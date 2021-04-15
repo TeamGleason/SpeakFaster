@@ -17,7 +17,7 @@ Combine the results into an open reference platform for eye gaze speech
 
 Focused on English language speakers
 
-Experiments
+## Experiments
 
 * Lower letter selection error rates through evaluating and selecting best eye gaze sensor technology
 * Lower letter selection error rates through adaptive noise suppression (e.g. dynamically adjusting noise suppression based on observing signal jitter)

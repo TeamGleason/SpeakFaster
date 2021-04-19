@@ -1,7 +1,7 @@
 ‘Speak Faster Observer’ is a data collection app for the Speak Faster research effort.
 
 This app will be developed for Windows based AAC devices, with phase 1 constrained to observing and
-collection the use of Balabolka on a Surface Pro computer with a Tobii PC Eye 5 and Tobii Windows Control.
+collection the use of Balabolka on a Surface Pro computer with a Tobii PC Eye 5 and Tobii Computer Control.
 
 It will collect computer usage data including intercepting keyboard and mouse events, collecting screen and camera captures.
 

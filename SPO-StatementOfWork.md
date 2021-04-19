@@ -49,3 +49,4 @@ Audio capture should be stored in uncompressed PCM16 for best compatibility with
 
 Data will be copied to [GCloud storage via rsync](https://cloud.google.com/filestore/docs/copying-data).
 
+[Writing a System Tray Icon app in C#](https://www.red-gate.com/simple-talk/dotnet/net-framework/creating-tray-applications-in-net-a-practical-guide/).

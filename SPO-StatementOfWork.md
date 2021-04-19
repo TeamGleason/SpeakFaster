@@ -1,6 +1,6 @@
 # Statement of Work
 
-‘Speak Faster Observer’ is a data collection app for the Speak Faster research effort.
+‘Speak Faster Observer’ is a data collection app for the Speak Faster research effort that has the goal of providing data to determine Words Per Minute metrics for non-instrumented speech generating software while preserving privacy.
 
 ## Scope
 

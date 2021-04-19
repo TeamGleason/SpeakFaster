@@ -35,7 +35,7 @@ Words Per Minute (WPM) will not be calculated in this app.  WPM will be post pro
 
 Sample screen capture code: [ConferenceXP ScreenScraper](https://github.com/conferencexp/conferencexp/blob/1fb8be570a7c4b21d9161f3ee7a93a3bd1ea9275/MSR.LST.DShow/ScreenScraper/ScreenScraper.cpp#L204)
 
-Timestamps will be encoded in filenames using non-delimited ISO 8601 format, so yyyymmddThhmmssf.  So filenames would be DataStream-yyyymmddThhmmssf.formatExtension.
+Timestamps will be encoded in filenames using non-delimited ISO 8601 format, so yyyymmddThhmmssf.  So filenames would be DataStream-yyyymmddThhmmssfff.Extension.
 
 Output audio can be separated and captured using a technique like a [Virtual Audio Cable](http://ntonyx.com/vac.htm).
 

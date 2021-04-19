@@ -7,17 +7,19 @@
 This app will be developed for Windows based AAC devices, with phase 1 constrained to observing and
 collection the use of Balabolka on a Surface Pro computer with a Tobii PC Eye 5 and Tobii Computer Control.
 
-It will collect computer usage data including intercepting keyboard and mouse events, collecting screen and selfie camera captures and 
+It will collect computer usage data including intercepting keyboard and mouse events, collecting screen and selfie camera captures.
+
+Optional: Capture of audio speech output streams, display recording light for other people in the room.
 
 ## Privacy
 
-The app will include a “recording on” notification in the Windows System Tray and a simple Toggle On/Off button for recording.
+The app will include a “recording on” notification in the Windows System Tray and a simple Toggle On/Off button for recording (maybe not system tray, for a larger eye gaze hit target).
 
 The app will recognize context and only record keystroke and mouse events during speaking events, when Balabolka and Tobii Computer Control keyboards are 'topmost'.
 
 
 The captured data will be stored in local disk storage on the Surface Pro using common data formats such as JPG/PNG (image)
-and JSON (data) files, to be uploaded at a later date by a Google Cloud uploading agent provided by a different application.
+and JSON (data) files, to be uploaded at a later date by a Google Cloud uploading agent.
 
 ## Specific Aims (e.g. goals)
 

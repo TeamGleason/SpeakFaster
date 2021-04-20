@@ -11,11 +11,11 @@ Create an open source research platform & publish results of experiments
 
 Quantitatively validate concepts through metrics enabled experimentation
 
-Perform experiments with all the known best practices of AAC design
+Perform experiments with known best practices of AAC design
 
 Combine the results into an open reference platform for eye gaze speech
 
-Focused on English language speakers
+Focus on English language speakers
 
 ## Experiments
 

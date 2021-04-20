@@ -1,4 +1,4 @@
-# SpeakFaster
+# Speak Faster
 
 
 ## Mission

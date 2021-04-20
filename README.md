@@ -15,7 +15,7 @@ Perform experiments with known best practices of AAC design
 
 Combine the results into an open reference platform for eye gaze speech
 
-Focus on English language speakers
+Initially scoped to English language speakers
 
 ## Experiments
 

@@ -15,16 +15,15 @@ Optional: Capture of audio speech output streams, display recording light for ot
 
 The app will include a “recording on” notification in the Windows System Tray and a simple Toggle On/Off button for recording (maybe not system tray, for a larger eye gaze hit target).
 
-The app will recognize context and only record keystroke and mouse events during speaking events, when Balabolka and Tobii Computer Control keyboards are 'topmost'.
+The app will recognize context and only record keystroke and mouse events during speaking events when Balabolka and Tobii Computer Control keyboards are 'topmost'.
 
-
-The captured data will be stored in local disk storage on the Surface Pro using common data formats such as JPG/PNG (image)
-and JSON (data) files, to be uploaded at a later date by a Google Cloud uploading agent.
+The captured data will be stored in local disk storage on the Surface Pro using common data formats such as PNG (image)
+and protobuf (data) files, to be uploaded at a later date via rsync.
 
 ## Specific Aims (e.g. goals)
 
 The phase 1 app will not include collection of eye gaze or speaking context data.  The goal of Phase 1 is to collect enough
-data to reliably measure the WPM output of generating speech using a combination of Tobii Computer Control and Balabolka by
+data to reliably measure the WPM output of generated speech using a combination of Tobii Computer Control and Balabolka by
 observing the computer screen and Windows Events.
 
 ## Design Notes

@@ -44,7 +44,7 @@ Structured data files (e.g. keystroke captures) should use the Google [protobuf]
 
 Screen and selfie image captures should be as close to lossless as possible (PNG?)
 
-Data will be stored to a local folder by SPO copied to [GCloud storage via rsync](https://cloud.google.com/filestore/docs/copying-data).
+Data will be stored to a local folder by SPO copied to [GCloud storage via rsync](https://cloud.google.com/storage/docs/gsutil/commands/rsync).
 
 ### Data Capture Sample Code
 

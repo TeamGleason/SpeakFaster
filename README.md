@@ -26,6 +26,6 @@ Focus on English language speakers
 * Word expansion using language stemming selections
 * Word prediction using environment context
 * Word prediction using sentence context
-* Phrase prediction using environment & paragraph context
+* Phrase prediction using environment & paragraph context & personal history
 * Contextual overlay of predictions within the eye’s foveated cone
 * Eye gaze enabled editing & correction

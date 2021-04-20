@@ -61,7 +61,7 @@ Output audio can be separated and captured using a technique like a [Virtual Aud
 
 Audio capture should be stored in uncompressed PCM16 for best compatibility with Speech To Text engines.  See [NAudio](https://markheath.net/post/how-to-record-and-play-audio-at-same) for guidance.  See also: [Audio Conversion](https://gitter.im/naudio/NAudio?at=56f2aa21e247956f1e305cbf), [C# Array Conversion](https://www.markheath.net/post/how-to-convert-byte-to-short-or-float).  FLAC is also possible: [C# FLAC Encoder](https://hydrogenaud.io/index.php?topic=74242.0), [CUDA Enabled FLAC Encoder](http://cue.tools/wiki/FLACCL), [C# FLAC Encoding](https://sourceforge.net/p/cuetoolsnet/code/ci/default/tree/CUETools.Codecs.FLACCL/).
 
-### Bill Of Materials for Capture Device
+### Bill Of Materials for Observation Device
 
 - Surface Pro 7+
   - Intel Core i7 recommended

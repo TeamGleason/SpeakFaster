@@ -13,7 +13,7 @@ Optional: Capture of audio speech output streams, display recording light for ot
 
 ## Privacy
 
-The app will include a “recording on” notification in the Windows System Tray and a simple Toggle On/Off button for recording (maybe not system tray, for a larger eye gaze hit target).
+The app will include a “recording on” notification in the Windows System Tray and a simple Toggle On/Off button for recording (maybe not just system tray but also a small overlay window for a larger eye gaze hit target).
 
 The app will recognize context and only record keystroke and mouse events during speaking events when Balabolka and Tobii Computer Control keyboards are 'topmost'.
 

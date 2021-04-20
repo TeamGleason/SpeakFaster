@@ -67,22 +67,19 @@ Audio capture should be stored in uncompressed PCM16 for best compatibility with
   - 32 GB RAM recommended
   - 1 TB storage recommended
 
-- Tobii Dynavox PC Eye 5 with Computer Control
-  - https://us.tobiidynavox.com/products/pceye
-  - https://www.tobiidynavox.com/products/computer-control/
+- Tobii Dynavox [PC Eye 5](https://us.tobiidynavox.com/products/pceye) with [Computer Control](https://www.tobiidynavox.com/products/computer-control/)
   
-- Balabolka TTS Software
-  - http://www.cross-plus-a.com/balabolka.htm
+- [Balabolka TTS Software](http://www.cross-plus-a.com/balabolka.htm)
 
 - USB Hub
-  - Anker USB C 4-in-1, https://www.amazon.com/gp/product/B07KS3PQG2
-  - USB C 90 degree adapter, https://www.amazon.com/Poyiccot-2-Pack-Degree-Adapter-Extension/dp/B071XHQJG8
+  - [Anker USB C 4-in-1](https://www.amazon.com/gp/product/B07KS3PQG2)
+  - [USB C 90 degree adapter](https://www.amazon.com/Poyiccot-2-Pack-Degree-Adapter-Extension/dp/B071XHQJG8)
 
-- “Recording Light” display
-  - Sparklet All In One, https://www.amazon.com/gp/product/B08DYFK9RD
+- “Recording On Light” display
+  - [Sparklet All In One](https://siliconsquared.com/sparkletallinone/)
+  - [Controlling an Expressive Pixel](https://github.com/microsoft/ExpressivePixels/tree/master/Windows/ExpressivePixelsActivator/WPF)
 
 - Array Microphone (Out Of Scope for Phase 1 SPO)
-  - Respeaker USB Array Mic from Seeed Studio, https://www.seeedstudio.com/ReSpeaker-USB-Mic-Array-p-4247.html
+  - [Respeaker USB Array Mic](https://www.seeedstudio.com/ReSpeaker-USB-Mic-Array-p-4247.html) from Seeed Studio
 
-- 3M VHB Mounting Tape
-  - https://www.amazon.com/3M-Scotch-5952-VHB-Tape/dp/B01BU7038A
+- [3M VHB Mounting Tape](https://www.amazon.com/3M-Scotch-5952-VHB-Tape/dp/B01BU7038A)

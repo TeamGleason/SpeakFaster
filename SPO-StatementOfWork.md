@@ -38,7 +38,7 @@ Words Per Minute (WPM) will not be calculated in this app.  WPM will be post pro
 
 ### Data Format and Storage
 
-Data will be time stamp correlated with approximately a 2 frames per second context.  Precision timings are not needed, standard seconds/milliseconds off of system clock is sufficient for data correlation.  Timestamps will be encoded in filenames using non-delimited ISO 8601 format, so yyyymmddThhmmssf.  So filenames would be DataStream-yyyymmddThhmmssf.Extension.
+Data will be time stamp correlated with approximately a 2 frames per second context.  Precision timings are not needed, standard seconds/milliseconds off of system clock is sufficient for data correlation.  Timestamps will be encoded in filenames using non-delimited ISO 8601 format, so yyyymmddThhmmssf.  So filenames would be {DataStream}-yyyymmddThhmmssf.{Extension}.
 
 Structured data files (e.g. keystroke captures) should use the Google [protobuf](https://developers.google.com/protocol-buffers/docs/csharptutorial) format rather than xml or json.
 

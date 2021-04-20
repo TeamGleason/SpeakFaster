@@ -6,7 +6,7 @@ By combining a series of technologies, each of which contribute 10-30% improveme
 
 Develop an observation and measurement system which facilitates the collection of repeatable, hard scientific measurements of AAC outcomes for existing AAC software.
 
-### Milestone
+#### Milestone
 
 Observation system can record and upload raw data consisting of screen captures, eye gaze movements, AAC output, and contextual audio streams.  Semi-automated signals processing can analyze these data streams and output typing, errors, speech generation, outcome metrics, and time stamp correlate this with conversational context. 
 
@@ -14,7 +14,7 @@ Observation system can record and upload raw data consisting of screen captures,
 
 Develop an open source experimental AAC application that works with an eye tracker that can be used for deeper instrumentation and experimentation.
 
-### Milestone
+#### Milestone
 
 Experimental AAC application can achieve equivalent outcomes to existing AAC software.
 
@@ -22,7 +22,7 @@ Experimental AAC application can achieve equivalent outcomes to existing AAC sof
 
 Perform experiments with language modeling, enhanced prediction context, in-place editing, and plan-ahead conversations.
 
-### Milestone
+#### Milestone
 
 Analyze outcomes for each individual experiment.  Analyze outcomes for combined improvements.
 

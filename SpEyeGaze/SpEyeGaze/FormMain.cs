@@ -12,8 +12,8 @@ namespace SpEyeGaze
     {
         enum RecordingState
         {
-            RecordingOn,
-            RecordingOff
+            RecordingOff = 0,
+            RecordingOn = 1,
         }
 
         // Store captured data in %localappdata%\SpEyeGaze
@@ -29,7 +29,7 @@ namespace SpEyeGaze
             "SpEyeGaze",
             "Screenshots");
 
-        static RecordingState currentRecordingState = RecordingState.RecordingOff; // TODO start in previous state on boot
+        static RecordingState currentRecordingState = RecordingState.RecordingOff;
         static readonly KeyPresses keypresses = new ();
 
         Keylogger keylogger;
@@ -51,6 +51,9 @@ namespace SpEyeGaze
             {
                 Directory.CreateDirectory(screenshotsPath);
             }
+
+            // Load previous recording state
+            currentRecordingState = (Properties.Settings.Default.IsRecordingOn ? RecordingState.RecordingOn : RecordingState.RecordingOff);
 
             // Ensure Icons and Strings reflect proper recording state on start
             SetRecordingState(currentRecordingState);
@@ -146,6 +149,13 @@ namespace SpEyeGaze
             btnOn.Enabled = !isRecording;
             btnOff.Enabled = isRecording;
             screenshotTimer.Enabled = isRecording;
+
+            if (isRecording != Properties.Settings.Default.IsRecordingOn)
+            {
+                // Save the new recording state
+                Properties.Settings.Default.IsRecordingOn = isRecording;
+                Properties.Settings.Default.Save();
+            }
         }
 
         private void HideWindow()

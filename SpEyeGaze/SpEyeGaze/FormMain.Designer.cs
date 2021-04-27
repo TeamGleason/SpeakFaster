@@ -37,11 +37,14 @@ namespace SpEyeGaze
             this.btnMinimize = new System.Windows.Forms.Button();
             this.btnExit = new System.Windows.Forms.Button();
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
+            this.labelBalabolkaRunning = new System.Windows.Forms.Label();
             this.notifyIcon = new System.Windows.Forms.NotifyIcon(this.components);
             this.screenshotTimer = new System.Windows.Forms.Timer(this.components);
+            this.balabolkaTimer = new System.Windows.Forms.Timer(this.components);
             this.flowLayoutPanel1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
             this.splitContainer1.Panel1.SuspendLayout();
+            this.splitContainer1.Panel2.SuspendLayout();
             this.splitContainer1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -80,7 +83,7 @@ namespace SpEyeGaze
             this.flowLayoutPanel1.FlowDirection = System.Windows.Forms.FlowDirection.TopDown;
             this.flowLayoutPanel1.Location = new System.Drawing.Point(0, 0);
             this.flowLayoutPanel1.Name = "flowLayoutPanel1";
-            this.flowLayoutPanel1.Size = new System.Drawing.Size(348, 978);
+            this.flowLayoutPanel1.Size = new System.Drawing.Size(340, 978);
             this.flowLayoutPanel1.TabIndex = 2;
             // 
             // btnMinimize
@@ -116,9 +119,22 @@ namespace SpEyeGaze
             // splitContainer1.Panel1
             // 
             this.splitContainer1.Panel1.Controls.Add(this.flowLayoutPanel1);
-            this.splitContainer1.Size = new System.Drawing.Size(699, 978);
-            this.splitContainer1.SplitterDistance = 348;
+            // 
+            // splitContainer1.Panel2
+            // 
+            this.splitContainer1.Panel2.Controls.Add(this.labelBalabolkaRunning);
+            this.splitContainer1.Size = new System.Drawing.Size(819, 978);
+            this.splitContainer1.SplitterDistance = 340;
             this.splitContainer1.TabIndex = 3;
+            // 
+            // labelBalabolkaRunning
+            // 
+            this.labelBalabolkaRunning.AutoSize = true;
+            this.labelBalabolkaRunning.Location = new System.Drawing.Point(25, 20);
+            this.labelBalabolkaRunning.Name = "labelBalabolkaRunning";
+            this.labelBalabolkaRunning.Size = new System.Drawing.Size(273, 32);
+            this.labelBalabolkaRunning.TabIndex = 0;
+            this.labelBalabolkaRunning.Text = "Balabolka is not running";
             // 
             // notifyIcon
             // 
@@ -132,11 +148,17 @@ namespace SpEyeGaze
             this.screenshotTimer.Interval = 2000;
             this.screenshotTimer.Tick += new System.EventHandler(this.screenshotTimer_Tick);
             // 
+            // balabolkaTimer
+            // 
+            this.balabolkaTimer.Enabled = true;
+            this.balabolkaTimer.Interval = 2000;
+            this.balabolkaTimer.Tick += new System.EventHandler(this.balabolkaTimer_Tick);
+            // 
             // FormMain
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(13F, 32F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(699, 978);
+            this.ClientSize = new System.Drawing.Size(819, 978);
             this.ControlBox = false;
             this.Controls.Add(this.splitContainer1);
             this.MinimizeBox = false;
@@ -146,6 +168,8 @@ namespace SpEyeGaze
             this.Load += new System.EventHandler(this.FormMain_Load);
             this.flowLayoutPanel1.ResumeLayout(false);
             this.splitContainer1.Panel1.ResumeLayout(false);
+            this.splitContainer1.Panel2.ResumeLayout(false);
+            this.splitContainer1.Panel2.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).EndInit();
             this.splitContainer1.ResumeLayout(false);
             this.ResumeLayout(false);
@@ -162,6 +186,8 @@ namespace SpEyeGaze
         private System.Windows.Forms.Button btnMinimize;
         private System.Windows.Forms.Button btnExit;
         private System.Windows.Forms.Timer screenshotTimer;
+        private System.Windows.Forms.Label labelBalabolkaRunning;
+        private System.Windows.Forms.Timer balabolkaTimer;
     }
 }
 

@@ -1,6 +1,7 @@
 ﻿using Google.Protobuf;
 using Microsoft.Win32;
 using System;
+using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
@@ -31,6 +32,7 @@ namespace SpEyeGaze
 
         static RecordingState currentRecordingState = RecordingState.RecordingOff;
         static readonly KeyPresses keypresses = new ();
+        static bool balabolkaRunning = false;
 
         Keylogger keylogger;
 
@@ -126,7 +128,9 @@ namespace SpEyeGaze
 
         private static void KeyboardHookHandler(int vkCode)
         {
-            if (currentRecordingState == RecordingState.RecordingOn)
+            // Only record when recording enabled AND balabolka is running
+            if (currentRecordingState == RecordingState.RecordingOn
+                && balabolkaRunning)
             {
                 keypresses.KeyPresses_.Add(new KeyPress
                 {
@@ -192,6 +196,25 @@ namespace SpEyeGaze
             //Set the application to run at startup
             RegistryKey key = Registry.CurrentUser.OpenSubKey(StartupKey, true);
             key.SetValue(StartupValue, Application.ExecutablePath.ToString());
+        }
+
+        public bool IsProcessRunning(string processName)
+        {
+            foreach (Process process in Process.GetProcesses())
+            {
+                if (process.ProcessName.Contains(processName, StringComparison.InvariantCultureIgnoreCase))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private void balabolkaTimer_Tick(object sender, EventArgs e)
+        {
+            balabolkaRunning = IsProcessRunning("balabolka");
+
+            labelBalabolkaRunning.Text = "Balabolka is " + (balabolkaRunning ? "" : "not ") + "running.";
         }
     }
 }

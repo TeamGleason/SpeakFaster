@@ -11,27 +11,13 @@ namespace SpEyeGaze
 {
     public partial class FormMain : Form
     {
-        enum RecordingState
-        {
-            RecordingOff = 0,
-            RecordingOn = 1,
-        }
-
         // Store captured data in %localappdata%\SpEyeGaze
-        string baseFilePath = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "SpEyeGaze");
-        readonly string keypressesPath = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "SpEyeGaze",
-            "Keypresses");
-        readonly string screenshotsPath = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "SpEyeGaze",
-            "Screenshots");
+        readonly string baseFilePath;
+        readonly string keypressesPath;
+        readonly string screenshotsPath;
 
-        static RecordingState currentRecordingState = RecordingState.RecordingOff;
         static readonly KeyPresses keypresses = new ();
+        static bool isRecording = false;
         static bool balabolkaRunning = false;
         static bool tobiiComputerControlRunning = false;
 
@@ -40,6 +26,16 @@ namespace SpEyeGaze
         public FormMain()
         {
             InitializeComponent();
+
+            baseFilePath = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "SpEyeGaze");
+            keypressesPath = Path.Combine(
+                baseFilePath,
+                "Keypresses");
+            screenshotsPath = Path.Combine(
+                baseFilePath,
+                "Screenshots");
 
             // Ensure output director exists
             if (!Directory.Exists(baseFilePath))
@@ -56,10 +52,10 @@ namespace SpEyeGaze
             }
 
             // Load previous recording state
-            currentRecordingState = (Properties.Settings.Default.IsRecordingOn ? RecordingState.RecordingOn : RecordingState.RecordingOff);
+            isRecording = Properties.Settings.Default.IsRecordingOn;
 
             // Ensure Icons and Strings reflect proper recording state on start
-            SetRecordingState(currentRecordingState);
+            SetRecordingState(isRecording);
 
             // Setup the Keypress keyboard hook
             keylogger = new Keylogger(KeyboardHookHandler);
@@ -75,12 +71,12 @@ namespace SpEyeGaze
         #region Button Handlers
         private void btnOff_Click(object sender, EventArgs e)
         {
-            SetRecordingState(RecordingState.RecordingOff);
+            SetRecordingState(false);
         }
 
         private void btnOn_Click(object sender, EventArgs e)
         {
-            SetRecordingState(RecordingState.RecordingOn);
+            SetRecordingState(true);
         }
 
         private void btnMinimize_Click(object sender, EventArgs e)
@@ -111,13 +107,27 @@ namespace SpEyeGaze
         #region Event Handlers
         private void notifyIcon_MouseDoubleClick(object sender, MouseEventArgs e)
         {
-            this.Show();
-            this.WindowState = FormWindowState.Normal;
+            ShowWindow();
+        }
+
+        private void notifyIcon_MouseClick(object sender, MouseEventArgs e)
+        {
+            ShowWindow();
+        }
+
+        private void notifyIcon_Click(object sender, EventArgs e)
+        {
+            ShowWindow();
+        }
+
+        private void notifyIcon_DoubleClick(object sender, EventArgs e)
+        {
+            ShowWindow();
         }
 
         private void screenshotTimer_Tick(object sender, EventArgs e)
         {
-            if (currentRecordingState == RecordingState.RecordingOn)
+            if (isRecording)
             {
                 var filename = Path.Combine(
                     screenshotsPath,
@@ -130,9 +140,9 @@ namespace SpEyeGaze
         private static void KeyboardHookHandler(int vkCode)
         {
             if (
-                currentRecordingState == RecordingState.RecordingOn // Only record when recording enabled
-                && balabolkaRunning                                 //  AND balabolka is running
-                //&& tobiiComputerControlRunning                      //  AND Tobii Computer Control
+                isRecording                         // Only record when recording enabled
+                && balabolkaRunning                 //  AND balabolka is running
+                //&& tobiiComputerControlRunning      //  AND Tobii Computer Control
                 )
             {
                 keypresses.KeyPresses_.Add(new KeyPress
@@ -144,13 +154,11 @@ namespace SpEyeGaze
         }
         #endregion
 
-        private void SetRecordingState(RecordingState newRecordingState)
+        private void SetRecordingState(bool newRecordingState)
         {
-            bool isRecording = newRecordingState == RecordingState.RecordingOn;
+            isRecording = newRecordingState;
 
             notifyIcon.Icon = new Icon("Assets\\Recording" + (isRecording ? "On" : "Off") + ".ico");
-            currentRecordingState = newRecordingState;
-
             notifyIcon.Text = "SpEyeGaze - Recording " + (isRecording ? "On" : "Off");
 
             btnOn.Enabled = !isRecording;
@@ -165,13 +173,19 @@ namespace SpEyeGaze
             }
         }
 
+        private void ShowWindow()
+        {
+            this.Show();
+            this.WindowState = FormWindowState.Normal;
+        }
+
         private void HideWindow()
         {
             this.Hide();
             notifyIcon.ShowBalloonTip(
                 1000,
                 "SpEyeGaze",
-                "Recordding " + (currentRecordingState == RecordingState.RecordingOn ? "On" : "Off"),
+                "Recording " + (isRecording ? "On" : "Off"),
                 ToolTipIcon.Info);
         }
 
@@ -191,14 +205,14 @@ namespace SpEyeGaze
         }
 
         //Startup registry key and value
-        private static readonly string StartupKey = "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run";
-        private static readonly string StartupValue = "SpEyeGaze";
+        private static readonly string startupPath = "%APPDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\Startup";
         
         private static void SetStartup()
         {
-            //Set the application to run at startup
-            RegistryKey key = Registry.CurrentUser.OpenSubKey(StartupKey, true);
-            key.SetValue(StartupValue, Application.ExecutablePath.ToString());
+            if (Directory.Exists(startupPath))
+            {
+                // TODO add shortcut to this exe in startup
+            }
         }
 
         public bool IsProcessRunning(string processName)
@@ -219,7 +233,7 @@ namespace SpEyeGaze
             labelBalabolkaRunning.Text = "Balabolka is " + (balabolkaRunning ? "" : "not ") + "running.";
 
             tobiiComputerControlRunning = IsProcessRunning("Tdx.ComputerControl");
-            labelBalabolkaRunning.Text = "Tobii Computer Control is " + (tobiiComputerControlRunning ? "" : "not ") + "running.";
+            labelTobiiComputerControl.Text = "Tobii Computer Control is " + (tobiiComputerControlRunning ? "" : "not ") + "running.";
         }
     }
 }

@@ -33,6 +33,7 @@ namespace SpEyeGaze
         static RecordingState currentRecordingState = RecordingState.RecordingOff;
         static readonly KeyPresses keypresses = new ();
         static bool balabolkaRunning = false;
+        static bool tobiiComputerControlRunning = false;
 
         Keylogger keylogger;
 
@@ -128,9 +129,11 @@ namespace SpEyeGaze
 
         private static void KeyboardHookHandler(int vkCode)
         {
-            // Only record when recording enabled AND balabolka is running
-            if (currentRecordingState == RecordingState.RecordingOn
-                && balabolkaRunning)
+            if (
+                currentRecordingState == RecordingState.RecordingOn // Only record when recording enabled
+                && balabolkaRunning                                 //  AND balabolka is running
+                //&& tobiiComputerControlRunning                      //  AND Tobii Computer Control
+                )
             {
                 keypresses.KeyPresses_.Add(new KeyPress
                 {
@@ -213,8 +216,10 @@ namespace SpEyeGaze
         private void balabolkaTimer_Tick(object sender, EventArgs e)
         {
             balabolkaRunning = IsProcessRunning("balabolka");
-
             labelBalabolkaRunning.Text = "Balabolka is " + (balabolkaRunning ? "" : "not ") + "running.";
+
+            tobiiComputerControlRunning = IsProcessRunning("Tdx.ComputerControl");
+            labelBalabolkaRunning.Text = "Tobii Computer Control is " + (tobiiComputerControlRunning ? "" : "not ") + "running.";
         }
     }
 }

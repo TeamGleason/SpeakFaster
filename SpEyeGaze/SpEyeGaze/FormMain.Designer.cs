@@ -40,7 +40,8 @@ namespace SpEyeGaze
             this.labelBalabolkaRunning = new System.Windows.Forms.Label();
             this.notifyIcon = new System.Windows.Forms.NotifyIcon(this.components);
             this.screenshotTimer = new System.Windows.Forms.Timer(this.components);
-            this.balabolkaTimer = new System.Windows.Forms.Timer(this.components);
+            this.processCheckerTimer = new System.Windows.Forms.Timer(this.components);
+            this.labelTobii = new System.Windows.Forms.Label();
             this.flowLayoutPanel1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
             this.splitContainer1.Panel1.SuspendLayout();
@@ -122,6 +123,7 @@ namespace SpEyeGaze
             // 
             // splitContainer1.Panel2
             // 
+            this.splitContainer1.Panel2.Controls.Add(this.labelTobii);
             this.splitContainer1.Panel2.Controls.Add(this.labelBalabolkaRunning);
             this.splitContainer1.Size = new System.Drawing.Size(819, 978);
             this.splitContainer1.SplitterDistance = 340;
@@ -148,11 +150,20 @@ namespace SpEyeGaze
             this.screenshotTimer.Interval = 2000;
             this.screenshotTimer.Tick += new System.EventHandler(this.screenshotTimer_Tick);
             // 
-            // balabolkaTimer
+            // processCheckerTimer
             // 
-            this.balabolkaTimer.Enabled = true;
-            this.balabolkaTimer.Interval = 2000;
-            this.balabolkaTimer.Tick += new System.EventHandler(this.balabolkaTimer_Tick);
+            this.processCheckerTimer.Enabled = true;
+            this.processCheckerTimer.Interval = 2000;
+            this.processCheckerTimer.Tick += new System.EventHandler(this.balabolkaTimer_Tick);
+            // 
+            // labelTobii
+            // 
+            this.labelTobii.AutoSize = true;
+            this.labelTobii.Location = new System.Drawing.Point(25, 52);
+            this.labelTobii.Name = "labelTobii";
+            this.labelTobii.Size = new System.Drawing.Size(422, 32);
+            this.labelTobii.TabIndex = 1;
+            this.labelTobii.Text = "Tobii Computer Control is not running";
             // 
             // FormMain
             // 
@@ -187,7 +198,8 @@ namespace SpEyeGaze
         private System.Windows.Forms.Button btnExit;
         private System.Windows.Forms.Timer screenshotTimer;
         private System.Windows.Forms.Label labelBalabolkaRunning;
-        private System.Windows.Forms.Timer balabolkaTimer;
+        private System.Windows.Forms.Timer processCheckerTimer;
+        private System.Windows.Forms.Label labelTobii;
     }
 }
 

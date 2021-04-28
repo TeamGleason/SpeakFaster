@@ -105,16 +105,6 @@ namespace SpEyeGaze
         #endregion
 
         #region Event Handlers
-        private void notifyIcon_MouseDoubleClick(object sender, MouseEventArgs e)
-        {
-            ShowWindow();
-        }
-
-        private void notifyIcon_MouseClick(object sender, MouseEventArgs e)
-        {
-            ShowWindow();
-        }
-
         private void notifyIcon_Click(object sender, EventArgs e)
         {
             ShowWindow();
@@ -158,8 +148,16 @@ namespace SpEyeGaze
         {
             isRecording = newRecordingState;
 
-            notifyIcon.Icon = new Icon("Assets\\Recording" + (isRecording ? "On" : "Off") + ".ico");
-            notifyIcon.Text = "SpEyeGaze - Recording " + (isRecording ? "On" : "Off");
+            if (isRecording)
+            {
+                notifyIcon.Icon = new Icon("Assets\\RecordingOn.ico");
+                notifyIcon.Text = "SpEyeGaze - Recording On";
+            }
+            else
+            {
+                notifyIcon.Icon = new Icon("Assets\\RecordingOff.ico");
+                notifyIcon.Text = "SpEyeGaze - Recording Off";
+            }
 
             btnOn.Enabled = !isRecording;
             btnOff.Enabled = isRecording;
@@ -185,7 +183,7 @@ namespace SpEyeGaze
             notifyIcon.ShowBalloonTip(
                 1000,
                 "SpEyeGaze",
-                "Recording " + (isRecording ? "On" : "Off"),
+                (isRecording ? "Recording On" : "Recording Off"),
                 ToolTipIcon.Info);
         }
 
@@ -230,10 +228,10 @@ namespace SpEyeGaze
         private void balabolkaTimer_Tick(object sender, EventArgs e)
         {
             balabolkaRunning = IsProcessRunning("balabolka");
-            labelBalabolkaRunning.Text = "Balabolka is " + (balabolkaRunning ? "" : "not ") + "running.";
+            labelBalabolkaRunning.Text = (balabolkaRunning ? "Balabolka is running." : "Balabolka is not running.");
 
             tobiiComputerControlRunning = IsProcessRunning("Tdx.ComputerControl");
-            labelTobiiComputerControl.Text = "Tobii Computer Control is " + (tobiiComputerControlRunning ? "" : "not ") + "running.";
+            labelTobiiComputerControl.Text = (tobiiComputerControlRunning ? "Tobii Computer Control is running." : "Tobii Computer Control is not running");
         }
     }
 }

@@ -61,22 +61,15 @@ namespace SpEyeGaze
             keylogger = new Keylogger(KeyboardHookHandler);
         }
 
-        #region Form Event Handlers
+        #region Event Handlers
         private void FormMain_Load(object sender, EventArgs e)
         {
             this.Hide();
         }
-        #endregion
 
-        #region Button Handlers
-        private void btnOff_Click(object sender, EventArgs e)
+        private void btnAddStartupIcon_Click(object sender, EventArgs e)
         {
-            SetRecordingState(false);
-        }
-
-        private void btnOn_Click(object sender, EventArgs e)
-        {
-            SetRecordingState(true);
+            // TODO Setup autostart
         }
 
         private void btnMinimize_Click(object sender, EventArgs e)
@@ -102,9 +95,12 @@ namespace SpEyeGaze
 
             this.Close();
         }
-        #endregion
 
-        #region Event Handlers
+        private void toggleButtonOnOff_Click(object sender, EventArgs e)
+        {
+            SetRecordingState(!isRecording);
+        }
+
         private void notifyIcon_Click(object sender, EventArgs e)
         {
             ShowWindow();
@@ -125,6 +121,15 @@ namespace SpEyeGaze
                 // TODO Re-enable screenshots
                 //CaptureFullScreenshot(filename);
             }
+        }
+
+        private void balabolkaTimer_Tick(object sender, EventArgs e)
+        {
+            balabolkaRunning = IsProcessRunning("balabolka");
+            labelBalabolkaRunning.Text = (balabolkaRunning ? "Balabolka is running." : "Balabolka is not running.");
+
+            tobiiComputerControlRunning = IsProcessRunning("Tdx.ComputerControl");
+            labelTobiiComputerControl.Text = (tobiiComputerControlRunning ? "Tobii Computer Control is running." : "Tobii Computer Control is not running");
         }
 
         private static void KeyboardHookHandler(int vkCode)
@@ -148,19 +153,21 @@ namespace SpEyeGaze
         {
             isRecording = newRecordingState;
 
+            toggleButtonOnOff.Checked = isRecording;
+
             if (isRecording)
             {
                 notifyIcon.Icon = new Icon("Assets\\RecordingOn.ico");
                 notifyIcon.Text = "SpEyeGaze - Recording On";
+                toggleButtonOnOff.Text = "Turn Recording Off";
             }
             else
             {
                 notifyIcon.Icon = new Icon("Assets\\RecordingOff.ico");
                 notifyIcon.Text = "SpEyeGaze - Recording Off";
+                toggleButtonOnOff.Text = "Turn On Recording On";
             }
 
-            btnOn.Enabled = !isRecording;
-            btnOff.Enabled = isRecording;
             screenshotTimer.Enabled = isRecording;
 
             if (isRecording != Properties.Settings.Default.IsRecordingOn)
@@ -202,17 +209,6 @@ namespace SpEyeGaze
             bitmap.Save(fullpath, ImageFormat.Jpeg);
         }
 
-        //Startup registry key and value
-        private static readonly string startupPath = "%APPDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\Startup";
-        
-        private static void SetStartup()
-        {
-            if (Directory.Exists(startupPath))
-            {
-                // TODO add shortcut to this exe in startup
-            }
-        }
-
         public bool IsProcessRunning(string processName)
         {
             foreach (Process process in Process.GetProcesses())
@@ -223,15 +219,6 @@ namespace SpEyeGaze
                 }
             }
             return false;
-        }
-
-        private void balabolkaTimer_Tick(object sender, EventArgs e)
-        {
-            balabolkaRunning = IsProcessRunning("balabolka");
-            labelBalabolkaRunning.Text = (balabolkaRunning ? "Balabolka is running." : "Balabolka is not running.");
-
-            tobiiComputerControlRunning = IsProcessRunning("Tdx.ComputerControl");
-            labelTobiiComputerControl.Text = (tobiiComputerControlRunning ? "Tobii Computer Control is running." : "Tobii Computer Control is not running");
         }
     }
 }

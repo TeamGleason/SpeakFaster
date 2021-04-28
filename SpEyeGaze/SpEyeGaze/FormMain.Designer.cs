@@ -31,9 +31,9 @@ namespace SpEyeGaze
         {
             this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FormMain));
-            this.btnOn = new System.Windows.Forms.Button();
-            this.btnOff = new System.Windows.Forms.Button();
+            this.btnAddStartupIcon = new System.Windows.Forms.Button();
             this.flowLayoutPanel = new System.Windows.Forms.FlowLayoutPanel();
+            this.toggleButtonOnOff = new System.Windows.Forms.CheckBox();
             this.btnMinimize = new System.Windows.Forms.Button();
             this.btnExit = new System.Windows.Forms.Button();
             this.mainSplitContainer = new System.Windows.Forms.SplitContainer();
@@ -49,35 +49,23 @@ namespace SpEyeGaze
             this.mainSplitContainer.SuspendLayout();
             this.SuspendLayout();
             // 
-            // btnOn
+            // btnAddStartupIcon
             // 
-            this.btnOn.Font = new System.Drawing.Font("Segoe UI", 19.875F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.btnOn.Location = new System.Drawing.Point(20, 20);
-            this.btnOn.Margin = new System.Windows.Forms.Padding(20);
-            this.btnOn.Name = "btnOn";
-            this.btnOn.Size = new System.Drawing.Size(300, 200);
-            this.btnOn.TabIndex = 0;
-            this.btnOn.Text = "On";
-            this.btnOn.UseVisualStyleBackColor = true;
-            this.btnOn.Click += new System.EventHandler(this.btnOn_Click);
-            // 
-            // btnOff
-            // 
-            this.btnOff.Enabled = false;
-            this.btnOff.Font = new System.Drawing.Font("Segoe UI", 19.875F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.btnOff.Location = new System.Drawing.Point(20, 260);
-            this.btnOff.Margin = new System.Windows.Forms.Padding(20);
-            this.btnOff.Name = "btnOff";
-            this.btnOff.Size = new System.Drawing.Size(300, 200);
-            this.btnOff.TabIndex = 1;
-            this.btnOff.Text = "Off";
-            this.btnOff.UseVisualStyleBackColor = true;
-            this.btnOff.Click += new System.EventHandler(this.btnOff_Click);
+            this.btnAddStartupIcon.Enabled = false;
+            this.btnAddStartupIcon.Font = new System.Drawing.Font("Segoe UI", 16.125F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.btnAddStartupIcon.Location = new System.Drawing.Point(20, 260);
+            this.btnAddStartupIcon.Margin = new System.Windows.Forms.Padding(20);
+            this.btnAddStartupIcon.Name = "btnAddStartupIcon";
+            this.btnAddStartupIcon.Size = new System.Drawing.Size(300, 200);
+            this.btnAddStartupIcon.TabIndex = 0;
+            this.btnAddStartupIcon.Text = "Add Startup Icon";
+            this.btnAddStartupIcon.UseVisualStyleBackColor = true;
+            this.btnAddStartupIcon.Click += new System.EventHandler(this.btnAddStartupIcon_Click);
             // 
             // flowLayoutPanel
             // 
-            this.flowLayoutPanel.Controls.Add(this.btnOn);
-            this.flowLayoutPanel.Controls.Add(this.btnOff);
+            this.flowLayoutPanel.Controls.Add(this.toggleButtonOnOff);
+            this.flowLayoutPanel.Controls.Add(this.btnAddStartupIcon);
             this.flowLayoutPanel.Controls.Add(this.btnMinimize);
             this.flowLayoutPanel.Controls.Add(this.btnExit);
             this.flowLayoutPanel.Dock = System.Windows.Forms.DockStyle.Fill;
@@ -87,9 +75,23 @@ namespace SpEyeGaze
             this.flowLayoutPanel.Size = new System.Drawing.Size(340, 978);
             this.flowLayoutPanel.TabIndex = 2;
             // 
+            // toggleButtonOnOff
+            // 
+            this.toggleButtonOnOff.Appearance = System.Windows.Forms.Appearance.Button;
+            this.toggleButtonOnOff.Font = new System.Drawing.Font("Segoe UI", 16.125F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.toggleButtonOnOff.Location = new System.Drawing.Point(20, 20);
+            this.toggleButtonOnOff.Margin = new System.Windows.Forms.Padding(20);
+            this.toggleButtonOnOff.Name = "toggleButtonOnOff";
+            this.toggleButtonOnOff.Size = new System.Drawing.Size(300, 200);
+            this.toggleButtonOnOff.TabIndex = 4;
+            this.toggleButtonOnOff.Text = "Turn Recording On";
+            this.toggleButtonOnOff.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.toggleButtonOnOff.UseVisualStyleBackColor = true;
+            this.toggleButtonOnOff.Click += new System.EventHandler(this.toggleButtonOnOff_Click);
+            // 
             // btnMinimize
             // 
-            this.btnMinimize.Font = new System.Drawing.Font("Segoe UI", 19.875F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.btnMinimize.Font = new System.Drawing.Font("Segoe UI", 16.125F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.btnMinimize.Location = new System.Drawing.Point(20, 500);
             this.btnMinimize.Margin = new System.Windows.Forms.Padding(20);
             this.btnMinimize.Name = "btnMinimize";
@@ -101,7 +103,7 @@ namespace SpEyeGaze
             // 
             // btnExit
             // 
-            this.btnExit.Font = new System.Drawing.Font("Segoe UI", 19.875F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
+            this.btnExit.Font = new System.Drawing.Font("Segoe UI", 16.125F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.btnExit.Location = new System.Drawing.Point(20, 740);
             this.btnExit.Margin = new System.Windows.Forms.Padding(20);
             this.btnExit.Name = "btnExit";
@@ -191,8 +193,7 @@ namespace SpEyeGaze
 
         #endregion
 
-        private System.Windows.Forms.Button btnOn;
-        private System.Windows.Forms.Button btnOff;
+        private System.Windows.Forms.Button btnAddStartupIcon;
         private System.Windows.Forms.FlowLayoutPanel flowLayoutPanel;
         private System.Windows.Forms.SplitContainer mainSplitContainer;
         private System.Windows.Forms.NotifyIcon notifyIcon;
@@ -202,6 +203,7 @@ namespace SpEyeGaze
         private System.Windows.Forms.Label labelBalabolkaRunning;
         private System.Windows.Forms.Timer processCheckerTimer;
         private System.Windows.Forms.Label labelTobiiComputerControl;
+        private System.Windows.Forms.CheckBox toggleButtonOnOff;
     }
 }
 

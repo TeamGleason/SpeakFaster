@@ -44,7 +44,7 @@ namespace SpEyeGaze
 
         public void Dispose()
         {
-            if (_hookID != null)
+            if (_hookID != IntPtr.Zero)
             {
                 UnhookWindowsHookEx(_hookID);
             }

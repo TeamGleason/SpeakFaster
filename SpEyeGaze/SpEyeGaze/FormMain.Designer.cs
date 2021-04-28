@@ -1,4 +1,4 @@
-﻿
+
 namespace SpEyeGaze
 {
     partial class FormMain
@@ -176,6 +176,7 @@ namespace SpEyeGaze
             this.Name = "FormMain";
             this.ShowIcon = false;
             this.Text = "SpEyeGaze";
+            this.WindowState = System.Windows.Forms.FormWindowState.Minimized;
             this.Load += new System.EventHandler(this.FormMain_Load);
             this.flowLayoutPanel1.ResumeLayout(false);
             this.splitContainer1.Panel1.ResumeLayout(false);

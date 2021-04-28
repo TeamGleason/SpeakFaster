@@ -62,13 +62,12 @@ namespace SpEyeGaze
 
             // Setup the Keypress keyboard hook
             keylogger = new Keylogger(KeyboardHookHandler);
-            Application.Run();
         }
 
         #region Form Event Handlers
         private void FormMain_Load(object sender, EventArgs e)
         {
-
+            this.Hide();
         }
         #endregion
 
@@ -104,7 +103,7 @@ namespace SpEyeGaze
             keylogger.Dispose();
             keylogger = null;
 
-            Application.Exit(); // TODO Exit seems to be throwing exception, need to investigate
+            this.Close();
         }
         #endregion
 
@@ -112,8 +111,9 @@ namespace SpEyeGaze
         private void notifyIcon_MouseDoubleClick(object sender, MouseEventArgs e)
         {
             this.Show();
+            this.WindowState = FormWindowState.Normal;
         }
-        
+
         private void screenshotTimer_Tick(object sender, EventArgs e)
         {
             if (currentRecordingState == RecordingState.RecordingOn)

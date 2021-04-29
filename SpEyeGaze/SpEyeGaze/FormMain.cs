@@ -1,4 +1,4 @@
-﻿using Google.Protobuf;
+using Google.Protobuf;
 using Microsoft.Win32;
 using System;
 using System.Diagnostics;
@@ -16,7 +16,7 @@ namespace SpEyeGaze
         readonly string keypressesPath;
         readonly string screenshotsPath;
 
-        static readonly KeyPresses keypresses = new ();
+        static readonly KeyPresses keypresses = new();
         static bool isRecording = false;
         static bool balabolkaRunning = false;
         static bool tobiiComputerControlRunning = false;
@@ -83,7 +83,7 @@ namespace SpEyeGaze
             // {DataStream}-yyyymmddThhmmssf.{Extension}
             var filename = Path.Combine(
                keypressesPath,
-                "Keypresses-" + DateTime.Now.ToString("yyyyMMddThhmmss") + "f.bin");
+                "Keypresses-" + DateTime.Now.ToString("yyyyMMddThhmmssfff") + ".protobuf");
             using (var file = File.Create(filename))
             {
                 keypresses.WriteTo(file);
@@ -117,9 +117,9 @@ namespace SpEyeGaze
             {
                 var filename = Path.Combine(
                     screenshotsPath,
-                    "Screenshot-" + DateTime.Now.ToString("yyyyMMddThhmmss") + ".jpg");
-                // TODO Re-enable screenshots
-                //CaptureFullScreenshot(filename);
+                    "Screenshot-" + DateTime.Now.ToString("yyyyMMddThhmmssfff") + ".jpg");
+
+                ScreenCapture.Capture(filename);
             }
         }
 
@@ -159,13 +159,13 @@ namespace SpEyeGaze
             {
                 notifyIcon.Icon = new Icon("Assets\\RecordingOn.ico");
                 notifyIcon.Text = "SpEyeGaze - Recording On";
-                toggleButtonOnOff.Text = "Turn Recording Off";
+                toggleButtonOnOff.Text = "Recording On";
             }
             else
             {
                 notifyIcon.Icon = new Icon("Assets\\RecordingOff.ico");
                 notifyIcon.Text = "SpEyeGaze - Recording Off";
-                toggleButtonOnOff.Text = "Turn On Recording On";
+                toggleButtonOnOff.Text = "Recording Off";
             }
 
             screenshotTimer.Enabled = isRecording;

@@ -64,7 +64,7 @@ namespace SpEyeGaze
         #region Event Handlers
         private void FormMain_Load(object sender, EventArgs e)
         {
-            this.Hide();
+            Hide();
         }
 
         private void btnAddStartupIcon_Click(object sender, EventArgs e)
@@ -192,21 +192,6 @@ namespace SpEyeGaze
                 "SpEyeGaze",
                 (isRecording ? "Recording On" : "Recording Off"),
                 ToolTipIcon.Info);
-        }
-
-        private static void CaptureFullScreenshot(string fullpath)
-        {
-            // TODO Be cautious of performance implications. Native option may be necessary
-            // Note: This seems to only capture the primary display. For most systems
-            //       this should be sufficient.
-            var screenBounds = Screen.GetBounds(Point.Empty);
-            var bitmap = new Bitmap(screenBounds.Width, screenBounds.Height);
-            using (var graphics = Graphics.FromImage(bitmap))
-            {
-                graphics.CopyFromScreen(Point.Empty, Point.Empty, screenBounds.Size);
-            }
-
-            bitmap.Save(fullpath, ImageFormat.Jpeg);
         }
 
         public bool IsProcessRunning(string processName)

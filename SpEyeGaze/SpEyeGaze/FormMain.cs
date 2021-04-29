@@ -113,7 +113,11 @@ namespace SpEyeGaze
 
         private void screenshotTimer_Tick(object sender, EventArgs e)
         {
-            if (isRecording)
+            if (
+                isRecording                         // Only record when recording enabled
+                && balabolkaRunning                 //  AND balabolka is running
+                //&& tobiiComputerControlRunning      //  AND Tobii Computer Control
+                )
             {
                 var filename = Path.Combine(
                     screenshotsPath,

@@ -53,10 +53,10 @@ namespace SpEyeGaze
             // 
             this.btnAddStartupIcon.Enabled = false;
             this.btnAddStartupIcon.Font = new System.Drawing.Font("Segoe UI", 16.125F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.btnAddStartupIcon.Location = new System.Drawing.Point(26, 334);
-            this.btnAddStartupIcon.Margin = new System.Windows.Forms.Padding(26, 26, 26, 26);
+            this.btnAddStartupIcon.Location = new System.Drawing.Point(20, 260);
+            this.btnAddStartupIcon.Margin = new System.Windows.Forms.Padding(20, 20, 20, 20);
             this.btnAddStartupIcon.Name = "btnAddStartupIcon";
-            this.btnAddStartupIcon.Size = new System.Drawing.Size(392, 256);
+            this.btnAddStartupIcon.Size = new System.Drawing.Size(300, 200);
             this.btnAddStartupIcon.TabIndex = 0;
             this.btnAddStartupIcon.Text = "Add Startup Icon";
             this.btnAddStartupIcon.UseVisualStyleBackColor = true;
@@ -71,19 +71,18 @@ namespace SpEyeGaze
             this.flowLayoutPanel.Dock = System.Windows.Forms.DockStyle.Fill;
             this.flowLayoutPanel.FlowDirection = System.Windows.Forms.FlowDirection.TopDown;
             this.flowLayoutPanel.Location = new System.Drawing.Point(0, 0);
-            this.flowLayoutPanel.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.flowLayoutPanel.Name = "flowLayoutPanel";
-            this.flowLayoutPanel.Size = new System.Drawing.Size(444, 1253);
+            this.flowLayoutPanel.Size = new System.Drawing.Size(339, 978);
             this.flowLayoutPanel.TabIndex = 2;
             // 
             // toggleButtonOnOff
             // 
             this.toggleButtonOnOff.Appearance = System.Windows.Forms.Appearance.Button;
             this.toggleButtonOnOff.Font = new System.Drawing.Font("Segoe UI", 16.125F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.toggleButtonOnOff.Location = new System.Drawing.Point(26, 26);
-            this.toggleButtonOnOff.Margin = new System.Windows.Forms.Padding(26, 26, 26, 26);
+            this.toggleButtonOnOff.Location = new System.Drawing.Point(20, 20);
+            this.toggleButtonOnOff.Margin = new System.Windows.Forms.Padding(20, 20, 20, 20);
             this.toggleButtonOnOff.Name = "toggleButtonOnOff";
-            this.toggleButtonOnOff.Size = new System.Drawing.Size(392, 256);
+            this.toggleButtonOnOff.Size = new System.Drawing.Size(300, 200);
             this.toggleButtonOnOff.TabIndex = 4;
             this.toggleButtonOnOff.Text = "Turn Recording On";
             this.toggleButtonOnOff.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
@@ -93,10 +92,10 @@ namespace SpEyeGaze
             // btnMinimize
             // 
             this.btnMinimize.Font = new System.Drawing.Font("Segoe UI", 16.125F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.btnMinimize.Location = new System.Drawing.Point(26, 642);
-            this.btnMinimize.Margin = new System.Windows.Forms.Padding(26, 26, 26, 26);
+            this.btnMinimize.Location = new System.Drawing.Point(20, 500);
+            this.btnMinimize.Margin = new System.Windows.Forms.Padding(20, 20, 20, 20);
             this.btnMinimize.Name = "btnMinimize";
-            this.btnMinimize.Size = new System.Drawing.Size(392, 256);
+            this.btnMinimize.Size = new System.Drawing.Size(300, 200);
             this.btnMinimize.TabIndex = 2;
             this.btnMinimize.Text = "Minimize";
             this.btnMinimize.UseVisualStyleBackColor = true;
@@ -105,10 +104,10 @@ namespace SpEyeGaze
             // btnExit
             // 
             this.btnExit.Font = new System.Drawing.Font("Segoe UI", 16.125F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.btnExit.Location = new System.Drawing.Point(26, 950);
-            this.btnExit.Margin = new System.Windows.Forms.Padding(26, 26, 26, 26);
+            this.btnExit.Location = new System.Drawing.Point(20, 740);
+            this.btnExit.Margin = new System.Windows.Forms.Padding(20, 20, 20, 20);
             this.btnExit.Name = "btnExit";
-            this.btnExit.Size = new System.Drawing.Size(392, 256);
+            this.btnExit.Size = new System.Drawing.Size(300, 200);
             this.btnExit.TabIndex = 3;
             this.btnExit.Text = "Exit";
             this.btnExit.UseVisualStyleBackColor = true;
@@ -118,7 +117,6 @@ namespace SpEyeGaze
             // 
             this.mainSplitContainer.Dock = System.Windows.Forms.DockStyle.Fill;
             this.mainSplitContainer.Location = new System.Drawing.Point(0, 0);
-            this.mainSplitContainer.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.mainSplitContainer.Name = "mainSplitContainer";
             // 
             // mainSplitContainer.Panel1
@@ -129,28 +127,25 @@ namespace SpEyeGaze
             // 
             this.mainSplitContainer.Panel2.Controls.Add(this.labelTobiiComputerControl);
             this.mainSplitContainer.Panel2.Controls.Add(this.labelBalabolkaRunning);
-            this.mainSplitContainer.Size = new System.Drawing.Size(1071, 1253);
-            this.mainSplitContainer.SplitterDistance = 444;
-            this.mainSplitContainer.SplitterWidth = 5;
+            this.mainSplitContainer.Size = new System.Drawing.Size(819, 978);
+            this.mainSplitContainer.SplitterDistance = 339;
             this.mainSplitContainer.TabIndex = 3;
             // 
             // labelTobiiComputerControl
             // 
             this.labelTobiiComputerControl.AutoSize = true;
-            this.labelTobiiComputerControl.Location = new System.Drawing.Point(33, 67);
-            this.labelTobiiComputerControl.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.labelTobiiComputerControl.Location = new System.Drawing.Point(25, 52);
             this.labelTobiiComputerControl.Name = "labelTobiiComputerControl";
-            this.labelTobiiComputerControl.Size = new System.Drawing.Size(522, 41);
+            this.labelTobiiComputerControl.Size = new System.Drawing.Size(422, 32);
             this.labelTobiiComputerControl.TabIndex = 1;
             this.labelTobiiComputerControl.Text = "Tobii Computer Control is not running";
             // 
             // labelBalabolkaRunning
             // 
             this.labelBalabolkaRunning.AutoSize = true;
-            this.labelBalabolkaRunning.Location = new System.Drawing.Point(33, 26);
-            this.labelBalabolkaRunning.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.labelBalabolkaRunning.Location = new System.Drawing.Point(25, 20);
             this.labelBalabolkaRunning.Name = "labelBalabolkaRunning";
-            this.labelBalabolkaRunning.Size = new System.Drawing.Size(337, 41);
+            this.labelBalabolkaRunning.Size = new System.Drawing.Size(273, 32);
             this.labelBalabolkaRunning.TabIndex = 0;
             this.labelBalabolkaRunning.Text = "Balabolka is not running";
             // 
@@ -175,12 +170,12 @@ namespace SpEyeGaze
             // 
             // FormMain
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(17F, 41F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(13F, 32F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1071, 1253);
+            this.ClientSize = new System.Drawing.Size(819, 978);
             this.ControlBox = false;
             this.Controls.Add(this.mainSplitContainer);
-            this.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MinimizeBox = false;
             this.Name = "FormMain";
             this.ShowIcon = false;

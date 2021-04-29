@@ -3,8 +3,10 @@ using System.Runtime.InteropServices;
 
 namespace SpEyeGaze.Win32
 {
-    public class Interop
+    public partial class Interop
     {
+        public const int DWMWA_EXTENDED_FRAME_BOUNDS = 9;
+
         public delegate IntPtr WindowsHookDelegate(int nCode, IntPtr wParam, IntPtr lParam);
 
         [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
@@ -19,5 +21,41 @@ namespace SpEyeGaze.Win32
 
         [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         public static extern IntPtr GetModuleHandle(string lpModuleName);
+
+        [DllImport("gdi32.dll")]
+        public static extern bool BitBlt(IntPtr hdcDest, int nxDest, int nyDest, int nWidth, int nHeight, IntPtr hdcSrc, int nXSrc, int nYSrc, RasterOperation dwRop);
+
+        [DllImport("gdi32.dll")]
+        public static extern IntPtr CreateCompatibleBitmap(IntPtr hdc, int nWidth, int nHeight);
+
+        [DllImport("gdi32.dll")]
+        public static extern IntPtr CreateCompatibleDC(IntPtr hdc);
+
+        [DllImport("gdi32.dll")]
+        public static extern IntPtr DeleteDC(IntPtr hdc);
+
+        [DllImport("gdi32.dll")]
+        public static extern IntPtr DeleteObject(IntPtr hObject);
+
+        [DllImport("dwmapi.dll")]
+        public static extern int DwmGetWindowAttribute(IntPtr hwnd, int dwAttribute, out RECT pvAttribute, int cbAttribute);
+
+        [DllImport("user32.dll")]
+        public static extern IntPtr GetDesktopWindow();
+
+        [DllImport("user32.dll")]
+        public static extern IntPtr GetForegroundWindow();
+
+        [DllImport("user32.dll")]
+        public static extern IntPtr GetWindowDC(IntPtr hWnd);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        public static extern bool GetWindowRect(IntPtr hwnd, out RECT lpRect);
+
+        [DllImport("user32.dll")]
+        public static extern bool ReleaseDC(IntPtr hWnd, IntPtr hDc);
+
+        [DllImport("gdi32.dll")]
+        public static extern IntPtr SelectObject(IntPtr hdc, IntPtr hObject);
     }
 }

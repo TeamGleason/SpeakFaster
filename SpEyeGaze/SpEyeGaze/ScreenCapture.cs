@@ -100,7 +100,10 @@ namespace SpEyeGaze
             var graphics = Graphics.FromImage(bitmap);
             graphics.SmoothingMode = SmoothingMode.AntiAlias;
 
-            graphics.FillEllipse(gazeCursorBrush, (int)gazeDevice.LastGazePoint.X, (int)gazeDevice.LastGazePoint.Y, 50, 50);
+            if (gazeDevice != null)
+            {
+                graphics.FillEllipse(gazeCursorBrush, (int)gazeDevice.LastGazePoint.X, (int)gazeDevice.LastGazePoint.Y, 50, 50);
+            }
         }
 
         public static void Capture(string path)

@@ -4,15 +4,19 @@ using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
+using System.IO;
 using System.Windows.Forms;
+using TurboJpegWrapper;
 
 namespace SpEyeGaze
 {
     class ScreenCapture : IDisposable
     {
-        private static ImageCodecInfo jpgEncoder = GetEncoder(ImageFormat.Jpeg);
-        private static Brush gazeCursorBrush = new SolidBrush(Color.FromArgb(128, 255, 0, 0));
-        private ToltTech.GazeInput.IGazeDevice gazeDevice;
+//        private static readonly ImageCodecInfo jpgEncoder = GetEncoder(ImageFormat.Jpeg);
+        private static readonly TJCompressor compressor = new();
+
+        private static readonly Brush gazeCursorBrush = new SolidBrush(Color.FromArgb(128, 255, 0, 0));
+        private readonly ToltTech.GazeInput.IGazeDevice gazeDevice;
 
         public ScreenCapture()
         {
@@ -63,7 +67,15 @@ namespace SpEyeGaze
                 desktop = Rectangle.Union(desktop, workingAreaOnly ? screen.WorkingArea : screen.Bounds);
             }
 
-            return CaptureRegion(desktop);
+            // libjpeg-turbo is incompatible with the CaptureRegion graphic that is generated
+            // This path is a bit slower than CaptureRegion, but it's a little faster to use this plus libjpeg than
+            // To use the CaptureRegion plus the internal jpeg encoder
+            var bitmap = new Bitmap(desktop.Width, desktop.Height, PixelFormat.Format32bppArgb);
+            var graphics = Graphics.FromImage(bitmap);
+            graphics.CopyFromScreen(0, 0, 0, 0, bitmap.Size, CopyPixelOperation.SourceCopy);
+            return bitmap;
+
+            //return CaptureRegion(desktop);
         }
 
         private static ImageCodecInfo GetEncoder(ImageFormat format)
@@ -122,10 +134,36 @@ namespace SpEyeGaze
                 OverlayTimestamp(bitmap);
                 OverlayGazeCursor(bitmap);
 
-                var parameters = new EncoderParameters();
-                parameters.Param[0] = new EncoderParameter(Encoder.Quality, 25L);
+                var srcData = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height), ImageLockMode.ReadOnly, bitmap.PixelFormat);
 
-                bitmap.Save(path, jpgEncoder, parameters);
+                TJPixelFormats tjPixelFormat;
+                switch (bitmap.PixelFormat)
+                {
+                    case PixelFormat.Format8bppIndexed:
+                        tjPixelFormat = TJPixelFormats.TJPF_GRAY;
+                        break;
+                    case PixelFormat.Format24bppRgb:
+                        tjPixelFormat = TJPixelFormats.TJPF_RGB;
+                        break;
+                    case PixelFormat.Format32bppArgb:
+                        tjPixelFormat = TJPixelFormats.TJPF_BGRA;  // Fixed from the sample code that had this wrong
+                        break;
+                    case PixelFormat.Format32bppRgb:
+                        tjPixelFormat = TJPixelFormats.TJPF_BGRX; //?
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
+
+                var bytes = compressor.Compress(srcData.Scan0, 0, bitmap.Width, bitmap.Height, tjPixelFormat, TJSubsamplingOptions.TJSAMP_422, 25, TJFlags.NONE);
+                bitmap.UnlockBits(srcData);
+
+                File.WriteAllBytes(path, bytes);
+
+                // The 'built in' jpeg encoder -- considerably slower than libjpeg-turbo (above)
+                // var parameters = new EncoderParameters();
+                // parameters.Param[0] = new EncoderParameter(Encoder.Quality, 25L);
+                // bitmap.Save(path, jpgEncoder, parameters);
             }
         }
 

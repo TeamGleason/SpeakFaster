@@ -4,17 +4,21 @@ using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
+using System.IO;
 using System.Windows.Forms;
+using TurboJpegWrapper;
 
 namespace SpEyeGaze
 {
-    class ScreenCapture
+    class ScreenCapture : IDisposable
     {
-        private static ImageCodecInfo jpgEncoder = GetEncoder(ImageFormat.Jpeg);
-        private static Brush gazeCursorBrush = new SolidBrush(Color.FromArgb(128, 255, 0, 0));
-        private static ToltTech.GazeInput.IGazeDevice gazeDevice;
+//        private static readonly ImageCodecInfo jpgEncoder = GetEncoder(ImageFormat.Jpeg);
+        private static readonly TJCompressor compressor = new();
 
-        static ScreenCapture()
+        private static readonly Brush gazeCursorBrush = new SolidBrush(Color.FromArgb(128, 255, 0, 0));
+        private readonly ToltTech.GazeInput.IGazeDevice gazeDevice;
+
+        public ScreenCapture()
         {
             gazeDevice = new ToltTech.GazeInput.TobiiStreamEngine();
 
@@ -22,11 +26,13 @@ namespace SpEyeGaze
             {
                 gazeDevice.Dispose();
                 gazeDevice = null;
+                return;
             }
 
+            gazeDevice.Connect(new System.Diagnostics.TraceSource("Null"));
         }
 
-        public static Bitmap CaptureRegion(Rectangle region)
+        public Bitmap CaptureRegion(Rectangle region)
         {
             var desktophWnd = Interop.GetDesktopWindow();
             var desktopDc = Interop.GetWindowDC(desktophWnd);
@@ -52,7 +58,7 @@ namespace SpEyeGaze
             }
         }
 
-        public static Bitmap CaptureDesktop(bool workingAreaOnly)
+        public Bitmap CaptureDesktop(bool workingAreaOnly)
         {
             var desktop = Rectangle.Empty;
 
@@ -61,7 +67,15 @@ namespace SpEyeGaze
                 desktop = Rectangle.Union(desktop, workingAreaOnly ? screen.WorkingArea : screen.Bounds);
             }
 
-            return CaptureRegion(desktop);
+            // libjpeg-turbo is incompatible with the CaptureRegion graphic that is generated
+            // This path is a bit slower than CaptureRegion, but it's a little faster to use this plus libjpeg than
+            // To use the CaptureRegion plus the internal jpeg encoder
+            var bitmap = new Bitmap(desktop.Width, desktop.Height, PixelFormat.Format32bppArgb);
+            var graphics = Graphics.FromImage(bitmap);
+            graphics.CopyFromScreen(0, 0, 0, 0, bitmap.Size, CopyPixelOperation.SourceCopy);
+            return bitmap;
+
+            //return CaptureRegion(desktop);
         }
 
         private static ImageCodecInfo GetEncoder(ImageFormat format)
@@ -79,43 +93,83 @@ namespace SpEyeGaze
             return null;
         }
 
-        private static void OverlayTimestamp(Bitmap bitmap)
+        private void OverlayTimestamp(Bitmap bitmap)
         {
-            var graphics = Graphics.FromImage(bitmap);
-
-            var font = new Font("Times New Roman", 12, FontStyle.Regular);
-            var stringFormat = new StringFormat
+            using (var graphics = Graphics.FromImage(bitmap))
             {
-                Alignment = StringAlignment.Center,
-                LineAlignment = StringAlignment.Center
-            };
 
-            graphics.SmoothingMode = SmoothingMode.AntiAlias;
-            graphics.FillRectangle(Brushes.Black, new Rectangle(0, 0, 400, 80));
-            graphics.DrawString(DateTime.Now.ToString("yyyyMMddThhmmssfff"), font, Brushes.White, new Point(200, 40), stringFormat);
-        }
+                var font = new Font("Times New Roman", 12, FontStyle.Regular);
+                var stringFormat = new StringFormat
+                {
+                    Alignment = StringAlignment.Center,
+                    LineAlignment = StringAlignment.Center
+                };
 
-        private static void OverlayGazeCursor(Bitmap bitmap)
-        {
-            var graphics = Graphics.FromImage(bitmap);
-            graphics.SmoothingMode = SmoothingMode.AntiAlias;
-
-            if (gazeDevice != null)
-            {
-                graphics.FillEllipse(gazeCursorBrush, (int)gazeDevice.LastGazePoint.X, (int)gazeDevice.LastGazePoint.Y, 50, 50);
+                graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                graphics.FillRectangle(Brushes.Black, new Rectangle(0, 0, 400, 80));
+                graphics.DrawString(DateTime.Now.ToString("yyyyMMddThhmmssfff"), font, Brushes.White, new Point(200, 40), stringFormat);
             }
         }
 
-        public static void Capture(string path)
+        private void OverlayGazeCursor(Bitmap bitmap)
         {
-            var bitmap = CaptureDesktop(false);
-            OverlayTimestamp(bitmap);
-            OverlayGazeCursor(bitmap);
+            if (gazeDevice != null && gazeDevice.LastGazePoint != null)
+            {
+                var gazePoint = gazeDevice.LastGazePoint;
+                if (gazePoint != null && gazeDevice.LastGazePoint.HasValue)
+                {
+                    using (var graphics = Graphics.FromImage(bitmap))
+                    {
+                        graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                        graphics.FillEllipse(gazeCursorBrush, (int)(gazePoint.Value.X), (int)gazePoint.Value.Y, 50, 50);
+                    }
+                }
+            }
+        }
 
-            var parameters = new EncoderParameters();
-            parameters.Param[0] = new EncoderParameter(System.Drawing.Imaging.Encoder.Quality, 25L);
+        public void Capture(string path)
+        {
+            using (var bitmap = CaptureDesktop(false))
+            {
+                OverlayTimestamp(bitmap);
+                OverlayGazeCursor(bitmap);
 
-            bitmap.Save(path, jpgEncoder, parameters);
+                var srcData = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height), ImageLockMode.ReadOnly, bitmap.PixelFormat);
+
+                TJPixelFormats tjPixelFormat;
+                switch (bitmap.PixelFormat)
+                {
+                    case PixelFormat.Format8bppIndexed:
+                        tjPixelFormat = TJPixelFormats.TJPF_GRAY;
+                        break;
+                    case PixelFormat.Format24bppRgb:
+                        tjPixelFormat = TJPixelFormats.TJPF_RGB;
+                        break;
+                    case PixelFormat.Format32bppArgb:
+                        tjPixelFormat = TJPixelFormats.TJPF_BGRA;  // Fixed from the sample code that had this wrong
+                        break;
+                    case PixelFormat.Format32bppRgb:
+                        tjPixelFormat = TJPixelFormats.TJPF_BGRX; //?
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
+
+                var bytes = compressor.Compress(srcData.Scan0, 0, bitmap.Width, bitmap.Height, tjPixelFormat, TJSubsamplingOptions.TJSAMP_422, 25, TJFlags.NONE);
+                bitmap.UnlockBits(srcData);
+
+                File.WriteAllBytes(path, bytes);
+
+                // The 'built in' jpeg encoder -- considerably slower than libjpeg-turbo (above)
+                // var parameters = new EncoderParameters();
+                // parameters.Param[0] = new EncoderParameter(Encoder.Quality, 25L);
+                // bitmap.Save(path, jpgEncoder, parameters);
+            }
+        }
+
+        public void Dispose()
+        {
+            gazeDevice?.Dispose();
         }
     }
 }

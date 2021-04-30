@@ -42,6 +42,7 @@ namespace SpEyeGaze
             this.notifyIcon = new System.Windows.Forms.NotifyIcon(this.components);
             this.screenshotTimer = new System.Windows.Forms.Timer(this.components);
             this.processCheckerTimer = new System.Windows.Forms.Timer(this.components);
+            this.labelBalabolkaFocused = new System.Windows.Forms.Label();
             this.flowLayoutPanel.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.mainSplitContainer)).BeginInit();
             this.mainSplitContainer.Panel1.SuspendLayout();
@@ -54,7 +55,7 @@ namespace SpEyeGaze
             this.btnAddStartupIcon.Enabled = false;
             this.btnAddStartupIcon.Font = new System.Drawing.Font("Segoe UI", 16.125F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.btnAddStartupIcon.Location = new System.Drawing.Point(20, 260);
-            this.btnAddStartupIcon.Margin = new System.Windows.Forms.Padding(20, 20, 20, 20);
+            this.btnAddStartupIcon.Margin = new System.Windows.Forms.Padding(20);
             this.btnAddStartupIcon.Name = "btnAddStartupIcon";
             this.btnAddStartupIcon.Size = new System.Drawing.Size(300, 200);
             this.btnAddStartupIcon.TabIndex = 0;
@@ -80,7 +81,7 @@ namespace SpEyeGaze
             this.toggleButtonOnOff.Appearance = System.Windows.Forms.Appearance.Button;
             this.toggleButtonOnOff.Font = new System.Drawing.Font("Segoe UI", 16.125F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.toggleButtonOnOff.Location = new System.Drawing.Point(20, 20);
-            this.toggleButtonOnOff.Margin = new System.Windows.Forms.Padding(20, 20, 20, 20);
+            this.toggleButtonOnOff.Margin = new System.Windows.Forms.Padding(20);
             this.toggleButtonOnOff.Name = "toggleButtonOnOff";
             this.toggleButtonOnOff.Size = new System.Drawing.Size(300, 200);
             this.toggleButtonOnOff.TabIndex = 4;
@@ -93,7 +94,7 @@ namespace SpEyeGaze
             // 
             this.btnMinimize.Font = new System.Drawing.Font("Segoe UI", 16.125F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.btnMinimize.Location = new System.Drawing.Point(20, 500);
-            this.btnMinimize.Margin = new System.Windows.Forms.Padding(20, 20, 20, 20);
+            this.btnMinimize.Margin = new System.Windows.Forms.Padding(20);
             this.btnMinimize.Name = "btnMinimize";
             this.btnMinimize.Size = new System.Drawing.Size(300, 200);
             this.btnMinimize.TabIndex = 2;
@@ -105,7 +106,7 @@ namespace SpEyeGaze
             // 
             this.btnExit.Font = new System.Drawing.Font("Segoe UI", 16.125F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.btnExit.Location = new System.Drawing.Point(20, 740);
-            this.btnExit.Margin = new System.Windows.Forms.Padding(20, 20, 20, 20);
+            this.btnExit.Margin = new System.Windows.Forms.Padding(20);
             this.btnExit.Name = "btnExit";
             this.btnExit.Size = new System.Drawing.Size(300, 200);
             this.btnExit.TabIndex = 3;
@@ -125,6 +126,7 @@ namespace SpEyeGaze
             // 
             // mainSplitContainer.Panel2
             // 
+            this.mainSplitContainer.Panel2.Controls.Add(this.labelBalabolkaFocused);
             this.mainSplitContainer.Panel2.Controls.Add(this.labelTobiiComputerControl);
             this.mainSplitContainer.Panel2.Controls.Add(this.labelBalabolkaRunning);
             this.mainSplitContainer.Size = new System.Drawing.Size(819, 978);
@@ -168,6 +170,15 @@ namespace SpEyeGaze
             this.processCheckerTimer.Interval = 2000;
             this.processCheckerTimer.Tick += new System.EventHandler(this.balabolkaTimer_Tick);
             // 
+            // labelBalabolkaFocused
+            // 
+            this.labelBalabolkaFocused.AutoSize = true;
+            this.labelBalabolkaFocused.Location = new System.Drawing.Point(25, 84);
+            this.labelBalabolkaFocused.Name = "labelBalabolkaFocused";
+            this.labelBalabolkaFocused.Size = new System.Drawing.Size(278, 32);
+            this.labelBalabolkaFocused.TabIndex = 2;
+            this.labelBalabolkaFocused.Text = "Balabolka is not focused.";
+            // 
             // FormMain
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(13F, 32F);
@@ -205,6 +216,7 @@ namespace SpEyeGaze
         private System.Windows.Forms.Timer processCheckerTimer;
         private System.Windows.Forms.Label labelTobiiComputerControl;
         private System.Windows.Forms.CheckBox toggleButtonOnOff;
+        private System.Windows.Forms.Label labelBalabolkaFocused;
     }
 }
 

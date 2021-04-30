@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.InteropServices;
+using System.Text;
 
 namespace SpEyeGaze.Win32
 {
@@ -57,5 +58,8 @@ namespace SpEyeGaze.Win32
 
         [DllImport("gdi32.dll")]
         public static extern IntPtr SelectObject(IntPtr hdc, IntPtr hObject);
+
+        [DllImport("user32.dll")]
+        public static extern int GetWindowText(IntPtr hWnd, StringBuilder text, int count);
     }
 }

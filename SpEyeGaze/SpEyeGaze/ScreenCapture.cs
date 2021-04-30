@@ -5,6 +5,7 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using TurboJpegWrapper;
 
@@ -34,27 +35,41 @@ namespace SpEyeGaze
 
         public Bitmap CaptureRegion(Rectangle region)
         {
-            var desktophWnd = Interop.GetDesktopWindow();
-            var desktopDc = Interop.GetWindowDC(desktophWnd);
-            var memoryDc = Interop.CreateCompatibleDC(desktopDc);
-            var bitmap = Interop.CreateCompatibleBitmap(desktopDc, region.Width, region.Height);
-            var oldBitmap = Interop.SelectObject(memoryDc, bitmap);
+            var hDeskWnd = Interop.GetDesktopWindow();
+            var hWndDC = Interop.GetWindowDC(hDeskWnd);
+            var hMemDC = Interop.CreateCompatibleDC(hWndDC);
+            var hMemBmp = Interop.CreateCompatibleBitmap(hWndDC, region.Width, region.Height);
+            var hOldBmp = Interop.SelectObject(hMemDC, hMemBmp);
 
-            if (!Interop.BitBlt(memoryDc, 0, 0, region.Width, region.Height, desktopDc, region.Left, region.Top, Interop.RasterOperation.SRCCOPY | Interop.RasterOperation.CAPTUREBLT))
+            if (!Interop.BitBlt(hMemDC, 0, 0, region.Width, region.Height, hWndDC, region.Left, region.Top, Interop.RasterOperation.SRCCOPY | Interop.RasterOperation.CAPTUREBLT))
             {
                 throw new Win32Exception();
             }
 
+            /*
+            long size = ((width * 32 + 31) / 32) * 4 * height;
+            var bmi = new BITMAPINFO();
+            bmi.biSize = (uint)Marshal.SizeOf(bmi);
+            bmi.biWidth = region.Width;
+            bmi.biHeight = region.Height;
+            bmi.biPlanes = 1;
+            bmi.biBitCount = 32;
+            bmi.biCompression = BitmapCompressionMode.BI_RGB;
+            bmi.biSizeImage = (uint)size;
+            */
+
+            Interop.SelectObject(hMemDC, hOldBmp);
+
             try
             {
-                return Image.FromHbitmap(bitmap);
+                return Image.FromHbitmap(hMemBmp);
             }
             finally
             {
-                Interop.SelectObject(memoryDc, oldBitmap);
-                Interop.DeleteObject(bitmap);
-                Interop.DeleteDC(memoryDc);
-                Interop.ReleaseDC(desktophWnd, desktopDc);
+                // Interop.GetDIBits(hMemDC, hMemBmp, 0, wndHeight, pData, ref bmi, BitmapCompressionMode.BI_RGB);
+                Interop.DeleteObject(hMemBmp);
+                Interop.DeleteDC(hMemDC);
+                Interop.ReleaseDC(hDeskWnd, hWndDC);
             }
         }
 
@@ -68,14 +83,17 @@ namespace SpEyeGaze
             }
 
             // libjpeg-turbo is incompatible with the CaptureRegion graphic that is generated
+            // Throws System.AccessViolationException
+
+            //return CaptureRegion(desktop);
+
             // This path is a bit slower than CaptureRegion, but it's a little faster to use this plus libjpeg than
             // To use the CaptureRegion plus the internal jpeg encoder
+
             var bitmap = new Bitmap(desktop.Width, desktop.Height, PixelFormat.Format32bppArgb);
             var graphics = Graphics.FromImage(bitmap);
             graphics.CopyFromScreen(0, 0, 0, 0, bitmap.Size, CopyPixelOperation.SourceCopy);
             return bitmap;
-
-            //return CaptureRegion(desktop);
         }
 
         private static ImageCodecInfo GetEncoder(ImageFormat format)

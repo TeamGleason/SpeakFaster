@@ -8,13 +8,13 @@ using System.Windows.Forms;
 
 namespace SpEyeGaze
 {
-    class ScreenCapture
+    class ScreenCapture : IDisposable
     {
         private static ImageCodecInfo jpgEncoder = GetEncoder(ImageFormat.Jpeg);
         private static Brush gazeCursorBrush = new SolidBrush(Color.FromArgb(128, 255, 0, 0));
-        private static ToltTech.GazeInput.IGazeDevice gazeDevice;
+        private ToltTech.GazeInput.IGazeDevice gazeDevice;
 
-        static ScreenCapture()
+        public ScreenCapture()
         {
             gazeDevice = new ToltTech.GazeInput.TobiiStreamEngine();
 
@@ -22,11 +22,13 @@ namespace SpEyeGaze
             {
                 gazeDevice.Dispose();
                 gazeDevice = null;
+                return;
             }
 
+            gazeDevice.Connect(new System.Diagnostics.TraceSource("Null"));
         }
 
-        public static Bitmap CaptureRegion(Rectangle region)
+        public Bitmap CaptureRegion(Rectangle region)
         {
             var desktophWnd = Interop.GetDesktopWindow();
             var desktopDc = Interop.GetWindowDC(desktophWnd);
@@ -52,7 +54,7 @@ namespace SpEyeGaze
             }
         }
 
-        public static Bitmap CaptureDesktop(bool workingAreaOnly)
+        public Bitmap CaptureDesktop(bool workingAreaOnly)
         {
             var desktop = Rectangle.Empty;
 
@@ -79,40 +81,57 @@ namespace SpEyeGaze
             return null;
         }
 
-        private static void OverlayTimestamp(Bitmap bitmap)
+        private void OverlayTimestamp(Bitmap bitmap)
         {
-            var graphics = Graphics.FromImage(bitmap);
-
-            var font = new Font("Times New Roman", 12, FontStyle.Regular);
-            var stringFormat = new StringFormat
+            using (var graphics = Graphics.FromImage(bitmap))
             {
-                Alignment = StringAlignment.Center,
-                LineAlignment = StringAlignment.Center
-            };
 
-            graphics.SmoothingMode = SmoothingMode.AntiAlias;
-            graphics.FillRectangle(Brushes.Black, new Rectangle(0, 0, 400, 80));
-            graphics.DrawString(DateTime.Now.ToString("yyyyMMddThhmmssfff"), font, Brushes.White, new Point(200, 40), stringFormat);
+                var font = new Font("Times New Roman", 12, FontStyle.Regular);
+                var stringFormat = new StringFormat
+                {
+                    Alignment = StringAlignment.Center,
+                    LineAlignment = StringAlignment.Center
+                };
+
+                graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                graphics.FillRectangle(Brushes.Black, new Rectangle(0, 0, 400, 80));
+                graphics.DrawString(DateTime.Now.ToString("yyyyMMddThhmmssfff"), font, Brushes.White, new Point(200, 40), stringFormat);
+            }
         }
 
-        private static void OverlayGazeCursor(Bitmap bitmap)
+        private void OverlayGazeCursor(Bitmap bitmap)
         {
-            var graphics = Graphics.FromImage(bitmap);
-            graphics.SmoothingMode = SmoothingMode.AntiAlias;
-
-            graphics.FillEllipse(gazeCursorBrush, (int)gazeDevice.LastGazePoint.X, (int)gazeDevice.LastGazePoint.Y, 50, 50);
+            if (gazeDevice != null && gazeDevice.LastGazePoint != null)
+            {
+                var gazePoint = gazeDevice.LastGazePoint;
+                if (gazePoint != null && gazeDevice.LastGazePoint.HasValue)
+                {
+                    using (var graphics = Graphics.FromImage(bitmap))
+                    {
+                        graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                        graphics.FillEllipse(gazeCursorBrush, (int)(gazePoint.Value.X), (int)gazePoint.Value.Y, 50, 50);
+                    }
+                }
+            }
         }
 
-        public static void Capture(string path)
+        public void Capture(string path)
         {
-            var bitmap = CaptureDesktop(false);
-            OverlayTimestamp(bitmap);
-            OverlayGazeCursor(bitmap);
+            using (var bitmap = CaptureDesktop(false))
+            {
+                OverlayTimestamp(bitmap);
+                OverlayGazeCursor(bitmap);
 
-            var parameters = new EncoderParameters();
-            parameters.Param[0] = new EncoderParameter(System.Drawing.Imaging.Encoder.Quality, 25L);
+                var parameters = new EncoderParameters();
+                parameters.Param[0] = new EncoderParameter(Encoder.Quality, 25L);
 
-            bitmap.Save(path, jpgEncoder, parameters);
+                bitmap.Save(path, jpgEncoder, parameters);
+            }
+        }
+
+        public void Dispose()
+        {
+            gazeDevice?.Dispose();
         }
     }
 }

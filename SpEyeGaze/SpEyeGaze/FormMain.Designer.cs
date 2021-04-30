@@ -54,7 +54,7 @@ namespace SpEyeGaze
             this.btnAddStartupIcon.Enabled = false;
             this.btnAddStartupIcon.Font = new System.Drawing.Font("Segoe UI", 16.125F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.btnAddStartupIcon.Location = new System.Drawing.Point(26, 334);
-            this.btnAddStartupIcon.Margin = new System.Windows.Forms.Padding(26, 26, 26, 26);
+            this.btnAddStartupIcon.Margin = new System.Windows.Forms.Padding(26);
             this.btnAddStartupIcon.Name = "btnAddStartupIcon";
             this.btnAddStartupIcon.Size = new System.Drawing.Size(392, 256);
             this.btnAddStartupIcon.TabIndex = 0;
@@ -71,7 +71,7 @@ namespace SpEyeGaze
             this.flowLayoutPanel.Dock = System.Windows.Forms.DockStyle.Fill;
             this.flowLayoutPanel.FlowDirection = System.Windows.Forms.FlowDirection.TopDown;
             this.flowLayoutPanel.Location = new System.Drawing.Point(0, 0);
-            this.flowLayoutPanel.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.flowLayoutPanel.Margin = new System.Windows.Forms.Padding(4);
             this.flowLayoutPanel.Name = "flowLayoutPanel";
             this.flowLayoutPanel.Size = new System.Drawing.Size(444, 1253);
             this.flowLayoutPanel.TabIndex = 2;
@@ -81,7 +81,7 @@ namespace SpEyeGaze
             this.toggleButtonOnOff.Appearance = System.Windows.Forms.Appearance.Button;
             this.toggleButtonOnOff.Font = new System.Drawing.Font("Segoe UI", 16.125F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.toggleButtonOnOff.Location = new System.Drawing.Point(26, 26);
-            this.toggleButtonOnOff.Margin = new System.Windows.Forms.Padding(26, 26, 26, 26);
+            this.toggleButtonOnOff.Margin = new System.Windows.Forms.Padding(26);
             this.toggleButtonOnOff.Name = "toggleButtonOnOff";
             this.toggleButtonOnOff.Size = new System.Drawing.Size(392, 256);
             this.toggleButtonOnOff.TabIndex = 4;
@@ -94,7 +94,7 @@ namespace SpEyeGaze
             // 
             this.btnMinimize.Font = new System.Drawing.Font("Segoe UI", 16.125F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.btnMinimize.Location = new System.Drawing.Point(26, 642);
-            this.btnMinimize.Margin = new System.Windows.Forms.Padding(26, 26, 26, 26);
+            this.btnMinimize.Margin = new System.Windows.Forms.Padding(26);
             this.btnMinimize.Name = "btnMinimize";
             this.btnMinimize.Size = new System.Drawing.Size(392, 256);
             this.btnMinimize.TabIndex = 2;
@@ -106,7 +106,7 @@ namespace SpEyeGaze
             // 
             this.btnExit.Font = new System.Drawing.Font("Segoe UI", 16.125F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
             this.btnExit.Location = new System.Drawing.Point(26, 950);
-            this.btnExit.Margin = new System.Windows.Forms.Padding(26, 26, 26, 26);
+            this.btnExit.Margin = new System.Windows.Forms.Padding(26);
             this.btnExit.Name = "btnExit";
             this.btnExit.Size = new System.Drawing.Size(392, 256);
             this.btnExit.TabIndex = 3;
@@ -118,7 +118,7 @@ namespace SpEyeGaze
             // 
             this.mainSplitContainer.Dock = System.Windows.Forms.DockStyle.Fill;
             this.mainSplitContainer.Location = new System.Drawing.Point(0, 0);
-            this.mainSplitContainer.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.mainSplitContainer.Margin = new System.Windows.Forms.Padding(4);
             this.mainSplitContainer.Name = "mainSplitContainer";
             // 
             // mainSplitContainer.Panel1
@@ -180,12 +180,13 @@ namespace SpEyeGaze
             this.ClientSize = new System.Drawing.Size(1071, 1253);
             this.ControlBox = false;
             this.Controls.Add(this.mainSplitContainer);
-            this.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.Margin = new System.Windows.Forms.Padding(4);
             this.MinimizeBox = false;
             this.Name = "FormMain";
             this.ShowIcon = false;
             this.Text = "SpEyeGaze";
             this.WindowState = System.Windows.Forms.FormWindowState.Minimized;
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.FormMain_FormClosing);
             this.Load += new System.EventHandler(this.FormMain_Load);
             this.flowLayoutPanel.ResumeLayout(false);
             this.mainSplitContainer.Panel1.ResumeLayout(false);

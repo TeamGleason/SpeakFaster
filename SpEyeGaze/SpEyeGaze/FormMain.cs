@@ -21,6 +21,7 @@ namespace SpEyeGaze
         static bool balabolkaRunning = false;
         static bool tobiiComputerControlRunning = false;
 
+        ScreenCapture screenCapture = new();
         Keylogger keylogger;
 
         public FormMain()
@@ -119,7 +120,7 @@ namespace SpEyeGaze
                     screenshotsPath,
                     "Screenshot-" + DateTime.Now.ToString("yyyyMMddThhmmssfff") + ".jpg");
 
-                ScreenCapture.Capture(filename);
+                screenCapture.Capture(filename);
             }
         }
 
@@ -204,6 +205,11 @@ namespace SpEyeGaze
                 }
             }
             return false;
+        }
+
+        private void FormMain_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            screenCapture.Dispose();
         }
     }
 }

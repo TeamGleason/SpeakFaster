@@ -1,10 +1,12 @@
 using Google.Protobuf;
 using Microsoft.Win32;
+using SpEyeGaze.Win32;
 using System;
 using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
+using System.Text;
 using System.Windows.Forms;
 
 namespace SpEyeGaze
@@ -19,6 +21,7 @@ namespace SpEyeGaze
         static readonly KeyPresses keypresses = new();
         static bool isRecording = false;
         static bool balabolkaRunning = false;
+        static bool balabolkaFocused = false;
         static bool tobiiComputerControlRunning = false;
 
         ScreenCapture screenCapture = new();
@@ -68,6 +71,11 @@ namespace SpEyeGaze
             Hide();
         }
 
+        private void FormMain_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            screenCapture.Dispose();
+        }
+
         private void btnAddStartupIcon_Click(object sender, EventArgs e)
         {
             // TODO Setup autostart
@@ -114,7 +122,12 @@ namespace SpEyeGaze
 
         private void screenshotTimer_Tick(object sender, EventArgs e)
         {
-            if (isRecording)
+            if (
+                isRecording                         // Only record when recording enabled
+                && balabolkaRunning                 // AND balabolka is running
+                && balabolkaFocused                 // AND balabolka has focus
+                //&& tobiiComputerControlRunning      //  AND Tobii Computer Control
+                )
             {
                 var filename = Path.Combine(
                     screenshotsPath,
@@ -131,14 +144,18 @@ namespace SpEyeGaze
 
             tobiiComputerControlRunning = IsProcessRunning("Tdx.ComputerControl");
             labelTobiiComputerControl.Text = (tobiiComputerControlRunning ? "Tobii Computer Control is running." : "Tobii Computer Control is not running");
+
+            balabolkaFocused = IsBalabolkaFocused();
+            labelBalabolkaFocused.Text = (balabolkaFocused ? "Balabolka is focused." : "Balabolka is not focused.");
         }
 
         private static void KeyboardHookHandler(int vkCode)
         {
             if (
                 isRecording                         // Only record when recording enabled
-                && balabolkaRunning                 //  AND balabolka is running
-                //&& tobiiComputerControlRunning      //  AND Tobii Computer Control
+                && balabolkaRunning                 // AND balabolka is running
+                && balabolkaFocused                 // AND balabolka has focus
+                //&& tobiiComputerControlRunning      // AND Tobii Computer Control
                 )
             {
                 keypresses.KeyPresses_.Add(new KeyPress
@@ -207,9 +224,22 @@ namespace SpEyeGaze
             return false;
         }
 
-        private void FormMain_FormClosing(object sender, FormClosingEventArgs e)
+        private bool IsBalabolkaFocused()
         {
-            screenCapture.Dispose();
+            const int nChars = 256; // MAX_PATH
+            IntPtr handle = IntPtr.Zero;
+            StringBuilder windowText = new StringBuilder(nChars);
+
+            handle = Interop.GetForegroundWindow();
+
+            if (Interop.GetWindowText(handle, windowText, nChars) > 0)
+            {
+                Console.WriteLine(windowText.ToString());
+                if (windowText.ToString().Contains("Balabolka", StringComparison.InvariantCultureIgnoreCase))
+                    return true;
+            }
+
+            return false;
         }
     }
 }

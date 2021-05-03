@@ -6,6 +6,7 @@
     <UseWindowsForms>true</UseWindowsForms>
     <UseWpf>true</UseWpf>
     <UserSecretsId>8113bd62-23c8-491e-b22e-a99138c3700e</UserSecretsId>
+    <ApplicationIcon>SPO.ico</ApplicationIcon>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

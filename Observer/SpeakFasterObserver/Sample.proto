@@ -1,0 +1,22 @@
+﻿// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+// If this file changes, you MUST update the generated CS and python file!
+//
+// protoc.exe -I="." --csharp_out="." .\keypresses.proto
+// protoc.exe -I="." --python_out="." .\keypresses.proto
+//
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+syntax = "proto3";
+package SpeakFasterObserver;
+
+import "google/protobuf/timestamp.proto";
+
+message Sample {
+	int32 X = 1;
+	int32 Y = 2;
+	google.protobuf.Timestamp Timestamp = 3;
+}
+
+message Samples {
+	repeated Sample samples = 1;
+}

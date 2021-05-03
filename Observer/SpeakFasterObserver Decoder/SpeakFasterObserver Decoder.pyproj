@@ -12,7 +12,7 @@
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
     <Name>SpeakFasterObserver Decoder</Name>
-    <RootNamespace>SpEyeGaze Decoder</RootNamespace>
+    <RootNamespace>SpeakFasterObserver Decoder</RootNamespace>
     <InterpreterId>MSBuild|venv|$(MSBuildProjectFullPath)</InterpreterId>
     <LaunchProvider>Standard Python launcher</LaunchProvider>
     <CommandLineArguments>

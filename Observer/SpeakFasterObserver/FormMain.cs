@@ -19,6 +19,7 @@ namespace SpeakFasterObserver
         static bool balabolkaFocused = false;
         static bool tobiiComputerControlRunning = false;
         readonly ScreenCapture screenCapture = new();
+
         Keylogger keylogger;
 
         public FormMain()
@@ -68,16 +69,7 @@ namespace SpeakFasterObserver
 
         private void btnExit_Click(object sender, EventArgs e)
         {
-            keypressTimer.Enabled = false;
-            processCheckerTimer.Enabled = false;
-            screenshotTimer.Enabled = false;
-
-            SaveKeypresses();
-
-            keylogger.Dispose();
-            keylogger = null;
-
-            this.Close();
+            ExitApplication();
         }
 
         private void toggleButtonOnOff_Click(object sender, EventArgs e)
@@ -85,10 +77,14 @@ namespace SpeakFasterObserver
             SetRecordingState(!isRecording);
         }
 
-        private void notifyIcon_Click(object sender, EventArgs e)
+        private void notifyIcon_DoubleClick(object sender, EventArgs e)
         {
-            //ShowWindow();
             SetRecordingState(!isRecording);
+        }
+
+        private void notifyIconContextMenuStrip_ItemClicked(object sender, ToolStripItemClickedEventArgs e)
+        {
+            ExitApplication();
         }
 
         private void screenshotTimer_Tick(object sender, EventArgs e)
@@ -240,6 +236,20 @@ namespace SpeakFasterObserver
             {
                 oldKeypresses.WriteTo(file);
             }
+        }
+
+        private void ExitApplication()
+        {
+            keypressTimer.Enabled = false;
+            processCheckerTimer.Enabled = false;
+            screenshotTimer.Enabled = false;
+
+            SaveKeypresses();
+
+            keylogger.Dispose();
+            keylogger = null;
+
+            this.Close();
         }
     }
 }

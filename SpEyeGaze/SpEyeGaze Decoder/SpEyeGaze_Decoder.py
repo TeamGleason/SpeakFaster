@@ -4,7 +4,7 @@ import sys
 # Iterates though all people in the AddressBook and prints info about them.
 def ListKeypresses(keypresses):
   for keypress in keypresses.keyPresses:
-    print(f"Key:{keypress.KeyPress} Timestamp:{keypress.Timestamp.seconds}")
+    print(f"Key:{keypress.KeyPress} Timestamp:{keypress.Timestamp.seconds}.{keypress.Timestamp.nanos}")
 
 if len(sys.argv) != 2:
   print(f"Usage: {sys.argv[0]} input_file")

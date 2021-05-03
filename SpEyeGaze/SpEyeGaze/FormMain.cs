@@ -18,7 +18,7 @@ namespace SpEyeGaze
         readonly string keypressesPath;
         readonly string screenshotsPath;
 
-        static readonly KeyPresses keypresses = new();
+        static KeyPresses keypresses = new();
         static bool isRecording = false;
         static bool balabolkaRunning = false;
         static bool balabolkaFocused = false;
@@ -88,17 +88,12 @@ namespace SpEyeGaze
 
         private void btnExit_Click(object sender, EventArgs e)
         {
-            // need to serialize to file
-            // {DataStream}-yyyymmddThhmmssf.{Extension}
-            var filename = Path.Combine(
-               keypressesPath,
-                "Keypresses-" + DateTime.Now.ToString("yyyyMMddThhmmssfff") + ".protobuf");
-            using (var file = File.Create(filename))
-            {
-                keypresses.WriteTo(file);
-            }
-
+            keypressTimer.Enabled = false;
+            processCheckerTimer.Enabled = false;
             screenshotTimer.Enabled = false;
+
+            SaveKeypresses();
+
             keylogger.Dispose();
             keylogger = null;
 
@@ -147,6 +142,11 @@ namespace SpEyeGaze
 
             balabolkaFocused = IsBalabolkaFocused();
             labelBalabolkaFocused.Text = (balabolkaFocused ? "Balabolka is focused." : "Balabolka is not focused.");
+        }
+
+        private void keypressTimer_Tick(object sender, EventArgs e)
+        {
+            SaveKeypresses();
         }
 
         private static void KeyboardHookHandler(int vkCode)
@@ -240,6 +240,21 @@ namespace SpEyeGaze
             }
 
             return false;
+        }
+
+        private void SaveKeypresses()
+        {
+            var oldKeypresses = keypresses;
+            keypresses = new ();
+            // need to serialize to file
+            // {DataStream}-yyyymmddThhmmssf.{Extension}
+            var filename = Path.Combine(
+               keypressesPath,
+                "Keypresses-" + DateTime.Now.ToString("yyyyMMddThhmmssfff") + ".protobuf");
+            using (var file = File.Create(filename))
+            {
+                oldKeypresses.WriteTo(file);
+            }
         }
     }
 }

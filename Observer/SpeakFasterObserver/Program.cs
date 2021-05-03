@@ -2,7 +2,7 @@ using System;
 using System.Threading;
 using System.Windows.Forms;
 
-namespace SpEyeGaze
+namespace SpeakFasterObserver
 {
     static class Program
     {
@@ -13,7 +13,7 @@ namespace SpEyeGaze
         static void Main()
         {
             bool isNewInstance;
-            Mutex mutex = new(true, "SpEyeGaze", out isNewInstance);
+            Mutex mutex = new(true, "SpeakFasterObserver", out isNewInstance);
             if (!isNewInstance)
             {
                 return;
@@ -21,6 +21,9 @@ namespace SpEyeGaze
             Application.SetHighDpiMode(HighDpiMode.SystemAware);
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
+
+            Upload.Go();
+
             Application.Run(new FormMain());
         }
     }

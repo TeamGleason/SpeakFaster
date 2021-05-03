@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.31129.286
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SpEyeGaze", "SpEyeGaze\SpEyeGaze.csproj", "{C2B00DBD-672A-4A4B-B09F-46204905D784}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SpeakFasterObserver", "SpeakFasterObserver\SpeakFasterObserver.csproj", "{ECEDB902-2FAB-44A7-A824-B1725237E8DE}"
 EndProject
-Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "SpEyeGaze Decoder", "SpEyeGaze Decoder\SpEyeGaze Decoder.pyproj", "{3752D2B0-C808-4F34-A82A-0E91F6F3E5EB}"
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "SpeakFasterObserver Decoder", "SpeakFasterObserver Decoder\SpeakFasterObserver Decoder.pyproj", "{3752D2B0-C808-4F34-A82A-0E91F6F3E5EB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -13,10 +13,10 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{C2B00DBD-672A-4A4B-B09F-46204905D784}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C2B00DBD-672A-4A4B-B09F-46204905D784}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C2B00DBD-672A-4A4B-B09F-46204905D784}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C2B00DBD-672A-4A4B-B09F-46204905D784}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ECEDB902-2FAB-44A7-A824-B1725237E8DE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ECEDB902-2FAB-44A7-A824-B1725237E8DE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ECEDB902-2FAB-44A7-A824-B1725237E8DE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ECEDB902-2FAB-44A7-A824-B1725237E8DE}.Release|Any CPU.Build.0 = Release|Any CPU
 		{3752D2B0-C808-4F34-A82A-0E91F6F3E5EB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{3752D2B0-C808-4F34-A82A-0E91F6F3E5EB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 	EndGlobalSection

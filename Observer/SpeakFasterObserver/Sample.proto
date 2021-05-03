@@ -7,15 +7,16 @@
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 syntax = "proto3";
-package SpEyeGaze;
+package SpeakFasterObserver;
 
 import "google/protobuf/timestamp.proto";
 
-message KeyPress {
-	string KeyPress = 1;
-	google.protobuf.Timestamp Timestamp = 2;
+message Sample {
+	int32 X = 1;
+	int32 Y = 2;
+	google.protobuf.Timestamp Timestamp = 3;
 }
 
-message KeyPresses {
-	repeated KeyPress keyPresses = 1;
+message Samples {
+	repeated Sample samples = 1;
 }

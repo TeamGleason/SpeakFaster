@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
-using static SpEyeGaze.Win32.Interop;
+using static SpeakFasterObserver.Win32.Interop;
 
-namespace SpEyeGaze
+namespace SpeakFasterObserver
 {
     public class Keylogger: IDisposable
     {

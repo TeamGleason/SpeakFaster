@@ -1,6 +1,6 @@
 ﻿using System.Runtime.InteropServices;
 
-namespace SpEyeGaze.Win32
+namespace SpeakFasterObserver.Win32
 {
     public partial class Interop
     {

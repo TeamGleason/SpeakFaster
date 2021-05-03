@@ -2,7 +2,7 @@
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace SpEyeGaze.Win32
+namespace SpeakFasterObserver.Win32
 {
     public partial class Interop
     {

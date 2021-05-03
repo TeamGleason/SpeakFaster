@@ -21,6 +21,9 @@ namespace SpeakFasterObserver
             Application.SetHighDpiMode(HighDpiMode.SystemAware);
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
+
+            Upload.Go();
+
             Application.Run(new FormMain());
         }
     }

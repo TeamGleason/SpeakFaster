@@ -24,10 +24,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="AWSSDK.S3" Version="3.7.0.18" />
     <PackageReference Include="Google.Protobuf" Version="3.15.8" />
     <PackageReference Include="libjpeg-turbo-native-win" Version="2.0.15" />
     <PackageReference Include="libjpeg-turbo-net" Version="2.0.15" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="3.1.0" />
   </ItemGroup>
 
   <ItemGroup>

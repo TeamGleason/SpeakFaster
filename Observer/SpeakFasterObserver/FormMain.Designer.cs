@@ -169,7 +169,6 @@ namespace SpeakFasterObserver
             this.notifyIcon.Text = "Observer";
             this.notifyIcon.Visible = true;
             this.notifyIcon.Click += new System.EventHandler(this.notifyIcon_Click);
-            this.notifyIcon.DoubleClick += new System.EventHandler(this.notifyIcon_DoubleClick);
             // 
             // screenshotTimer
             // 

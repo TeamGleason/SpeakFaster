@@ -14,7 +14,7 @@ namespace SpeakFasterObserver
         readonly string dataPath;
 
         static KeyPresses keypresses = new();
-        static bool isRecording = false;
+        static bool isRecording = true;
         static bool balabolkaRunning = false;
         static bool balabolkaFocused = false;
         static bool tobiiComputerControlRunning = false;
@@ -87,12 +87,8 @@ namespace SpeakFasterObserver
 
         private void notifyIcon_Click(object sender, EventArgs e)
         {
-            ShowWindow();
-        }
-
-        private void notifyIcon_DoubleClick(object sender, EventArgs e)
-        {
-            ShowWindow();
+            //ShowWindow();
+            SetRecordingState(!isRecording);
         }
 
         private void screenshotTimer_Tick(object sender, EventArgs e)

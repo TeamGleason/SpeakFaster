@@ -1,15 +1,14 @@
-﻿using SpEyeGaze.Win32;
+﻿using SpeakFasterObserver.Win32;
 using System;
 using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.IO;
-using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using TurboJpegWrapper;
 
-namespace SpEyeGaze
+namespace SpeakFasterObserver
 {
     class ScreenCapture : IDisposable
     {
@@ -111,7 +110,7 @@ namespace SpEyeGaze
             return null;
         }
 
-        private void OverlayTimestamp(Bitmap bitmap)
+        private void OverlayTimestamp(Bitmap bitmap, string timestamp)
         {
             using (var graphics = Graphics.FromImage(bitmap))
             {
@@ -125,7 +124,7 @@ namespace SpEyeGaze
 
                 graphics.SmoothingMode = SmoothingMode.AntiAlias;
                 graphics.FillRectangle(Brushes.Black, new Rectangle(0, 0, 400, 80));
-                graphics.DrawString(DateTime.Now.ToString("yyyyMMddThhmmssfff"), font, Brushes.White, new Point(200, 40), stringFormat);
+                graphics.DrawString(timestamp, font, Brushes.White, new Point(200, 40), stringFormat);
             }
         }
 
@@ -145,11 +144,11 @@ namespace SpEyeGaze
             }
         }
 
-        public void Capture(string path)
+        public void Capture(string path, string timestamp)
         {
             using (var bitmap = CaptureDesktop(false))
             {
-                OverlayTimestamp(bitmap);
+                OverlayTimestamp(bitmap, timestamp);
                 OverlayGazeCursor(bitmap);
 
                 var srcData = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height), ImageLockMode.ReadOnly, bitmap.PixelFormat);

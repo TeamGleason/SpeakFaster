@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SpEyeGaze.Win32
+namespace SpeakFasterObserver.Win32
 {
     [StructLayout(LayoutKind.Sequential)]
     public struct BITMAPINFO

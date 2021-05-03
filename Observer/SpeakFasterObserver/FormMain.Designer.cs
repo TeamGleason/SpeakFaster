@@ -1,5 +1,5 @@
 
-namespace SpEyeGaze
+namespace SpeakFasterObserver
 {
     partial class FormMain
     {
@@ -157,7 +157,7 @@ namespace SpEyeGaze
             // notifyIcon
             // 
             this.notifyIcon.Icon = ((System.Drawing.Icon)(resources.GetObject("notifyIcon.Icon")));
-            this.notifyIcon.Text = "SpEyeGaze";
+            this.notifyIcon.Text = "Observer";
             this.notifyIcon.Visible = true;
             this.notifyIcon.Click += new System.EventHandler(this.notifyIcon_Click);
             this.notifyIcon.DoubleClick += new System.EventHandler(this.notifyIcon_DoubleClick);
@@ -184,7 +184,7 @@ namespace SpEyeGaze
             this.MinimizeBox = false;
             this.Name = "FormMain";
             this.ShowIcon = false;
-            this.Text = "SpEyeGaze";
+            this.Text = "Observer";
             this.WindowState = System.Windows.Forms.FormWindowState.Minimized;
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.FormMain_FormClosing);
             this.Load += new System.EventHandler(this.FormMain_Load);

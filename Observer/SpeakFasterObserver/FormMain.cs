@@ -1,55 +1,35 @@
 using Google.Protobuf;
-using Microsoft.Win32;
 using System;
 using System.Diagnostics;
 using System.Drawing;
-using System.Drawing.Imaging;
 using System.IO;
 using System.Windows.Forms;
 
-namespace SpEyeGaze
+namespace SpeakFasterObserver
 {
     public partial class FormMain : Form
     {
-        // Store captured data in %localappdata%\SpEyeGaze
-        readonly string baseFilePath;
-        readonly string keypressesPath;
-        readonly string screenshotsPath;
+        readonly string dataPath;
 
         static readonly KeyPresses keypresses = new();
         static bool isRecording = false;
         static bool balabolkaRunning = false;
         static bool tobiiComputerControlRunning = false;
-
-        ScreenCapture screenCapture = new();
+        readonly ScreenCapture screenCapture = new();
         Keylogger keylogger;
 
         public FormMain()
         {
             InitializeComponent();
 
-            baseFilePath = Path.Combine(
+            dataPath = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "SpEyeGaze");
-            keypressesPath = Path.Combine(
-                baseFilePath,
-                "Keypresses");
-            screenshotsPath = Path.Combine(
-                baseFilePath,
-                "Screenshots");
+                "SpeakFasterObserver");
 
             // Ensure output director exists
-            if (!Directory.Exists(baseFilePath))
+            if (!Directory.Exists(dataPath))
             {
-                Directory.CreateDirectory(baseFilePath);
-            }
-            if (!Directory.Exists(keypressesPath))
-            {
-                Directory.CreateDirectory(keypressesPath);
-            }
-            if (!Directory.Exists(screenshotsPath))
-            {
-                Directory.CreateDirectory(screenshotsPath);
+                Directory.CreateDirectory(dataPath);
             }
 
             // Load previous recording state
@@ -83,8 +63,9 @@ namespace SpEyeGaze
             // need to serialize to file
             // {DataStream}-yyyymmddThhmmssf.{Extension}
             var filename = Path.Combine(
-               keypressesPath,
-                "Keypresses-" + DateTime.Now.ToString("yyyyMMddThhmmssfff") + ".protobuf");
+               dataPath,
+                $"{DateTime.Now:yyyyMMddThhmmssfff}-{Environment.MachineName}-Keypresses.protobuf");
+
             using (var file = File.Create(filename))
             {
                 keypresses.WriteTo(file);
@@ -116,11 +97,20 @@ namespace SpEyeGaze
         {
             if (isRecording)
             {
-                var filename = Path.Combine(
-                    screenshotsPath,
-                    "Screenshot-" + DateTime.Now.ToString("yyyyMMddThhmmssfff") + ".jpg");
+                var timestamp = $"{DateTime.Now:yyyyMMddThhmmssfff}";
 
-                screenCapture.Capture(filename);
+                var filePath = Path.Combine(
+                    dataPath,
+                    $"{timestamp}-{Environment.MachineName}-Screenshot.jpg");
+
+                // TODO: Optimize raw capture data to best time synchronize the captures
+                //   e.g. capture raw data to memory first, and compress/serialize/store later
+
+                screenCapture.Capture(filePath, timestamp);
+
+                // TODO: Also capture gaze coordinates
+
+                // TODO: Also capture selfie image
             }
         }
 
@@ -159,13 +149,13 @@ namespace SpEyeGaze
             if (isRecording)
             {
                 notifyIcon.Icon = new Icon("Assets\\RecordingOn.ico");
-                notifyIcon.Text = "SpEyeGaze - Recording On";
+                notifyIcon.Text = "Observer - Recording On";
                 toggleButtonOnOff.Text = "Recording On";
             }
             else
             {
                 notifyIcon.Icon = new Icon("Assets\\RecordingOff.ico");
-                notifyIcon.Text = "SpEyeGaze - Recording Off";
+                notifyIcon.Text = "Observer - Recording Off";
                 toggleButtonOnOff.Text = "Recording Off";
             }
 
@@ -190,7 +180,7 @@ namespace SpEyeGaze
             this.Hide();
             notifyIcon.ShowBalloonTip(
                 1000,
-                "SpEyeGaze",
+                "Observer",
                 (isRecording ? "Recording On" : "Recording Off"),
                 ToolTipIcon.Info);
         }

@@ -9,7 +9,8 @@ using pb = global::Google.Protobuf;
 using pbc = global::Google.Protobuf.Collections;
 using pbr = global::Google.Protobuf.Reflection;
 using scg = global::System.Collections.Generic;
-namespace SpEyeGaze {
+namespace SpeakFasterObserver
+{
 
   /// <summary>Holder for reflection information generated from keypresses.proto</summary>
   public static partial class KeypressesReflection {
@@ -32,8 +33,8 @@ namespace SpEyeGaze {
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Google.Protobuf.WellKnownTypes.TimestampReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::SpEyeGaze.KeyPress), global::SpEyeGaze.KeyPress.Parser, new[]{ "KeyPress_", "Timestamp" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::SpEyeGaze.KeyPresses), global::SpEyeGaze.KeyPresses.Parser, new[]{ "KeyPresses_" }, null, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::SpeakFasterObserver.KeyPress), global::SpeakFasterObserver.KeyPress.Parser, new[]{ "KeyPress_", "Timestamp" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::SpeakFasterObserver.KeyPresses), global::SpeakFasterObserver.KeyPresses.Parser, new[]{ "KeyPresses_" }, null, null, null, null)
           }));
     }
     #endregion
@@ -52,7 +53,7 @@ namespace SpEyeGaze {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::SpEyeGaze.KeypressesReflection.Descriptor.MessageTypes[0]; }
+      get { return global::SpeakFasterObserver.KeypressesReflection.Descriptor.MessageTypes[0]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -269,7 +270,7 @@ namespace SpEyeGaze {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::SpEyeGaze.KeypressesReflection.Descriptor.MessageTypes[1]; }
+      get { return global::SpeakFasterObserver.KeypressesReflection.Descriptor.MessageTypes[1]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -297,11 +298,11 @@ namespace SpEyeGaze {
 
     /// <summary>Field number for the "keyPresses" field.</summary>
     public const int KeyPresses_FieldNumber = 1;
-    private static readonly pb::FieldCodec<global::SpEyeGaze.KeyPress> _repeated_keyPresses_codec
-        = pb::FieldCodec.ForMessage(10, global::SpEyeGaze.KeyPress.Parser);
-    private readonly pbc::RepeatedField<global::SpEyeGaze.KeyPress> keyPresses_ = new pbc::RepeatedField<global::SpEyeGaze.KeyPress>();
+    private static readonly pb::FieldCodec<global::SpeakFasterObserver.KeyPress> _repeated_keyPresses_codec
+        = pb::FieldCodec.ForMessage(10, global::SpeakFasterObserver.KeyPress.Parser);
+    private readonly pbc::RepeatedField<global::SpeakFasterObserver.KeyPress> keyPresses_ = new pbc::RepeatedField<global::SpeakFasterObserver.KeyPress>();
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    public pbc::RepeatedField<global::SpEyeGaze.KeyPress> KeyPresses_ {
+    public pbc::RepeatedField<global::SpeakFasterObserver.KeyPress> KeyPresses_ {
       get { return keyPresses_; }
     }
 

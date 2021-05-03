@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SpEyeGaze.Win32
+namespace SpeakFasterObserver.Win32
 {
     public enum DIB_Color_Mode : uint
     {

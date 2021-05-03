@@ -238,7 +238,7 @@ namespace SpeakFasterObserver
             // need to serialize to file
             // {DataStream}-yyyymmddThhmmssf.{Extension}
             var filename = Path.Combine(
-               keypressesPath,
+               dataPath,
                 $"{DateTime.Now:yyyyMMddThhmmssfff}-{Environment.MachineName}-Keypresses.protobuf");
             using (var file = File.Create(filename))
             {

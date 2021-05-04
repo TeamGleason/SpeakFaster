@@ -9,16 +9,24 @@ Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "SpeakFasterObserver Decoder
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-		Debug|Any CPU = Debug|Any CPU
-		Release|Any CPU = Release|Any CPU
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{ECEDB902-2FAB-44A7-A824-B1725237E8DE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{ECEDB902-2FAB-44A7-A824-B1725237E8DE}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{ECEDB902-2FAB-44A7-A824-B1725237E8DE}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{ECEDB902-2FAB-44A7-A824-B1725237E8DE}.Release|Any CPU.Build.0 = Release|Any CPU
-		{3752D2B0-C808-4F34-A82A-0E91F6F3E5EB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{3752D2B0-C808-4F34-A82A-0E91F6F3E5EB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ECEDB902-2FAB-44A7-A824-B1725237E8DE}.Debug|x64.ActiveCfg = Debug|x64
+		{ECEDB902-2FAB-44A7-A824-B1725237E8DE}.Debug|x64.Build.0 = Debug|x64
+		{ECEDB902-2FAB-44A7-A824-B1725237E8DE}.Debug|x86.ActiveCfg = Debug|x86
+		{ECEDB902-2FAB-44A7-A824-B1725237E8DE}.Debug|x86.Build.0 = Debug|x86
+		{ECEDB902-2FAB-44A7-A824-B1725237E8DE}.Release|x64.ActiveCfg = Release|x64
+		{ECEDB902-2FAB-44A7-A824-B1725237E8DE}.Release|x64.Build.0 = Release|x64
+		{ECEDB902-2FAB-44A7-A824-B1725237E8DE}.Release|x86.ActiveCfg = Release|x86
+		{ECEDB902-2FAB-44A7-A824-B1725237E8DE}.Release|x86.Build.0 = Release|x86
+		{3752D2B0-C808-4F34-A82A-0E91F6F3E5EB}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{3752D2B0-C808-4F34-A82A-0E91F6F3E5EB}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{3752D2B0-C808-4F34-A82A-0E91F6F3E5EB}.Release|x64.ActiveCfg = Release|Any CPU
+		{3752D2B0-C808-4F34-A82A-0E91F6F3E5EB}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

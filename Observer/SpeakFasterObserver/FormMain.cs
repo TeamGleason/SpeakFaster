@@ -13,12 +13,13 @@ namespace SpeakFasterObserver
     {
         readonly string dataPath;
 
-        static readonly KeyPresses keypresses = new();
-        static bool isRecording = false;
+        static KeyPresses keypresses = new();
+        static bool isRecording = true;
         static bool balabolkaRunning = false;
         static bool balabolkaFocused = false;
         static bool tobiiComputerControlRunning = false;
         readonly ScreenCapture screenCapture = new();
+
         Keylogger keylogger;
 
         public FormMain()
@@ -68,22 +69,7 @@ namespace SpeakFasterObserver
 
         private void btnExit_Click(object sender, EventArgs e)
         {
-            // need to serialize to file
-            // {DataStream}-yyyymmddThhmmssf.{Extension}
-            var filename = Path.Combine(
-               dataPath,
-                $"{DateTime.Now:yyyyMMddThhmmssfff}-{Environment.MachineName}-Keypresses.protobuf");
-
-            using (var file = File.Create(filename))
-            {
-                keypresses.WriteTo(file);
-            }
-
-            screenshotTimer.Enabled = false;
-            keylogger.Dispose();
-            keylogger = null;
-
-            this.Close();
+            ExitApplication();
         }
 
         private void toggleButtonOnOff_Click(object sender, EventArgs e)
@@ -91,14 +77,14 @@ namespace SpeakFasterObserver
             SetRecordingState(!isRecording);
         }
 
-        private void notifyIcon_Click(object sender, EventArgs e)
-        {
-            ShowWindow();
-        }
-
         private void notifyIcon_DoubleClick(object sender, EventArgs e)
         {
-            ShowWindow();
+            SetRecordingState(!isRecording);
+        }
+
+        private void notifyIconContextMenuStrip_ItemClicked(object sender, ToolStripItemClickedEventArgs e)
+        {
+            ExitApplication();
         }
 
         private void screenshotTimer_Tick(object sender, EventArgs e)
@@ -137,6 +123,11 @@ namespace SpeakFasterObserver
 
             balabolkaFocused = IsBalabolkaFocused();
             labelBalabolkaFocused.Text = (balabolkaFocused ? "Balabolka is focused." : "Balabolka is not focused.");
+        }
+
+        private void keypressTimer_Tick(object sender, EventArgs e)
+        {
+            SaveKeypresses();
         }
 
         private static void KeyboardHookHandler(int vkCode)
@@ -230,6 +221,35 @@ namespace SpeakFasterObserver
             }
 
             return false;
+        }
+
+        private void SaveKeypresses()
+        {
+            var oldKeypresses = keypresses;
+            keypresses = new ();
+            // need to serialize to file
+            // {DataStream}-yyyymmddThhmmssf.{Extension}
+            var filename = Path.Combine(
+               dataPath,
+                $"{DateTime.Now:yyyyMMddThhmmssfff}-{Environment.MachineName}-Keypresses.protobuf");
+            using (var file = File.Create(filename))
+            {
+                oldKeypresses.WriteTo(file);
+            }
+        }
+
+        private void ExitApplication()
+        {
+            keypressTimer.Enabled = false;
+            processCheckerTimer.Enabled = false;
+            screenshotTimer.Enabled = false;
+
+            SaveKeypresses();
+
+            keylogger.Dispose();
+            keylogger = null;
+
+            this.Close();
         }
     }
 }

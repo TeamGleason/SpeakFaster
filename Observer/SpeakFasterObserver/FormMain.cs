@@ -252,8 +252,8 @@ namespace SpeakFasterObserver
         private void SaveKeypresses()
         {
             KeyPresses oldKeypresses;
-            
-            lock(keypresses)
+
+            lock (keypresses)
             {
                 oldKeypresses = keypresses;
                 keypresses = new();

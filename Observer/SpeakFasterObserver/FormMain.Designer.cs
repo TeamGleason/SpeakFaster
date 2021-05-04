@@ -76,7 +76,7 @@ namespace SpeakFasterObserver
             this.flowLayoutPanel.Dock = System.Windows.Forms.DockStyle.Fill;
             this.flowLayoutPanel.FlowDirection = System.Windows.Forms.FlowDirection.TopDown;
             this.flowLayoutPanel.Location = new System.Drawing.Point(0, 0);
-            this.flowLayoutPanel.Margin = new System.Windows.Forms.Padding(5, 5, 5, 5);
+            this.flowLayoutPanel.Margin = new System.Windows.Forms.Padding(5);
             this.flowLayoutPanel.Name = "flowLayoutPanel";
             this.flowLayoutPanel.Size = new System.Drawing.Size(488, 1304);
             this.flowLayoutPanel.TabIndex = 2;
@@ -123,7 +123,7 @@ namespace SpeakFasterObserver
             // 
             this.mainSplitContainer.Dock = System.Windows.Forms.DockStyle.Fill;
             this.mainSplitContainer.Location = new System.Drawing.Point(0, 0);
-            this.mainSplitContainer.Margin = new System.Windows.Forms.Padding(5, 5, 5, 5);
+            this.mainSplitContainer.Margin = new System.Windows.Forms.Padding(5);
             this.mainSplitContainer.Name = "mainSplitContainer";
             // 
             // mainSplitContainer.Panel1
@@ -217,7 +217,7 @@ namespace SpeakFasterObserver
             this.ClientSize = new System.Drawing.Size(1183, 1304);
             this.ControlBox = false;
             this.Controls.Add(this.mainSplitContainer);
-            this.Margin = new System.Windows.Forms.Padding(5, 5, 5, 5);
+            this.Margin = new System.Windows.Forms.Padding(5);
             this.MinimizeBox = false;
             this.Name = "FormMain";
             this.ShowIcon = false;

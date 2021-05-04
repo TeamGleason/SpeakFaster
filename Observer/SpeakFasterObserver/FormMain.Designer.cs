@@ -58,10 +58,10 @@ namespace SpeakFasterObserver
             // 
             this.btnAddStartupIcon.Enabled = false;
             this.btnAddStartupIcon.Font = new System.Drawing.Font("Segoe UI", 16.125F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.btnAddStartupIcon.Location = new System.Drawing.Point(26, 278);
-            this.btnAddStartupIcon.Margin = new System.Windows.Forms.Padding(26);
+            this.btnAddStartupIcon.Location = new System.Drawing.Point(34, 355);
+            this.btnAddStartupIcon.Margin = new System.Windows.Forms.Padding(34, 33, 34, 33);
             this.btnAddStartupIcon.Name = "btnAddStartupIcon";
-            this.btnAddStartupIcon.Size = new System.Drawing.Size(300, 200);
+            this.btnAddStartupIcon.Size = new System.Drawing.Size(392, 256);
             this.btnAddStartupIcon.TabIndex = 0;
             this.btnAddStartupIcon.Text = "Add Startup Icon";
             this.btnAddStartupIcon.UseVisualStyleBackColor = true;
@@ -76,19 +76,19 @@ namespace SpeakFasterObserver
             this.flowLayoutPanel.Dock = System.Windows.Forms.DockStyle.Fill;
             this.flowLayoutPanel.FlowDirection = System.Windows.Forms.FlowDirection.TopDown;
             this.flowLayoutPanel.Location = new System.Drawing.Point(0, 0);
-            this.flowLayoutPanel.Margin = new System.Windows.Forms.Padding(4);
+            this.flowLayoutPanel.Margin = new System.Windows.Forms.Padding(5, 5, 5, 5);
             this.flowLayoutPanel.Name = "flowLayoutPanel";
-            this.flowLayoutPanel.Size = new System.Drawing.Size(374, 1018);
+            this.flowLayoutPanel.Size = new System.Drawing.Size(488, 1304);
             this.flowLayoutPanel.TabIndex = 2;
             // 
             // toggleButtonOnOff
             // 
             this.toggleButtonOnOff.Appearance = System.Windows.Forms.Appearance.Button;
             this.toggleButtonOnOff.Font = new System.Drawing.Font("Segoe UI", 16.125F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.toggleButtonOnOff.Location = new System.Drawing.Point(26, 26);
-            this.toggleButtonOnOff.Margin = new System.Windows.Forms.Padding(26);
+            this.toggleButtonOnOff.Location = new System.Drawing.Point(34, 33);
+            this.toggleButtonOnOff.Margin = new System.Windows.Forms.Padding(34, 33, 34, 33);
             this.toggleButtonOnOff.Name = "toggleButtonOnOff";
-            this.toggleButtonOnOff.Size = new System.Drawing.Size(300, 200);
+            this.toggleButtonOnOff.Size = new System.Drawing.Size(392, 256);
             this.toggleButtonOnOff.TabIndex = 4;
             this.toggleButtonOnOff.Text = "Turn Recording On";
             this.toggleButtonOnOff.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
@@ -98,10 +98,10 @@ namespace SpeakFasterObserver
             // btnMinimize
             // 
             this.btnMinimize.Font = new System.Drawing.Font("Segoe UI", 16.125F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.btnMinimize.Location = new System.Drawing.Point(26, 530);
-            this.btnMinimize.Margin = new System.Windows.Forms.Padding(26);
+            this.btnMinimize.Location = new System.Drawing.Point(34, 677);
+            this.btnMinimize.Margin = new System.Windows.Forms.Padding(34, 33, 34, 33);
             this.btnMinimize.Name = "btnMinimize";
-            this.btnMinimize.Size = new System.Drawing.Size(300, 200);
+            this.btnMinimize.Size = new System.Drawing.Size(392, 256);
             this.btnMinimize.TabIndex = 2;
             this.btnMinimize.Text = "Minimize";
             this.btnMinimize.UseVisualStyleBackColor = true;
@@ -110,10 +110,10 @@ namespace SpeakFasterObserver
             // btnExit
             // 
             this.btnExit.Font = new System.Drawing.Font("Segoe UI", 16.125F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.btnExit.Location = new System.Drawing.Point(26, 782);
-            this.btnExit.Margin = new System.Windows.Forms.Padding(26);
+            this.btnExit.Location = new System.Drawing.Point(34, 999);
+            this.btnExit.Margin = new System.Windows.Forms.Padding(34, 33, 34, 33);
             this.btnExit.Name = "btnExit";
-            this.btnExit.Size = new System.Drawing.Size(300, 200);
+            this.btnExit.Size = new System.Drawing.Size(392, 256);
             this.btnExit.TabIndex = 3;
             this.btnExit.Text = "Exit";
             this.btnExit.UseVisualStyleBackColor = true;
@@ -123,7 +123,7 @@ namespace SpeakFasterObserver
             // 
             this.mainSplitContainer.Dock = System.Windows.Forms.DockStyle.Fill;
             this.mainSplitContainer.Location = new System.Drawing.Point(0, 0);
-            this.mainSplitContainer.Margin = new System.Windows.Forms.Padding(4);
+            this.mainSplitContainer.Margin = new System.Windows.Forms.Padding(5, 5, 5, 5);
             this.mainSplitContainer.Name = "mainSplitContainer";
             // 
             // mainSplitContainer.Panel1
@@ -135,34 +135,38 @@ namespace SpeakFasterObserver
             this.mainSplitContainer.Panel2.Controls.Add(this.labelBalabolkaFocused);
             this.mainSplitContainer.Panel2.Controls.Add(this.labelTobiiComputerControl);
             this.mainSplitContainer.Panel2.Controls.Add(this.labelBalabolkaRunning);
-            this.mainSplitContainer.Size = new System.Drawing.Size(905, 1018);
-            this.mainSplitContainer.SplitterDistance = 374;
+            this.mainSplitContainer.Size = new System.Drawing.Size(1183, 1304);
+            this.mainSplitContainer.SplitterDistance = 488;
+            this.mainSplitContainer.SplitterWidth = 5;
             this.mainSplitContainer.TabIndex = 3;
             // 
             // labelBalabolkaFocused
             // 
             this.labelBalabolkaFocused.AutoSize = true;
-            this.labelBalabolkaFocused.Location = new System.Drawing.Point(25, 84);
+            this.labelBalabolkaFocused.Location = new System.Drawing.Point(33, 108);
+            this.labelBalabolkaFocused.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.labelBalabolkaFocused.Name = "labelBalabolkaFocused";
-            this.labelBalabolkaFocused.Size = new System.Drawing.Size(278, 32);
+            this.labelBalabolkaFocused.Size = new System.Drawing.Size(346, 41);
             this.labelBalabolkaFocused.TabIndex = 2;
             this.labelBalabolkaFocused.Text = "Balabolka is not focused.";
             // 
             // labelTobiiComputerControl
             // 
             this.labelTobiiComputerControl.AutoSize = true;
-            this.labelTobiiComputerControl.Location = new System.Drawing.Point(25, 52);
+            this.labelTobiiComputerControl.Location = new System.Drawing.Point(33, 67);
+            this.labelTobiiComputerControl.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.labelTobiiComputerControl.Name = "labelTobiiComputerControl";
-            this.labelTobiiComputerControl.Size = new System.Drawing.Size(422, 32);
+            this.labelTobiiComputerControl.Size = new System.Drawing.Size(522, 41);
             this.labelTobiiComputerControl.TabIndex = 1;
             this.labelTobiiComputerControl.Text = "Tobii Computer Control is not running";
             // 
             // labelBalabolkaRunning
             // 
             this.labelBalabolkaRunning.AutoSize = true;
-            this.labelBalabolkaRunning.Location = new System.Drawing.Point(25, 20);
+            this.labelBalabolkaRunning.Location = new System.Drawing.Point(33, 26);
+            this.labelBalabolkaRunning.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.labelBalabolkaRunning.Name = "labelBalabolkaRunning";
-            this.labelBalabolkaRunning.Size = new System.Drawing.Size(273, 32);
+            this.labelBalabolkaRunning.Size = new System.Drawing.Size(337, 41);
             this.labelBalabolkaRunning.TabIndex = 0;
             this.labelBalabolkaRunning.Text = "Balabolka is not running";
             // 
@@ -180,18 +184,18 @@ namespace SpeakFasterObserver
             this.notifyIconContextMenuStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.ExitToolStripMenuItem});
             this.notifyIconContextMenuStrip.Name = "notifyIconContextMenuStrip";
-            this.notifyIconContextMenuStrip.Size = new System.Drawing.Size(126, 42);
+            this.notifyIconContextMenuStrip.Size = new System.Drawing.Size(143, 52);
             this.notifyIconContextMenuStrip.ItemClicked += new System.Windows.Forms.ToolStripItemClickedEventHandler(this.notifyIconContextMenuStrip_ItemClicked);
             // 
             // ExitToolStripMenuItem
             // 
             this.ExitToolStripMenuItem.Name = "ExitToolStripMenuItem";
-            this.ExitToolStripMenuItem.Size = new System.Drawing.Size(125, 38);
+            this.ExitToolStripMenuItem.Size = new System.Drawing.Size(142, 48);
             this.ExitToolStripMenuItem.Text = "Exit";
             // 
             // screenshotTimer
             // 
-            this.screenshotTimer.Interval = 5000;
+            this.screenshotTimer.Interval = 200;
             this.screenshotTimer.Tick += new System.EventHandler(this.screenshotTimer_Tick);
             // 
             // processCheckerTimer
@@ -208,12 +212,12 @@ namespace SpeakFasterObserver
             // 
             // FormMain
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(13F, 32F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(17F, 41F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(905, 1018);
+            this.ClientSize = new System.Drawing.Size(1183, 1304);
             this.ControlBox = false;
             this.Controls.Add(this.mainSplitContainer);
-            this.Margin = new System.Windows.Forms.Padding(4);
+            this.Margin = new System.Windows.Forms.Padding(5, 5, 5, 5);
             this.MinimizeBox = false;
             this.Name = "FormMain";
             this.ShowIcon = false;

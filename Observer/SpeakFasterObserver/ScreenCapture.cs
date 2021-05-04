@@ -6,30 +6,22 @@ using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Windows.Forms;
+using ToltTech.GazeInput;
 using TurboJpegWrapper;
 
 namespace SpeakFasterObserver
 {
-    class ScreenCapture : IDisposable
+    class ScreenCapture
     {
 //        private static readonly ImageCodecInfo jpgEncoder = GetEncoder(ImageFormat.Jpeg);
         private static readonly TJCompressor compressor = new();
 
         private static readonly Brush gazeCursorBrush = new SolidBrush(Color.FromArgb(128, 255, 0, 0));
-        private readonly ToltTech.GazeInput.IGazeDevice gazeDevice;
+        private readonly IGazeDevice _gazeDevice;
 
-        public ScreenCapture()
+        public ScreenCapture(IGazeDevice gazeDevice)
         {
-            gazeDevice = new ToltTech.GazeInput.TobiiStreamEngine();
-
-            if (!gazeDevice.IsAvailable)
-            {
-                gazeDevice.Dispose();
-                gazeDevice = null;
-                return;
-            }
-
-            gazeDevice.Connect(new System.Diagnostics.TraceSource("Null"));
+            _gazeDevice = gazeDevice;
         }
 
         public Bitmap CaptureRegion(Rectangle region)
@@ -130,10 +122,10 @@ namespace SpeakFasterObserver
 
         private void OverlayGazeCursor(Bitmap bitmap)
         {
-            if (gazeDevice != null && gazeDevice.LastGazePoint != null)
+            if (_gazeDevice != null && _gazeDevice.LastGazePoint != null)
             {
-                var gazePoint = gazeDevice.LastGazePoint;
-                if (gazePoint != null && gazeDevice.LastGazePoint.HasValue)
+                var gazePoint = _gazeDevice.LastGazePoint;
+                if (gazePoint != null && _gazeDevice.LastGazePoint.HasValue)
                 {
                     using (var graphics = Graphics.FromImage(bitmap))
                     {
@@ -182,11 +174,6 @@ namespace SpeakFasterObserver
                 // parameters.Param[0] = new EncoderParameter(Encoder.Quality, 25L);
                 // bitmap.Save(path, jpgEncoder, parameters);
             }
-        }
-
-        public void Dispose()
-        {
-            gazeDevice?.Dispose();
         }
     }
 }

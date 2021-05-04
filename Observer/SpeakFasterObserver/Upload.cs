@@ -1,44 +1,67 @@
-﻿using Amazon;
-using Amazon.Runtime.CredentialManagement;
+﻿using Amazon.Runtime.CredentialManagement;
 using Amazon.S3;
 using Amazon.S3.Model;
+using System;
 using System.Diagnostics;
+using System.IO;
+using System.Net;
 
 namespace SpeakFasterObserver
 {
     internal class Upload
     {
-        public static async void Go()
+        private static string _schemaVersion = "SPO-2105";
+        private static string _bucketName = "speak-faster";
+        private static AmazonS3Client _client;
+
+        internal static string _dataDirectory;
+        internal static string _gazeDevice;
+
+        static Upload()
         {
             var sf = new SharedCredentialsFile();
-            CredentialProfile spo;
-            if (!sf.TryGetProfile("spo", out spo))
+            if (!sf.TryGetProfile("spo", out CredentialProfile spo))
             {
                 return;
             }
 
-            var client = new AmazonS3Client(spo.GetAWSCredentials(sf), spo.Region);
+            Debug.Assert(spo.Region != null);
+            _client = new AmazonS3Client(spo.GetAWSCredentials(sf), spo.Region);
+        }
 
-            var listRequest = new ListObjectsV2Request
-            {
-                BucketName = "speak-faster",
-            };
+        static bool _uploading = false;
+        public static async void Timer_Tick(object? state)
+        {
+            // If we're still uploading, don't double-start
+            if (_uploading) return;
+            _uploading = true;
 
-            ListObjectsV2Response listResponse;
-            do
+            Debug.Assert(_client != null);
+            Debug.Assert(_dataDirectory != null);
+
+            var dataDirectory = new DirectoryInfo(_dataDirectory);
+            foreach(var fileInfo in dataDirectory.GetFiles())
             {
-                // Get a list of objects
-                listResponse = await client.ListObjectsV2Async(listRequest);
-                foreach (S3Object obj in listResponse.S3Objects)
+                var putRequest = new PutObjectRequest
                 {
-                    Debug.WriteLine("Object - " + obj.Key);
-                    Debug.WriteLine(" Size - " + obj.Size);
-                    Debug.WriteLine(" LastModified - " + obj.LastModified);
-                    Debug.WriteLine(" Storage class - " + obj.StorageClass);
+                    BucketName = _bucketName,
+                    Key = $"observer_data/{_schemaVersion}/{Environment.MachineName}-{_gazeDevice ?? "none"}/{Environment.UserName}/{fileInfo.Name}"
+                };
+
+                PutObjectResponse putResponse;
+                using (var inputStream = fileInfo.OpenRead())
+                {
+                    putRequest.InputStream = inputStream;
+                    putResponse = await _client.PutObjectAsync(putRequest);
                 }
 
-            } while (listResponse.IsTruncated);
+                if (putResponse.HttpStatusCode == HttpStatusCode.OK)
+                {
+                    fileInfo.Delete();
+                }
+            }
 
+            _uploading = false;
         }
     }
 }

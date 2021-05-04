@@ -11,6 +11,8 @@ namespace SpeakFasterObserver
 {
     public partial class FormMain : Form
     {
+        private readonly ToltTech.GazeInput.IGazeDevice gazeDevice;
+
         readonly string dataPath;
 
         static KeyPresses keypresses = new();
@@ -18,13 +20,31 @@ namespace SpeakFasterObserver
         static bool balabolkaRunning = false;
         static bool balabolkaFocused = false;
         static bool tobiiComputerControlRunning = false;
-        readonly ScreenCapture screenCapture = new();
+        readonly ScreenCapture screenCapture;
 
         Keylogger keylogger;
+
+        System.Threading.Timer uploadTimer = new(Upload.Timer_Tick);
 
         public FormMain()
         {
             InitializeComponent();
+
+            gazeDevice = new ToltTech.GazeInput.TobiiStreamEngine();
+
+            if (!gazeDevice.IsAvailable)
+            {
+                gazeDevice.Dispose();
+                gazeDevice = null;
+
+                screenCapture = new(null);
+            }
+            else
+            {
+                gazeDevice.Connect(new TraceSource("Null"));
+                screenCapture = new(gazeDevice);
+                Upload._gazeDevice = gazeDevice.Information;
+            }
 
             dataPath = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -44,6 +64,9 @@ namespace SpeakFasterObserver
 
             // Setup the Keypress keyboard hook
             keylogger = new Keylogger(KeyboardHookHandler);
+
+            Upload._dataDirectory = (dataPath);
+            uploadTimer.Change(0, 60 * 1000);
         }
 
         #region Event Handlers
@@ -54,7 +77,7 @@ namespace SpeakFasterObserver
 
         private void FormMain_FormClosing(object sender, FormClosingEventArgs e)
         {
-            screenCapture.Dispose();
+            gazeDevice?.Dispose();
         }
 
         private void btnAddStartupIcon_Click(object sender, EventArgs e)
@@ -100,7 +123,7 @@ namespace SpeakFasterObserver
 
                 var filePath = Path.Combine(
                     dataPath,
-                    $"{timestamp}-{Environment.MachineName}-Screenshot.jpg");
+                    $"{timestamp}-Screenshot.jpg");
 
                 // TODO: Optimize raw capture data to best time synchronize the captures
                 //   e.g. capture raw data to memory first, and compress/serialize/store later
@@ -139,11 +162,14 @@ namespace SpeakFasterObserver
                 //&& tobiiComputerControlRunning      // AND Tobii Computer Control
                 )
             {
-                keypresses.KeyPresses_.Add(new KeyPress
+                lock (keypresses)
                 {
-                    KeyPress_ = ((Keys)vkCode).ToString(),
-                    Timestamp = Google.Protobuf.WellKnownTypes.Timestamp.FromDateTime(DateTime.Now.ToUniversalTime())
-                });
+                    keypresses.KeyPresses_.Add(new KeyPress
+                    {
+                        KeyPress_ = ((Keys)vkCode).ToString(),
+                        Timestamp = Google.Protobuf.WellKnownTypes.Timestamp.FromDateTime(DateTime.Now.ToUniversalTime())
+                    });
+                }
             }
         }
         #endregion
@@ -225,13 +251,21 @@ namespace SpeakFasterObserver
 
         private void SaveKeypresses()
         {
-            var oldKeypresses = keypresses;
-            keypresses = new ();
+            KeyPresses oldKeypresses;
+
+            lock (keypresses)
+            {
+                oldKeypresses = keypresses;
+                keypresses = new();
+            }
+
+            if (oldKeypresses.KeyPresses_.Count == 0) return;
+
             // need to serialize to file
             // {DataStream}-yyyymmddThhmmssf.{Extension}
             var filename = Path.Combine(
                dataPath,
-                $"{DateTime.Now:yyyyMMddThhmmssfff}-{Environment.MachineName}-Keypresses.protobuf");
+                $"{DateTime.Now:yyyyMMddThhmmssfff}-Keypresses.protobuf");
             using (var file = File.Create(filename))
             {
                 oldKeypresses.WriteTo(file);

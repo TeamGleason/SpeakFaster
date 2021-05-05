@@ -29,3 +29,11 @@ Initially scoped to English language speakers
 * Phrase prediction using environment & paragraph context & personal history
 * Contextual overlay of predictions within the eye’s foveated cone
 * Eye gaze enabled editing & correction
+
+## Licenses
+
+The contents of the repository are licensed under the [MIT license](LICENSE).
+
+Data is contributed to the dataset owned by Team Gleason under the [Speak Faster Data Contribution Agreement](Legal/SpeakFaster_Data_Contribution_Agreement.md) license.
+
+Data is sub-licensed to researchers under the [Open Dataset License with De-Identification Restrictions](Legal/DATA_LICENSE.md).

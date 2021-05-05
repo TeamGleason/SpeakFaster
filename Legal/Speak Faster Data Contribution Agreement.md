@@ -1,4 +1,4 @@
-# Speak Faster Contribution Agreement
+# Speak Faster Data Contribution Agreement
 
 ## 1. Purpose
 You are invited to participate in the Team Gleason Foundation “Speak Faster” speech generation data collection (“Data Collection”) conducted by Team Gleason Foundation (“Team Gleason”), located at 930 Robert E Lee Blvd, New Orleans, LA United States. The purpose of the Data Collection is: (a) developing and evaluating: (i) machine learning models for speech generation and prediction; (ii) performing analysis and statistics to understand conversational context (this may involve sharing the data with third party partners); (b) researching, analyzing, and improving products and services involving speech generation and prediction; (c) developing computer vision and audio analysis algorithms to determine conversational context such as conversation participants, conversation location, and conversation subject(s); and (d) other and future uses that relate to improving the quality of speech prediction and generation algorithms, experiences, products and services (collectively, the “Purpose”).

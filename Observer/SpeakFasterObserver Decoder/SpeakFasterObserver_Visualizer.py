@@ -1,5 +1,6 @@
 import keypresses_pb2
 import sys
+import os
 
 # Phase 1:
 # 
@@ -46,28 +47,44 @@ def VisualizeKeypresses(keypresses):
                 print("␃", end = '')
                 isPhraseEnd = True
                 print("💬", end = '')
+                previousKeypress = None
             elif keypress.KeyPress == "Q":  # Ctrl-Q == Pause
                 print("␃", end = '')
                 isPhraseEnd = True
                 print("⏸", end = '')
+                previousKeypress = None
             elif keypress.KeyPress == "Q":  # Ctrl-E == Stop
                 print("␃", end = '')
                 isPhraseEnd = True
                 print("🛑", end = '')
+                previousKeypress = None
             elif keypress.KeyPress == "A":  # Ctrl-A == Select All
                 previousKeypress = "SelectAll"
+                previousKeypress = None
         elif keypress.KeyPress == "Back":
             # TODO Backspace needs additional logic for predictions
             print("🠠", end = '')
             characterCount -= 1
-        elif keypress.KeyPress == "Enter":
+        elif keypress.KeyPress == "Enter" or keypress.KeyPress == "Return":
             print("↩", end = '')
         elif keypress.KeyPress == "Space":
             print(" ", end = '')
         elif keypress.KeyPress == "OemPeriod":
             print(".", end = '')
+        elif keypress.KeyPress == "Oemcomma":
+            print(",", end = '')
+        elif keypress.KeyPress == "OemQuestion":
+            print("?", end = '')
+        elif keypress.KeyPress == "Oem7":
+            print("'", end = '')
+        elif keypress.KeyPress == "LWin":
+            print("🗔", end = '')
+        elif keypress.KeyPress == "Tab":
+            print("→", end = '')
         elif keypress.KeyPress == "LShiftKey" or keypress.KeyPress == "RShiftKey":
-            print("↑", end = '')
+            if previousKeypress != "Shift": # Ignore long holds on shift
+                print("↑", end = '')
+            previousKeypress = "Shift"
         else:                               # Normal character, print as-is
             # TODO Questioning whether the characters should be stored in a buffer that gets manipulated 
             #      rather than outputting characters on the fly?
@@ -78,12 +95,13 @@ def VisualizeKeypresses(keypresses):
             isPhraseEnd = False
             isPhraseStart = True
 
-            wpm = (characterCount / 5) / ((keypress.Timestamp.seconds - phraseStartTimeSeconds) / 60)
-            wpms.append(wpm)
+            wpm = 0.0
 
             if characterCount > 0:
                 totalPhraseCount += 1
                 totalCharacterCount += characterCount
+                wpm = (characterCount / 5) / ((keypress.Timestamp.seconds - phraseStartTimeSeconds) / 60)
+                wpms.append(wpm)
 
             print(f"⏲{wpm:5.1f}", end = '\n')
 
@@ -92,15 +110,21 @@ def VisualizeKeypresses(keypresses):
     totalWpm = 0.0
     countWpm = 0
     topWpm = 0.0
+    averageWpm = 0.0
     for wpm in wpms:
         totalWpm += wpm
         countWpm += 1
         if wpm > topWpm:
             topWpm = wpm
 
-    averageWpm = totalWpm / countWpm
+    if countWpm > 0:
+        averageWpm = totalWpm / countWpm
 
+    print("")
     print(f"🗪[Speak: {totalPhraseCount}, Characters: {totalCharacterCount}, AverageWPM: {averageWpm:5.1f}, TopWPM: {topWpm:5.1f}]")
+
+def listFilesWithExtension(dirname,extension):
+    return (f for f in os.listdir(dirname) if f.endswith('.' + extension))
 
 if len(sys.argv) != 2:
   print(f"Usage: {sys.argv[0]} input_file")
@@ -109,11 +133,14 @@ if len(sys.argv) != 2:
 keypresses = keypresses_pb2.KeyPresses()
 
 # Read the existing address book.
-filename = sys.argv[1]
+filepath = sys.argv[1]
 
-f = open(filename, "rb")
-bytes = f.read()
-keypresses.ParseFromString(bytes)
-f.close()
+files = listFilesWithExtension(filepath, "protobuf")
 
-VisualizeKeypresses(keypresses)
+for filename in files:
+    f = open(os.path.join(filepath,filename), "rb")
+    bytes = f.read()
+    keypresses.ParseFromString(bytes)
+    f.close()
+
+    VisualizeKeypresses(keypresses)

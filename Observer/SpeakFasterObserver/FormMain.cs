@@ -100,9 +100,12 @@ namespace SpeakFasterObserver
             SetRecordingState(!isRecording);
         }
 
-        private void notifyIcon_DoubleClick(object sender, EventArgs e)
+        private void notifyIcon_Click(object sender, EventArgs e)
         {
-            SetRecordingState(!isRecording);
+            if (((System.Windows.Forms.MouseEventArgs)e).Button == MouseButtons.Left)
+            {
+                SetRecordingState(!isRecording);
+            }
         }
 
         private void notifyIconContextMenuStrip_ItemClicked(object sender, ToolStripItemClickedEventArgs e)

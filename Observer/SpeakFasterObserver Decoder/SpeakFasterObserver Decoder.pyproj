@@ -29,6 +29,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="keypresses_pb2.py" />
+    <Compile Include="SpeakFasterObserver_Visualizer.py" />
     <Compile Include="SpeakFasterObserver_Decoder.py" />
   </ItemGroup>
   <ItemGroup>

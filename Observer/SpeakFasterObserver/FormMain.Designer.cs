@@ -45,7 +45,6 @@ namespace SpeakFasterObserver
             this.ExitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.screenshotTimer = new System.Windows.Forms.Timer(this.components);
             this.processCheckerTimer = new System.Windows.Forms.Timer(this.components);
-            this.keypressTimer = new System.Windows.Forms.Timer(this.components);
             this.flowLayoutPanel.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.mainSplitContainer)).BeginInit();
             this.mainSplitContainer.Panel1.SuspendLayout();
@@ -204,12 +203,6 @@ namespace SpeakFasterObserver
             this.processCheckerTimer.Interval = 2000;
             this.processCheckerTimer.Tick += new System.EventHandler(this.balabolkaTimer_Tick);
             // 
-            // keypressTimer
-            // 
-            this.keypressTimer.Enabled = true;
-            this.keypressTimer.Interval = 60000;
-            this.keypressTimer.Tick += new System.EventHandler(this.keypressTimer_Tick);
-            // 
             // FormMain
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(17F, 41F);
@@ -250,7 +243,6 @@ namespace SpeakFasterObserver
         private System.Windows.Forms.Label labelTobiiComputerControl;
         private System.Windows.Forms.CheckBox toggleButtonOnOff;
         private System.Windows.Forms.Label labelBalabolkaFocused;
-        private System.Windows.Forms.Timer keypressTimer;
         private System.Windows.Forms.ContextMenuStrip notifyIconContextMenuStrip;
         private System.Windows.Forms.ToolStripMenuItem ExitToolStripMenuItem;
     }

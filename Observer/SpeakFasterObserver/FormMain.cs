@@ -13,7 +13,7 @@ namespace SpeakFasterObserver
     {
         private readonly ToltTech.GazeInput.IGazeDevice gazeDevice;
 
-        readonly string dataPath;
+        static string dataPath;
 
         static KeyPresses keypresses = new();
         static bool isRecording = true;
@@ -25,6 +25,7 @@ namespace SpeakFasterObserver
         Keylogger keylogger;
 
         System.Threading.Timer uploadTimer = new(Upload.Timer_Tick);
+        static System.Threading.Timer keyloggerTimer = new((state) => { SaveKeypresses(); });
 
         public FormMain()
         {
@@ -173,6 +174,8 @@ namespace SpeakFasterObserver
                         Timestamp = Google.Protobuf.WellKnownTypes.Timestamp.FromDateTime(DateTime.Now.ToUniversalTime())
                     });
                 }
+
+                keyloggerTimer.Change(60 * 1000, System.Threading.Timeout.Infinite);
             }
         }
         #endregion
@@ -252,7 +255,7 @@ namespace SpeakFasterObserver
             return false;
         }
 
-        private void SaveKeypresses()
+        private static void SaveKeypresses()
         {
             KeyPresses oldKeypresses;
 
@@ -267,7 +270,7 @@ namespace SpeakFasterObserver
             // need to serialize to file
             // {DataStream}-yyyymmddThhmmssf.{Extension}
             var filename = Path.Combine(
-               dataPath,
+               FormMain.dataPath,
                 $"{DateTime.Now:yyyyMMddThhmmssfff}-Keypresses.protobuf");
             using (var file = File.Create(filename))
             {
@@ -277,7 +280,9 @@ namespace SpeakFasterObserver
 
         private void ExitApplication()
         {
-            keypressTimer.Enabled = false;
+            keyloggerTimer.Dispose();
+            keyloggerTimer = null;
+
             processCheckerTimer.Enabled = false;
             screenshotTimer.Enabled = false;
 

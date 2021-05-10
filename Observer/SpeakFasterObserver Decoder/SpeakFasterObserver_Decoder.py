@@ -2,7 +2,7 @@ import keypresses_pb2
 import sys
 import datetime
 
-minhumantime = datetime.timedelta(milliseconds=60)
+mingazetime = datetime.timedelta(milliseconds=100)
 maxdeltatime = datetime.timedelta(days=1)
 
 def datetimeFromTimestamp(timestamp):
@@ -14,30 +14,39 @@ def ListKeypresses(keypresses):
     totalKeysPressed = len(keypresses.keyPresses)
 
     currentKeyIndex = 0
-    humanKeyPressCount = 0
+    gazeKeyPressCount = 0
 
     while currentKeyIndex < totalKeysPressed:
         keypress = keypresses.keyPresses[currentKeyIndex]
 
         currentTimestamp = datetimeFromTimestamp(keypress.Timestamp)
 
-        deltaTimestamp = datetime.timedelta(0)
-        if currentKeyIndex > 0:
-            previousTimestamp = datetimeFromTimestamp(keypresses.keyPresses[currentKeyIndex - 1].Timestamp)
-            deltaTimestamp = currentTimestamp - previousTimestamp
-
-        isHuman = False
+        isGazeTyped = False
         isChar = (len(keypress.KeyPress) == 1)
 
-        if deltaTimestamp > minhumantime:
-            isHuman = True
-            humanKeyPressCount += 1
+        isGazeTyped, deltaTimestamp = isKeyGazeInitiated(keypresses, currentKeyIndex, totalKeysPressed)
+        if isGazeTyped:
+            gazeKeyPressCount += 1
 
-        print(f"Key:{keypress.KeyPress:13} Timestamp:{keypress.Timestamp.seconds:12}.{keypress.Timestamp.nanos:09} Delta:{deltaTimestamp} Human:{isHuman:2} Character:{isChar:2}")
+        print(f"Key:{keypress.KeyPress:13} Timestamp:{keypress.Timestamp.seconds:12}.{keypress.Timestamp.nanos:09} Delta:{deltaTimestamp} Gaze:{isGazeTyped:2} Character:{isChar:2}")
 
         currentKeyIndex += 1
 
-    print(f"{totalKeysPressed} pressed, {humanKeyPressCount} human initiated - {(humanKeyPressCount/totalKeysPressed):.2%}")
+    print(f"{totalKeysPressed} pressed, {gazeKeyPressCount} human initiated - {(gazeKeyPressCount/totalKeysPressed):.2%}")
+
+def isKeyGazeInitiated(keypresses, currentKeyIndex, totalKeypressCount):
+    isGazeInitiated = True
+    deltaTimestamp = datetime.timedelta(0)
+
+    if currentKeyIndex > 0 and currentKeyIndex < totalKeypressCount - 1:
+        currentTimestamp = datetimeFromTimestamp(keypresses.keyPresses[currentKeyIndex].Timestamp)
+        previousTimestamp = datetimeFromTimestamp(keypresses.keyPresses[currentKeyIndex-1].Timestamp)
+        deltaTimestamp = currentTimestamp - previousTimestamp
+        
+        if deltaTimestamp < mingazetime:
+            isGazeInitiated = False
+
+    return isGazeInitiated, deltaTimestamp
 
 if len(sys.argv) != 2:
   print(f"Usage: {sys.argv[0]} input_file")

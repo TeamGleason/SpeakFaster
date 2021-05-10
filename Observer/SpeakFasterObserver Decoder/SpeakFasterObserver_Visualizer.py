@@ -3,11 +3,11 @@ import sys
 import os
 import datetime
 
-# Assuming that eye gaze activation faster than 100ms is faster than realistically possible.
+# Assuming that eye gaze activation faster than 300ms is faster than realistically possible.
 # This is useful for detecting automatic insertion of characters as opposed to manually typed
 # characters. A prime example is when predictions are used. A rapid series of backspace keys
 # followed by rapid typing of characters
-minhumantime = datetime.timedelta(milliseconds=100)
+mingazetime = datetime.timedelta(milliseconds=300)
 
 # Phase 1:
 # 
@@ -34,105 +34,107 @@ def VisualizeKeypresses(keypresses):
     totalCharacterCount = 0
     characterCount = 0
     wpms = []
-    previousCharacterTimestamp = None
+    phraseStartTimestamp = None
+    outputStr = ""
 
-    for keypress in keypresses.keyPresses:
-        currentCharacterTimestamp = datetimeFromTimestamp(keypress.Timestamp)
-        if previousCharacterTimestamp:
-            characterDelta = currentCharacterTimestamp - previousCharacterTimestamp
+    totalKeyspresses = len(keypresses.keyPresses)
+
+    currentKeyIndex = 0
+    gazeKeyPressCount = 0
+
+    while currentKeyIndex < totalKeyspresses:
+        keypress = keypresses.keyPresses[currentKeyIndex]
+        currentTimestamp = datetimeFromTimestamp(keypress.Timestamp)
+        previousCharacterDelta = None
+        nextCharacterDelta = None
+
+        isGazeInitiated, previousCharacterDelta = isKeyGazeInitiated(keypresses, currentKeyIndex, totalKeyspresses)
+        if isGazeInitiated:
+            gazeKeyPressCount += 1
 
         if isPhraseStart:
-            print("␂", end = '')
+            outputStr = "␂"
             isPhraseStart = False
+            isPhraseEnd = False
+            wasPhraseSpoken = False
+            phraseStartTimestamp = currentTimestamp
             characterCount = 0
             backspaceCount = 0
 
-            phraseStartTimestamp = currentCharacterTimestamp
+        isNextGazeInitialized, nextCharacterDelta = isKeyGazeInitiated(keypresses, currentKeyIndex + 1, totalKeyspresses)
 
-        if (previousKeypress == "LControlKey" or previousKeypress == "RControlKey"):
-            if keypress.KeyPress == "W":    # Ctrl-W == Speak
-                print("␃", end = '')
-                isPhraseEnd = True
-                wasPhraseSpoken = True
-                print("💬", end = '')       # Speak
-            elif keypress.KeyPress == "Q":  # Ctrl-Q == Pause
-                print("␃", end = '')
-                isPhraseEnd = True
-                wasPhraseSpoken = False
-                print("⏸", end = '')       # Pause
-            elif keypress.KeyPress == "Q":  # Ctrl-E == Stop
-                print("␃", end = '')
-                isPhraseEnd = True
-                wasPhraseSpoken = False
-                print("🛑", end = '')       # Stop
-            elif keypress.KeyPress == "A":  # Ctrl-A == Select All
-                isPhraseEnd = True
-                wasPhraseSpoken = False
-                print("␘", end = '')        # Cancel/reset of thought
-            elif keypress.KeyPress == "Left":
-                print("🠠", end = '')        # TODO need emoji for jumping back a word
-        elif keypress.KeyPress == "Back":
-            # TODO Backspace needs additional logic for predictions
-            # 
-            # Example of prediction being used for correction. Note that gaze keypresses are 500ms or more apart,
-            # whereas the prediction related keystrokes are about 10ms apart
-            # Key:M Timestamp:1620234070.425752700
-            # Key:S Timestamp:1620234071.43349900
-            # Key:J Timestamp:1620234072.64601200
-            # Key:O Timestamp:1620234072.932556900
-            # Key:R Timestamp:1620234073.901352900
-            # Key:Back Timestamp:1620234075.126854300
-            # Key:Back Timestamp:1620234075.128678900
-            # Key:Back Timestamp:1620234075.130742100
-            # Key:Back Timestamp:1620234075.133772800
-            # Key:A Timestamp:1620234075.139330600
-            # Key:J Timestamp:1620234075.141458000
-            # Key:O Timestamp:1620234075.142460800
-            # Key:R Timestamp:1620234075.143512300
-            # Key:I Timestamp:1620234075.144501000
-            # Key:T Timestamp:1620234075.145684400
-            # Key:Y Timestamp:1620234075.146953500
+        if not isNextGazeInitialized:
+            # there is a subsequent character, and it was inserted programmatically
+            if (keypress.KeyPress == "LControlKey"
+                and currentKeyIndex + 3 < totalKeyspresses 
+                and keypresses.keyPresses[currentKeyIndex+1].KeyPress == "LShiftKey"
+                and keypresses.keyPresses[currentKeyIndex+2].KeyPress == "Left"
+                and keypresses.keyPresses[currentKeyIndex+3].KeyPress == "Back"
+                ):
+                # Scenario 1: ctrl-shift-left-back == DelWord
+                outputStr += "↞"
+                currentKeyIndex += 4
+                backspaceCount += 1 # For DelWord we don't know how many backspaces, so just say "1"
+            else:
+                # Scenario 2a: backspaces followed by characters then space = Prediction
+                # Scenario 2b: characters then space = Prediction
+                charsUsed, charString, charCount = prediction(keypresses, currentKeyIndex, totalKeyspresses)
+                currentKeyIndex += charsUsed
+                characterCount += charCount
 
-            print("🔙", end = '')
-            characterCount -= 1
-            backspaceCount += 1
-            if characterDelta < minhumantime:
-                if not wordPrediction:
-                    # Word Prediction in use
-                    wordPrediction = True
-                    print("🗩", end = '')
-        elif keypress.KeyPress == "Enter" or keypress.KeyPress == "Return":
-            print("↩", end = '')
-        elif keypress.KeyPress == "Space":
-            print(" ", end = '')
-        elif keypress.KeyPress == "OemPeriod":
-            print(".", end = '')
-        elif keypress.KeyPress == "Oemcomma":
-            print(",", end = '')
-        elif keypress.KeyPress == "OemQuestion":
-            print("?", end = '')
-        elif keypress.KeyPress == "Oem7":
-            print("'", end = '')
-        elif keypress.KeyPress == "LWin":
-            print("🗔", end = '')
-        elif keypress.KeyPress == "Tab":
-            print("→", end = '')
-        elif keypress.KeyPress == "Left":
-            print("🠠", end = '')
-        elif keypress.KeyPress == "LShiftKey" or keypress.KeyPress == "RShiftKey":
-            if previousKeypress != keypress.KeyPress: # Ignore long holds on shift
-                print("↑", end = '')
-        elif keypress.KeyPress == "LControlKey" or keypress.KeyPress == "RControlKey":
-            pass
-        else:                               # Normal character, print as-is
-            # TODO Questioning whether the characters should be stored in a buffer that gets manipulated 
-            #      rather than outputting characters on the fly?
-            print(keypress.KeyPress, end = '')
-            characterCount += 1
-            wordPrediction = False
+                outputStr += charString
+        else:
+            # next character is gaze initated
+            if ((keypress.KeyPress == "LControlKey" or keypress.KeyPress == "RControlKey")
+                and currentKeyIndex + 1 < totalKeyspresses):
+                nextKeypress = keypresses.keyPresses[currentKeyIndex+1]
+                if nextKeypress.KeyPress == "W":    # Ctrl-W == Speak
+                    outputStr += "␃"
+                    isPhraseEnd = True
+                    wasPhraseSpoken = True
+                    outputStr += "💬"       # Speak
+                    currentKeyIndex += 2
+                    gazeKeyPressCount += 1
+                elif nextKeypress.KeyPress == "Q":  # Ctrl-Q == Pause
+                    outputStr += "␃"
+                    isPhraseEnd = True
+                    wasPhraseSpoken = False
+                    outputStr += "⏸"       # Pause
+                    currentKeyIndex += 2
+                    gazeKeyPressCount += 1
+                elif nextKeypress.KeyPress == "Q":  # Ctrl-E == Stop
+                    outputStr += "␃"
+                    isPhraseEnd = True
+                    wasPhraseSpoken = False
+                    outputStr += "🛑"       # Stop
+                    currentKeyIndex += 2
+                    gazeKeyPressCount += 1
+                elif nextKeypress.KeyPress == "A":  # Ctrl-A == Select All
+                    isPhraseEnd = True
+                    wasPhraseSpoken = False
+                    outputStr += "␘"        # Cancel/reset of thought
+                    currentKeyIndex += 2
+                    gazeKeyPressCount += 1
+                elif nextKeypress.KeyPress == "Left":
+                    outputStr +="↶"        # TODO need emoji for jumping back a word
+                    currentKeyIndex += 2
+                    gazeKeyPressCount += 1
+                else:
+                    outputStr += outputForKeypress(keypress.KeyPress)
+                    characterCount += 1
+                    currentKeyIndex += 1
+            else:
+                if keypress.KeyPress == "Back":
+                    backspaceCount += 1
+                    characterCount -= 1
+                else:
+                    characterCount += 1
 
-        previousCharacterTimestamp = currentCharacterTimestamp
-        previousKeypress = keypress.KeyPress
+                outputStr += outputForKeypress(keypress.KeyPress)
+                currentKeyIndex += 1
+
+                if currentKeyIndex >= totalKeyspresses:
+                    isPhraseEnd = True
 
         if isPhraseEnd:
             isPhraseEnd = False
@@ -143,14 +145,13 @@ def VisualizeKeypresses(keypresses):
             if characterCount > 0:
                 totalPhraseCount += 1
                 totalCharacterCount += characterCount
-                wpm = (characterCount / 5) / ((currentCharacterTimestamp - phraseStartTimestamp).total_seconds() / 60)
+                wpm = (characterCount / 5) / ((currentTimestamp - phraseStartTimestamp).total_seconds() / 60)
                 wpms.append(wpm)
 
             if wasPhraseSpoken:
-                print(f"⏲{wpm:5.1f} backspaces {backspaceCount}", end = '\n')
-            else:
-                print("", end = '\n')
+                outputStr += f"{outputStr}⏲{wpm:5.1f} backspaces {backspaceCount}"
 
+            print(outputStr)
 
     # Note in the above example, characters is the effective characters (ie: what was actually spoken)
     # Since "HELLO" was spoken twice the characters are 5 per phrase, or 10 total
@@ -169,6 +170,74 @@ def VisualizeKeypresses(keypresses):
 
     print("")
     print(f"🗪[Speak: {totalPhraseCount}, Characters: {totalCharacterCount}, AverageWPM: {averageWpm:5.1f}, TopWPM: {topWpm:5.1f}]")
+
+def prediction(keypresses, currentKeyIndex, totalKeypressCount):
+    charString = "🗩"   # the string representation of the prediction. ie: "🗩🠠🠠HELLO "
+    charsUsed = 0       # the number of keypresses used in the prediction, 8 in the case of "🗩🠠🠠HELLO "
+    charCount = 0       # the number of actual characters contributed to the output, 4 in the case of "🗩🠠🠠HELLO "
+
+    index = currentKeyIndex
+    isNextGazeInitiated = False
+
+    while index < totalKeypressCount and not isNextGazeInitiated:
+        currentKeypress = keypresses.keyPresses[index]
+
+        charString += outputForKeypress(currentKeypress.KeyPress)
+
+        # Just keep eating automatic keypresses until next gaze initiated key
+        isNextGazeInitiated, deltaTimestamp = isKeyGazeInitiated(keypresses, index + 1, totalKeypressCount)
+        index += 1
+        charsUsed += 1
+
+        if currentKeypress.KeyPress == "Back":
+            charCount -= 1
+        elif isCharacter(currentKeypress.KeyPress):
+            charCount += 1
+
+    return charsUsed, charString, charCount
+
+def isKeyGazeInitiated(keypresses, currentKeyIndex, totalKeypressCount):
+    isGazeInitiated = True
+    deltaTimestamp = datetime.timedelta(0)
+
+    if currentKeyIndex > 0 and currentKeyIndex < totalKeypressCount - 1:
+        currentTimestamp = datetimeFromTimestamp(keypresses.keyPresses[currentKeyIndex].Timestamp)
+        previousTimestamp = datetimeFromTimestamp(keypresses.keyPresses[currentKeyIndex-1].Timestamp)
+        deltaTimestamp = currentTimestamp - previousTimestamp
+        
+        if deltaTimestamp < mingazetime:
+            isGazeInitiated = False
+
+    return isGazeInitiated, deltaTimestamp
+
+def isCharacter(keypress):
+    return (len(keypress) == 1)
+
+def outputForKeypress(keypress):
+    specialKeys = {
+        "Space" : " ",
+        "OemPeriod" : ".",
+        "Oemcomma" : ",",
+        "OemQuestion" : "?",
+        "Oem7" : "'",
+        "Tab" : "↦",
+        "Left" : "↶",
+        "Right" : "↷",
+        "Back" : "🠠",
+        "Enter" : "↩",
+        "Return" : "↩",
+        "LWin" : "🗔",
+        "LControlKey" : "🎛️",
+        "LShiftKey" : "↑",
+        "D1" : "1" # TODO Properly handle exclaimation point
+        }
+
+    if isCharacter(keypress):
+        return keypress
+    elif keypress in specialKeys:
+       return specialKeys[keypress]
+    else:
+        raise Exception(f"{keypress} not handled")
 
 def listFilesWithExtension(dirname,extension):
     return (f for f in os.listdir(dirname) if f.endswith('.' + extension))

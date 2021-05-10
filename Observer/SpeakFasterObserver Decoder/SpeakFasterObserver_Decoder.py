@@ -11,18 +11,33 @@ def datetimeFromTimestamp(timestamp):
 def ListKeypresses(keypresses):
     previousTimestamp = datetime.datetime.min
 
-    for keypress in keypresses.keyPresses:
-        currentTimestamp = datetimeFromTimestamp(keypress.Timestamp)
-        deltaTimestamp = currentTimestamp - previousTimestamp
+    totalKeysPressed = len(keypresses.keyPresses)
 
-        isHuman = True
+    currentKeyIndex = 0
+    humanKeyPressCount = 0
+
+    while currentKeyIndex < totalKeysPressed:
+        keypress = keypresses.keyPresses[currentKeyIndex]
+
+        currentTimestamp = datetimeFromTimestamp(keypress.Timestamp)
+
+        deltaTimestamp = datetime.timedelta(0)
+        if currentKeyIndex > 0:
+            previousTimestamp = datetimeFromTimestamp(keypresses.keyPresses[currentKeyIndex - 1].Timestamp)
+            deltaTimestamp = currentTimestamp - previousTimestamp
+
+        isHuman = False
         isChar = (len(keypress.KeyPress) == 1)
 
-        if deltaTimestamp < minhumantime:
-            isHuman = False
+        if deltaTimestamp > minhumantime:
+            isHuman = True
+            humanKeyPressCount += 1
 
-        print(f"Key:{keypress.KeyPress} Timestamp:{keypress.Timestamp.seconds}.{keypress.Timestamp.nanos} Delta:{deltaTimestamp} Human:{isHuman} Character:{isChar}")
-        previousTimestamp = currentTimestamp
+        print(f"Key:{keypress.KeyPress:13} Timestamp:{keypress.Timestamp.seconds:12}.{keypress.Timestamp.nanos:09} Delta:{deltaTimestamp} Human:{isHuman:2} Character:{isChar:2}")
+
+        currentKeyIndex += 1
+
+    print(f"{totalKeysPressed} pressed, {humanKeyPressCount} human initiated - {(humanKeyPressCount/totalKeysPressed):.2%}")
 
 if len(sys.argv) != 2:
   print(f"Usage: {sys.argv[0]} input_file")

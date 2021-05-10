@@ -16,11 +16,12 @@ def ListKeypresses(keypresses):
         deltaTimestamp = currentTimestamp - previousTimestamp
 
         isHuman = True
+        isChar = (len(keypress.KeyPress) == 1)
 
         if deltaTimestamp < minhumantime:
             isHuman = False
 
-        print(f"Key:{keypress.KeyPress} Timestamp:{keypress.Timestamp.seconds}.{keypress.Timestamp.nanos} Delta:{deltaTimestamp} {isHuman}")
+        print(f"Key:{keypress.KeyPress} Timestamp:{keypress.Timestamp.seconds}.{keypress.Timestamp.nanos} Delta:{deltaTimestamp} Human:{isHuman} Character:{isChar}")
         previousTimestamp = currentTimestamp
 
 if len(sys.argv) != 2:

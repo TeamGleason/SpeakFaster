@@ -42,6 +42,7 @@ namespace SpeakFasterObserver
             this.labelBalabolkaRunning = new System.Windows.Forms.Label();
             this.notifyIcon = new System.Windows.Forms.NotifyIcon(this.components);
             this.notifyIconContextMenuStrip = new System.Windows.Forms.ContextMenuStrip(this.components);
+            this.RecordScreenshotsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.ExitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.screenshotTimer = new System.Windows.Forms.Timer(this.components);
             this.processCheckerTimer = new System.Windows.Forms.Timer(this.components);
@@ -57,10 +58,10 @@ namespace SpeakFasterObserver
             // 
             this.btnAddStartupIcon.Enabled = false;
             this.btnAddStartupIcon.Font = new System.Drawing.Font("Segoe UI", 16.125F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.btnAddStartupIcon.Location = new System.Drawing.Point(34, 355);
-            this.btnAddStartupIcon.Margin = new System.Windows.Forms.Padding(34, 33, 34, 33);
+            this.btnAddStartupIcon.Location = new System.Drawing.Point(26, 278);
+            this.btnAddStartupIcon.Margin = new System.Windows.Forms.Padding(26);
             this.btnAddStartupIcon.Name = "btnAddStartupIcon";
-            this.btnAddStartupIcon.Size = new System.Drawing.Size(392, 256);
+            this.btnAddStartupIcon.Size = new System.Drawing.Size(300, 200);
             this.btnAddStartupIcon.TabIndex = 0;
             this.btnAddStartupIcon.Text = "Add Startup Icon";
             this.btnAddStartupIcon.UseVisualStyleBackColor = true;
@@ -75,19 +76,19 @@ namespace SpeakFasterObserver
             this.flowLayoutPanel.Dock = System.Windows.Forms.DockStyle.Fill;
             this.flowLayoutPanel.FlowDirection = System.Windows.Forms.FlowDirection.TopDown;
             this.flowLayoutPanel.Location = new System.Drawing.Point(0, 0);
-            this.flowLayoutPanel.Margin = new System.Windows.Forms.Padding(5);
+            this.flowLayoutPanel.Margin = new System.Windows.Forms.Padding(4);
             this.flowLayoutPanel.Name = "flowLayoutPanel";
-            this.flowLayoutPanel.Size = new System.Drawing.Size(488, 1304);
+            this.flowLayoutPanel.Size = new System.Drawing.Size(373, 1018);
             this.flowLayoutPanel.TabIndex = 2;
             // 
             // toggleButtonOnOff
             // 
             this.toggleButtonOnOff.Appearance = System.Windows.Forms.Appearance.Button;
             this.toggleButtonOnOff.Font = new System.Drawing.Font("Segoe UI", 16.125F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.toggleButtonOnOff.Location = new System.Drawing.Point(34, 33);
-            this.toggleButtonOnOff.Margin = new System.Windows.Forms.Padding(34, 33, 34, 33);
+            this.toggleButtonOnOff.Location = new System.Drawing.Point(26, 26);
+            this.toggleButtonOnOff.Margin = new System.Windows.Forms.Padding(26);
             this.toggleButtonOnOff.Name = "toggleButtonOnOff";
-            this.toggleButtonOnOff.Size = new System.Drawing.Size(392, 256);
+            this.toggleButtonOnOff.Size = new System.Drawing.Size(300, 200);
             this.toggleButtonOnOff.TabIndex = 4;
             this.toggleButtonOnOff.Text = "Turn Recording On";
             this.toggleButtonOnOff.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
@@ -97,10 +98,10 @@ namespace SpeakFasterObserver
             // btnMinimize
             // 
             this.btnMinimize.Font = new System.Drawing.Font("Segoe UI", 16.125F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.btnMinimize.Location = new System.Drawing.Point(34, 677);
-            this.btnMinimize.Margin = new System.Windows.Forms.Padding(34, 33, 34, 33);
+            this.btnMinimize.Location = new System.Drawing.Point(26, 530);
+            this.btnMinimize.Margin = new System.Windows.Forms.Padding(26);
             this.btnMinimize.Name = "btnMinimize";
-            this.btnMinimize.Size = new System.Drawing.Size(392, 256);
+            this.btnMinimize.Size = new System.Drawing.Size(300, 200);
             this.btnMinimize.TabIndex = 2;
             this.btnMinimize.Text = "Minimize";
             this.btnMinimize.UseVisualStyleBackColor = true;
@@ -109,10 +110,10 @@ namespace SpeakFasterObserver
             // btnExit
             // 
             this.btnExit.Font = new System.Drawing.Font("Segoe UI", 16.125F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point);
-            this.btnExit.Location = new System.Drawing.Point(34, 999);
-            this.btnExit.Margin = new System.Windows.Forms.Padding(34, 33, 34, 33);
+            this.btnExit.Location = new System.Drawing.Point(26, 782);
+            this.btnExit.Margin = new System.Windows.Forms.Padding(26);
             this.btnExit.Name = "btnExit";
-            this.btnExit.Size = new System.Drawing.Size(392, 256);
+            this.btnExit.Size = new System.Drawing.Size(300, 200);
             this.btnExit.TabIndex = 3;
             this.btnExit.Text = "Exit";
             this.btnExit.UseVisualStyleBackColor = true;
@@ -122,7 +123,7 @@ namespace SpeakFasterObserver
             // 
             this.mainSplitContainer.Dock = System.Windows.Forms.DockStyle.Fill;
             this.mainSplitContainer.Location = new System.Drawing.Point(0, 0);
-            this.mainSplitContainer.Margin = new System.Windows.Forms.Padding(5);
+            this.mainSplitContainer.Margin = new System.Windows.Forms.Padding(4);
             this.mainSplitContainer.Name = "mainSplitContainer";
             // 
             // mainSplitContainer.Panel1
@@ -134,38 +135,34 @@ namespace SpeakFasterObserver
             this.mainSplitContainer.Panel2.Controls.Add(this.labelBalabolkaFocused);
             this.mainSplitContainer.Panel2.Controls.Add(this.labelTobiiComputerControl);
             this.mainSplitContainer.Panel2.Controls.Add(this.labelBalabolkaRunning);
-            this.mainSplitContainer.Size = new System.Drawing.Size(1183, 1304);
-            this.mainSplitContainer.SplitterDistance = 488;
-            this.mainSplitContainer.SplitterWidth = 5;
+            this.mainSplitContainer.Size = new System.Drawing.Size(905, 1018);
+            this.mainSplitContainer.SplitterDistance = 373;
             this.mainSplitContainer.TabIndex = 3;
             // 
             // labelBalabolkaFocused
             // 
             this.labelBalabolkaFocused.AutoSize = true;
-            this.labelBalabolkaFocused.Location = new System.Drawing.Point(33, 108);
-            this.labelBalabolkaFocused.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.labelBalabolkaFocused.Location = new System.Drawing.Point(25, 84);
             this.labelBalabolkaFocused.Name = "labelBalabolkaFocused";
-            this.labelBalabolkaFocused.Size = new System.Drawing.Size(346, 41);
+            this.labelBalabolkaFocused.Size = new System.Drawing.Size(278, 32);
             this.labelBalabolkaFocused.TabIndex = 2;
             this.labelBalabolkaFocused.Text = "Balabolka is not focused.";
             // 
             // labelTobiiComputerControl
             // 
             this.labelTobiiComputerControl.AutoSize = true;
-            this.labelTobiiComputerControl.Location = new System.Drawing.Point(33, 67);
-            this.labelTobiiComputerControl.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.labelTobiiComputerControl.Location = new System.Drawing.Point(25, 52);
             this.labelTobiiComputerControl.Name = "labelTobiiComputerControl";
-            this.labelTobiiComputerControl.Size = new System.Drawing.Size(522, 41);
+            this.labelTobiiComputerControl.Size = new System.Drawing.Size(422, 32);
             this.labelTobiiComputerControl.TabIndex = 1;
             this.labelTobiiComputerControl.Text = "Tobii Computer Control is not running";
             // 
             // labelBalabolkaRunning
             // 
             this.labelBalabolkaRunning.AutoSize = true;
-            this.labelBalabolkaRunning.Location = new System.Drawing.Point(33, 26);
-            this.labelBalabolkaRunning.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.labelBalabolkaRunning.Location = new System.Drawing.Point(25, 20);
             this.labelBalabolkaRunning.Name = "labelBalabolkaRunning";
-            this.labelBalabolkaRunning.Size = new System.Drawing.Size(337, 41);
+            this.labelBalabolkaRunning.Size = new System.Drawing.Size(273, 32);
             this.labelBalabolkaRunning.TabIndex = 0;
             this.labelBalabolkaRunning.Text = "Balabolka is not running";
             // 
@@ -181,15 +178,22 @@ namespace SpeakFasterObserver
             // 
             this.notifyIconContextMenuStrip.ImageScalingSize = new System.Drawing.Size(32, 32);
             this.notifyIconContextMenuStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.RecordScreenshotsToolStripMenuItem,
             this.ExitToolStripMenuItem});
             this.notifyIconContextMenuStrip.Name = "notifyIconContextMenuStrip";
-            this.notifyIconContextMenuStrip.Size = new System.Drawing.Size(143, 52);
+            this.notifyIconContextMenuStrip.Size = new System.Drawing.Size(297, 80);
             this.notifyIconContextMenuStrip.ItemClicked += new System.Windows.Forms.ToolStripItemClickedEventHandler(this.notifyIconContextMenuStrip_ItemClicked);
+            // 
+            // RecordScreenshotsToolStripMenuItem
+            // 
+            this.RecordScreenshotsToolStripMenuItem.Name = "RecordScreenshotsToolStripMenuItem";
+            this.RecordScreenshotsToolStripMenuItem.Size = new System.Drawing.Size(296, 38);
+            this.RecordScreenshotsToolStripMenuItem.Text = "Record Screenshots";
             // 
             // ExitToolStripMenuItem
             // 
             this.ExitToolStripMenuItem.Name = "ExitToolStripMenuItem";
-            this.ExitToolStripMenuItem.Size = new System.Drawing.Size(142, 48);
+            this.ExitToolStripMenuItem.Size = new System.Drawing.Size(296, 38);
             this.ExitToolStripMenuItem.Text = "Exit";
             // 
             // screenshotTimer
@@ -205,12 +209,12 @@ namespace SpeakFasterObserver
             // 
             // FormMain
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(17F, 41F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(13F, 32F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1183, 1304);
+            this.ClientSize = new System.Drawing.Size(905, 1018);
             this.ControlBox = false;
             this.Controls.Add(this.mainSplitContainer);
-            this.Margin = new System.Windows.Forms.Padding(5);
+            this.Margin = new System.Windows.Forms.Padding(4);
             this.MinimizeBox = false;
             this.Name = "FormMain";
             this.ShowIcon = false;
@@ -245,6 +249,7 @@ namespace SpeakFasterObserver
         private System.Windows.Forms.Label labelBalabolkaFocused;
         private System.Windows.Forms.ContextMenuStrip notifyIconContextMenuStrip;
         private System.Windows.Forms.ToolStripMenuItem ExitToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem RecordScreenshotsToolStripMenuItem;
     }
 }
 

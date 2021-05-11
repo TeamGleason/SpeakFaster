@@ -17,6 +17,7 @@ namespace SpeakFasterObserver
 
         static KeyPresses keypresses = new();
         static bool isRecording = true;
+        static bool isRecordingScreenshots = true;
         static bool balabolkaRunning = false;
         static bool balabolkaFocused = false;
         static bool tobiiComputerControlRunning = false;
@@ -59,9 +60,10 @@ namespace SpeakFasterObserver
 
             // Load previous recording state
             isRecording = Properties.Settings.Default.IsRecordingOn;
+            isRecordingScreenshots = Properties.Settings.Default.IsRecordingScreenshots;
 
             // Ensure Icons and Strings reflect proper recording state on start
-            SetRecordingState(isRecording);
+            SetRecordingState(isRecording, isRecordingScreenshots);
 
             // Setup the Keypress keyboard hook
             keylogger = new Keylogger(KeyboardHookHandler);
@@ -98,26 +100,36 @@ namespace SpeakFasterObserver
 
         private void toggleButtonOnOff_Click(object sender, EventArgs e)
         {
-            SetRecordingState(!isRecording);
+            SetRecordingState(!isRecording, isRecordingScreenshots);
         }
 
         private void notifyIcon_Click(object sender, EventArgs e)
         {
             if (((System.Windows.Forms.MouseEventArgs)e).Button == MouseButtons.Left)
             {
-                SetRecordingState(!isRecording);
+                SetRecordingState(!isRecording, isRecordingScreenshots);
             }
         }
 
         private void notifyIconContextMenuStrip_ItemClicked(object sender, ToolStripItemClickedEventArgs e)
         {
-            ExitApplication();
+            var clickedItem = e.ClickedItem;
+
+            if (clickedItem.Text == "Exit")
+            {
+                ExitApplication();
+            }
+            else if (clickedItem.Text == "Record Screenshots")
+            {
+                SetRecordingState(isRecording, !isRecordingScreenshots);
+            }
         }
 
         private void screenshotTimer_Tick(object sender, EventArgs e)
         {
             if (
                 isRecording                         // Only record when recording enabled
+                && isRecordingScreenshots           // AND when we are recording screenshots
                 && balabolkaRunning                 // AND balabolka is running
                 && balabolkaFocused                 // AND balabolka has focus
                 //&& tobiiComputerControlRunning      //  AND Tobii Computer Control
@@ -180,11 +192,13 @@ namespace SpeakFasterObserver
         }
         #endregion
 
-        private void SetRecordingState(bool newRecordingState)
+        private void SetRecordingState(bool newRecordingState, bool newIsRecordingScreenshots)
         {
             isRecording = newRecordingState;
+            isRecordingScreenshots = newIsRecordingScreenshots;
 
             toggleButtonOnOff.Checked = isRecording;
+            this.RecordScreenshotsToolStripMenuItem.Checked = isRecordingScreenshots;
 
             if (isRecording)
             {
@@ -205,6 +219,13 @@ namespace SpeakFasterObserver
             {
                 // Save the new recording state
                 Properties.Settings.Default.IsRecordingOn = isRecording;
+                Properties.Settings.Default.Save();
+            }
+
+            if (isRecordingScreenshots != Properties.Settings.Default.IsRecordingScreenshots)
+            {
+                // Save the new recording state
+                Properties.Settings.Default.IsRecordingScreenshots = isRecordingScreenshots;
                 Properties.Settings.Default.Save();
             }
         }

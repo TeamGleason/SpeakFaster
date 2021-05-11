@@ -177,7 +177,7 @@ def VisualizeKeypresses(keypresses):
                 wpms.append(wpm)
 
             if wasPhraseSpoken:
-                outputStr += f"{outputStr}⏲{wpm:5.1f} backspaces {backspaceCount}"
+                outputStr += f"⏲{wpm:5.1f} backspaces {backspaceCount}"
 
             print(outputStr)
 

@@ -9,6 +9,9 @@ import datetime
 # followed by rapid typing of characters
 mingazetime = datetime.timedelta(milliseconds=300)
 
+# Assume that after 90 seconds of inactivity we are doing a new utterance
+longdeltatime = datetime.timedelta(seconds=90)
+
 # Phase 1:
 # 
 # Raw: Characters, Space Delimited, Other Ctrl/Alt Modifiers (Ctl-, Alt-)
@@ -41,6 +44,10 @@ def VisualizeKeypresses(keypresses):
 
     currentKeyIndex = 0
     gazeKeyPressCount = 0
+    predictionCount = 0
+    timeoutCount = 0
+    cancelCount = 0
+    totalGazeKeyPressCount = 0
 
     while currentKeyIndex < totalKeyspresses:
         keypress = keypresses.keyPresses[currentKeyIndex]
@@ -50,7 +57,7 @@ def VisualizeKeypresses(keypresses):
 
         isGazeInitiated, previousCharacterDelta = isKeyGazeInitiated(keypresses, currentKeyIndex, totalKeyspresses)
         if isGazeInitiated:
-            gazeKeyPressCount += 1
+            totalGazeKeyPressCount += 1
 
         if isPhraseStart:
             outputStr = "␂"
@@ -60,6 +67,9 @@ def VisualizeKeypresses(keypresses):
             phraseStartTimestamp = currentTimestamp
             characterCount = 0
             backspaceCount = 0
+            predictionCount = 0
+            gazeKeyPressCount = 0
+            startingKeypressIndex = currentKeyIndex
 
         isNextGazeInitialized, nextCharacterDelta = isKeyGazeInitiated(keypresses, currentKeyIndex + 1, totalKeyspresses)
 
@@ -75,12 +85,15 @@ def VisualizeKeypresses(keypresses):
                 outputStr += "↞"
                 currentKeyIndex += 4
                 backspaceCount += 1 # For DelWord we don't know how many backspaces, so just say "1"
+                gazeKeyPressCount += 1
             else:
                 # Scenario 2a: backspaces followed by characters then space = Prediction
                 # Scenario 2b: characters then space = Prediction
                 charsUsed, charString, charCount = prediction(keypresses, currentKeyIndex, totalKeyspresses)
                 currentKeyIndex += charsUsed
                 characterCount += charCount
+                predictionCount += 1
+                gazeKeyPressCount += 1
 
                 outputStr += charString
         else:
@@ -94,48 +107,59 @@ def VisualizeKeypresses(keypresses):
                     outputStr += "␃💬"
                     currentKeyIndex += 2
                     gazeKeyPressCount += 1
+                    totalGazeKeyPressCount += 1
                 elif nextKeypress.KeyPress == "Q":  # Ctrl-Q == Pause
                     isPhraseEnd = True
                     wasPhraseSpoken = False
                     outputStr += "␃⏸"
                     currentKeyIndex += 2
                     gazeKeyPressCount += 1
+                    totalGazeKeyPressCount += 1
                 elif nextKeypress.KeyPress == "Q":  # Ctrl-E == Stop
                     isPhraseEnd = True
                     wasPhraseSpoken = False
                     outputStr += "␃🛑"
                     currentKeyIndex += 2
                     gazeKeyPressCount += 1
+                    totalGazeKeyPressCount += 1
                 elif nextKeypress.KeyPress == "A":  # Ctrl-A == Select All
                     isPhraseEnd = True
                     wasPhraseSpoken = False
                     outputStr += "␘"
                     currentKeyIndex += 2
                     gazeKeyPressCount += 1
+                    cancelCount += 1
+                    totalGazeKeyPressCount += 1
                 elif nextKeypress.KeyPress == "Left":
                     outputStr +="↶"
                     currentKeyIndex += 2
                     gazeKeyPressCount += 1
+                    totalGazeKeyPressCount += 1
                 elif nextKeypress.KeyPress == "Right":
                     outputStr +="↷"
                     currentKeyIndex += 2
                     gazeKeyPressCount += 1
+                    totalGazeKeyPressCount += 1
                 elif nextKeypress.KeyPress == "X":  # Ctrl-X == Cut
                     outputStr += "✂️"
                     currentKeyIndex += 2
                     gazeKeyPressCount += 1
+                    totalGazeKeyPressCount += 1
                 elif nextKeypress.KeyPress == "C":  # Ctrl-C == Copy
                     outputStr += "📄"
                     currentKeyIndex += 2
                     gazeKeyPressCount += 1
+                    totalGazeKeyPressCount += 1
                 elif nextKeypress.KeyPress == "V":  # Ctrl-V == Paste
                     outputStr += "📋"
                     currentKeyIndex += 2
                     gazeKeyPressCount += 1
+                    totalGazeKeyPressCount += 1
                 elif nextKeypress.KeyPress == "Z":  # Ctrl-Z == Undo
                     outputStr += "↺"
                     currentKeyIndex += 2
                     gazeKeyPressCount += 1
+                    totalGazeKeyPressCount += 1
                 else:
                     outputStr += outputForKeypress(keypress.KeyPress, False)
                     characterCount += 1
@@ -147,16 +171,21 @@ def VisualizeKeypresses(keypresses):
                     outputStr += outputForKeypress(keypresses.keyPresses[currentKeyIndex+1].KeyPress, True)
                     currentKeyIndex += 2
                     characterCount += 1
+                    gazeKeyPressCount += 2
+                    totalGazeKeyPressCount += 1
                 else:
                     outputStr += outputForKeypress(keypress.KeyPress, False)
                     characterCount += 1
                     currentKeyIndex += 1
+                    gazeKeyPressCount += 1
             else:
                 if keypress.KeyPress == "Back":
                     backspaceCount += 1
                     characterCount -= 1
+                    gazeKeyPressCount += 1
                 else:
                     characterCount += 1
+                    gazeKeyPressCount += 1
 
                 outputStr += outputForKeypress(keypress.KeyPress, False)
                 currentKeyIndex += 1
@@ -164,22 +193,27 @@ def VisualizeKeypresses(keypresses):
                 if currentKeyIndex >= totalKeyspresses:
                     isPhraseEnd = True
 
+        if nextCharacterDelta > longdeltatime:
+            isPhraseEnd = True
+            outputStr += "⏰␘"
+            timeoutCount += 1
+
         if isPhraseEnd:
             isPhraseEnd = False
             isPhraseStart = True
 
             wpm = 0.0
 
-            if characterCount > 0:
-                totalPhraseCount += 1
+            if characterCount > 1:
                 totalCharacterCount += characterCount
                 wpm = (characterCount / 5) / ((currentTimestamp - phraseStartTimestamp).total_seconds() / 60)
                 wpms.append(wpm)
 
             if wasPhraseSpoken:
-                outputStr += f"⏲{wpm:5.1f} backspaces {backspaceCount}"
+                totalPhraseCount += 1
+                outputStr += f"⏲{wpm:5.1f} back:{backspaceCount} gaze:{gazeKeyPressCount} prediction:{predictionCount}"
 
-            print(outputStr)
+            print(f"startIndex: {startingKeypressIndex:8} {outputStr}")
 
     # Note in the above example, characters is the effective characters (ie: what was actually spoken)
     # Since "HELLO" was spoken twice the characters are 5 per phrase, or 10 total
@@ -197,7 +231,8 @@ def VisualizeKeypresses(keypresses):
         averageWpm = totalWpm / countWpm
 
     print("")
-    print(f"🗪[Speak: {totalPhraseCount}, Characters: {totalCharacterCount}, AverageWPM: {averageWpm:5.1f}, TopWPM: {topWpm:5.1f}]")
+    print(f"🗪[Speak: {totalPhraseCount}, AverageWPM: {averageWpm:5.1f}, TopWPM: {topWpm:5.1f} Cancel:{cancelCount} Timeouts:{timeoutCount}]")
+    print(f"Total Keypresses: {totalKeyspresses} Gaze: {totalGazeKeyPressCount} Characters: {totalCharacterCount}")
 
 def prediction(keypresses, currentKeyIndex, totalKeypressCount):
     charString = "🗩"   # the string representation of the prediction. ie: "🗩🠠🠠HELLO "
@@ -259,6 +294,7 @@ def outputForKeypress(keypress, shiftOn):
         "Left" : "↶",
         "Right" : "↷",
         "Back" : "🠠",
+        "Delete" : "🠠",
         "Enter" : "↩",
         "Return" : "↩",
         "LWin" : "🗔",
@@ -296,6 +332,8 @@ def outputForKeypress(keypress, shiftOn):
         "OemPeriod" : ">",
         "Oemcomma" : "<",
         "Oemtilde" : "~",
+        "Back" : "🠠",
+        "Space" : " ",
         }
 
     if isCharacter(keypress):

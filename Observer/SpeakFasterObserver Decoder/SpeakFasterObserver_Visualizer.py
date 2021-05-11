@@ -89,38 +89,66 @@ def VisualizeKeypresses(keypresses):
                 and currentKeyIndex + 1 < totalKeyspresses):
                 nextKeypress = keypresses.keyPresses[currentKeyIndex+1]
                 if nextKeypress.KeyPress == "W":    # Ctrl-W == Speak
-                    outputStr += "␃"
                     isPhraseEnd = True
                     wasPhraseSpoken = True
-                    outputStr += "💬"       # Speak
+                    outputStr += "␃💬"
                     currentKeyIndex += 2
                     gazeKeyPressCount += 1
                 elif nextKeypress.KeyPress == "Q":  # Ctrl-Q == Pause
-                    outputStr += "␃"
                     isPhraseEnd = True
                     wasPhraseSpoken = False
-                    outputStr += "⏸"       # Pause
+                    outputStr += "␃⏸"
                     currentKeyIndex += 2
                     gazeKeyPressCount += 1
                 elif nextKeypress.KeyPress == "Q":  # Ctrl-E == Stop
-                    outputStr += "␃"
                     isPhraseEnd = True
                     wasPhraseSpoken = False
-                    outputStr += "🛑"       # Stop
+                    outputStr += "␃🛑"
                     currentKeyIndex += 2
                     gazeKeyPressCount += 1
                 elif nextKeypress.KeyPress == "A":  # Ctrl-A == Select All
                     isPhraseEnd = True
                     wasPhraseSpoken = False
-                    outputStr += "␘"        # Cancel/reset of thought
+                    outputStr += "␘"
                     currentKeyIndex += 2
                     gazeKeyPressCount += 1
                 elif nextKeypress.KeyPress == "Left":
-                    outputStr +="↶"        # TODO need emoji for jumping back a word
+                    outputStr +="↶"
+                    currentKeyIndex += 2
+                    gazeKeyPressCount += 1
+                elif nextKeypress.KeyPress == "Right":
+                    outputStr +="↷"
+                    currentKeyIndex += 2
+                    gazeKeyPressCount += 1
+                elif nextKeypress.KeyPress == "X":  # Ctrl-X == Cut
+                    outputStr += "✂️"
+                    currentKeyIndex += 2
+                    gazeKeyPressCount += 1
+                elif nextKeypress.KeyPress == "C":  # Ctrl-C == Copy
+                    outputStr += "📄"
+                    currentKeyIndex += 2
+                    gazeKeyPressCount += 1
+                elif nextKeypress.KeyPress == "V":  # Ctrl-V == Paste
+                    outputStr += "📋"
+                    currentKeyIndex += 2
+                    gazeKeyPressCount += 1
+                elif nextKeypress.KeyPress == "Z":  # Ctrl-Z == Undo
+                    outputStr += "↺"
                     currentKeyIndex += 2
                     gazeKeyPressCount += 1
                 else:
-                    outputStr += outputForKeypress(keypress.KeyPress)
+                    outputStr += outputForKeypress(keypress.KeyPress, False)
+                    characterCount += 1
+                    currentKeyIndex += 1
+            elif keypress.KeyPress == "LShiftKey":
+                if (currentKeyIndex + 1 < totalKeyspresses 
+                    and not keypresses.keyPresses[currentKeyIndex+1].KeyPress == "LShiftKey"
+                    and not keypresses.keyPresses[currentKeyIndex+1].KeyPress == "LControlKey"):
+                    outputStr += outputForKeypress(keypresses.keyPresses[currentKeyIndex+1].KeyPress, True)
+                    currentKeyIndex += 2
+                    characterCount += 1
+                else:
+                    outputStr += outputForKeypress(keypress.KeyPress, False)
                     characterCount += 1
                     currentKeyIndex += 1
             else:
@@ -130,7 +158,7 @@ def VisualizeKeypresses(keypresses):
                 else:
                     characterCount += 1
 
-                outputStr += outputForKeypress(keypress.KeyPress)
+                outputStr += outputForKeypress(keypress.KeyPress, False)
                 currentKeyIndex += 1
 
                 if currentKeyIndex >= totalKeyspresses:
@@ -182,7 +210,7 @@ def prediction(keypresses, currentKeyIndex, totalKeypressCount):
     while index < totalKeypressCount and not isNextGazeInitiated:
         currentKeypress = keypresses.keyPresses[index]
 
-        charString += outputForKeypress(currentKeypress.KeyPress)
+        charString += outputForKeypress(currentKeypress.KeyPress, False)
 
         # Just keep eating automatic keypresses until next gaze initiated key
         isNextGazeInitiated, deltaTimestamp = isKeyGazeInitiated(keypresses, index + 1, totalKeypressCount)
@@ -213,13 +241,20 @@ def isKeyGazeInitiated(keypresses, currentKeyIndex, totalKeypressCount):
 def isCharacter(keypress):
     return (len(keypress) == 1)
 
-def outputForKeypress(keypress):
+def outputForKeypress(keypress, shiftOn):
     specialKeys = {
         "Space" : " ",
         "OemPeriod" : ".",
         "Oemcomma" : ",",
         "OemQuestion" : "?",
-        "Oem7" : "'",
+        "OemMinus" : "-",
+        "Oemplus" : "=",
+        "Oemtilde" : "`",
+        "Oem1": ";", # OemSemicolon
+        "Oem4" : "[", # OemOpenBrackets
+        "Oem5" : "\\", # OemPipe
+        "Oem6" : "]", # OemCloseBrackets
+        "Oem7" : "'", # OemQuotes
         "Tab" : "↦",
         "Left" : "↶",
         "Right" : "↷",
@@ -229,13 +264,46 @@ def outputForKeypress(keypress):
         "LWin" : "🗔",
         "LControlKey" : "🎛️",
         "LShiftKey" : "↑",
-        "D1" : "1" # TODO Properly handle exclaimation point
+        "D1" : "1",
+        "D2" : "2",
+        "D3" : "3",
+        "D4" : "4",
+        "D5" : "5",
+        "D6" : "6",
+        "D7" : "7",
+        "D8" : "8",
+        "D9" : "9",
+        "D0" : "0",
+        }
+    shiftedSpecialKeys = {
+        "D1" : "!",
+        "D2" : "@",
+        "D3" : "#",
+        "D4" : "$",
+        "D5" : "%",
+        "D6" : "^",
+        "D7" : "&",
+        "D8" : "*",
+        "D9" : "(",
+        "D0" : ")",
+        "OemMinus" : "-",
+        "Oemplus" : "=",
+        "Oem1" : ":", # OemSemicolon
+        "Oem4" : "{", # OemOpenBrackets
+        "Oem5" : "|", # OemPipe
+        "Oem6" : "}", # OemCloseBrackets
+        "Oem7" : "\"", # OemQuotes
+        "OemPeriod" : ">",
+        "Oemcomma" : "<",
+        "Oemtilde" : "~",
         }
 
     if isCharacter(keypress):
         return keypress
-    elif keypress in specialKeys:
+    elif not shiftOn and keypress in specialKeys:
        return specialKeys[keypress]
+    elif shiftOn and keypress in shiftedSpecialKeys:
+       return shiftedSpecialKeys[keypress]
     else:
         raise Exception(f"{keypress} not handled")
 

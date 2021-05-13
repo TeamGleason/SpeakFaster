@@ -194,10 +194,10 @@ def VisualizeKeypresses(keypresses):
             isPhraseEnd = True
             currentPhrase.timeout()
 
-        if not isPhraseEnd and currentKeyIndex >= totalKeyspresses - 1:
+        if not isPhraseEnd and currentKeyIndex >= totalKeyspresses:
             # If we have run out of keypresses, but have not otherwise ended
             # the phrase, ensure the phrase is ended
-            isPhaseEnd = True
+            isPhraseEnd = True
             currentPhrase.cancel("␘")
 
         if isPhraseEnd:
@@ -295,7 +295,7 @@ def isKeyGazeInitiated(keypresses, currentKeyIndex, totalKeypressCount):
     isGazeInitiated = True
     deltaTimestamp = datetime.timedelta(0)
 
-    if currentKeyIndex > 0 and currentKeyIndex < totalKeypressCount - 1:
+    if currentKeyIndex > 0 and currentKeyIndex < totalKeypressCount:
         currentTimestamp = datetimeFromTimestamp(keypresses.keyPresses[currentKeyIndex].Timestamp)
         previousTimestamp = datetimeFromTimestamp(keypresses.keyPresses[currentKeyIndex-1].Timestamp)
         deltaTimestamp = currentTimestamp - previousTimestamp

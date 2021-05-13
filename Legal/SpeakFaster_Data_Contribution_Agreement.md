@@ -66,7 +66,7 @@ During your participation in the Data Collection, you may provide comments, feed
 
 ### 5.2 Team Gleason Foundation Confidential Information. 
 
-his agreement and any information provided to you by Team Gleason Foundation during the Data Collection are confidential (the “Confidential Information”). You may use Confidential Information only for participation in the Data Collection and take care to prevent any unauthorized use or disclosure of such information. You may not photograph, record, or share any Confidential Information.
+This agreement and any information provided to you by Team Gleason Foundation during the Data Collection are confidential (the “Confidential Information”). You may use Confidential Information only for participation in the Data Collection and take care to prevent any unauthorized use or disclosure of such information. You may not photograph, record, or share any Confidential Information.
 
 ## 6. General Provisions.
 

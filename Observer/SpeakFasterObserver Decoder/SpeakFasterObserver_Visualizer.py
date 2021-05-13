@@ -274,7 +274,7 @@ def isKeyGazeInitiated(keypresses, currentKeyIndex, totalKeypressCount):
     return isGazeInitiated, deltaTimestamp
 
 def isCharacter(keypress):
-    return (len(keypress) == 1)
+    return len(keypress) == 1
 
 def outputForKeypress(keypress, shiftOn):
     specialKeys = {

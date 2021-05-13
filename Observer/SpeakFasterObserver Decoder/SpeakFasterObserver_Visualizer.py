@@ -12,66 +12,79 @@ mingazetime = datetime.timedelta(milliseconds=300)
 # Assume that after 90 seconds of inactivity we are doing a new utterance
 longdeltatime = datetime.timedelta(seconds=90)
 
-# Phase 1:
-# 
-# Raw: Characters, Space Delimited, Other Ctrl/Alt Modifiers (Ctl-, Alt-)
-# Char Analysis: Speak, Stop, Pause, Enter, Backspace, Count of Characters Spoken
-# Timing Analysis: Backword, Use Prediction, WPM
-# Context Analysis: STX, ETX, CAN
-# 
-# ETX is inserted when detecting Speak, Stop, or Cancel.
-# Cancel is detected if after STX, CTRL-A is received before Speak.
-# When STX ... Stop/Pause ... Speak is detected, WPM timings are not calculated.
 
-# Example Output:
-# 
-# ␂ H E L K 🠠 L O ␃ 💬 ⏲12.3
-# ␂ H E L 🗩HELLO ␃ 💬 ⏲16.3
-# 🗪 { Speak : 2 , Characters : 10, AverageWPM : 14.3 , TopWPM : 16.3 }
+
+# A phrase is defined as a series of keypresses over a period of time
+# The phrase may end with it being spoken or not spoken
+class Phrase:
+    startIndex = 0  # Index of the first keypress in the phrase
+    endIndex = 0    # Index of the last keypress in the phrase
+    startTimestamp = None
+    endTimestamp = None
+    outputStr = ""
+    endingStr = ""
+    wasSpoken = False
+    wasCancelled = False
+    wasTimeout = False
+    characterCount = 0
+    backspaceCount = 0
+    predictionCount = 0
+    gazeKeyPressCount = 0
+    wpm = None
+
+    def wpm(self):
+        wpm = 0.0
+        if self.wasSpoken and self.characterCount > 1:
+            wpm =  (self.characterCount / 5) / ((self.endTimestamp - self.startTimestamp).total_seconds() / 60)
+
+        return wpm
+
+    def cancel(self, endingStr):
+        self.wasCancelled = True
+        self.endingStr = endingStr
+
+    def timeout(self):
+        self.wasTimeout = True
+        self.endingStr = "⏰"
+
+    def speak(self):
+        self.wasSpoken = True
+        self.endingStr = "💬"
+
+    def keypressCount(self):
+        return self.endIndex - self.startIndex + 1
+
+    def printVal(self):
+        print(self.val)
+
+    def __str__(self):
+        returnString = f"[{self.startIndex:8}:{self.endIndex:8}] {self.endingStr} ␂{self.outputStr}␃ {self.endingStr}"
+        if self.wasSpoken:
+            returnString += f" ⏲{self.wpm():5.1f} Time:{self.endTimestamp} back:{self.backspaceCount} gaze:{self.gazeKeyPressCount} prediction:{self.predictionCount}"
+
+        return returnString
 
 def VisualizeKeypresses(keypresses):
-    previousKeypress = None
+    phrases = []
+    currentPhrase = None
     isPhraseStart = True
     isPhraseEnd = False
-    totalPhraseCount = 0
-    totalCharacterCount = 0
-    characterCount = 0
-    wpms = []
-    phraseStartTimestamp = None
-    outputStr = ""
 
     totalKeyspresses = len(keypresses.keyPresses)
 
     currentKeyIndex = 0
-    gazeKeyPressCount = 0
-    predictionCount = 0
-    timeoutCount = 0
-    cancelCount = 0
-    totalGazeKeyPressCount = 0
 
     while currentKeyIndex < totalKeyspresses:
         keypress = keypresses.keyPresses[currentKeyIndex]
         currentTimestamp = datetimeFromTimestamp(keypress.Timestamp)
-        previousCharacterDelta = None
-        nextCharacterDelta = None
-
-        isGazeInitiated, previousCharacterDelta = isKeyGazeInitiated(keypresses, currentKeyIndex, totalKeyspresses)
-        if isGazeInitiated:
-            totalGazeKeyPressCount += 1
+        isNextGazeInitialized, nextCharacterDelta = isKeyGazeInitiated(keypresses, currentKeyIndex + 1, totalKeyspresses)
 
         if isPhraseStart:
-            outputStr = "␂"
+            currentPhrase = Phrase()
+            currentPhrase.startIndex = currentKeyIndex
             isPhraseStart = False
             isPhraseEnd = False
-            wasPhraseSpoken = False
-            phraseStartTimestamp = currentTimestamp
-            characterCount = 0
-            backspaceCount = 0
-            predictionCount = 0
-            gazeKeyPressCount = 0
-            startingKeypressIndex = currentKeyIndex
-
-        isNextGazeInitialized, nextCharacterDelta = isKeyGazeInitiated(keypresses, currentKeyIndex + 1, totalKeyspresses)
+            currentPhrase.startTimestamp = currentTimestamp
 
         if not isNextGazeInitialized:
             # there is a subsequent character, and it was inserted programmatically
@@ -82,20 +95,20 @@ def VisualizeKeypresses(keypresses):
                 and keypresses.keyPresses[currentKeyIndex+3].KeyPress == "Back"
                 ):
                 # Scenario 1: ctrl-shift-left-back == DelWord
-                outputStr += "↞"
+                currentPhrase.outputStr += "↞"
                 currentKeyIndex += 4
-                backspaceCount += 1 # For DelWord we don't know how many backspaces, so just say "1"
-                gazeKeyPressCount += 1
+                currentPhrase.backspaceCount += 1 # For DelWord we don't know how many backspaces, so just say "1"
+                currentPhrase.gazeKeyPressCount += 1
             else:
                 # Scenario 2a: backspaces followed by characters then space = Prediction
                 # Scenario 2b: characters then space = Prediction
                 charsUsed, charString, charCount = prediction(keypresses, currentKeyIndex, totalKeyspresses)
                 currentKeyIndex += charsUsed
-                characterCount += charCount
-                predictionCount += 1
-                gazeKeyPressCount += 1
+                currentPhrase.characterCount += charCount
+                currentPhrase.predictionCount += 1
+                currentPhrase.gazeKeyPressCount += 1
 
-                outputStr += charString
+                currentPhrase.outputStr += charString
         else:
             # next character is gaze initated
             if ((keypress.KeyPress == "LControlKey" or keypress.KeyPress == "RControlKey")
@@ -103,91 +116,75 @@ def VisualizeKeypresses(keypresses):
                 nextKeypress = keypresses.keyPresses[currentKeyIndex+1]
                 if nextKeypress.KeyPress == "W":    # Ctrl-W == Speak
                     isPhraseEnd = True
-                    wasPhraseSpoken = True
-                    outputStr += "␃💬"
                     currentKeyIndex += 2
-                    gazeKeyPressCount += 1
-                    totalGazeKeyPressCount += 1
+                    currentPhrase.gazeKeyPressCount += 1
+                    currentPhrase.speak()
                 elif nextKeypress.KeyPress == "Q":  # Ctrl-Q == Pause
                     isPhraseEnd = True
-                    wasPhraseSpoken = False
-                    outputStr += "␃⏸"
                     currentKeyIndex += 2
-                    gazeKeyPressCount += 1
-                    totalGazeKeyPressCount += 1
+                    currentPhrase.gazeKeyPressCount += 1
+                    currentPhrase.cancel("⏸")
                 elif nextKeypress.KeyPress == "Q":  # Ctrl-E == Stop
                     isPhraseEnd = True
-                    wasPhraseSpoken = False
-                    outputStr += "␃🛑"
                     currentKeyIndex += 2
-                    gazeKeyPressCount += 1
-                    totalGazeKeyPressCount += 1
+                    currentPhrase.gazeKeyPressCount += 1
+                    currentPhrase.cancel("🛑")
                 elif nextKeypress.KeyPress == "A":  # Ctrl-A == Select All
-                    isPhraseEnd = True
-                    wasPhraseSpoken = False
-                    outputStr += "␘"
+                    isPhraseEnd = True              # TODO If ctrl-A is followed by ctrl-W, phrase wasn't cancelled
                     currentKeyIndex += 2
-                    gazeKeyPressCount += 1
-                    cancelCount += 1
-                    totalGazeKeyPressCount += 1
+                    currentPhrase.gazeKeyPressCount += 1
+                    currentPhrase.cancel("␘")
                 elif nextKeypress.KeyPress == "Left":
-                    outputStr +="↶"
+                    currentPhrase.outputStr +="↶"
                     currentKeyIndex += 2
-                    gazeKeyPressCount += 1
-                    totalGazeKeyPressCount += 1
+                    currentPhrase.gazeKeyPressCount += 1
                 elif nextKeypress.KeyPress == "Right":
-                    outputStr +="↷"
+                    currentPhrase.outputStr +="↷"
                     currentKeyIndex += 2
-                    gazeKeyPressCount += 1
-                    totalGazeKeyPressCount += 1
+                    currentPhrase.gazeKeyPressCount += 1
                 elif nextKeypress.KeyPress == "X":  # Ctrl-X == Cut
-                    outputStr += "✂️"
+                    currentPhrase.outputStr += "✂️"
                     currentKeyIndex += 2
-                    gazeKeyPressCount += 1
-                    totalGazeKeyPressCount += 1
+                    currentPhrase.gazeKeyPressCount += 1
                 elif nextKeypress.KeyPress == "C":  # Ctrl-C == Copy
-                    outputStr += "📄"
+                    currentPhrase.outputStr += "📄"
                     currentKeyIndex += 2
-                    gazeKeyPressCount += 1
-                    totalGazeKeyPressCount += 1
+                    currentPhrase.gazeKeyPressCount += 1
                 elif nextKeypress.KeyPress == "V":  # Ctrl-V == Paste
-                    outputStr += "📋"
+                    currentPhrase.outputStr += "📋"
                     currentKeyIndex += 2
-                    gazeKeyPressCount += 1
-                    totalGazeKeyPressCount += 1
+                    currentPhrase.gazeKeyPressCount += 1
                 elif nextKeypress.KeyPress == "Z":  # Ctrl-Z == Undo
-                    outputStr += "↺"
+                    currentPhrase.outputStr += "↺"
                     currentKeyIndex += 2
-                    gazeKeyPressCount += 1
-                    totalGazeKeyPressCount += 1
+                    currentPhrase.gazeKeyPressCount += 1
                 else:
-                    outputStr += outputForKeypress(keypress.KeyPress, False)
-                    characterCount += 1
+                    currentPhrase.outputStr += outputForKeypress(keypress.KeyPress, False)
+                    currentPhrase.characterCount += 1
                     currentKeyIndex += 1
             elif keypress.KeyPress == "LShiftKey":
                 if (currentKeyIndex + 1 < totalKeyspresses 
                     and not keypresses.keyPresses[currentKeyIndex+1].KeyPress == "LShiftKey"
                     and not keypresses.keyPresses[currentKeyIndex+1].KeyPress == "LControlKey"):
-                    outputStr += outputForKeypress(keypresses.keyPresses[currentKeyIndex+1].KeyPress, True)
+                    currentPhrase.outputStr += outputForKeypress(keypresses.keyPresses[currentKeyIndex+1].KeyPress, True)
                     currentKeyIndex += 2
-                    characterCount += 1
-                    gazeKeyPressCount += 2
-                    totalGazeKeyPressCount += 1
+                    currentPhrase.characterCount += 1
+                    currentPhrase.gazeKeyPressCount += 2
                 else:
-                    outputStr += outputForKeypress(keypress.KeyPress, False)
-                    characterCount += 1
+                    currentPhrase.outputStr += outputForKeypress(keypress.KeyPress, False)
+                    currentPhrase.characterCount += 1
                     currentKeyIndex += 1
-                    gazeKeyPressCount += 1
+                    currentPhrase.gazeKeyPressCount += 1
             else:
                 if keypress.KeyPress == "Back":
-                    backspaceCount += 1
-                    characterCount -= 1
-                    gazeKeyPressCount += 1
+                    currentPhrase.backspaceCount += 1
+                    currentPhrase.characterCount -= 1
+                    currentPhrase.gazeKeyPressCount += 1
                 else:
-                    characterCount += 1
-                    gazeKeyPressCount += 1
+                    currentPhrase.characterCount += 1
+                    currentPhrase.gazeKeyPressCount += 1
 
-                outputStr += outputForKeypress(keypress.KeyPress, False)
+                currentPhrase.outputStr += outputForKeypress(keypress.KeyPress, False)
                 currentKeyIndex += 1
 
                 if currentKeyIndex >= totalKeyspresses:
@@ -195,28 +192,66 @@ def VisualizeKeypresses(keypresses):
 
         if nextCharacterDelta > longdeltatime:
             isPhraseEnd = True
-            outputStr += "⏰␘"
-            timeoutCount += 1
+            currentPhrase.timeout()
+
+        if not isPhraseEnd and currentKeyIndex >= totalKeyspresses - 1:
+            # If we have run out of keypresses, but have not otherwise ended
+            # the phrase, ensure the phrase is ended
+            isPhaseEnd = True
+            currentPhrase.cancel("␘")
 
         if isPhraseEnd:
+            # The currentKeyIndex is pointing to the beginning of the next phrase.
+            # Grab the timestamp from the keypress just before it, which is the
+            # end of the current phrase.
+            currentPhrase.endIndex = currentKeyIndex - 1
+            endKeypress = keypresses.keyPresses[currentPhrase.endIndex]
+            currentPhrase.endTimestamp = datetimeFromTimestamp(endKeypress.Timestamp)
+
+            phrases.append(currentPhrase)
+
+            currentPhrase = None
             isPhraseEnd = False
             isPhraseStart = True
 
-            wpm = 0.0
+    # TODO sum these from each phrase
+    totalGazeKeyPressCount = 0
+    totalCharacterCount = 0
+    totalPhraseKeypressCount = 0
+    timeoutCount = 0
+    cancelledCount = 0
+    spokenCount = 0
+    phraseCount = len(phrases)
+    wpms = []
+    
+    for phrase in phrases:
+        totalGazeKeyPressCount += phrase.gazeKeyPressCount
+        totalCharacterCount += phrase.characterCount
+        totalPhraseKeypressCount += phrase.keypressCount()
+        if phrase.wasCancelled:
+            cancelledCount += 1
+        if phrase.wasTimeout:
+            timeoutCount += 1
+        if phrase.wasSpoken:
+            spokenCount += 1
+            wpms.append(phrase.wpm())
 
-            if characterCount > 1:
-                totalCharacterCount += characterCount
-                wpm = (characterCount / 5) / ((currentTimestamp - phraseStartTimestamp).total_seconds() / 60)
-                wpms.append(wpm)
+        print(phrase)
 
-            if wasPhraseSpoken:
-                totalPhraseCount += 1
-                outputStr += f"⏲{wpm:5.1f} back:{backspaceCount} gaze:{gazeKeyPressCount} prediction:{predictionCount}"
+    avgWpms, topWpm = averageWpm(wpms)
 
-            print(f"startIndex: {startingKeypressIndex:8} {outputStr}")
+    # The totalPhraseKeypressCount is a bug check, it MUST equal totalKeyspresses.
+    # Otherwise we have lost keypresses somehow
+    if not totalPhraseKeypressCount == totalKeyspresses:
+        raise Exception(f"Keypress mismatch, {totalKeyspresses - totalPhraseKeypressCount} keypresses missing from phrases. PhraseKeypressCount:{totalPhraseKeypressCount} KeypressCount:{totalKeyspresses}")
 
-    # Note in the above example, characters is the effective characters (ie: what was actually spoken)
-    # Since "HELLO" was spoken twice the characters are 5 per phrase, or 10 total
+    print("")
+    print(f"🗪[Speak: {spokenCount}, AverageWPM: {avgWpms:5.1f}, TopWPM: {topWpm:5.1f}]")
+    print(f"Total Keypresses: {totalKeyspresses} Gaze: {totalGazeKeyPressCount} Characters: {totalCharacterCount}")
+    print(f"Total Phrases:{phraseCount} Spoken:{spokenCount} Cancelled:{cancelledCount} Timeouts:{timeoutCount}")
+    print(f"wpms:{wpms}")
+
+def averageWpm(wpms):
     totalWpm = 0.0
     countWpm = 0
     topWpm = 0.0
@@ -229,10 +264,7 @@ def VisualizeKeypresses(keypresses):
 
     if countWpm > 0:
         averageWpm = totalWpm / countWpm
-
-    print("")
-    print(f"🗪[Speak: {totalPhraseCount}, AverageWPM: {averageWpm:5.1f}, TopWPM: {topWpm:5.1f} Cancel:{cancelCount} Timeouts:{timeoutCount}]")
-    print(f"Total Keypresses: {totalKeyspresses} Gaze: {totalGazeKeyPressCount} Characters: {totalCharacterCount}")
+    return averageWpm, topWpm
 
 def prediction(keypresses, currentKeyIndex, totalKeypressCount):
     charString = "🗩"   # the string representation of the prediction. ie: "🗩🠠🠠HELLO "
@@ -351,6 +383,9 @@ def listFilesWithExtension(dirname,extension):
 def datetimeFromTimestamp(timestamp):
     return datetime.datetime.fromtimestamp(timestamp.seconds + timestamp.nanos/1e9)
 
+# TODO switch to argparse
+# - option to process directory (automerge)
+# - option to process file
 if len(sys.argv) != 2:
   print(f"Usage: {sys.argv[0]} input_file")
   sys.exit(-1)
@@ -359,12 +394,9 @@ keypresses = keypresses_pb2.KeyPresses()
 
 filepath = sys.argv[1]
 
-files = listFilesWithExtension(filepath, "protobuf")
+f = open(filepath, "rb")
+bytes = f.read()
+keypresses.ParseFromString(bytes)
+f.close()
 
-for filename in files:
-    f = open(os.path.join(filepath,filename), "rb")
-    bytes = f.read()
-    keypresses.ParseFromString(bytes)
-    f.close()
-
-    VisualizeKeypresses(keypresses)
+VisualizeKeypresses(keypresses)

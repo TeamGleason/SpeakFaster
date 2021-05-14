@@ -21,18 +21,16 @@ As part of this Data Collection, you will be asked to submit audio, video, and t
 
 ### 3.2 Conversation Data.
 
-As part of collecting the Conversation Data you will be presented with a recording button in the Application. Additionally, you may be asked to upload different types of media (including, but not limited to, image, video, audio, and text) that may be relevant for the Purpose. While completing the Conversation Data Collection, the Application may collect the following information (together with any content you upload or provide via the Application, the “ Research Data”):
+As part of collecting the Conversation Data you will be presented with a recording button in the Application. The button will allow you to start and end data recording at any time. Additionally, you may be asked to upload different types of media (including, but not limited to, image, video, audio, and text) that may be relevant for the Purpose. While completing the Conversation Data Collection, the Application may collect the following information (together with any content you upload or provide via the Application, the “ Research Data”):
 
 Conversation Data Collection:
 
 Date and time information associated with your text, audio, and image captures. Annotations associated with your Conversation Data, including visual focus target, approximate gaze position, and other attention related data. Screenshots of the device you use to generate speech which may include the contents of other applications running at the time you are generating speech. Audio and image data of the environment in which you are speaking, such as photos of the people, room, and objects around you along with recordings of sounds nearby such as other people’s speech. The email address you used to log-in to the Application. Usage analytics by the user of the tool, such as button clicks and screen views. Device information consisting of (i) the model and manufacturer of the device, (ii) the version of the operating system running on the device; (iii) device characteristics such as camera and other hardware peripherals; and (iv) device screen related data (e.g. size, DPI, resolution, etc.).
 
-The Application will allow you to start and end data recording at any time. The Application will additionally provide options for you to delete previously-recorded data.
-
 ### 3.3 Conversation Data Generation.
 
 As part of Conversation Data collection, we may take your Research Data and use it to generate composite machine learning models. The machine learning models shall be considered Aggregate Data as defined in this agreement.
-
+f
 ### 3.4 Personal Identifier Data Collection.
 
 As part of this Data Collection, you will also be asked to provide a personal identifier (e.g., email address) for purposes of fulfilling any future request from you to delete your data and sending follow-up questions or surveys related to this data collection project.
@@ -43,7 +41,7 @@ Research Data will be retained for as long as needed to fulfill the Purpose, but
 
 ### 3.6 Use and Sharing.
 
-Team Gleason Foundation may share the Research Data with contractors and partners, including but not limited to Google LLC, under obligations of confidentiality to annotate the data, create other metadata from it, or verify the quality and usefulness of the data for the Purpose. We may also share externally Aggregate Data. Team Gleason Foundation may permit third parties to submit queries or otherwise run analyses across the Research Data, provided that such research activities by third parties will not disclose or make available data that would personally identify you. Team Gleason Foundation, and third parties permitted by Team Gleason Foundation, may publish research studies describing the Data Collection (including Aggregate Data), provided that the research studies do not disclose data that would personally identify you. You agree to permit all such uses and sharing.
+Team Gleason Foundation may share the Research Data with contractors and partners under obligations of confidentiality to annotate the data, create other metadata from it, or verify the quality and usefulness of the data for the Purpose. We may also share externally Aggregate Data. Team Gleason Foundation may permit third parties to submit queries or otherwise run analyses across the Research Data, provided that such research activities by third parties will not disclose or make available data that would personally identify you. Team Gleason Foundation, and third parties permitted by Team Gleason Foundation, may publish research studies describing the Data Collection (including Aggregate Data), provided that the research studies do not disclose data that would personally identify you. You agree to permit all such uses and sharing.
 
 Team Gleason Foundation will publish the Research Data, stripped of personal identifiers, to a public data collection under a restricted usage license where the data itself cannot be republished but anonymous, aggregate data sets can be derived and published. The purpose of the public sharing is to enable a wide network of machine learning developers and researchers to use the Conversation Data to develop new machine learning models and algorithms for facial feature recognition and gaze prediction. The goal of this sharing is to improve the outcomes of speech generating devices for all people. This data will be advertised and published to well known repositories of machine learning data, such as but not limited to Github (github.com) and Kaggle (kaggle.com). The data will be published with a restricted use license that forbids the use of the data outside of the scope of research and development for creating speech generating algorithms and/or anonymized aggregate data sets.
 

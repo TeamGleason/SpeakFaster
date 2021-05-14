@@ -30,7 +30,7 @@ Date and time information associated with your text, audio, and image captures. 
 ### 3.3 Conversation Data Generation.
 
 As part of Conversation Data collection, we may take your Research Data and use it to generate composite machine learning models. The machine learning models shall be considered Aggregate Data as defined in this agreement.
-f
+
 ### 3.4 Personal Identifier Data Collection.
 
 As part of this Data Collection, you will also be asked to provide a personal identifier (e.g., email address) for purposes of fulfilling any future request from you to delete your data and sending follow-up questions or surveys related to this data collection project.

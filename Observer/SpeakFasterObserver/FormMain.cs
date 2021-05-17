@@ -13,10 +13,11 @@ namespace SpeakFasterObserver
     {
         private readonly ToltTech.GazeInput.IGazeDevice gazeDevice;
 
-        readonly string dataPath;
+        static string dataPath;
 
         static KeyPresses keypresses = new();
         static bool isRecording = true;
+        static bool isRecordingScreenshots = true;
         static bool balabolkaRunning = false;
         static bool balabolkaFocused = false;
         static bool tobiiComputerControlRunning = false;
@@ -25,6 +26,7 @@ namespace SpeakFasterObserver
         Keylogger keylogger;
 
         System.Threading.Timer uploadTimer = new(Upload.Timer_Tick);
+        static System.Threading.Timer keyloggerTimer = new((state) => { SaveKeypresses(); });
 
         public FormMain()
         {
@@ -58,9 +60,10 @@ namespace SpeakFasterObserver
 
             // Load previous recording state
             isRecording = Properties.Settings.Default.IsRecordingOn;
+            isRecordingScreenshots = Properties.Settings.Default.IsRecordingScreenshots;
 
             // Ensure Icons and Strings reflect proper recording state on start
-            SetRecordingState(isRecording);
+            SetRecordingState(isRecording, isRecordingScreenshots);
 
             // Setup the Keypress keyboard hook
             keylogger = new Keylogger(KeyboardHookHandler);
@@ -97,26 +100,36 @@ namespace SpeakFasterObserver
 
         private void toggleButtonOnOff_Click(object sender, EventArgs e)
         {
-            SetRecordingState(!isRecording);
+            SetRecordingState(!isRecording, isRecordingScreenshots);
         }
 
         private void notifyIcon_Click(object sender, EventArgs e)
         {
             if (((System.Windows.Forms.MouseEventArgs)e).Button == MouseButtons.Left)
             {
-                SetRecordingState(!isRecording);
+                SetRecordingState(!isRecording, isRecordingScreenshots);
             }
         }
 
         private void notifyIconContextMenuStrip_ItemClicked(object sender, ToolStripItemClickedEventArgs e)
         {
-            ExitApplication();
+            var clickedItem = e.ClickedItem;
+
+            if (clickedItem.Text == "Exit")
+            {
+                ExitApplication();
+            }
+            else if (clickedItem.Text == "Record Screenshots")
+            {
+                SetRecordingState(isRecording, !isRecordingScreenshots);
+            }
         }
 
         private void screenshotTimer_Tick(object sender, EventArgs e)
         {
             if (
                 isRecording                         // Only record when recording enabled
+                && isRecordingScreenshots           // AND when we are recording screenshots
                 && balabolkaRunning                 // AND balabolka is running
                 && balabolkaFocused                 // AND balabolka has focus
                 //&& tobiiComputerControlRunning      //  AND Tobii Computer Control
@@ -173,15 +186,19 @@ namespace SpeakFasterObserver
                         Timestamp = Google.Protobuf.WellKnownTypes.Timestamp.FromDateTime(DateTime.Now.ToUniversalTime())
                     });
                 }
+
+                keyloggerTimer.Change(60 * 1000, System.Threading.Timeout.Infinite);
             }
         }
         #endregion
 
-        private void SetRecordingState(bool newRecordingState)
+        private void SetRecordingState(bool newRecordingState, bool newIsRecordingScreenshots)
         {
             isRecording = newRecordingState;
+            isRecordingScreenshots = newIsRecordingScreenshots;
 
             toggleButtonOnOff.Checked = isRecording;
+            this.RecordScreenshotsToolStripMenuItem.Checked = isRecordingScreenshots;
 
             if (isRecording)
             {
@@ -202,6 +219,13 @@ namespace SpeakFasterObserver
             {
                 // Save the new recording state
                 Properties.Settings.Default.IsRecordingOn = isRecording;
+                Properties.Settings.Default.Save();
+            }
+
+            if (isRecordingScreenshots != Properties.Settings.Default.IsRecordingScreenshots)
+            {
+                // Save the new recording state
+                Properties.Settings.Default.IsRecordingScreenshots = isRecordingScreenshots;
                 Properties.Settings.Default.Save();
             }
         }
@@ -252,7 +276,7 @@ namespace SpeakFasterObserver
             return false;
         }
 
-        private void SaveKeypresses()
+        private static void SaveKeypresses()
         {
             KeyPresses oldKeypresses;
 
@@ -267,7 +291,7 @@ namespace SpeakFasterObserver
             // need to serialize to file
             // {DataStream}-yyyymmddThhmmssf.{Extension}
             var filename = Path.Combine(
-               dataPath,
+               FormMain.dataPath,
                 $"{DateTime.Now:yyyyMMddThhmmssfff}-Keypresses.protobuf");
             using (var file = File.Create(filename))
             {
@@ -277,7 +301,9 @@ namespace SpeakFasterObserver
 
         private void ExitApplication()
         {
-            keypressTimer.Enabled = false;
+            keyloggerTimer.Dispose();
+            keyloggerTimer = null;
+
             processCheckerTimer.Enabled = false;
             screenshotTimer.Enabled = false;
 

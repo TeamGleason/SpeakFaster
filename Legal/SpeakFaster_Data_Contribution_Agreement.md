@@ -21,10 +21,11 @@ As part of this Data Collection, you will be asked to submit audio, video, and t
 
 ### 3.2 Conversation Data.
 
-As part of collecting the Conversation Data you will be presented with a recording button in the Application. Additionally, you may be asked to upload different types of media (including, but not limited to, image, video, audio, and text) that may be relevant for the Purpose. While completing the Conversation Data Collection, the Application may collect the following information (together with any content you upload or provide via the Application, the “ Research Data”):
+As part of collecting the Conversation Data you will be presented with a recording button in the Application. The button will allow you to start and end data recording at any time. Additionally, you may be asked to upload different types of media (including, but not limited to, image, video, audio, and text) that may be relevant for the Purpose. While completing the Conversation Data Collection, the Application may collect the following information (together with any content you upload or provide via the Application, the “ Research Data”):
+
 Conversation Data Collection:
 
-Date and time information associated with your text, audio, and image captures. Annotations associated with your Conversation Data, including visual focus target, approximate gaze position, and other attention related data. Screenshots of the device you use to generate speech which may include the contents of other applications running at the time you are generating speech. Audio and image data of the environment in which you are speaking, such as photos of the people, room, and objects around you along with recordings of sounds nearby such as other people’s speech. The email address you used to log-in to the Application. Usage analytics by the user of the tool, such as button clicks and screen views. Device information consisting of (i) the model and manufacturer of the device, (ii) the version of the operating system running on the device; (iii) device characteristics such as camera and other hardware peripherals; and (iv) device screen related data (e.g. size, DPI, resolution, etc.);
+Date and time information associated with your text, audio, and image captures. Annotations associated with your Conversation Data, including visual focus target, approximate gaze position, and other attention related data. Screenshots of the device you use to generate speech which may include the contents of other applications running at the time you are generating speech. Audio and image data of the environment in which you are speaking, such as photos of the people, room, and objects around you along with recordings of sounds nearby such as other people’s speech. The email address you used to log-in to the Application. Usage analytics by the user of the tool, such as button clicks and screen views. Device information consisting of (i) the model and manufacturer of the device, (ii) the version of the operating system running on the device; (iii) device characteristics such as camera and other hardware peripherals; and (iv) device screen related data (e.g. size, DPI, resolution, etc.).
 
 ### 3.3 Conversation Data Generation.
 
@@ -66,7 +67,7 @@ During your participation in the Data Collection, you may provide comments, feed
 
 ### 5.2 Team Gleason Foundation Confidential Information. 
 
-his agreement and any information provided to you by Team Gleason Foundation during the Data Collection are confidential (the “Confidential Information”). You may use Confidential Information only for participation in the Data Collection and take care to prevent any unauthorized use or disclosure of such information. You may not photograph, record, or share any Confidential Information.
+This agreement and any information provided to you by Team Gleason Foundation during the Data Collection are confidential (the “Confidential Information”). You may use Confidential Information only for participation in the Data Collection and take care to prevent any unauthorized use or disclosure of such information. You may not photograph, record, or share any Confidential Information.
 
 ## 6. General Provisions.
 
@@ -74,4 +75,4 @@ Unless applicable law requires otherwise: (a) this agreement is governed by the 
 
 ## 7. Questions
 
-If you have questions or concerns, if you want to withdraw from the Data Collection, or if you want to have your Research Data deleted, please contact SpeakFasterResearch@TeamGleason.org. The subject of your email should be “Request for Speak Faster Data Collection and your email should include enough information so that Team Gleason Foundation can identify the Research Data collected from you (if applicable).
+If you have questions or concerns, if you want to withdraw from the Data Collection, or if you want to have your Research Data deleted, please contact SpeakFasterResearch@TeamGleason.org. The subject of your email should be "Request for Speak Faster Data Collection" and your email should include enough information so that Team Gleason Foundation can identify the Research Data collected from you (if applicable).

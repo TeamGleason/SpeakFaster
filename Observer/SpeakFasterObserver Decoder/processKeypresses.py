@@ -72,20 +72,38 @@ class Phrase:
         self.machineKeyPressCount = 0
         self.predictions = []
         self.wpm = 0.0
-
-        # TODO Add KSR: (total_chars - actual_num_of_keystrokes) / total_chars
-        # TODO Add Error Rate: "%error analysis?  E.g. if 10% of the letter keys get backspaced/back worded?"
+        self.ksr = 0.0
+        self.error = 0.0
 
     def finalize(self):
-        currentPhrase.calculateWpm()
-        currentPhrase.validate()
+        # When the phrase is complete, we want to run various calculations for
+        # WPM, KSR, and Error rate. We also validate to ensure there are no missing
+        # Keypresses in the range.
+        self.calculateWpm()
+        self.calculateKsr()
+        self.calculateError()
+        self.validate()
+
+    def calculateError(self):
+        # Error rate relates the number of corrections in comparison to the number
+        # of keys the user pressed. Backspace count includes both direct backspaces
+        # as well as delword (which counts as one backspace). Similarly, Gaze KeyPress
+        # count includes the keypresses that were done via gaze. For predictions, it 
+        # will be one gaze keypress.
+        if self.wasSpoken and self.gazeKeyPressCount > 0:
+            self.error = self.backspaceCount / self.gazeKeyPressCount
+
+    def calculateKsr(self):
+        # KSR is Keystroke Savings Rate
+        # (total_chars - actual_num_of_keystrokes) / total_chars
+        if self.wasSpoken and self.characterCount > 0:
+            self.ksr = (self.characterCount - self.gazeKeyPressCount) / self.characterCount
 
     def calculateWpm(self):
-        wpm = 0.0
         if self.wasSpoken and self.characterCount > 1:
-            wpm =  (self.characterCount / 5) / ((self.endTimestamp - self.startTimestamp).total_seconds() / 60)
+            self.wpm = (self.characterCount / 5) / ((self.endTimestamp - self.startTimestamp).total_seconds() / 60)
 
-        return wpm
+        self.wpm
 
     def validate(self):
         if not self.keypressCount() == self.gazeKeyPressCount + self.machineKeyPressCount:
@@ -112,7 +130,7 @@ class Phrase:
     def __str__(self):
         returnString = f"[{self.startIndex:8}:{self.endIndex:8}] Time:{self.endTimestamp} {self.endingStr} ␂{self.visualizedStr}␃ {self.endingStr}"
         if self.wasSpoken:
-            returnString += f" ⏲{self.wpm:5.1f}wpm"
+            returnString += f" ⏲{self.wpm:0.2f} wpm ⌨️{self.error:0.2f} ksr 🤦{self.error:0.2%} error"
         returnString += f" back:{self.backspaceCount} delword:{self.delwordCount} gaze:{self.gazeKeyPressCount} prediction:{len(self.predictions)} chars:{self.characterCount}"
 
         return returnString
@@ -296,6 +314,7 @@ def VisualizeKeypresses(keypresses, visualizePath, predictionPath):
             isPhraseEnd = False
             isPhraseStart = True
 
+    keyIndex = 0
     totalGazeKeyPressCount = 0
     totalMachineKeyPressCount = 0
     totalCharacterCount = 0
@@ -313,6 +332,11 @@ def VisualizeKeypresses(keypresses, visualizePath, predictionPath):
         totalMachineKeyPressCount += phrase.machineKeyPressCount
         totalCharacterCount += phrase.characterCount
         totalPhraseKeypressCount += phrase.keypressCount()
+
+        if not phrase.startIndex == keyIndex:
+            raise Exception(f"Index mismatch. Expected {keyIndex} but got {phrase.startIndex}")
+        else:
+            keyIndex = phrase.endIndex + 1
 
         if phrase.wasCancelled:
             cancelledCount += 1

@@ -21,6 +21,86 @@ MIN_GAZE_TIME = datetime.timedelta(milliseconds=300)
 # Assume that after 90 seconds of inactivity we are doing a new utterance
 LONG_DELTA_TIME = datetime.timedelta(seconds=90)
 
+CONTROL_KEYS = {
+    "Left" : "↶", # Back one word
+    "Right" : "↷", # Forward one word
+    "X" : "✂️", # Cut
+    "C" : "📄", # Copy
+    "V" : "📋", # Paste
+    "Z" : "↺", # Undo
+    }
+
+CANCEL_KEYS = {
+    "Q" : "⏸", # Pause
+    "E" : "🛑", # Stop
+    "A" : "␘" # Select All, considered reset of thought
+    }
+
+WINDOWS_KEYS = {
+    "A": "🗔", # Win+A = Action Center
+    "S": "🗔", # Win+S = Search
+    "Tab": "🗔" # Win+Tab = Task View
+    }
+
+SPECIAL_KEYS = {
+    "Space" : " ",
+    "OemPeriod" : ".",
+    "Oemcomma" : ",",
+    "OemQuestion" : "?",
+    "OemMinus" : "-",
+    "Oemplus" : "=",
+    "Oemtilde" : "`",
+    "Oem1": ";", # OemSemicolon
+    "Oem4" : "[", # OemOpenBrackets
+    "Oem5" : "\\", # OemPipe
+    "Oem6" : "]", # OemCloseBrackets
+    "Oem7" : "'", # OemQuotes
+    "Tab" : "↦",
+    "Left" : "↶",
+    "Right" : "↷",
+    "Back" : "🠠",
+    "Delete" : "🠠",
+    "Enter" : "↩",
+    "Return" : "↩",
+    "LWin" : "🗔",
+    "LControlKey" : "🎛️",
+    "LShiftKey" : "↑",
+    "D1" : "1",
+    "D2" : "2",
+    "D3" : "3",
+    "D4" : "4",
+    "D5" : "5",
+    "D6" : "6",
+    "D7" : "7",
+    "D8" : "8",
+    "D9" : "9",
+    "D0" : "0",
+    }
+SHIFTED_SPECIAL_KEYS = {
+    "D1" : "!",
+    "D2" : "@",
+    "D3" : "#",
+    "D4" : "$",
+    "D5" : "%",
+    "D6" : "^",
+    "D7" : "&",
+    "D8" : "*",
+    "D9" : "(",
+    "D0" : ")",
+    "OemMinus" : "-",
+    "Oemplus" : "=",
+    "Oem1" : ":", # OemSemicolon
+    "Oem4" : "{", # OemOpenBrackets
+    "Oem5" : "|", # OemPipe
+    "Oem6" : "}", # OemCloseBrackets
+    "Oem7" : "\"", # OemQuotes
+    "OemPeriod" : ">",
+    "Oemcomma" : "<",
+    "Oemtilde" : "~",
+    "Back" : "🠠",
+    "Space" : " ",
+    }
+
 # pylint: disable=too-few-public-methods
 class Prediction:
     """
@@ -32,8 +112,8 @@ class Prediction:
         """
         Creates a `Prediction` instance starting at current_key_index.
 
-        The prediction continues up to, but not including, the next gaze initiated keypress
-        
+        The prediction continues up to, but not including, the next gaze initiated keypress.
+
         Args:
           keypresses: keypresses_pb2 object to be processed
           current_key_index: index into the keypresses object where the prediction begins
@@ -67,7 +147,7 @@ class Prediction:
             # After that they are a combination of characters, sometimes
             # including purposely uppercase characters (hence the LShiftKey).
             # Predictions generally conclude with a space key.
-            # 
+            #
             # Examples:
             # 🗩↑I
             # 🗩↑A↑L↑S
@@ -75,7 +155,7 @@ class Prediction:
             # 🗩ELLO
             if current_keypress.KeyPress == "Back":
                 self.gain -= 1
-            elif (current_keypress.KeyPress == "LShiftKey" 
+            elif (current_keypress.KeyPress == "LShiftKey"
                   or is_character(current_keypress.KeyPress)
                   or current_keypress.KeyPress == "Space"):
                 self.gain += 1
@@ -99,7 +179,8 @@ class Phrase:
     """
     # pylint: disable=too-many-instance-attributes
     def __init__(self):
-        """Creates a `Phrase` instance.
+        """
+        Creates a `Phrase` instance.
         """
         self.start_index = 0  # Index of the first keypress in the phrase
         self.end_index = 0    # Index of the last keypress in the phrase
@@ -248,7 +329,7 @@ def visualize_keypresses(keypresses, args):
                 and keypresses.keyPresses[current_key_index + 1].KeyPress == "LShiftKey"
                 and keypresses.keyPresses[current_key_index + 2].KeyPress == "Left"
                 and keypresses.keyPresses[current_key_index + 3].KeyPress == "Back"):
-                # Scenario 1: ctrl-shift-left-back == DelWord
+                # ctrl-shift-left-back == DelWord
                 current_phrase.visualized_string += "↞"
                 current_key_index += 4
                 current_phrase.delword_count += 1
@@ -257,20 +338,16 @@ def visualize_keypresses(keypresses, args):
             elif (keypress.KeyPress == "LWin" and current_key_index + 1 < total_keyspresses):
                 # Automated windows hotkeys
                 next_keypress = keypresses.keyPresses[current_key_index + 1]
-                if (next_keypress.KeyPress == "A"        # Win+A = Action Center
-                    or next_keypress.KeyPress == "S"     # Win+S = Search
-                    or next_keypress.KeyPress == "Tab"): # Win+Tab = Task View
+                if next_keypress.KeyPress in WINDOWS_KEYS:
                     is_phrase_end = True
                     current_key_index += 2
                     current_phrase.gaze_keypress_count += 1
                     current_phrase.machine_keypress_count += 1
-                    current_phrase.cancel("🗔")
+                    current_phrase.cancel(WINDOWS_KEYS[next_keypress.KeyPress])
                 else:
                     raise Exception(f"Unknown windows key combo Win+{next_keypress.KeyPress}")
             else:
-                # Scenario 2a: backspaces followed by characters then space =
                 # Prediction
-                # Scenario 2b: characters then space = Prediction
                 current_prediction = Prediction(keypresses, current_key_index, total_keyspresses)
                 current_key_index += current_prediction.length
                 current_phrase.character_count += current_prediction.gain + 1
@@ -282,69 +359,35 @@ def visualize_keypresses(keypresses, args):
                 current_phrase.predictions.append(current_prediction)
         else:
             # next character is gaze initated
-            if ((keypress.KeyPress == "LControlKey" or keypress.KeyPress == "RControlKey") and current_key_index + 1 < total_keyspresses):
+            if ((keypress.KeyPress == "LControlKey" or keypress.KeyPress == "RControlKey")
+                and current_key_index + 1 < total_keyspresses):
                 next_keypress = keypresses.keyPresses[current_key_index + 1]
-                if next_keypress.KeyPress == "W":    # Ctrl-W == Speak
+                if next_keypress.KeyPress == "W":
+                    # Ctrl-W == Speak
                     is_phrase_end = True
                     current_key_index += 2
-                    current_phrase.gaze_keypress_count += 1
-                    current_phrase.machine_keypress_count += 1
+                    current_phrase.gaze_keypress_count += 2
                     current_phrase.speak()
-                elif next_keypress.KeyPress == "Q":  # Ctrl-Q == Pause
+                elif next_keypress.KeyPress in CANCEL_KEYS:
+                    # TODO If ctrl-A is followed by ctrl-W, was phrase cancelled?
                     is_phrase_end = True
                     current_key_index += 2
-                    current_phrase.gaze_keypress_count += 1
-                    current_phrase.machine_keypress_count += 1
-                    current_phrase.cancel("⏸")
-                elif next_keypress.KeyPress == "Q":  # Ctrl-E == Stop
-                    is_phrase_end = True
+                    current_phrase.gaze_keypress_count += 2
+                    current_phrase.cancel(CANCEL_KEYS[next_keypress.KeyPress])
+                elif next_keypress.KeyPress in CONTROL_KEYS:
+                    current_phrase.visualized_string += CONTROL_KEYS[next_keypress.KeyPress]
                     current_key_index += 2
-                    current_phrase.gaze_keypress_count += 1
-                    current_phrase.machine_keypress_count += 1
-                    current_phrase.cancel("🛑")
-                elif next_keypress.KeyPress == "A":  # Ctrl-A == Select All
-                    is_phrase_end = True             # TODO If ctrl-A is followed by ctrl-W, phrase wasn't cancelled
-                    current_key_index += 2
-                    current_phrase.gaze_keypress_count += 1
-                    current_phrase.machine_keypress_count += 1
-                    current_phrase.cancel("␘")
-                elif next_keypress.KeyPress == "Left":
-                    current_phrase.visualized_string += "↶"
-                    current_key_index += 2
-                    current_phrase.gaze_keypress_count += 1
-                    current_phrase.machine_keypress_count += 1
-                elif next_keypress.KeyPress == "Right":
-                    current_phrase.visualized_string += "↷"
-                    current_key_index += 2
-                    current_phrase.gaze_keypress_count += 1
-                    current_phrase.machine_keypress_count += 1
-                elif next_keypress.KeyPress == "X":  # Ctrl-X == Cut
-                    current_phrase.visualized_string += "✂️"
-                    current_key_index += 2
-                    current_phrase.gaze_keypress_count += 1
-                    current_phrase.machine_keypress_count += 1
-                elif next_keypress.KeyPress == "C":  # Ctrl-C == Copy
-                    current_phrase.visualized_string += "📄"
-                    current_key_index += 2
-                    current_phrase.gaze_keypress_count += 1
-                    current_phrase.machine_keypress_count += 1
-                elif next_keypress.KeyPress == "V":  # Ctrl-V == Paste
-                    current_phrase.visualized_string += "📋"
-                    current_key_index += 2
-                    current_phrase.gaze_keypress_count += 1
-                    current_phrase.machine_keypress_count += 1
-                elif next_keypress.KeyPress == "Z":  # Ctrl-Z == Undo
-                    current_phrase.visualized_string += "↺"
-                    current_key_index += 2
-                    current_phrase.gaze_keypress_count += 1
-                    current_phrase.machine_keypress_count += 1
+                    current_phrase.gaze_keypress_count += 2
                 else:
+                    # Handle the control key in isolation
                     current_phrase.visualized_string += output_for_keypress(keypress.KeyPress, False)
                     current_phrase.character_count += 1
                     current_phrase.gaze_keypress_count += 1
                     current_key_index += 1
             elif keypress.KeyPress == "LShiftKey":
-                if (current_key_index + 1 < total_keyspresses and not keypresses.keyPresses[current_key_index + 1].KeyPress == "LShiftKey" and not keypresses.keyPresses[current_key_index + 1].KeyPress == "LControlKey"):
+                if (current_key_index + 1 < total_keyspresses
+                    and not keypresses.keyPresses[current_key_index + 1].KeyPress == "LShiftKey"
+                    and not keypresses.keyPresses[current_key_index + 1].KeyPress == "LControlKey"):
                     current_phrase.visualized_string += output_for_keypress(keypresses.keyPresses[current_key_index + 1].KeyPress, True)
                     current_key_index += 2
                     current_phrase.character_count += 1
@@ -380,8 +423,8 @@ def visualize_keypresses(keypresses, args):
             current_phrase.cancel("␘")
 
         if is_phrase_end:
-            # The currentKeyIndex is pointing to the beginning of the next
-            # phrase.  Grab the timestamp from the keypress just before it,
+            # The current_key_index is pointing to the beginning of the next
+            # phrase. Grab the timestamp from the keypress just before it,
             # which is the end of the current phrase.
             current_phrase.end_index = current_key_index - 1
             end_keypress = keypresses.keyPresses[current_phrase.end_index]
@@ -575,73 +618,14 @@ def output_for_keypress(keypress, shift_on):
     Raises:
         Exception: Unhandled keypress
     """
-    special_keys = {
-        "Space" : " ",
-        "OemPeriod" : ".",
-        "Oemcomma" : ",",
-        "OemQuestion" : "?",
-        "OemMinus" : "-",
-        "Oemplus" : "=",
-        "Oemtilde" : "`",
-        "Oem1": ";", # OemSemicolon
-        "Oem4" : "[", # OemOpenBrackets
-        "Oem5" : "\\", # OemPipe
-        "Oem6" : "]", # OemCloseBrackets
-        "Oem7" : "'", # OemQuotes
-        "Tab" : "↦",
-        "Left" : "↶",
-        "Right" : "↷",
-        "Back" : "🠠",
-        "Delete" : "🠠",
-        "Enter" : "↩",
-        "Return" : "↩",
-        "LWin" : "🗔",
-        "LControlKey" : "🎛️",
-        "LShiftKey" : "↑",
-        "D1" : "1",
-        "D2" : "2",
-        "D3" : "3",
-        "D4" : "4",
-        "D5" : "5",
-        "D6" : "6",
-        "D7" : "7",
-        "D8" : "8",
-        "D9" : "9",
-        "D0" : "0",
-        }
-    shifted_special_keys = {
-        "D1" : "!",
-        "D2" : "@",
-        "D3" : "#",
-        "D4" : "$",
-        "D5" : "%",
-        "D6" : "^",
-        "D7" : "&",
-        "D8" : "*",
-        "D9" : "(",
-        "D0" : ")",
-        "OemMinus" : "-",
-        "Oemplus" : "=",
-        "Oem1" : ":", # OemSemicolon
-        "Oem4" : "{", # OemOpenBrackets
-        "Oem5" : "|", # OemPipe
-        "Oem6" : "}", # OemCloseBrackets
-        "Oem7" : "\"", # OemQuotes
-        "OemPeriod" : ">",
-        "Oemcomma" : "<",
-        "Oemtilde" : "~",
-        "Back" : "🠠",
-        "Space" : " ",
-        }
-
     if is_character(keypress):
         return keypress
 
-    if not shift_on and keypress in special_keys:
-        return special_keys[keypress]
+    if not shift_on and keypress in SPECIAL_KEYS:
+        return SPECIAL_KEYS[keypress]
 
-    if shift_on and keypress in shifted_special_keys:
-        return shifted_special_keys[keypress]
+    if shift_on and keypress in SHIFTED_SPECIAL_KEYS:
+        return SHIFTED_SPECIAL_KEYS[keypress]
 
     raise Exception(f"{keypress} not handled")
 

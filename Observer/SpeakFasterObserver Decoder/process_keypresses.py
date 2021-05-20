@@ -205,7 +205,7 @@ class Phrase:
         """
         return_string = f"[{self.start_index:8}:{self.end_index:8}] Time:{self.end_timestamp} {self.ending_string} ␂{self.visualized_string}␃ {self.ending_string}"
         if self.was_spoken:
-            return_string += f" ⏲{self.wpm:0.2f} wpm ⌨️{self.error:0.2f} ksr 🤦{self.error:0.2%} error"
+            return_string += f" ⏲{self.wpm:0.2f} wpm ⌨️{self.ksr:0.2f} ksr 🤦{self.error:0.2%} error"
         return_string += f" back:{self.backspace_count} delword:{self.delword_count} gaze:{self.gaze_keypress_count} prediction:{len(self.predictions)} chars:{self.character_count}"
 
         return return_string

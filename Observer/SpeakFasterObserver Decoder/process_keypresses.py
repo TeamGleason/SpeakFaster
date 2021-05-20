@@ -63,9 +63,19 @@ class Prediction:
             index += 1
             self.length += 1
 
+            # Predictions can start with 0 or more backspace characters.
+            # After that they are a combination of characters, sometimes
+            # including purposely uppercase characters (hence the LShiftKey).
+            # Predictions generally conclude with a space key.
+            # 
+            # Examples:
+            # 🗩↑I
+            # 🗩↑A↑L↑S
+            # 🗩🠠🠠🠠🠠↑CUBS
+            # 🗩ELLO
             if current_keypress.KeyPress == "Back":
                 self.gain -= 1
-            elif (current_keypress.KeyPress == "LShiftKey"
+            elif (current_keypress.KeyPress == "LShiftKey" 
                   or is_character(current_keypress.KeyPress)
                   or current_keypress.KeyPress == "Space"):
                 self.gain += 1

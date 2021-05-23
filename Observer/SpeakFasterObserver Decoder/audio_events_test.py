@@ -52,7 +52,6 @@ class AudioEventsTest(tf.test.TestCase):
       yield np.random.normal(0, 0.1, size=[24000]).astype(np.float32)
     output = audio_events.extract_audio_events(
         noise_waveform_generator, fs=16000, threshold_score=0.25)
-    print(output)
 
     self.assertLen(output, 2)
     seg_0_output = output[0]

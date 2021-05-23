@@ -148,7 +148,7 @@ def convert_events_to_tsv_rows(events, timestep_s=1.0):
   rows = []
   active_classes_with_tbegins = []
   # Add sentinel at the end.
-  events = events + [[]]
+  events += [[]]
   for step_events in events:
     current_classes = [item[0] for item in step_events]
     # Find deactivated labels and write them.

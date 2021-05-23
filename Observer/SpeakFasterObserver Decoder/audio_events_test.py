@@ -47,7 +47,7 @@ class AudioEventsTest(tf.test.TestCase):
 
   def testExtractAudioEvents(self):
     def noise_waveform_generator():
-      # Return two waveforms of unequal lengths: 1.0 s and 1.5 s.    if
+      # Return two waveforms of unequal lengths: 1.0 s and 1.5 s.
       yield np.random.normal(0, 0.1, size=[16000]).astype(np.float32)
       yield np.random.normal(0, 0.1, size=[24000]).astype(np.float32)
     output = audio_events.extract_audio_events(

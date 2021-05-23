@@ -1,4 +1,7 @@
 pip==21.0.1
 protobuf==3.15.8
 setuptools==47.1.0
+numpy==1.19.5
+scipy==1.6.3
 six==1.15.0
+tensorflow==2.5.0

@@ -97,8 +97,6 @@ def extract_audio_events(generator, fs, threshold_score=0.25):
   waveform_input_index = input_details[0]['index']
   output_details = interpreter.get_output_details()
   scores_output_index = output_details[0]['index']
-  embeddings_output_index = output_details[1]['index']
-  spectrogram_output_index = output_details[2]['index']
 
   output = []
   for xs in generator():
@@ -116,10 +114,7 @@ def extract_audio_events(generator, fs, threshold_score=0.25):
     interpreter.allocate_tensors()
     interpreter.set_tensor(waveform_input_index, xs)
     interpreter.invoke()
-    scores, _, _ = (
-        interpreter.get_tensor(scores_output_index),
-        interpreter.get_tensor(embeddings_output_index),
-        interpreter.get_tensor(spectrogram_output_index))
+    scores = interpreter.get_tensor(scores_output_index)
     scores = np.mean(scores, axis=0)
     supra_thresh_indices = np.where(scores > threshold_score)[0]
     segment_output = []

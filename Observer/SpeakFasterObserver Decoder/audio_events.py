@@ -48,6 +48,10 @@ def maybe_download_yamnet_class_map():
   return yamnet_class_map_path
 
 
+def _get_local_yamnet_class_map_path():
+  return os.path.join(tempfile.gettempdir(), os.path.basename(YAMNET_CLASS_MAP_URL))
+
+
 def get_yamnet_class_names():
   """Returns list of YAMnet class names as a tuple of strings."""
   local_csv_path = maybe_download_yamnet_class_map()
@@ -57,11 +61,6 @@ def get_yamnet_class_names():
     for row in reader:
       class_names.append(row["display_name"])
   return tuple(class_names)
-
-
-
-def _get_local_yamnet_class_map_path():
-  return os.path.join(tempfile.gettempdir(), os.path.basename(YAMNET_CLASS_MAP_URL))
 
 
 YAMNET_FS = 16000  # Required sampling rate by YAMNet.

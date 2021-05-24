@@ -506,21 +506,25 @@ def visualize_keypresses(keypresses, args):
     visualization_string += f"Total Keypresses: {total_keyspresses} Gaze: {total_gaze_keypress_count} Characters: {total_character_count}\n"
     visualization_string += f"Total Phrases:{phrase_count} Spoken:{spoken_count}({spoken_count/phrase_count:0.2%}) Cancelled:{cancelled_count}({cancelled_count/phrase_count:0.2%}) Timeouts:{timeout_count}({timeout_count/phrase_count:0.2%})\n"
     visualization_string += f"Total Predictions: {predictions_count} Average Length: {average_prediction_length:0.3f} Average Gain: {average_prediction_gain:0.3f}\n"
-    #wpmsStr = f"{wpms}"
+    wpms_string = jsonpickle.encode(wpms)
     predictions_string = jsonpickle.encode(predictions)
     phrases_string = jsonpickle.encode(phrases)
 
     if args.visualize_path:
         save_string_to_file(args.visualize_path, visualization_string)
-        print(f"Keypress visualization saved to {args.visualize_path}")
+        print(f"Visualization saved to {args.visualize_path}")
 
     if args.prediction_path:
         save_string_to_file(args.prediction_path, predictions_string)
-        print(f"Keypress predictions saved to {args.prediction_path}")
+        print(f"Predictions saved to {args.prediction_path}")
 
     if args.phrases_path:
         save_string_to_file(args.phrases_path, phrases_string)
-        print(f"Keypress phrases saved to {args.phrases_path}")
+        print(f"Phrases saved to {args.phrases_path}")
+
+    if args.wpms_path:
+        save_string_to_file(args.wpms_path, wpms_string)
+        print(f"Wpms saved to {args.wpms_path}")
 
 def list_keypresses(keypresses, args):
     """
@@ -717,8 +721,12 @@ def parse_arguments():
                         dest='prediction_path')
     parser.add_argument('--phrases',
                         type=str,
-                        help="Path to output prediction results.",
+                        help="Path to output phrase results.",
                         dest='phrases_path')
+    parser.add_argument('--wpms',
+                        type=str,
+                        help="Path to output wpm results.",
+                        dest='wpms_path')
 
     # Parse and print the results
     args = parser.parse_args()

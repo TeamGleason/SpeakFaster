@@ -1,4 +1,4 @@
-﻿using SpeakFasterObserver.Win32;
+using SpeakFasterObserver.Win32;
 using System;
 using System.ComponentModel;
 using System.Drawing;
@@ -82,8 +82,11 @@ namespace SpeakFasterObserver
             // To use the CaptureRegion plus the internal jpeg encoder
 
             var bitmap = new Bitmap(desktop.Width, desktop.Height, PixelFormat.Format32bppArgb);
-            var graphics = Graphics.FromImage(bitmap);
-            graphics.CopyFromScreen(0, 0, 0, 0, bitmap.Size, CopyPixelOperation.SourceCopy);
+            using (var graphics = Graphics.FromImage(bitmap))
+            {
+                graphics.CopyFromScreen(0, 0, 0, 0, bitmap.Size, CopyPixelOperation.SourceCopy);
+            }
+
             return bitmap;
         }
 

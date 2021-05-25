@@ -21,8 +21,8 @@ namespace SpeakFasterObserver
         static bool balabolkaRunning = false;
         static bool balabolkaFocused = false;
         static bool tobiiComputerControlRunning = false;
-        readonly ScreenCapture screenCapture;
-
+        static ScreenCapture screenCapture;
+        private static string lastKeypressString = String.Empty;
         Keylogger keylogger;
 
         System.Threading.Timer uploadTimer = new(Upload.Timer_Tick);
@@ -127,29 +127,13 @@ namespace SpeakFasterObserver
 
         private void screenshotTimer_Tick(object sender, EventArgs e)
         {
-            if (
-                isRecording                         // Only record when recording enabled
-                && isRecordingScreenshots           // AND when we are recording screenshots
-                && balabolkaRunning                 // AND balabolka is running
-                && balabolkaFocused                 // AND balabolka has focus
-                //&& tobiiComputerControlRunning      //  AND Tobii Computer Control
-                )
-            {
-                var timestamp = $"{DateTime.Now:yyyyMMddThhmmssfff}";
+            var timestamp = $"{DateTime.Now:yyyyMMddThhmmssfff}";
 
-                var filePath = Path.Combine(
-                    dataPath,
-                    $"{timestamp}-Screenshot.jpg");
+            var filePath = Path.Combine(
+                dataPath,
+                $"{timestamp}-Screenshot.jpg");
 
-                // TODO: Optimize raw capture data to best time synchronize the captures
-                //   e.g. capture raw data to memory first, and compress/serialize/store later
-
-                screenCapture.Capture(filePath, timestamp);
-
-                // TODO: Also capture gaze coordinates
-
-                // TODO: Also capture selfie image
-            }
+            CaptureScreenshot(timestamp, filePath);
         }
 
         private void balabolkaTimer_Tick(object sender, EventArgs e)
@@ -178,19 +162,57 @@ namespace SpeakFasterObserver
                 //&& tobiiComputerControlRunning      // AND Tobii Computer Control
                 )
             {
+                var keypressString = ((Keys)vkCode).ToString();
+
                 lock (keypresses)
                 {
                     keypresses.KeyPresses_.Add(new KeyPress
                     {
-                        KeyPress_ = ((Keys)vkCode).ToString(),
+                        KeyPress_ = keypressString,
                         Timestamp = Google.Protobuf.WellKnownTypes.Timestamp.FromDateTime(DateTime.Now.ToUniversalTime())
                     });
                 }
+
+                if (lastKeypressString.Equals("LControlKey") && keypressString.Equals("W"))
+                {
+                    // TODO take screenshot
+
+                    var timestamp = $"{DateTime.Now:yyyyMMddThhmmssfff}";
+
+                    var filePath = Path.Combine(
+                        dataPath,
+                        $"{timestamp}-SpeechScreenshot.jpg");
+
+                    CaptureScreenshot(timestamp, filePath);
+                }
+
+                lastKeypressString = keypressString;
 
                 keyloggerTimer.Change(60 * 1000, System.Threading.Timeout.Infinite);
             }
         }
         #endregion
+
+        private static void CaptureScreenshot(string timestamp, string filePath)
+        {
+            if (
+                isRecording                         // Only record when recording enabled
+                && isRecordingScreenshots           // AND when we are recording screenshots
+                && balabolkaRunning                 // AND balabolka is running
+                && balabolkaFocused                 // AND balabolka has focus
+                                                    //&& tobiiComputerControlRunning      //  AND Tobii Computer Control
+                )
+            {
+                // TODO: Optimize raw capture data to best time synchronize the captures
+                //   e.g. capture raw data to memory first, and compress/serialize/store later
+
+                screenCapture.Capture(filePath, timestamp);
+
+                // TODO: Also capture gaze coordinates
+
+                // TODO: Also capture selfie image
+            }
+        }
 
         private void SetRecordingState(bool newRecordingState, bool newIsRecordingScreenshots)
         {

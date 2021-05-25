@@ -175,8 +175,6 @@ namespace SpeakFasterObserver
 
                 if (lastKeypressString.Equals("LControlKey") && keypressString.Equals("W"))
                 {
-                    // TODO take screenshot
-
                     var timestamp = $"{DateTime.Now:yyyyMMddThhmmssfff}";
 
                     var filePath = Path.Combine(

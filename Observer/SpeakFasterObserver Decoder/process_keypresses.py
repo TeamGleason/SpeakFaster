@@ -22,84 +22,84 @@ MIN_GAZE_TIME = datetime.timedelta(milliseconds=300)
 LONG_DELTA_TIME = datetime.timedelta(seconds=90)
 
 CONTROL_KEYS = {
-    "Left" : "↶", # Back one word
-    "Right" : "↷", # Forward one word
-    "X" : "✂️", # Cut
-    "C" : "📄", # Copy
-    "V" : "📋", # Paste
-    "Z" : "↺", # Undo
-    }
+    "Left": "↶",  # Back one word
+    "Right": "↷",  # Forward one word
+    "X": "✂️",  # Cut
+    "C": "📄",  # Copy
+    "V": "📋",  # Paste
+    "Z": "↺",  # Undo
+}
 
 CANCEL_KEYS = {
-    "Q" : "⏸", # Pause
-    "E" : "🛑", # Stop
-    "A" : "␘" # Select All, considered reset of thought
-    }
+    "Q": "⏸",  # Pause
+    "E": "🛑",  # Stop
+    "A": "␘",  # Select All, considered reset of thought
+}
 
 WINDOWS_KEYS = {
-    "A": "🗔", # Win+A = Action Center
-    "S": "🗔", # Win+S = Search
-    "Tab": "🗔" # Win+Tab = Task View
-    }
+    "A": "🗔",  # Win+A = Action Center
+    "S": "🗔",  # Win+S = Search
+    "Tab": "🗔",  # Win+Tab = Task View
+}
 
 SPECIAL_KEYS = {
-    "Space" : " ",
-    "OemPeriod" : ".",
-    "Oemcomma" : ",",
-    "OemQuestion" : "?",
-    "OemMinus" : "-",
-    "Oemplus" : "=",
-    "Oemtilde" : "`",
-    "Oem1": ";", # OemSemicolon
-    "Oem4" : "[", # OemOpenBrackets
-    "Oem5" : "\\", # OemPipe
-    "Oem6" : "]", # OemCloseBrackets
-    "Oem7" : "'", # OemQuotes
-    "Tab" : "↦",
-    "Left" : "↶",
-    "Right" : "↷",
-    "Back" : "🠠",
-    "Delete" : "🠠",
-    "Enter" : "↩",
-    "Return" : "↩",
-    "LWin" : "🗔",
-    "LControlKey" : "🎛️",
-    "LShiftKey" : "↑",
-    "D1" : "1",
-    "D2" : "2",
-    "D3" : "3",
-    "D4" : "4",
-    "D5" : "5",
-    "D6" : "6",
-    "D7" : "7",
-    "D8" : "8",
-    "D9" : "9",
-    "D0" : "0",
-    }
+    "Space": " ",
+    "OemPeriod": ".",
+    "Oemcomma": ",",
+    "OemQuestion": "?",
+    "OemMinus": "-",
+    "Oemplus": "=",
+    "Oemtilde": "`",
+    "Oem1": ";",  # OemSemicolon
+    "Oem4": "[",  # OemOpenBrackets
+    "Oem5": "\\",  # OemPipe
+    "Oem6": "]",  # OemCloseBrackets
+    "Oem7": "'",  # OemQuotes
+    "Tab": "↦",
+    "Left": "↶",
+    "Right": "↷",
+    "Back": "🠠",
+    "Delete": "🠠",
+    "Enter": "↩",
+    "Return": "↩",
+    "LWin": "🗔",
+    "LControlKey": "🎛️",
+    "LShiftKey": "↑",
+    "D1": "1",
+    "D2": "2",
+    "D3": "3",
+    "D4": "4",
+    "D5": "5",
+    "D6": "6",
+    "D7": "7",
+    "D8": "8",
+    "D9": "9",
+    "D0": "0",
+}
 SHIFTED_SPECIAL_KEYS = {
-    "D1" : "!",
-    "D2" : "@",
-    "D3" : "#",
-    "D4" : "$",
-    "D5" : "%",
-    "D6" : "^",
-    "D7" : "&",
-    "D8" : "*",
-    "D9" : "(",
-    "D0" : ")",
-    "OemMinus" : "-",
-    "Oemplus" : "=",
-    "Oem1" : ":", # OemSemicolon
-    "Oem4" : "{", # OemOpenBrackets
-    "Oem5" : "|", # OemPipe
-    "Oem6" : "}", # OemCloseBrackets
-    "Oem7" : "\"", # OemQuotes
-    "OemPeriod" : ">",
-    "Oemcomma" : "<",
-    "Oemtilde" : "~",
-    "Back" : "🠠",
-    "Space" : " ",
-    }
+    "D1": "!",
+    "D2": "@",
+    "D3": "#",
+    "D4": "$",
+    "D5": "%",
+    "D6": "^",
+    "D7": "&",
+    "D8": "*",
+    "D9": "(",
+    "D0": ")",
+    "OemMinus": "-",
+    "Oemplus": "=",
+    "Oem1": ":",  # OemSemicolon
+    "Oem4": "{",  # OemOpenBrackets
+    "Oem5": "|",  # OemPipe
+    "Oem6": "}",  # OemCloseBrackets
+    "Oem7": '"',  # OemQuotes
+    "OemPeriod": ">",
+    "Oemcomma": "<",
+    "Oemtilde": "~",
+    "Back": "🠠",
+    "Space": " ",
+}
 
 # pylint: disable=too-few-public-methods
 class Prediction:
@@ -108,6 +108,7 @@ class Prediction:
     automatically generated keypresses. for example, "🠠🠠ELLO " might
     be the prediction provided after typing "HIL".
     """
+
     def __init__(self, keypresses, current_key_index, total_keyspresses):
         """
         Creates a `Prediction` instance starting at current_key_index.
@@ -119,10 +120,10 @@ class Prediction:
           current_key_index: index into the keypresses object where the prediction begins
           total_keyspresses: size of the keypresses object
         """
-        self.length = 0 # the number of keypresses used in the prediction, 8 in the case of
-                        # "🗩🠠🠠HELLO "
-        self.gain = -1 # the number of extra characters contributed to the actual output, 3 in the
-                       # case of "🗩🠠🠠HELLO "
+        self.length = 0  # the number of keypresses used in the prediction, 8 in the case of "🗩🠠🠠HELLO "
+        self.gain = (
+            -1  # the number of extra characters contributed to the actual output, 3 in the case of "🗩🠠🠠HELLO "
+        )
         self.start_index = current_key_index
         self.end_index = 0
         self.prediction_string = ""
@@ -134,12 +135,14 @@ class Prediction:
         while index < total_keyspresses and not is_next_gaze_initiated:
             current_keypress = keypresses.keyPresses[index]
 
-            self.prediction_string += output_for_keypress(current_keypress.KeyPress, False)
+            self.prediction_string += output_for_keypress(
+                current_keypress.KeyPress, False
+            )
 
             # Just keep processing automatic keypresses until next gaze initiated key
-            is_next_gaze_initiated, _datetime_delta = is_key_gaze_initiated(keypresses,
-                                                                            index + 1,
-                                                                            total_keyspresses)
+            is_next_gaze_initiated, _datetime_delta = is_key_gaze_initiated(
+                keypresses, index + 1, total_keyspresses
+            )
             index += 1
             self.length += 1
 
@@ -155,20 +158,27 @@ class Prediction:
             # 🗩ELLO
             if current_keypress.KeyPress == "Back":
                 self.gain -= 1
-            elif (current_keypress.KeyPress == "LShiftKey"
-                  or is_character(current_keypress.KeyPress)
-                  or current_keypress.KeyPress == "Space"):
+            elif (
+                current_keypress.KeyPress == "LShiftKey"
+                or is_character(current_keypress.KeyPress)
+                or current_keypress.KeyPress == "Space"
+            ):
                 self.gain += 1
 
         self.end_index = index - 1
 
         for idx in range(self.start_index, self.end_index):
             current_keypress = keypresses.keyPresses[idx]
-            self.keystrokes.append({current_keypress.KeyPress,
-                                    datetime_from_protobuf_timestamp(current_keypress.Timestamp)})
+            self.keystrokes.append(
+                {
+                    current_keypress.KeyPress,
+                    datetime_from_protobuf_timestamp(current_keypress.Timestamp),
+                }
+            )
 
     def __str__(self):
         return f"🗩{self.prediction_string}"
+
 
 # A phrase is defined as a series of keypresses over a period of time
 # The phrase may end with it being spoken or not spoken
@@ -177,13 +187,14 @@ class Phrase:
     A Phrase is a series keypresses that ends in a termination state.
     Possible termination states are Spoken, Cancelled, or Timeout.
     """
+
     # pylint: disable=too-many-instance-attributes
     def __init__(self):
         """
         Creates a `Phrase` instance.
         """
         self.start_index = 0  # Index of the first keypress in the phrase
-        self.end_index = 0    # Index of the last keypress in the phrase
+        self.end_index = 0  # Index of the last keypress in the phrase
         self.start_timestamp = None
         self.end_timestamp = None
         self.visualized_string = ""
@@ -215,8 +226,12 @@ class Phrase:
 
         for idx in range(self.start_index, self.end_index):
             current_keypress = KEYPRESSES.keyPresses[idx]
-            self.keystrokes.append({current_keypress.KeyPress,
-                                    datetime_from_protobuf_timestamp(current_keypress.Timestamp)})
+            self.keystrokes.append(
+                {
+                    current_keypress.KeyPress,
+                    datetime_from_protobuf_timestamp(current_keypress.Timestamp),
+                }
+            )
 
     def calculate_error(self):
         """
@@ -227,7 +242,9 @@ class Phrase:
         via gaze.  For predictions, it will be one gaze keypress.
         """
         if self.was_spoken and self.gaze_keypress_count > 0:
-            self.error = (self.backspace_count + self.delword_count) / self.gaze_keypress_count
+            self.error = (
+                self.backspace_count + self.delword_count
+            ) / self.gaze_keypress_count
 
     def calculate_ksr(self):
         """
@@ -235,21 +252,30 @@ class Phrase:
         (total_chars - actual_num_of_keystrokes) / total_chars
         """
         if self.was_spoken and self.character_count > 0:
-            self.ksr = (self.character_count - self.gaze_keypress_count) / self.character_count
+            self.ksr = (
+                self.character_count - self.gaze_keypress_count
+            ) / self.character_count
 
     def calculate_wpm(self):
         """
         WPM is Words per minute, defined as (total_chars / 5) / time
         """
         if self.was_spoken and self.character_count > 1:
-            self.wpm = (self.character_count / 5) / ((self.end_timestamp - self.start_timestamp).total_seconds() / 60)
+            self.wpm = (self.character_count / 5) / (
+                (self.end_timestamp - self.start_timestamp).total_seconds() / 60
+            )
 
     def validate(self):
         """
         Runs basic validation to ensure there are no missing keypresses.
         """
-        if not self.keypress_count() == self.gaze_keypress_count + self.machine_keypress_count:
-            raise Exception(f"Missing Keypresses KeyPress:{self.keypress_count()} Gaze:{self.gaze_keypress_count} Machine:{self.machine_keypress_count}")
+        if (
+            not self.keypress_count()
+            == self.gaze_keypress_count + self.machine_keypress_count
+        ):
+            raise Exception(
+                f"Missing Keypresses KeyPress:{self.keypress_count()} Gaze:{self.gaze_keypress_count} Machine:{self.machine_keypress_count}"
+            )
 
     def cancel(self, ending_string):
         """
@@ -284,12 +310,29 @@ class Phrase:
         Returns:
             Formatted string representation of the Phrase.
         """
-        return_string = f"[{self.start_index:8}:{self.end_index:8}] Time:{self.end_timestamp} {self.ending_string} ␂{self.visualized_string}␃ {self.ending_string}"
+        return_string = (
+            f"[{self.start_index:8}:{self.end_index:8}] "
+            + f"Time:{self.end_timestamp} "
+            + f"{self.ending_string} "
+            + f"␂{self.visualized_string}␃ "
+            + f"{self.ending_string}"
+        )
         if self.was_spoken:
-            return_string += f" ⏲{self.wpm:0.2f} wpm ⌨️{self.ksr:0.2f} ksr 🤦{self.error:0.2%} error"
-        return_string += f" back:{self.backspace_count} delword:{self.delword_count} gaze:{self.gaze_keypress_count} prediction:{len(self.predictions)} chars:{self.character_count}"
+            return_string += (
+                f" ⏲{self.wpm:0.2f} wpm "
+                + f"⌨️{self.ksr:0.2f} ksr "
+                + f"🤦{self.error:0.2%} error"
+            )
+        return_string += (
+            f" back:{self.backspace_count} "
+            + f"delword:{self.delword_count} "
+            + f"gaze:{self.gaze_keypress_count} "
+            + f"prediction:{len(self.predictions)} "
+            + f"chars:{self.character_count}"
+        )
 
         return return_string
+
 
 # pylint: disable=too-many-branches
 # pylint: disable=too-many-statements
@@ -313,7 +356,9 @@ def visualize_keypresses(keypresses, args):
     while current_key_index < total_keyspresses:
         keypress = keypresses.keyPresses[current_key_index]
         current_timestamp = datetime_from_protobuf_timestamp(keypress.Timestamp)
-        is_next_gaze_initialized, next_character_delta = is_key_gaze_initiated(keypresses, current_key_index + 1, total_keyspresses)
+        is_next_gaze_initialized, next_character_delta = is_key_gaze_initiated(
+            keypresses, current_key_index + 1, total_keyspresses
+        )
 
         if is_phrase_start:
             current_phrase = Phrase()
@@ -324,18 +369,23 @@ def visualize_keypresses(keypresses, args):
 
         if not is_next_gaze_initialized:
             # there is a subsequent character, and it was inserted programmatically
-            if (keypress.KeyPress == "LControlKey"
+            if (
+                keypress.KeyPress == "LControlKey"
                 and current_key_index + 3 < total_keyspresses
                 and keypresses.keyPresses[current_key_index + 1].KeyPress == "LShiftKey"
                 and keypresses.keyPresses[current_key_index + 2].KeyPress == "Left"
-                and keypresses.keyPresses[current_key_index + 3].KeyPress == "Back"):
+                and keypresses.keyPresses[current_key_index + 3].KeyPress == "Back"
+            ):
                 # ctrl-shift-left-back == DelWord
                 current_phrase.visualized_string += "↞"
                 current_key_index += 4
                 current_phrase.delword_count += 1
                 current_phrase.gaze_keypress_count += 1
                 current_phrase.machine_keypress_count += 3
-            elif (keypress.KeyPress == "LWin" and current_key_index + 1 < total_keyspresses):
+            elif (
+                keypress.KeyPress == "LWin"
+                and current_key_index + 1 < total_keyspresses
+            ):
                 # Automated windows hotkeys
                 next_keypress = keypresses.keyPresses[current_key_index + 1]
                 if next_keypress.KeyPress in WINDOWS_KEYS:
@@ -345,10 +395,14 @@ def visualize_keypresses(keypresses, args):
                     current_phrase.machine_keypress_count += 1
                     current_phrase.cancel(WINDOWS_KEYS[next_keypress.KeyPress])
                 else:
-                    raise Exception(f"Unknown windows key combo Win+{next_keypress.KeyPress}")
+                    raise Exception(
+                        f"Unknown windows key combo Win+{next_keypress.KeyPress}"
+                    )
             else:
                 # Prediction
-                current_prediction = Prediction(keypresses, current_key_index, total_keyspresses)
+                current_prediction = Prediction(
+                    keypresses, current_key_index, total_keyspresses
+                )
                 current_key_index += current_prediction.length
                 current_phrase.character_count += current_prediction.gain + 1
                 current_phrase.gaze_keypress_count += 1
@@ -359,8 +413,9 @@ def visualize_keypresses(keypresses, args):
                 current_phrase.predictions.append(current_prediction)
         else:
             # next character is gaze initated
-            if ((keypress.KeyPress == "LControlKey" or keypress.KeyPress == "RControlKey")
-                and current_key_index + 1 < total_keyspresses):
+            if (
+                keypress.KeyPress == "LControlKey" or keypress.KeyPress == "RControlKey"
+            ) and current_key_index + 1 < total_keyspresses:
                 next_keypress = keypresses.keyPresses[current_key_index + 1]
                 if next_keypress.KeyPress == "W":
                     # Ctrl-W == Speak
@@ -375,25 +430,37 @@ def visualize_keypresses(keypresses, args):
                     current_phrase.gaze_keypress_count += 2
                     current_phrase.cancel(CANCEL_KEYS[next_keypress.KeyPress])
                 elif next_keypress.KeyPress in CONTROL_KEYS:
-                    current_phrase.visualized_string += CONTROL_KEYS[next_keypress.KeyPress]
+                    current_phrase.visualized_string += CONTROL_KEYS[
+                        next_keypress.KeyPress
+                    ]
                     current_key_index += 2
                     current_phrase.gaze_keypress_count += 2
                 else:
                     # Handle the control key in isolation
-                    current_phrase.visualized_string += output_for_keypress(keypress.KeyPress, False)
+                    current_phrase.visualized_string += output_for_keypress(
+                        keypress.KeyPress, False
+                    )
                     current_phrase.character_count += 1
                     current_phrase.gaze_keypress_count += 1
                     current_key_index += 1
             elif keypress.KeyPress == "LShiftKey":
-                if (current_key_index + 1 < total_keyspresses
-                    and not keypresses.keyPresses[current_key_index + 1].KeyPress == "LShiftKey"
-                    and not keypresses.keyPresses[current_key_index + 1].KeyPress == "LControlKey"):
-                    current_phrase.visualized_string += output_for_keypress(keypresses.keyPresses[current_key_index + 1].KeyPress, True)
+                if (
+                    current_key_index + 1 < total_keyspresses
+                    and not keypresses.keyPresses[current_key_index + 1].KeyPress
+                    == "LShiftKey"
+                    and not keypresses.keyPresses[current_key_index + 1].KeyPress
+                    == "LControlKey"
+                ):
+                    current_phrase.visualized_string += output_for_keypress(
+                        keypresses.keyPresses[current_key_index + 1].KeyPress, True
+                    )
                     current_key_index += 2
                     current_phrase.character_count += 1
                     current_phrase.gaze_keypress_count += 2
                 else:
-                    current_phrase.visualized_string += output_for_keypress(keypress.KeyPress, False)
+                    current_phrase.visualized_string += output_for_keypress(
+                        keypress.KeyPress, False
+                    )
                     current_phrase.character_count += 1
                     current_key_index += 1
                     current_phrase.gaze_keypress_count += 1
@@ -406,7 +473,9 @@ def visualize_keypresses(keypresses, args):
                     current_phrase.character_count += 1
                     current_phrase.gaze_keypress_count += 1
 
-                current_phrase.visualized_string += output_for_keypress(keypress.KeyPress, False)
+                current_phrase.visualized_string += output_for_keypress(
+                    keypress.KeyPress, False
+                )
                 current_key_index += 1
 
                 if current_key_index >= total_keyspresses:
@@ -428,7 +497,9 @@ def visualize_keypresses(keypresses, args):
             # which is the end of the current phrase.
             current_phrase.end_index = current_key_index - 1
             end_keypress = keypresses.keyPresses[current_phrase.end_index]
-            current_phrase.end_timestamp = datetime_from_protobuf_timestamp(end_keypress.Timestamp)
+            current_phrase.end_timestamp = datetime_from_protobuf_timestamp(
+                end_keypress.Timestamp
+            )
             current_phrase.finalize()
 
             phrases.append(current_phrase)
@@ -457,7 +528,9 @@ def visualize_keypresses(keypresses, args):
         total_phrase_keypress_count += phrase.keypress_count()
 
         if phrase.start_index != key_index:
-            raise Exception(f"Index mismatch. Expected {key_index} but got {phrase.start_index}")
+            raise Exception(
+                f"Index mismatch. Expected {key_index} but got {phrase.start_index}"
+            )
 
         key_index = phrase.end_index + 1
 
@@ -489,16 +562,27 @@ def visualize_keypresses(keypresses, args):
     # The totalPhraseKeypressCount is a bug check, it MUST equal
     # totalKeyspresses.  Otherwise we have lost keypresses somehow
     if total_phrase_keypress_count != total_keyspresses:
-        raise Exception(f"Keypress mismatch, {total_keyspresses - total_phrase_keypress_count} keypresses missing from phrases. PhraseKeypressCount:{total_phrase_keypress_count} KeypressCount:{total_keyspresses}")
+        raise Exception(
+            f"Keypress mismatch, {total_keyspresses - total_phrase_keypress_count} keypresses missing from phrases. PhraseKeypressCount:{total_phrase_keypress_count} KeypressCount:{total_keyspresses}"
+        )
 
-    if total_phrase_keypress_count != total_gaze_keypress_count + total_machine_keypress_count:
-        raise Exception(f"Missing Keypresses KeyPress:{total_phrase_keypress_count} Gaze:{total_gaze_keypress_count} Machine:{total_machine_keypress_count}")
+    if (
+        total_phrase_keypress_count
+        != total_gaze_keypress_count + total_machine_keypress_count
+    ):
+        raise Exception(
+            f"Missing Keypresses KeyPress:{total_phrase_keypress_count} Gaze:{total_gaze_keypress_count} Machine:{total_machine_keypress_count}"
+        )
 
     if phrase_count != spoken_count + timeout_count + cancelled_count:
-        raise Exception(f"Phrase mismatch, {phrase_count - (spoken_count + timeout_count + cancelled_count)} phrases missing.")
+        raise Exception(
+            f"Phrase mismatch, {phrase_count - (spoken_count + timeout_count + cancelled_count)} phrases missing."
+        )
 
     if predictions_count != len(predictions):
-        raise Exception(f"Predictions mismatch, {predictions_count} predicitons but found {len(predictions)}")
+        raise Exception(
+            f"Predictions mismatch, {predictions_count} predicitons but found {len(predictions)}"
+        )
 
     visualization_string += f"{phrase}\n"
     visualization_string += "\n"
@@ -526,6 +610,7 @@ def visualize_keypresses(keypresses, args):
         save_string_to_file(args.wpms_path, wpms_string)
         print(f"Wpms saved to {args.wpms_path}")
 
+
 def list_keypresses(keypresses, args):
     """
     Generates basic human readable data from keypresses.
@@ -542,7 +627,9 @@ def list_keypresses(keypresses, args):
         is_gaze_typed = False
         is_char = is_character(keypress.KeyPress)
 
-        is_gaze_typed, delta_timestamp = is_key_gaze_initiated(keypresses, current_key_index, total_keys_pressed)
+        is_gaze_typed, delta_timestamp = is_key_gaze_initiated(
+            keypresses, current_key_index, total_keys_pressed
+        )
         if is_gaze_typed:
             gaze_keypress_count += 1
 
@@ -559,6 +646,7 @@ def list_keypresses(keypresses, args):
     if args.stream_path:
         save_string_to_file(args.stream_path, keypresses_string)
         print(f"Keypress stream saved to {args.stream_path}")
+
 
 def average_wpm(wpms):
     """Calculates the average and top wpm from the wpms collection
@@ -581,6 +669,7 @@ def average_wpm(wpms):
         average = total / count
     return average, top
 
+
 def is_key_gaze_initiated(keypresses, current_key_index, total_keypress_count):
     """Determines whether a keypress was initiated by gaze or not.
 
@@ -595,14 +684,19 @@ def is_key_gaze_initiated(keypresses, current_key_index, total_keypress_count):
     delta_timestamp = datetime.timedelta(0)
 
     if 0 < current_key_index < total_keypress_count:
-        current_timestamp = datetime_from_protobuf_timestamp(keypresses.keyPresses[current_key_index].Timestamp)
-        previous_timestamp = datetime_from_protobuf_timestamp(keypresses.keyPresses[current_key_index - 1].Timestamp)
+        current_timestamp = datetime_from_protobuf_timestamp(
+            keypresses.keyPresses[current_key_index].Timestamp
+        )
+        previous_timestamp = datetime_from_protobuf_timestamp(
+            keypresses.keyPresses[current_key_index - 1].Timestamp
+        )
         delta_timestamp = current_timestamp - previous_timestamp
 
         if delta_timestamp < MIN_GAZE_TIME:
             is_gaze_initiated = False
 
     return is_gaze_initiated, delta_timestamp
+
 
 def is_character(keypress):
     """Determines whether the given keypress is a character.
@@ -612,6 +706,7 @@ def is_character(keypress):
         False otherwise
     """
     return len(keypress) == 1
+
 
 def output_for_keypress(keypress, shift_on):
     """Generates the matching string output for a given keypress.
@@ -633,13 +728,17 @@ def output_for_keypress(keypress, shift_on):
 
     raise Exception(f"{keypress} not handled")
 
+
 def datetime_from_protobuf_timestamp(protobuf_timestamp):
     """Converts a protobuf_timestamp into a standard python datetime object.
 
     Returns:
         python datetime object
     """
-    return datetime.datetime.fromtimestamp(protobuf_timestamp.seconds + protobuf_timestamp.nanos / 1e9)
+    return datetime.datetime.fromtimestamp(
+        protobuf_timestamp.seconds + protobuf_timestamp.nanos / 1e9
+    )
+
 
 def load_keypresses_from_directory(keypress_directorypath):
     """Loads multiple keypress protobuffers from keypress_directorypath.
@@ -647,22 +746,25 @@ def load_keypresses_from_directory(keypress_directorypath):
     Returns:
         A keypresses_pb2 object
     """
-    files = glob.glob(os.path.join(keypress_directorypath, '*.' + "protobuf"))
+    files = glob.glob(os.path.join(keypress_directorypath, "*." + "protobuf"))
 
     sorted_files = sorted(files)
 
     keypresses = keypresses_pb2.KeyPresses()
     merged_keypresses = keypresses_pb2.KeyPresses()
     for filename in sorted_files:
-        with open(os.path.join(keypress_directorypath,filename), "rb") as file:
+        with open(os.path.join(keypress_directorypath, filename), "rb") as file:
             keypress_protobuf_bytes = file.read()
             keypresses.ParseFromString(keypress_protobuf_bytes)
 
         merged_keypresses.keyPresses.extend(keypresses.keyPresses)
 
-    merged_keypresses.keyPresses.sort(key=lambda x:datetime_from_protobuf_timestamp(x.Timestamp))
+    merged_keypresses.keyPresses.sort(
+        key=lambda x: datetime_from_protobuf_timestamp(x.Timestamp)
+    )
 
     return merged_keypresses
+
 
 def load_keypresses_from_file(keypress_filepath):
     """Loads keypress protobuffer from keypress_filepath.
@@ -678,10 +780,12 @@ def load_keypresses_from_file(keypress_filepath):
 
     return keypresses
 
+
 def save_string_to_file(output_filepath, output_string):
     """Saves the output_string to output_filepath."""
     with open(output_filepath, "wb") as file:
         file.write(output_string.encode())
+
 
 def parse_arguments():
     """Parses command line arguments.
@@ -692,41 +796,54 @@ def parse_arguments():
     """
     is_valid = True
     parser = argparse.ArgumentParser()
-    parser.add_argument('-f',
-                        '--file',
-                        type=str,
-                        help="Path to keypresses protobuf file.",
-                        dest='input_filepath')
-    parser.add_argument('-d',
-                        '--dir',
-                        type=str,
-                        help="Path to directory containing one or more keypresses protobuf files.",
-                        dest='input_directory_path')
-    parser.add_argument('-m',
-                        '--merge',
-                        type=str,
-                        help="Path to output merged results.",
-                        dest='merge_path')
-    parser.add_argument('--stream',
-                        type=str,
-                        help="Path to output decoded stream of keypresses.",
-                        dest='stream_path')
-    parser.add_argument('--visualize',
-                        type=str,
-                        help="Path to output visualized results.",
-                        dest='visualize_path')
-    parser.add_argument('--predictions',
-                        type=str,
-                        help="Path to output prediction results.",
-                        dest='prediction_path')
-    parser.add_argument('--phrases',
-                        type=str,
-                        help="Path to output phrase results.",
-                        dest='phrases_path')
-    parser.add_argument('--wpms',
-                        type=str,
-                        help="Path to output wpm results.",
-                        dest='wpms_path')
+    parser.add_argument(
+        "-f",
+        "--file",
+        type=str,
+        help="Path to keypresses protobuf file.",
+        dest="input_filepath",
+    )
+    parser.add_argument(
+        "-d",
+        "--dir",
+        type=str,
+        help="Path to directory containing one or more keypresses protobuf files.",
+        dest="input_directory_path",
+    )
+    parser.add_argument(
+        "-m",
+        "--merge",
+        type=str,
+        help="Path to output merged results.",
+        dest="merge_path",
+    )
+    parser.add_argument(
+        "--stream",
+        type=str,
+        help="Path to output decoded stream of keypresses.",
+        dest="stream_path",
+    )
+    parser.add_argument(
+        "--visualize",
+        type=str,
+        help="Path to output visualized results.",
+        dest="visualize_path",
+    )
+    parser.add_argument(
+        "--predictions",
+        type=str,
+        help="Path to output prediction results.",
+        dest="prediction_path",
+    )
+    parser.add_argument(
+        "--phrases",
+        type=str,
+        help="Path to output phrase results.",
+        dest="phrases_path",
+    )
+    parser.add_argument(
+        "--wpms", type=str, help="Path to output wpm results.", dest="wpms_path"
+    )
 
     # Parse and print the results
     args = parser.parse_args()
@@ -738,6 +855,7 @@ def parse_arguments():
         is_valid = False
 
     return is_valid, args
+
 
 is_valid_arguments, parsed_args = parse_arguments()
 

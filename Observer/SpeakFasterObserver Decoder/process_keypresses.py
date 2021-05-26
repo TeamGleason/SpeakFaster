@@ -99,6 +99,7 @@ SHIFTED_SPECIAL_KEYS = {
     "Oemtilde": "~",
     "Back": "🠠",
     "Space": " ",
+    "Return": "↩",
 }
 
 # pylint: disable=too-few-public-methods
@@ -275,6 +276,11 @@ class Phrase:
         ):
             raise Exception(
                 f"Missing Keypresses KeyPress:{self.keypress_count()} Gaze:{self.gaze_keypress_count} Machine:{self.machine_keypress_count}"
+            )
+
+        if not (self.was_cancelled or self.was_spoken or self.was_timeout):
+            raise Exception(
+                "Phrase end error. Phrase was not Cancelled, Timeout, or Spoken!"
             )
 
     def cancel(self, ending_string):
@@ -478,9 +484,6 @@ def visualize_keypresses(keypresses, args):
                 )
                 current_key_index += 1
 
-                if current_key_index >= total_keyspresses:
-                    is_phrase_end = True
-
         if next_character_delta > LONG_DELTA_TIME:
             is_phrase_end = True
             current_phrase.timeout()
@@ -536,11 +539,15 @@ def visualize_keypresses(keypresses, args):
 
         if phrase.was_cancelled:
             cancelled_count += 1
-        if phrase.was_timeout:
+        elif phrase.was_timeout:
             timeout_count += 1
-        if phrase.was_spoken:
+        elif phrase.was_spoken:
             spoken_count += 1
             wpms.append(phrase.wpm)
+        else:
+            raise Exception(
+                "Phrase end error. Phrase was not Cancelled, Timeout, or Spoken!"
+            )
 
         visualization_string += f"{phrase}\n"
 

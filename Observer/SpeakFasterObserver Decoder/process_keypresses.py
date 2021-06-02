@@ -641,6 +641,10 @@ def list_keypresses(keypresses, args):
             keypresses, current_key_index, total_keys_pressed
         )
 
+        is_next_gaze_typed, next_delta_timestamp = is_key_gaze_initiated(
+            keypresses, current_key_index + 1, total_keys_pressed
+        )
+
         if is_gaze_typed:
             gaze_keypress_count += 1
 
@@ -657,7 +661,9 @@ def list_keypresses(keypresses, args):
                 ).isoformat(),
                 "Timedelta": delta_timestamp.total_seconds(),
                 "Gaze": is_gaze_typed,
-                "isLongPause": is_long_pause,
+                "IsLongPause": is_long_pause,
+                "IsCharacter": is_character(keypress.KeyPress),
+                "IsNextGazeTyped": not is_next_gaze_typed
             }
         )
 

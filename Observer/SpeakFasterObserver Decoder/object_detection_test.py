@@ -44,6 +44,32 @@ class ObjectDetectionTest(tf.test.TestCase):
     self.assertEqual(
         object_detection.get_video_fps("testdata/test_video_1.mp4"), 1.0)
 
+  def testDetectObjects(self):
+    generator = object_detection.read_video_file("testdata/test_video_1.mp4")
+    output = object_detection.detect_objects(generator, threshold_score=0.5)
+    self.assertLen(output, 5)
+    class_names = [class_name for class_name, _ in output[0]]
+    scores = [score for _, score in output[0]]
+    self.assertIn("apple", class_names)
+    self.assertGreaterEqual(min(scores), 0.5)
+    class_names = [class_name for class_name, _ in output[1]]
+    scores = [score for _, score in output[0]]
+    self.assertIn("apple", class_names)
+    self.assertGreaterEqual(min(scores), 0.5)
+    class_names = [class_name for class_name, _ in output[2]]
+    scores = [score for _, score in output[0]]
+    self.assertEqual(class_names, ["cell phone"])
+    self.assertGreaterEqual(min(scores), 0.5)
+    class_names = [class_name for class_name, _ in output[3]]
+    scores = [score for _, score in output[0]]
+    self.assertEqual(class_names, ["cell phone"])
+    self.assertGreaterEqual(min(scores), 0.5)
+    class_names = [class_name for class_name, _ in output[4]]
+    scores = [score for _, score in output[0]]
+    self.assertEqual(class_names, ["dog"])
+    self.assertGreaterEqual(min(scores), 0.5)
+
+
 
 if __name__ == "__main__":
   tf.test.main()

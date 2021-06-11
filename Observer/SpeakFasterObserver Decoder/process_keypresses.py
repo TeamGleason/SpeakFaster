@@ -133,6 +133,12 @@ class Prediction:
         index = current_key_index
         is_next_gaze_initiated = False
 
+        _is_current_gaze_initiated, delta_time = is_key_gaze_initiated(
+            keypresses, current_key_index, total_keyspresses
+        )
+
+        self.timedelta = delta_time.total_seconds()
+
         while index < total_keyspresses and not is_next_gaze_initiated:
             current_keypress = keypresses.keyPresses[index]
 
@@ -557,12 +563,14 @@ def visualize_keypresses(keypresses, args):
     predictions_count = 0
     average_prediction_length = 0.0
     average_prediction_gain = 0.0
+
     for phrase in phrases:
         predictions_count += len(phrase.predictions)
         predictions.extend(phrase.predictions)
     for pred in predictions:
         average_prediction_length += pred.length
         average_prediction_gain += pred.gain
+
     average_prediction_length /= predictions_count
     average_prediction_gain /= predictions_count
 
@@ -597,7 +605,7 @@ def visualize_keypresses(keypresses, args):
     visualization_string += f"Total Keypresses: {total_keyspresses} Gaze: {total_gaze_keypress_count} Characters: {total_character_count}\n"
     visualization_string += f"Total Phrases:{phrase_count} Spoken:{spoken_count}({spoken_count/phrase_count:0.2%}) Cancelled:{cancelled_count}({cancelled_count/phrase_count:0.2%}) Timeouts:{timeout_count}({timeout_count/phrase_count:0.2%})\n"
     visualization_string += f"Total Predictions: {predictions_count} Average Length: {average_prediction_length:0.3f} Average Gain: {average_prediction_gain:0.3f}\n"
-    wpms_string = jsonpickle.encode(wpms)
+
     predictions_string = jsonpickle.encode(predictions)
     phrases_string = jsonpickle.encode(phrases)
 
@@ -613,10 +621,6 @@ def visualize_keypresses(keypresses, args):
         save_string_to_file(args.phrases_path, phrases_string)
         print(f"Phrases saved to {args.phrases_path}")
 
-    if args.wpms_path:
-        save_string_to_file(args.wpms_path, wpms_string)
-        print(f"Wpms saved to {args.wpms_path}")
-
 
 def list_keypresses(keypresses, args):
     """
@@ -626,17 +630,21 @@ def list_keypresses(keypresses, args):
 
     current_key_index = 0
     gaze_keypress_count = 0
-    keypresses_string = ""
+    keypresses_objects = []
 
     while current_key_index < total_keys_pressed:
         keypress = keypresses.keyPresses[current_key_index]
 
         is_gaze_typed = False
-        is_char = is_character(keypress.KeyPress)
 
         is_gaze_typed, delta_timestamp = is_key_gaze_initiated(
             keypresses, current_key_index, total_keys_pressed
         )
+
+        is_next_gaze_typed, next_delta_timestamp = is_key_gaze_initiated(
+            keypresses, current_key_index + 1, total_keys_pressed
+        )
+
         if is_gaze_typed:
             gaze_keypress_count += 1
 
@@ -644,11 +652,24 @@ def list_keypresses(keypresses, args):
         if delta_timestamp > LONG_DELTA_TIME:
             is_long_pause = True
 
-        keypresses_string += f"Key:{keypress.KeyPress:13} Timestamp:{keypress.Timestamp.seconds:12}.{keypress.Timestamp.nanos:09} Delta:{delta_timestamp} Gaze:{is_gaze_typed:2} Character:{is_char:2} isLongPause:{is_long_pause}\n"
+        keypresses_objects.append(
+            {
+                "Index": current_key_index,
+                "Keypress": keypress.KeyPress,
+                "Timestamp": datetime_from_protobuf_timestamp(
+                    keypress.Timestamp
+                ).isoformat(),
+                "Timedelta": delta_timestamp.total_seconds(),
+                "Gaze": is_gaze_typed,
+                "IsLongPause": is_long_pause,
+                "IsCharacter": is_character(keypress.KeyPress),
+                "IsNextGazeTyped": not is_next_gaze_typed
+            }
+        )
 
         current_key_index += 1
 
-    keypresses_string += f"{total_keys_pressed} pressed, {gaze_keypress_count} human initiated - {(gaze_keypress_count/total_keys_pressed):.2%}\n"
+    keypresses_string = jsonpickle.encode(keypresses_objects)
 
     if args.stream_path:
         save_string_to_file(args.stream_path, keypresses_string)
@@ -818,16 +839,9 @@ def parse_arguments():
         dest="input_directory_path",
     )
     parser.add_argument(
-        "-m",
-        "--merge",
-        type=str,
-        help="Path to output merged results.",
-        dest="merge_path",
-    )
-    parser.add_argument(
         "--stream",
         type=str,
-        help="Path to output decoded stream of keypresses.",
+        help="Path to output json stream of keypresses.",
         dest="stream_path",
     )
     parser.add_argument(
@@ -839,17 +853,14 @@ def parse_arguments():
     parser.add_argument(
         "--predictions",
         type=str,
-        help="Path to output prediction results.",
+        help="Path to output json prediction results.",
         dest="prediction_path",
     )
     parser.add_argument(
         "--phrases",
         type=str,
-        help="Path to output phrase results.",
+        help="Path to output json phrase results.",
         dest="phrases_path",
-    )
-    parser.add_argument(
-        "--wpms", type=str, help="Path to output wpm results.", dest="wpms_path"
     )
 
     # Parse and print the results

@@ -127,7 +127,7 @@ namespace SpeakFasterObserver
 
         private void screenshotTimer_Tick(object sender, EventArgs e)
         {
-            var timestamp = $"{DateTime.Now:yyyyMMddThhmmssfff}";
+            var timestamp = $"{DateTime.Now:yyyyMMddTHHmmssfff}";
 
             var filePath = Path.Combine(
                 dataPath,
@@ -175,7 +175,7 @@ namespace SpeakFasterObserver
 
                 if (lastKeypressString.Equals("LControlKey") && keypressString.Equals("W"))
                 {
-                    var timestamp = $"{DateTime.Now:yyyyMMddThhmmssfff}";
+                    var timestamp = $"{DateTime.Now:yyyyMMddTHHmmssfff}";
 
                     var filePath = Path.Combine(
                         dataPath,
@@ -309,10 +309,10 @@ namespace SpeakFasterObserver
             if (oldKeypresses.KeyPresses_.Count == 0) return;
 
             // need to serialize to file
-            // {DataStream}-yyyymmddThhmmssf.{Extension}
+            // {DataStream}-yyyymmddTHHmmssf.{Extension}
             var filename = Path.Combine(
                FormMain.dataPath,
-                $"{DateTime.Now:yyyyMMddThhmmssfff}-Keypresses.protobuf");
+                $"{DateTime.Now:yyyyMMddTHHmmssfff}-Keypresses.protobuf");
             using (var file = File.Create(filename))
             {
                 oldKeypresses.WriteTo(file);

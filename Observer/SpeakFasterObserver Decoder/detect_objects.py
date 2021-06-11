@@ -20,7 +20,7 @@ parser.add_argument(
     default=None,
     type=float,
     help="Frame rate of the images from the glob pattern. "
-    "Required if --input_imgae_glob is specified.")
+    "Required if --input_image_glob is specified.")
 parser.add_argument(
     "--input_video_path",
     help="Path to input video file (e.g., mp4). "

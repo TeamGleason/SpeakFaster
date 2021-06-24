@@ -10,6 +10,7 @@ import argparse
 from scipy.io import wavfile
 
 import audio_events
+import events as events_lib
 
 
 parser = argparse.ArgumentParser()
@@ -40,7 +41,10 @@ def main():
     events.extend(audio_events.extract_audio_events(
         waveform_generator, fs=fs, threshold_score=0.5))
 
-  tsv_rows = audio_events.convert_events_to_tsv_rows(events)
+  tsv_rows = events_lib.convert_events_to_tsv_rows(
+      events,
+      audio_events.AUDIO_EVENTS_TIER,
+      ignore_class_names=audio_events.YAMNET_IGNORE_CLASS_NAMES)
   with open(args.output_tsv_path, mode="w") as f:
     tsv_writer = csv.writer(f, delimiter="\t")
     tsv_writer.writerow(["tBegin", "tEnd", "Tier", "Content"])

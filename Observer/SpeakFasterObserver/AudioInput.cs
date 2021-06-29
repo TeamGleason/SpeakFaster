@@ -25,10 +25,9 @@ namespace SpeakFasterObserver
         public AudioInput() {}
         public void StartRecordingFromMicrophone()
         {
-            // TODO(cais): Control by system tray icon click. DO NOT SUBMIT.
             if (isRecording)
             {
-                throw new Exception("Already recording from microphone");
+                return;
             }
             waveIn = new WaveIn();
             waveIn.WaveFormat = new WaveFormat(AUDIO_SAMPLE_RATE_HZ, AUDIO_NUM_CHANNELS);
@@ -48,7 +47,7 @@ namespace SpeakFasterObserver
         {
             if (!isRecording)
             {
-                throw new Exception("Not recording from microphone");
+                return;
             }
             waveIn.StopRecording();
             isRecording = false;
@@ -75,6 +74,7 @@ namespace SpeakFasterObserver
             {
                 if (bufferPointer == 0)
                 {
+                    // No data to write.
                     return;
                 }
                 using (var flacStream = File.Create(flacFilePath))
@@ -87,7 +87,9 @@ namespace SpeakFasterObserver
                     streamInfo.TotalSampleCount = bufferPointer;
                     streamInfo.MaxBlockSize = AUDIO_SAMPLE_RATE_HZ;
                     flacWriter.StartStream(streamInfo);
-                    flacWriter.WriteSamples(buffer);
+                    int[] samples = new int[bufferPointer];
+                    Array.Copy(buffer, samples, bufferPointer);
+                    flacWriter.WriteSamples(samples);
                     flacWriter.EndStream();
                 }
                 bufferPointer = 0;

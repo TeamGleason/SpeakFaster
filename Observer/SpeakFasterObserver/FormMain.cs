@@ -32,6 +32,7 @@ namespace SpeakFasterObserver
         {
             InitializeComponent();
 
+            audioInput = new AudioInput();
             gazeDevice = new ToltTech.GazeInput.TobiiStreamEngine();
 
             if (!gazeDevice.IsAvailable)
@@ -70,9 +71,6 @@ namespace SpeakFasterObserver
 
             Upload._dataDirectory = (dataPath);
             uploadTimer.Change(0, 60 * 1000);
-
-            audioInput = new AudioInput();
-            audioInput.StartRecordingFromMicrophone();
         }
 
         #region Event Handlers
@@ -128,13 +126,19 @@ namespace SpeakFasterObserver
             }
         }
 
-        public static async void Timer_Tick(object? state)
+        // Flush audio input data to file.
+        private static void flushAudioInput()
         {
             // Flush audio data to file.
             var timestamp = $"{DateTime.Now:yyyyMMddTHHmmssfff}";
             var micWaveInFilePath = Path.Combine(
                 dataPath, $"{timestamp}-MicWaveIn.flac");
             audioInput.WriteBufferToFlacFile(micWaveInFilePath);
+        }
+
+        public static async void Timer_Tick(object? state)
+        {
+            flushAudioInput();
             Upload.Timer_Tick(state);
         }
 
@@ -238,12 +242,15 @@ namespace SpeakFasterObserver
                 notifyIcon.Icon = new Icon("Assets\\RecordingOn.ico");
                 notifyIcon.Text = "Observer - Recording On";
                 toggleButtonOnOff.Text = "Recording On";
+                audioInput.StartRecordingFromMicrophone();
             }
             else
             {
                 notifyIcon.Icon = new Icon("Assets\\RecordingOff.ico");
                 notifyIcon.Text = "Observer - Recording Off";
                 toggleButtonOnOff.Text = "Recording Off";
+                audioInput.StopRecordingFromMicrophone();
+                flushAudioInput();
             }
 
             screenshotTimer.Enabled = isRecording;

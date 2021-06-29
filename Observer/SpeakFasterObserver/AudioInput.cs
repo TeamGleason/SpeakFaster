@@ -2,7 +2,6 @@
 using NAudio.Wave;
 using System;
 using System.IO;
-using System.Diagnostics;
 
 namespace SpeakFasterObserver
 {

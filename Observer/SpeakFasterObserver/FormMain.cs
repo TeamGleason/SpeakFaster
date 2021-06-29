@@ -28,6 +28,7 @@ namespace SpeakFasterObserver
 
         System.Threading.Timer uploadTimer = new(Timer_Tick);
         static System.Threading.Timer keyloggerTimer = new((state) => { SaveKeypresses(); });
+
         public FormMain()
         {
             InitializeComponent();

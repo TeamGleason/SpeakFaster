@@ -26,7 +26,7 @@ namespace SpeakFasterObserver
         private static string lastKeypressString = String.Empty;
         Keylogger keylogger;
 
-        System.Threading.Timer uploadTimer = new(Upload.Timer_Tick);
+        System.Threading.Timer uploadTimer = new(Timer_Tick);
         static System.Threading.Timer keyloggerTimer = new((state) => { SaveKeypresses(); });
         public FormMain()
         {
@@ -126,6 +126,16 @@ namespace SpeakFasterObserver
             {
                 SetRecordingState(isRecording, !isRecordingScreenshots);
             }
+        }
+
+        public static async void Timer_Tick(object? state)
+        {
+            // Flush audio data to file.
+            var timestamp = $"{DateTime.Now:yyyyMMddTHHmmssfff}";
+            var micWaveInFilePath = Path.Combine(
+                dataPath, $"{timestamp}-MicWaveIn.flac");
+            audioInput.WriteBufferToFlacFile(micWaveInFilePath);
+            Upload.Timer_Tick(state);
         }
 
         private void screenshotTimer_Tick(object sender, EventArgs e)

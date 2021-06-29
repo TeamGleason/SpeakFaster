@@ -11,17 +11,21 @@ namespace SpeakFasterObserver
         private static int AUDIO_NUM_CHANNELS = 1;
         private static int AUDIO_BITS_PER_SAMPLE = 16;
         private static int AUDIO_SAMPLE_RATE_HZ = 16000;
-        // How long each output audio file is (unit: second).
-        private static int PER_FILE_DURATION_SEC = 10;  // TODO(cais): Change to 60.
+        // NOTE: Due to limited buffer size, using a write timer of with a
+        // period of 120 s or greater will cause data loss, which will throw an
+        // exception.
+        private static int MAX_BUFFER_LENGTH = AUDIO_SAMPLE_RATE_HZ * 120;
 
         private WaveIn waveIn = null;
         private bool isRecording = false;  // TODO(cais): Thread safety?
         private int[] buffer = null;
         private int bufferPointer = 0;
+        private static readonly object lockObj = new object();
 
         public AudioInput() {}
         public void StartRecordingFromMicrophone()
         {
+            // TODO(cais): Control by system tray icon click. DO NOT SUBMIT.
             if (isRecording)
             {
                 throw new Exception("Already recording from microphone");
@@ -31,14 +35,11 @@ namespace SpeakFasterObserver
             if (waveIn.WaveFormat.BitsPerSample != AUDIO_BITS_PER_SAMPLE)
             {
                 throw new NotSupportedException(
-                    String.Format(
-                        "Expected wave-in bits per sample to be {0}, but got {1}",
-                        AUDIO_BITS_PER_SAMPLE, waveIn.WaveFormat.BitsPerSample));
+                    $"Expected wave-in bits per sample to be {AUDIO_BITS_PER_SAMPLE}, " +
+                    $"but got {waveIn.WaveFormat.BitsPerSample}");
             }
             waveIn.DataAvailable += new EventHandler<WaveInEventArgs>(WaveDataAvailable);
-            // TODO(cais): Do not hard code path. Remove wav file writing.
-            //waveFileWriter = new WaveFileWriter(@"C:\Temp\Test0001.wav", waveIn.WaveFormat);
-            buffer = new int[AUDIO_SAMPLE_RATE_HZ * PER_FILE_DURATION_SEC];
+            buffer = new int[MAX_BUFFER_LENGTH];
             bufferPointer = 0;
             waveIn.StartRecording();
             isRecording = true;
@@ -55,38 +56,41 @@ namespace SpeakFasterObserver
 
         private void WaveDataAvailable(object sender, WaveInEventArgs e)
         {
-            //int sumSquares = 0;  // TODO(cais): Clean up.
-            for (int i = 0; i < e.Buffer.Length; i += 2)
+            lock (lockObj)
             {
-                if (bufferPointer >= buffer.Length)
+                for (int i = 0; i < e.Buffer.Length; i += 2)
                 {
-                    WriteBufferToFlacFile();
-                    Debug.WriteLine("Wrote to .flac file");
-                    bufferPointer = 0;
+                    if (bufferPointer >= buffer.Length)
+                    {
+                        throw new OverflowException("Audio buffer overflowed");
+                    }
+                    buffer[bufferPointer++] = BitConverter.ToInt16(e.Buffer, i);
                 }
-                buffer[bufferPointer++] = BitConverter.ToInt16(e.Buffer, i);
             }
-            //if (waveFileWriter != null)  //TODO(cais): Remove this.
-            //{
-            //    waveFileWriter.Write(e.Buffer, 0, e.BytesRecorded);
-            //    waveFileWriter.Flush();
-            //}
         }
 
-        private void WriteBufferToFlacFile()
+        public void WriteBufferToFlacFile(string flacFilePath)
         {
-            using (var flacStream = File.Create(@"C:\Temp\Test0001.flac"))
+            lock (lockObj)
             {
-                FlacWriter flacWriter = new FlacWriter(flacStream);
-                FlacStreaminfo streamInfo = new FlacStreaminfo();
-                streamInfo.ChannelsCount = AUDIO_NUM_CHANNELS;
-                streamInfo.BitsPerSample = AUDIO_BITS_PER_SAMPLE;
-                streamInfo.SampleRate = AUDIO_SAMPLE_RATE_HZ;
-                streamInfo.TotalSampleCount = AUDIO_SAMPLE_RATE_HZ * PER_FILE_DURATION_SEC;
-                streamInfo.MaxBlockSize = AUDIO_SAMPLE_RATE_HZ;
-                flacWriter.StartStream(streamInfo);
-                flacWriter.WriteSamples(buffer);
-                flacWriter.EndStream();
+                if (bufferPointer == 0)
+                {
+                    return;
+                }
+                using (var flacStream = File.Create(flacFilePath))
+                {
+                    FlacWriter flacWriter = new FlacWriter(flacStream);
+                    FlacStreaminfo streamInfo = new FlacStreaminfo();
+                    streamInfo.ChannelsCount = AUDIO_NUM_CHANNELS;
+                    streamInfo.BitsPerSample = AUDIO_BITS_PER_SAMPLE;
+                    streamInfo.SampleRate = AUDIO_SAMPLE_RATE_HZ;
+                    streamInfo.TotalSampleCount = bufferPointer;
+                    streamInfo.MaxBlockSize = AUDIO_SAMPLE_RATE_HZ;
+                    flacWriter.StartStream(streamInfo);
+                    flacWriter.WriteSamples(buffer);
+                    flacWriter.EndStream();
+                }
+                bufferPointer = 0;
             }
         }
     }

@@ -22,6 +22,7 @@ namespace SpeakFasterObserver
         private static readonly object lockObj = new object();
 
         public AudioInput() {}
+
         public void StartRecordingFromMicrophone()
         {
             if (isRecording)
@@ -42,6 +43,7 @@ namespace SpeakFasterObserver
             waveIn.StartRecording();
             isRecording = true;
         }
+
         public void StopRecordingFromMicrophone()
         {
             if (!isRecording)

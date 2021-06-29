@@ -7,6 +7,9 @@ using System.IO;
 using System.Text;
 using System.Windows.Forms;
 
+using NAudio.Wave;
+using FlacBox;
+
 namespace SpeakFasterObserver
 {
     public partial class FormMain : Form
@@ -27,7 +30,6 @@ namespace SpeakFasterObserver
 
         System.Threading.Timer uploadTimer = new(Upload.Timer_Tick);
         static System.Threading.Timer keyloggerTimer = new((state) => { SaveKeypresses(); });
-
         public FormMain()
         {
             InitializeComponent();
@@ -70,6 +72,49 @@ namespace SpeakFasterObserver
 
             Upload._dataDirectory = (dataPath);
             uploadTimer.Change(0, 60 * 1000);
+
+            WaveIn waveSource = new WaveIn();
+            waveSource.WaveFormat = new WaveFormat(16000, 1);
+            waveSource.DataAvailable += new EventHandler<WaveInEventArgs>(waveSource_DataAvailable);
+            waveFile = new WaveFileWriter(@"C:\Temp\Test0001.wav", waveSource.WaveFormat);
+            waveSource.StartRecording();
+
+            using (var flacStream = File.Create(@"C:\Temp\Test0001.flac"))
+            {
+                // See https://github.com/Afterster/FlacBox/blob/master/FlacBox/FlacWriter.cs
+                FlacWriter flacWriter = new FlacWriter(flacStream);
+                FlacStreaminfo streamInfo = new FlacStreaminfo();
+                streamInfo.ChannelsCount = 1;
+                streamInfo.BitsPerSample = 16;
+                streamInfo.SampleRate = 16000;
+                streamInfo.TotalSampleCount = 16000 * 60;
+                streamInfo.MaxBlockSize = 16000;
+                flacWriter.StartStream(streamInfo);
+                int[] samples = new int[16000 * 60];
+                for (int i = 0; i < samples.Length; ++i)
+                {
+                    samples[i] = (i % 16000) - 8000;
+                }
+                flacWriter.WriteSamples(samples);
+                flacWriter.EndStream();
+            }
+        }
+
+        WaveFileWriter waveFile = null;
+
+        void waveSource_DataAvailable(object sender, WaveInEventArgs e)
+        {
+            int sumSquares = 0;
+            for (int i = 0; i < e.Buffer.Length; ++i)
+            {
+                int x = ((int)e.Buffer[i]) - 128;
+                sumSquares += x * x;
+            }
+            if (waveFile != null)
+            {
+                waveFile.Write(e.Buffer, 0, e.BytesRecorded);
+                waveFile.Flush();
+            }
         }
 
         #region Event Handlers

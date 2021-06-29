@@ -26,7 +26,7 @@ namespace SpeakFasterObserver
             }
 
             Debug.Assert(spo.Region != null);
-            _client = new AmazonS3Client(spo.GetAWSCredentials(sf), spo.Region);
+            //_client = new AmazonS3Client(spo.GetAWSCredentials(sf), spo.Region);
         }
 
         static bool _uploading = false;
@@ -36,7 +36,7 @@ namespace SpeakFasterObserver
             if (_uploading) return;
             _uploading = true;
 
-            Debug.Assert(_client != null);
+            //Debug.Assert(_client != null);
             Debug.Assert(_dataDirectory != null);
 
             var dataDirectory = new DirectoryInfo(_dataDirectory);
@@ -48,17 +48,17 @@ namespace SpeakFasterObserver
                     Key = $"observer_data/{_schemaVersion}/{Environment.MachineName}-{_gazeDevice ?? "none"}/{Environment.UserName}/{fileInfo.Name}"
                 };
 
-                PutObjectResponse putResponse;
-                using (var inputStream = fileInfo.OpenRead())
-                {
-                    putRequest.InputStream = inputStream;
-                    putResponse = await _client.PutObjectAsync(putRequest);
-                }
+                //PutObjectResponse putResponse;
+                //using (var inputStream = fileInfo.OpenRead())
+                //{
+                //    putRequest.InputStream = inputStream;
+                //    putResponse = await _client.PutObjectAsync(putRequest);
+                //}
 
-                if (putResponse.HttpStatusCode == HttpStatusCode.OK)
-                {
-                    fileInfo.Delete();
-                }
+                //if (putResponse.HttpStatusCode == HttpStatusCode.OK)
+                //{
+                //    fileInfo.Delete();
+                //}
             }
 
             _uploading = false;

@@ -5,6 +5,10 @@ using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Text;
+using System.Windows;
+using System.Windows.Interop;
+using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Forms;
 
 namespace SpeakFasterObserver
@@ -33,8 +37,12 @@ namespace SpeakFasterObserver
         {
             InitializeComponent();
 
-            audioInput = new AudioInput();
+            dataPath = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "SpeakFasterObserver");
+
             gazeDevice = new ToltTech.GazeInput.TobiiStreamEngine();
+            audioInput = new AudioInput(dataPath);
 
             if (!gazeDevice.IsAvailable)
             {
@@ -49,10 +57,6 @@ namespace SpeakFasterObserver
                 screenCapture = new(gazeDevice);
                 Upload._gazeDevice = gazeDevice.Information;
             }
-
-            dataPath = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "SpeakFasterObserver");
 
             // Ensure output director exists
             if (!Directory.Exists(dataPath))
@@ -128,29 +132,22 @@ namespace SpeakFasterObserver
         }
 
         // Flush audio input data to file.
-        private static void flushAudioInput()
-        {
-            // Flush audio data to file.
-            var timestamp = $"{DateTime.Now:yyyyMMddTHHmmssfff}";
-            var micWaveInFilePath = Path.Combine(
-                dataPath, $"{timestamp}-MicWaveIn.flac");
-            audioInput.WriteBufferToFlacFile(micWaveInFilePath);
-        }
+        //private static void flushAudioInput()
+        //{
+        //    // Flush audio data to file.
+        //    audioInput.WriteBufferToFlacFile(DataFormat.getMicWavInFilePath(dataPath));
+        //}
 
         public static async void Timer_Tick(object? state)
         {
-            flushAudioInput();
+            audioInput.RotateFlacWriter();
             Upload.Timer_Tick(state);
         }
 
         private void screenshotTimer_Tick(object sender, EventArgs e)
         {
-            var timestamp = $"{DateTime.Now:yyyyMMddTHHmmssfff}";
-
-            var filePath = Path.Combine(
-                dataPath,
-                $"{timestamp}-Screenshot.jpg");
-
+            var timestamp = FileNaming.getTimestamp();
+            var filePath = FileNaming.getScreenshotFilePath(dataPath, timestamp);
             CaptureScreenshot(timestamp, filePath);
         }
 
@@ -193,18 +190,29 @@ namespace SpeakFasterObserver
 
                 if (lastKeypressString.Equals("LControlKey") && keypressString.Equals("W"))
                 {
-                    var timestamp = $"{DateTime.Now:yyyyMMddTHHmmssfff}";
-
-                    var filePath = Path.Combine(
-                        dataPath,
-                        $"{timestamp}-SpeechScreenshot.jpg");
-
+                    var timestamp = FileNaming.getTimestamp();
+                    var filePath = FileNaming.getSpeechScreenshotFilePath(dataPath, timestamp);
                     CaptureScreenshot(timestamp, filePath);
                 }
 
                 lastKeypressString = keypressString;
 
                 keyloggerTimer.Change(60 * 1000, System.Threading.Timeout.Infinite);
+
+                //var key = Key.Enter;                    // Key to send
+                //var target = Keyboard.FocusedElement;    // Target element
+                //var routedEvent = Keyboard.KeyDownEvent; // Event to send
+                //var target = new HwndSource(0, 0, 0, 0, 0, "", IntPtr.Zero);
+                //target.RaiseEvent(
+                //     new System.Windows.Input.KeyEventArgs(
+                //       Keyboard.PrimaryDevice,
+                //       // PresentationSource.FromVisual(target),
+                //       // Keyboard.PrimaryDevice.ActiveSource,
+                //       target,
+                //       0,
+                //       key)
+                //     { RoutedEvent = routedEvent }
+                //   );
             }
         }
         #endregion
@@ -251,7 +259,6 @@ namespace SpeakFasterObserver
                 notifyIcon.Text = "Observer - Recording Off";
                 toggleButtonOnOff.Text = "Recording Off";
                 audioInput.StopRecordingFromMicrophone();
-                flushAudioInput();
             }
 
             screenshotTimer.Enabled = isRecording;
@@ -331,9 +338,7 @@ namespace SpeakFasterObserver
 
             // need to serialize to file
             // {DataStream}-yyyymmddTHHmmssf.{Extension}
-            var filename = Path.Combine(
-               FormMain.dataPath,
-                $"{DateTime.Now:yyyyMMddTHHmmssfff}-Keypresses.protobuf");
+            var filename = FileNaming.getKeypressesProtobufFilePath(dataPath);
             using (var file = File.Create(filename))
             {
                 oldKeypresses.WriteTo(file);

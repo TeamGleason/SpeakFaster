@@ -12,11 +12,6 @@ namespace SpeakFasterObserver
             return $"{DateTime.Now:yyyyMMddTHHmmssfff}";
         }
 
-        public static string getAudioFileName(string dataDir)
-        {
-            return Path.Combine(dataDir, $"{getTimestamp()}-MicWaveIn.flac");
-        }
-
         public static string getMicWavInFilePath(string dataDir)
         {
             return Path.Combine(dataDir, $"{getTimestamp()}-MicWaveIn.flac");

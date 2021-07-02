@@ -17,7 +17,7 @@ namespace SpeakFasterObserver
         private FileStream flacStream = null; 
         private FlacWriter flacWriter = null;
         private int[] buffer = null;
-        private volatile bool isRecording = false;  // TODO(cais): Thread safety?
+        private volatile bool isRecording = false;
         private static readonly object flacLock = new object();
 
         public AudioInput(string dataDir) {

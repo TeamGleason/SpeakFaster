@@ -5,10 +5,6 @@ using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Text;
-using System.Windows;
-using System.Windows.Interop;
-using System.Windows.Controls;
-using System.Windows.Input;
 using System.Windows.Forms;
 
 namespace SpeakFasterObserver
@@ -136,13 +132,6 @@ namespace SpeakFasterObserver
                 SetRecordingState(isRecording, isRecordingScreenshots, !isRecordingMicWaveIn);
             }
         }
-
-        // Flush audio input data to file.
-        //private static void flushAudioInput()
-        //{
-        //    // Flush audio data to file.
-        //    audioInput.WriteBufferToFlacFile(DataFormat.getMicWavInFilePath(dataPath));
-        //}
 
         public static async void Timer_Tick(object? state)
         {

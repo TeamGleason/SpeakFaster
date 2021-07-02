@@ -6,6 +6,7 @@ namespace SpeakFasterObserver
     class FileNaming
     {
         private static string IN_PROGRESS_SUFFIX = ".InProgress";
+
         public static String getTimestamp()
         {
             return $"{DateTime.Now:yyyyMMddTHHmmssfff}";
@@ -42,6 +43,7 @@ namespace SpeakFasterObserver
         {
             return filePath.EndsWith(IN_PROGRESS_SUFFIX);
         }
+
         public static string addInProgressSuffix(String filePath)
         {
             if (isInProgress(filePath))
@@ -50,6 +52,7 @@ namespace SpeakFasterObserver
             }
             return filePath + IN_PROGRESS_SUFFIX;
         }
+
         public static string removeInProgressSuffix(String filePath)
         {
             if (isInProgress(filePath))

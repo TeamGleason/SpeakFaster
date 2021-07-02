@@ -207,21 +207,6 @@ namespace SpeakFasterObserver
                 lastKeypressString = keypressString;
 
                 keyloggerTimer.Change(60 * 1000, System.Threading.Timeout.Infinite);
-
-                //var key = Key.Enter;                    // Key to send
-                //var target = Keyboard.FocusedElement;    // Target element
-                //var routedEvent = Keyboard.KeyDownEvent; // Event to send
-                //var target = new HwndSource(0, 0, 0, 0, 0, "", IntPtr.Zero);
-                //target.RaiseEvent(
-                //     new System.Windows.Input.KeyEventArgs(
-                //       Keyboard.PrimaryDevice,
-                //       // PresentationSource.FromVisual(target),
-                //       // Keyboard.PrimaryDevice.ActiveSource,
-                //       target,
-                //       0,
-                //       key)
-                //     { RoutedEvent = routedEvent }
-                //   );
             }
         }
         #endregion

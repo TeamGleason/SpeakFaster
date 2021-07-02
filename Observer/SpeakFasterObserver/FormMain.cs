@@ -22,6 +22,7 @@ namespace SpeakFasterObserver
         static KeyPresses keypresses = new();
         static bool isRecording = true;
         static bool isRecordingScreenshots = true;
+        static bool isRecordingMicWaveIn = true;
         static bool balabolkaRunning = false;
         static bool balabolkaFocused = false;
         static bool tobiiComputerControlRunning = false;
@@ -67,9 +68,10 @@ namespace SpeakFasterObserver
             // Load previous recording state
             isRecording = Properties.Settings.Default.IsRecordingOn;
             isRecordingScreenshots = Properties.Settings.Default.IsRecordingScreenshots;
+            isRecordingMicWaveIn = Properties.Settings.Default.IsRecordingMicWaveIn;
 
             // Ensure Icons and Strings reflect proper recording state on start
-            SetRecordingState(isRecording, isRecordingScreenshots);
+            SetRecordingState(isRecording, isRecordingScreenshots, isRecordingMicWaveIn);
 
             // Setup the Keypress keyboard hook
             keylogger = new Keylogger(KeyboardHookHandler);
@@ -106,14 +108,14 @@ namespace SpeakFasterObserver
 
         private void toggleButtonOnOff_Click(object sender, EventArgs e)
         {
-            SetRecordingState(!isRecording, isRecordingScreenshots);
+            SetRecordingState(!isRecording, isRecordingScreenshots, isRecordingMicWaveIn);
         }
 
         private void notifyIcon_Click(object sender, EventArgs e)
         {
             if (((System.Windows.Forms.MouseEventArgs)e).Button == MouseButtons.Left)
             {
-                SetRecordingState(!isRecording, isRecordingScreenshots);
+                SetRecordingState(!isRecording, isRecordingScreenshots, isRecordingMicWaveIn);
             }
         }
 
@@ -127,7 +129,11 @@ namespace SpeakFasterObserver
             }
             else if (clickedItem.Text == "Record Screenshots")
             {
-                SetRecordingState(isRecording, !isRecordingScreenshots);
+                SetRecordingState(isRecording, !isRecordingScreenshots, isRecordingMicWaveIn);
+            }
+            else if (clickedItem.Text == "Record Audio from Microphone")
+            {
+                SetRecordingState(isRecording, isRecordingScreenshots, !isRecordingMicWaveIn);
             }
         }
 
@@ -140,7 +146,10 @@ namespace SpeakFasterObserver
 
         public static async void Timer_Tick(object? state)
         {
-            audioInput.RotateFlacWriter();
+            if (isRecording && isRecordingMicWaveIn)
+            {
+                audioInput.RotateFlacWriter();
+            }
             Upload.Timer_Tick(state);
         }
 
@@ -238,27 +247,30 @@ namespace SpeakFasterObserver
             }
         }
 
-        private void SetRecordingState(bool newRecordingState, bool newIsRecordingScreenshots)
+        private void SetRecordingState(
+            bool newRecordingState,
+            bool newIsRecordingScreenshots,
+            bool newIsRecordingMicWaveIn)
         {
             isRecording = newRecordingState;
             isRecordingScreenshots = newIsRecordingScreenshots;
+            isRecordingMicWaveIn = newIsRecordingMicWaveIn;
 
             toggleButtonOnOff.Checked = isRecording;
             this.RecordScreenshotsToolStripMenuItem.Checked = isRecordingScreenshots;
+            this.RecordMicWaveInToolStripMenuItem.Checked = isRecordingMicWaveIn;
 
             if (isRecording)
             {
                 notifyIcon.Icon = new Icon("Assets\\RecordingOn.ico");
                 notifyIcon.Text = "Observer - Recording On";
                 toggleButtonOnOff.Text = "Recording On";
-                audioInput.StartRecordingFromMicrophone();
             }
             else
             {
                 notifyIcon.Icon = new Icon("Assets\\RecordingOff.ico");
                 notifyIcon.Text = "Observer - Recording Off";
                 toggleButtonOnOff.Text = "Recording Off";
-                audioInput.StopRecordingFromMicrophone();
             }
 
             screenshotTimer.Enabled = isRecording;
@@ -275,6 +287,22 @@ namespace SpeakFasterObserver
                 // Save the new recording state
                 Properties.Settings.Default.IsRecordingScreenshots = isRecordingScreenshots;
                 Properties.Settings.Default.Save();
+            }
+
+            if (isRecordingMicWaveIn != Properties.Settings.Default.IsRecordingMicWaveIn)
+            {
+                // Save the new recording state
+                Properties.Settings.Default.IsRecordingMicWaveIn = isRecordingMicWaveIn;
+                Properties.Settings.Default.Save();
+            }
+
+            if (isRecording && isRecordingMicWaveIn)
+            {
+                audioInput.StartRecordingFromMicrophone();
+            }
+            else
+            {
+                audioInput.StopRecordingFromMicrophone();
             }
         }
 
@@ -336,8 +364,6 @@ namespace SpeakFasterObserver
 
             if (oldKeypresses.KeyPresses_.Count == 0) return;
 
-            // need to serialize to file
-            // {DataStream}-yyyymmddTHHmmssf.{Extension}
             var filename = FileNaming.getKeypressesProtobufFilePath(dataPath);
             using (var file = File.Create(filename))
             {
@@ -353,6 +379,7 @@ namespace SpeakFasterObserver
             processCheckerTimer.Enabled = false;
             screenshotTimer.Enabled = false;
 
+            audioInput.StopRecordingFromMicrophone();
             SaveKeypresses();
 
             keylogger.Dispose();

@@ -17,13 +17,18 @@ namespace SpeakFasterObserver
         private FileStream flacStream = null; 
         private FlacWriter flacWriter = null;
         private int[] buffer = null;
-        private bool isRecording = false;  // TODO(cais): Thread safety?
+        private volatile bool isRecording = false;  // TODO(cais): Thread safety?
         private static readonly object flacLock = new object();
 
         public AudioInput(string dataDir) {
             this.dataDir = dataDir;
         }
 
+        /**
+         * Start recording audio waveform from the built-in microphone.
+         * 
+         * Creates a new InProgress .flac file to save the data to.
+         */
         public void StartRecordingFromMicrophone()
         {
             if (isRecording)
@@ -36,6 +41,7 @@ namespace SpeakFasterObserver
             };
             if (waveIn.WaveFormat.BitsPerSample != AUDIO_BITS_PER_SAMPLE)
             {
+                // TODO(#64): Handle this exception add the app level.
                 throw new NotSupportedException(
                     $"Expected wave-in bits per sample to be {AUDIO_BITS_PER_SAMPLE}, " +
                     $"but got {waveIn.WaveFormat.BitsPerSample}");
@@ -46,6 +52,11 @@ namespace SpeakFasterObserver
             isRecording = true;
         }
 
+        /**
+         * Stops any ongoing recording from microphone.
+         * 
+         * If a current InProgress .flac exists. Rename it to make it final.
+         */
         public void StopRecordingFromMicrophone()
         {
             if (!isRecording)
@@ -74,6 +85,10 @@ namespace SpeakFasterObserver
             }
         }
 
+        /**
+         * Marks the current InProgress .flac file final and starts a new
+         * InProgress .flac file.
+         */
         public void RotateFlacWriter()
         {
             MaybeEndCurrentFlacWriter();
@@ -111,7 +126,7 @@ namespace SpeakFasterObserver
                         FileNaming.getMicWavInFilePath(dataDir));
                 flacStream = File.Create(flacFilePath);
                 flacWriter = new FlacWriter(flacStream);
-                FlacStreaminfo streamInfo = new FlacStreaminfo
+                FlacStreaminfo streamInfo = new()
                 {
                     ChannelsCount = AUDIO_NUM_CHANNELS,
                     BitsPerSample = AUDIO_BITS_PER_SAMPLE,

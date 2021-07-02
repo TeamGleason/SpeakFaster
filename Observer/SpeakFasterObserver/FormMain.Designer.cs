@@ -43,6 +43,7 @@ namespace SpeakFasterObserver
             this.notifyIcon = new System.Windows.Forms.NotifyIcon(this.components);
             this.notifyIconContextMenuStrip = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.RecordScreenshotsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.RecordMicWaveInToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.ExitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.screenshotTimer = new System.Windows.Forms.Timer(this.components);
             this.processCheckerTimer = new System.Windows.Forms.Timer(this.components);
@@ -179,6 +180,7 @@ namespace SpeakFasterObserver
             this.notifyIconContextMenuStrip.ImageScalingSize = new System.Drawing.Size(32, 32);
             this.notifyIconContextMenuStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.RecordScreenshotsToolStripMenuItem,
+            this.RecordMicWaveInToolStripMenuItem,
             this.ExitToolStripMenuItem});
             this.notifyIconContextMenuStrip.Name = "notifyIconContextMenuStrip";
             this.notifyIconContextMenuStrip.Size = new System.Drawing.Size(297, 80);
@@ -189,6 +191,12 @@ namespace SpeakFasterObserver
             this.RecordScreenshotsToolStripMenuItem.Name = "RecordScreenshotsToolStripMenuItem";
             this.RecordScreenshotsToolStripMenuItem.Size = new System.Drawing.Size(296, 38);
             this.RecordScreenshotsToolStripMenuItem.Text = "Record Screenshots";
+            //
+            // RecordMicWaveInToolStripMenuItem
+            //
+            this.RecordMicWaveInToolStripMenuItem.Name = "RecordMicWaveInToolStripMenuItem";
+            this.RecordMicWaveInToolStripMenuItem.Size = new System.Drawing.Size(296, 38);
+            this.RecordMicWaveInToolStripMenuItem.Text = "Record Audio from Microphone";
             // 
             // ExitToolStripMenuItem
             // 
@@ -250,6 +258,7 @@ namespace SpeakFasterObserver
         private System.Windows.Forms.ContextMenuStrip notifyIconContextMenuStrip;
         private System.Windows.Forms.ToolStripMenuItem ExitToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem RecordScreenshotsToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem RecordMicWaveInToolStripMenuItem;
     }
 }
 

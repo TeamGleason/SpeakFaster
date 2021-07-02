@@ -37,9 +37,14 @@ namespace SpeakFasterObserver
         {
             return Path.Combine(dataDir, $"{getTimestamp()}-Keypresses.protobuf");
         }
+
+        public static bool isInProgress(String filePath)
+        {
+            return filePath.EndsWith(IN_PROGRESS_SUFFIX);
+        }
         public static string addInProgressSuffix(String filePath)
         {
-            if (filePath.EndsWith(IN_PROGRESS_SUFFIX))
+            if (isInProgress(filePath))
             {
                 return filePath;
             }
@@ -47,7 +52,7 @@ namespace SpeakFasterObserver
         }
         public static string removeInProgressSuffix(String filePath)
         {
-            if (filePath.EndsWith(IN_PROGRESS_SUFFIX))
+            if (isInProgress(filePath))
             {
                 return filePath.Substring(0, filePath.Length - IN_PROGRESS_SUFFIX.Length);
             }

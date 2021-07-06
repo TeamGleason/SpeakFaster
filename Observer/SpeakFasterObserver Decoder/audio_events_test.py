@@ -73,50 +73,6 @@ class AudioEventsTest(tf.test.TestCase):
     with self.assertRaisesRegex(ValueError, r"sample rate.*18000"):
       output = audio_events.extract_audio_events(dummy_generator, fs=18000)
 
-  def testConvertEventsToTsvRows_singleEventTypeAtATime(self):
-    events = [
-        [("Speech", 0.9)],
-        [("Speech", 0.95)],
-        [],
-        [("Hands", 0.55)],
-        [("Hands", 0.6)],
-    ]
-    rows = audio_events.convert_events_to_tsv_rows(events)
-    self.assertEqual(rows, [
-        (0.0, 2.0, "AudioEvents1", "Speech"),
-        (3.0, 5.0, "AudioEvents1", "Hands"),
-    ])
-
-  def testConvertEventsToTsvRows_withFinalEmptyClasses_ignoresSilence(self):
-    events = [
-        [("Speech", 0.9)],
-        [("Speech", 0.95)],
-        [("Silence", 0.99)],
-        [("Hands", 0.55)],
-        [("Hands", 0.6)],
-        []
-    ]
-    rows = audio_events.convert_events_to_tsv_rows(events)
-    self.assertEqual(rows, [
-        (0.0, 2.0, "AudioEvents1", "Speech"),
-        (3.0, 5.0, "AudioEvents1", "Hands"),
-    ])
-
-def testConvertEventsToTsvRows_withOverlapping(self):
-    events = [
-        [("Speech", 0.6)],
-        [("Speech", 0.6), ("Music", 0.3)],
-        [("Speech", 0.5), ("Music", 0.4)],
-        [("Music", 0.7)],
-        [("Music", 0.8)],
-    ]
-    rows = audio_events.convert_events_to_tsv_rows(events)
-    self.assertEqual(rows, [
-        (0.0, 3.0, "AudioEvents1", "Speech"),
-        (1.0, 5.0, "AudioEvents1", "Music"),
-    ])
-
-
 
 if __name__ == "__main__":
   tf.test.main() # run all tests

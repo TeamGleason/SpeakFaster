@@ -3,4 +3,9 @@
 
 set -eu
 
-python ./*_test.py
+for FILE_PATH in ./*_test.py; do
+  echo "================================"
+  echo "Running tests in ${FILE_PATH}..."
+  python "${FILE_PATH}"
+  echo
+done

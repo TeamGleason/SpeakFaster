@@ -18,21 +18,28 @@ namespace SpeakFasterObserver
         static KeyPresses keypresses = new();
         static bool isRecording = true;
         static bool isRecordingScreenshots = true;
+        static bool isRecordingMicWaveIn = true;
         static bool balabolkaRunning = false;
         static bool balabolkaFocused = false;
         static bool tobiiComputerControlRunning = false;
+        static AudioInput audioInput;
         static ScreenCapture screenCapture;
         private static string lastKeypressString = String.Empty;
         Keylogger keylogger;
 
-        System.Threading.Timer uploadTimer = new(Upload.Timer_Tick);
+        System.Threading.Timer uploadTimer = new(Timer_Tick);
         static System.Threading.Timer keyloggerTimer = new((state) => { SaveKeypresses(); });
 
         public FormMain()
         {
             InitializeComponent();
 
+            dataPath = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "SpeakFasterObserver");
+
             gazeDevice = new ToltTech.GazeInput.TobiiStreamEngine();
+            audioInput = new AudioInput(dataPath);
 
             if (!gazeDevice.IsAvailable)
             {
@@ -48,10 +55,6 @@ namespace SpeakFasterObserver
                 Upload._gazeDevice = gazeDevice.Information;
             }
 
-            dataPath = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "SpeakFasterObserver");
-
             // Ensure output director exists
             if (!Directory.Exists(dataPath))
             {
@@ -61,9 +64,10 @@ namespace SpeakFasterObserver
             // Load previous recording state
             isRecording = Properties.Settings.Default.IsRecordingOn;
             isRecordingScreenshots = Properties.Settings.Default.IsRecordingScreenshots;
+            isRecordingMicWaveIn = Properties.Settings.Default.IsRecordingMicWaveIn;
 
             // Ensure Icons and Strings reflect proper recording state on start
-            SetRecordingState(isRecording, isRecordingScreenshots);
+            SetRecordingState(isRecording, isRecordingScreenshots, isRecordingMicWaveIn);
 
             // Setup the Keypress keyboard hook
             keylogger = new Keylogger(KeyboardHookHandler);
@@ -100,14 +104,14 @@ namespace SpeakFasterObserver
 
         private void toggleButtonOnOff_Click(object sender, EventArgs e)
         {
-            SetRecordingState(!isRecording, isRecordingScreenshots);
+            SetRecordingState(!isRecording, isRecordingScreenshots, isRecordingMicWaveIn);
         }
 
         private void notifyIcon_Click(object sender, EventArgs e)
         {
             if (((System.Windows.Forms.MouseEventArgs)e).Button == MouseButtons.Left)
             {
-                SetRecordingState(!isRecording, isRecordingScreenshots);
+                SetRecordingState(!isRecording, isRecordingScreenshots, isRecordingMicWaveIn);
             }
         }
 
@@ -121,18 +125,27 @@ namespace SpeakFasterObserver
             }
             else if (clickedItem.Text == "Record Screenshots")
             {
-                SetRecordingState(isRecording, !isRecordingScreenshots);
+                SetRecordingState(isRecording, !isRecordingScreenshots, isRecordingMicWaveIn);
             }
+            else if (clickedItem.Text == "Record Audio from Microphone")
+            {
+                SetRecordingState(isRecording, isRecordingScreenshots, !isRecordingMicWaveIn);
+            }
+        }
+
+        public static async void Timer_Tick(object? state)
+        {
+            if (isRecording && isRecordingMicWaveIn)
+            {
+                audioInput.RotateFlacWriter();
+            }
+            Upload.Timer_Tick(state);
         }
 
         private void screenshotTimer_Tick(object sender, EventArgs e)
         {
-            var timestamp = $"{DateTime.Now:yyyyMMddTHHmmssfff}";
-
-            var filePath = Path.Combine(
-                dataPath,
-                $"{timestamp}-Screenshot.jpg");
-
+            var timestamp = FileNaming.getTimestamp();
+            var filePath = FileNaming.getScreenshotFilePath(dataPath, timestamp);
             CaptureScreenshot(timestamp, filePath);
         }
 
@@ -175,12 +188,8 @@ namespace SpeakFasterObserver
 
                 if (lastKeypressString.Equals("LControlKey") && keypressString.Equals("W"))
                 {
-                    var timestamp = $"{DateTime.Now:yyyyMMddTHHmmssfff}";
-
-                    var filePath = Path.Combine(
-                        dataPath,
-                        $"{timestamp}-SpeechScreenshot.jpg");
-
+                    var timestamp = FileNaming.getTimestamp();
+                    var filePath = FileNaming.getSpeechScreenshotFilePath(dataPath, timestamp);
                     CaptureScreenshot(timestamp, filePath);
                 }
 
@@ -212,13 +221,18 @@ namespace SpeakFasterObserver
             }
         }
 
-        private void SetRecordingState(bool newRecordingState, bool newIsRecordingScreenshots)
+        private void SetRecordingState(
+            bool newRecordingState,
+            bool newIsRecordingScreenshots,
+            bool newIsRecordingMicWaveIn)
         {
             isRecording = newRecordingState;
             isRecordingScreenshots = newIsRecordingScreenshots;
+            isRecordingMicWaveIn = newIsRecordingMicWaveIn;
 
             toggleButtonOnOff.Checked = isRecording;
             this.RecordScreenshotsToolStripMenuItem.Checked = isRecordingScreenshots;
+            this.RecordMicWaveInToolStripMenuItem.Checked = isRecordingMicWaveIn;
 
             if (isRecording)
             {
@@ -247,6 +261,22 @@ namespace SpeakFasterObserver
                 // Save the new recording state
                 Properties.Settings.Default.IsRecordingScreenshots = isRecordingScreenshots;
                 Properties.Settings.Default.Save();
+            }
+
+            if (isRecordingMicWaveIn != Properties.Settings.Default.IsRecordingMicWaveIn)
+            {
+                // Save the new recording state
+                Properties.Settings.Default.IsRecordingMicWaveIn = isRecordingMicWaveIn;
+                Properties.Settings.Default.Save();
+            }
+
+            if (isRecording && isRecordingMicWaveIn)
+            {
+                audioInput.StartRecordingFromMicrophone();
+            }
+            else
+            {
+                audioInput.StopRecordingFromMicrophone();
             }
         }
 
@@ -308,11 +338,7 @@ namespace SpeakFasterObserver
 
             if (oldKeypresses.KeyPresses_.Count == 0) return;
 
-            // need to serialize to file
-            // {DataStream}-yyyymmddTHHmmssf.{Extension}
-            var filename = Path.Combine(
-               FormMain.dataPath,
-                $"{DateTime.Now:yyyyMMddTHHmmssfff}-Keypresses.protobuf");
+            var filename = FileNaming.getKeypressesProtobufFilePath(dataPath);
             using (var file = File.Create(filename))
             {
                 oldKeypresses.WriteTo(file);
@@ -327,6 +353,7 @@ namespace SpeakFasterObserver
             processCheckerTimer.Enabled = false;
             screenshotTimer.Enabled = false;
 
+            audioInput.StopRecordingFromMicrophone();
             SaveKeypresses();
 
             keylogger.Dispose();

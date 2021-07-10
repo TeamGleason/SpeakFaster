@@ -51,7 +51,7 @@ license and are obtained from the URLs such as:
 
 The SpeakFaster Observer writes audio data to .flac files that are approximately
 60 second each in length. To transcribe a consecutive series of such .flac files,
-fine the path to the first .flac file in the series and feed it to the audio_asr.py
+find the path to the first .flac file in the series and feed it to the audio_asr.py
 script. Additionally, provide path to the  output .tsv file. For example:
 
 ```sh

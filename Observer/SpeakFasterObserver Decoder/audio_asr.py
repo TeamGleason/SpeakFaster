@@ -10,6 +10,7 @@ import os
 import pathlib
 import struct
 
+from absl import logging
 import numpy as np
 import pydub
 from google.cloud import speech_v1p1beta1 as speech
@@ -108,7 +109,7 @@ def audio_data_generator(input_audio_paths, config):
       data = load_audio_data(file_path, config)
       yield speech.StreamingRecognizeRequest(audio_content=data)
     except pydub.exceptions.CouldntDecodeError:
-      pass  # TODO(cais): Log an error.
+      logging.warn("Failed to read audio data from file %s", file_path)
 
 
 def parse_args():
@@ -177,6 +178,8 @@ def transcribe_audio_to_tsv(input_audio_paths,
       # TODO(cais): The default transcript result doesn't include the start
       # time stamp, so we currently pretend that each recognizer output phrase
       # is exactly 1 second.
+      # TODO(cais): Should we use absolute timestamps such as epoch time, instead of
+      # time relative to the beginning of the first file?
       start_time_sec = end_time_sec - 1
       line = "%.3f\t%.3f\t%s\t%s" % (
           start_time_sec, end_time_sec, SPEECH_TRANSCRIPT_TIER_NAME, best_transcript)

@@ -47,6 +47,23 @@ license and are obtained from the URLs such as:
 - https://search.creativecommons.org/photos/10590078-2f13-4caf-b96d-5d1db14eccd4
 - https://search.creativecommons.org/photos/832045ea-53f3-4a3d-9c35-9b51f9add43d
 
+## Automatic Speech Recognitino (ASR, Speech-to-text) on audio files
+
+The SpeakFaster Observer writes audio data to .flac files that are approximately
+60 second each in length. To transcribe a consecutive series of such .flac files,
+fine the path to the first .flac file in the series and feed it to the audio_asr.py
+script. Additionally, provide path to the  output .tsv file. For example:
+
+```sh
+python audio_asr.py data/20210710T095258428-MicWaveIn.flac /tmp/speech_transcript.tsv
+```
+
+The script automatically finds consecutive audio files in the same directory as the
+first audio file based on the length of each audio file and the timestamps in the
+file names.
+
+# TOOD(cais): Add instructions for Google Cloud credentials.
+
 ## Running unit tests in this folder
 
 Use:

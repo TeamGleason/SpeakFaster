@@ -5,6 +5,7 @@ black==21.5b1
 click==8.0.1
 colorama==0.4.4
 google==3.0.0
+google-cloud-speech==2.5.0
 importlib-metadata==4.0.1
 isort==5.8.0
 jsonpickle==2.0.0
@@ -19,6 +20,7 @@ pylint==2.8.2
 regex==2021.4.4
 setuptools==47.1.0
 numpy==1.19.5
+pydub==0.25.1
 scipy==1.6.3
 six==1.15.0
 tensorflow==2.5.0

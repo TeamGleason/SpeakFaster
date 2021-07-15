@@ -269,9 +269,14 @@ class Phrase:
         KSR is Keystroke Savings Rate, defined as
         (total_chars - actual_num_of_keystrokes) / total_chars
         """
+
+        # The gaze_keypress_count for the phrase includes the two keypresses
+        # needed to trigger speech. We don't want to include those in the KSR
+        actual_num_of_keystrokes = self.gaze_keypress_count - 2
+
         if self.was_spoken and self.character_count > 0:
             self.ksr = (
-                self.character_count - self.gaze_keypress_count
+                self.character_count - (actual_num_of_keystrokes)
             ) / self.character_count
 
     def calculate_wpm(self):

@@ -46,7 +46,6 @@ namespace SpeakFasterObserver
                     $"Expected wave-in bits per sample to be {AUDIO_BITS_PER_SAMPLE}, " +
                     $"but got {waveIn.WaveFormat.BitsPerSample}");
             }
-            CreateFlacWriter();
             waveIn.DataAvailable += new EventHandler<WaveInEventArgs>(WaveDataAvailable);
             waveIn.StartRecording();
             isRecording = true;
@@ -81,6 +80,7 @@ namespace SpeakFasterObserver
                 {
                     buffer[i / 2] = BitConverter.ToInt16(e.Buffer, i);
                 }
+                MaybeCreateFlacWriter();
                 flacWriter.WriteSamples(buffer);
             }
         }
@@ -92,9 +92,12 @@ namespace SpeakFasterObserver
         public void RotateFlacWriter()
         {
             MaybeEndCurrentFlacWriter();
-            CreateFlacWriter();
         }
 
+        /**
+         * If a FlacWriter object currently exists, stops it and removes the
+         * InProgress suffix from its file name.
+         */
         private void MaybeEndCurrentFlacWriter()
         {
             lock (flacLock)
@@ -114,27 +117,25 @@ namespace SpeakFasterObserver
             }
         }
 
-        private void CreateFlacWriter()
+        /** Creates a FlacWriter object if none currently exists. */
+        private void MaybeCreateFlacWriter()
         {
-            lock (flacLock)
+            if (flacWriter != null)
             {
-                if (flacWriter != null)
-                {
-                    return;
-                }
-                flacFilePath = flacFilePath = FileNaming.addInProgressSuffix(
-                        FileNaming.getMicWavInFilePath(dataDir));
-                flacStream = File.Create(flacFilePath);
-                flacWriter = new FlacWriter(flacStream);
-                FlacStreaminfo streamInfo = new()
-                {
-                    ChannelsCount = AUDIO_NUM_CHANNELS,
-                    BitsPerSample = AUDIO_BITS_PER_SAMPLE,
-                    SampleRate = AUDIO_SAMPLE_RATE_HZ,
-                    MaxBlockSize = AUDIO_SAMPLE_RATE_HZ,
-                };
-                flacWriter.StartStream(streamInfo);
+                return;
             }
+            flacFilePath = flacFilePath = FileNaming.addInProgressSuffix(
+                    FileNaming.getMicWavInFilePath(dataDir));
+            flacStream = File.Create(flacFilePath);
+            flacWriter = new FlacWriter(flacStream);
+            FlacStreaminfo streamInfo = new()
+            {
+                ChannelsCount = AUDIO_NUM_CHANNELS,
+                BitsPerSample = AUDIO_BITS_PER_SAMPLE,
+                SampleRate = AUDIO_SAMPLE_RATE_HZ,
+                MaxBlockSize = AUDIO_SAMPLE_RATE_HZ,
+            };
+            flacWriter.StartStream(streamInfo);
         }
     }
 }

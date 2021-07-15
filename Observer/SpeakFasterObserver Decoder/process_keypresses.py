@@ -469,10 +469,10 @@ def visualize_keypresses(keypresses, args):
             elif keypress.KeyPress == "LShiftKey":
                 if (
                     current_key_index + 1 < total_keyspresses
-                    and not keypresses.keyPresses[current_key_index + 1].KeyPress
-                    == "LShiftKey"
-                    and not keypresses.keyPresses[current_key_index + 1].KeyPress
-                    == "LControlKey"
+                    and keypresses.keyPresses[current_key_index + 1].KeyPress
+                    != "LShiftKey"
+                    and keypresses.keyPresses[current_key_index + 1].KeyPress
+                    != "LControlKey"
                 ):
                     current_phrase.visualized_string += output_for_keypress(
                         keypresses.keyPresses[current_key_index + 1].KeyPress, True
@@ -652,7 +652,7 @@ def list_keypresses(keypresses, args):
             keypresses, current_key_index, total_keys_pressed
         )
 
-        is_next_gaze_typed, next_delta_timestamp = is_key_gaze_initiated(
+        is_next_gaze_typed, _next_delta_timestamp = is_key_gaze_initiated(
             keypresses, current_key_index + 1, total_keys_pressed
         )
 

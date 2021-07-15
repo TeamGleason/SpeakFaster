@@ -65,6 +65,16 @@ SPECIAL_KEYS = {
     "LWin": "🗔",
     "LControlKey": "🎛️",
     "LShiftKey": "↑",
+    "End": "🔚",
+    "Next": "⏭️",
+    "Up": "⬆️",
+    "Down": "⬇️",
+    "PageUp": "⏫",
+    "PageDown": "⏬",
+    "NumLock": "🔒",
+    "LButton, OemClear": "🆑",
+    "OemOpenBrackets": "[",
+    "OemCloseBrackets": "]",
     "D1": "1",
     "D2": "2",
     "D3": "3",
@@ -100,6 +110,7 @@ SHIFTED_SPECIAL_KEYS = {
     "Back": "🠠",
     "Space": " ",
     "Return": "↩",
+    "End": "🔚",
 }
 
 # pylint: disable=too-few-public-methods
@@ -754,7 +765,8 @@ def output_for_keypress(keypress, shift_on):
     if shift_on and keypress in SHIFTED_SPECIAL_KEYS:
         return SHIFTED_SPECIAL_KEYS[keypress]
 
-    raise Exception(f"{keypress} not handled")
+    print(f"{keypress} not handled, outputting 👽")
+    return "👽"
 
 
 def datetime_from_protobuf_timestamp(protobuf_timestamp):

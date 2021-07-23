@@ -40,13 +40,15 @@ class GetConsecutiveAudioFilePathsTest(tf.test.TestCase):
         os.path.join(self.get_temp_dir(), "20210710T120000000-MicWavIn.wav"),
         16000, np.zeros(16000 * 1))
 
-    paths, total_duration_sec = audio_asr.get_consecutive_audio_file_paths(
-        os.path.join(self.get_temp_dir(), "20210710T080000000-MicWavIn.wav"))
-    self.assertEqual(paths, [
+    (path_groups,
+     group_durations_sec) = audio_asr.get_consecutive_audio_file_paths(
         os.path.join(self.get_temp_dir(), "20210710T080000000-MicWavIn.wav"),
-        os.path.join(self.get_temp_dir(), "20210710T080010000-MicWavIn.wav"),
-        os.path.join(self.get_temp_dir(), "20210710T080015000-MicWavIn.wav")])
-    self.assertEqual(total_duration_sec, 10 + 5 + 1)
+        group_limit_sec=15)
+    self.assertEqual(path_groups, [
+        [os.path.join(self.get_temp_dir(), "20210710T080000000-MicWavIn.wav"),
+         os.path.join(self.get_temp_dir(), "20210710T080010000-MicWavIn.wav")],
+        [os.path.join(self.get_temp_dir(), "20210710T080015000-MicWavIn.wav")]])
+    self.assertEqual(group_durations_sec, [10 + 5, 1])
 
   def testGetConsecutiveAudioFilePaths_findsASingleFile(self):
     wavfile.write(
@@ -59,11 +61,12 @@ class GetConsecutiveAudioFilePathsTest(tf.test.TestCase):
         os.path.join(self.get_temp_dir(), "20210710T090000000-MicWavIn.wav"),
         16000, np.zeros(16000 * 5))
 
-    paths, total_duration_sec = audio_asr.get_consecutive_audio_file_paths(
+    (path_groups,
+     group_durations_sec) = audio_asr.get_consecutive_audio_file_paths(
         os.path.join(self.get_temp_dir(), "20210710T080000000-MicWavIn.wav"))
-    self.assertEqual(paths, [
-        os.path.join(self.get_temp_dir(), "20210710T080000000-MicWavIn.wav")])
-    self.assertEqual(total_duration_sec, 10)
+    self.assertEqual(path_groups, [
+        [os.path.join(self.get_temp_dir(), "20210710T080000000-MicWavIn.wav")]])
+    self.assertEqual(group_durations_sec, [10])
 
 
 class LoadAudioDataTest(tf.test.TestCase):

@@ -25,8 +25,13 @@ def get_audio_file_duration_sec(file_path):
   return audio_seg.duration_seconds
 
 
+GCLOUD_SPEECH_STREAMING_LENGTH_LIMIT_SEC = 240
+
+
 def get_consecutive_audio_file_paths(
-    first_audio_path, tolerance_seconds=1.0):
+    first_audio_path,
+    tolerance_seconds=1.0,
+    group_limit_sec=GCLOUD_SPEECH_STREAMING_LENGTH_LIMIT_SEC):
   """Get the paths to the consecutive audio files.
 
   It is assumed that the audio basename of the file path has the format:
@@ -34,6 +39,12 @@ def get_consecutive_audio_file_paths(
 
   NOTE: It is assumed that there is no interleaving of more than one series
       of audio files.
+
+  Returns:
+    path_groups: A list of list of audio files. In each group, the
+      total duration of the audios is less than group_limit_sec
+    group_durations_sec: Total duration of audio in each element of
+      path_groups.
   """
   if not os.path.exists(first_audio_path):
     raise ValueError("Nonexist audio file path: %s" % first_audio_path)
@@ -45,11 +56,13 @@ def get_consecutive_audio_file_paths(
       file for file in candidate_paths if file > first_audio_path]
 
   output_paths = [first_audio_path]
+  durations_sec = []
   total_duration_sec = 0.0
   audio_path = first_audio_path
   while candidate_paths:
     timestamp = file_naming.parse_timestamp_from_filename(audio_path)
     duration_sec = get_audio_file_duration_sec(audio_path)
+    durations_sec.append(duration_sec)
     total_duration_sec += duration_sec
     next_timestamp = file_naming.parse_timestamp_from_filename(
         candidate_paths[0])
@@ -60,7 +73,26 @@ def get_consecutive_audio_file_paths(
       del candidate_paths[0]
     else:
       break
-  return output_paths, total_duration_sec
+
+  # Group paths by duration.
+  path_groups = [[]]
+  group_durations_sec = []
+  current_group_duration_sec = 0
+  for output_path, duration_sec in zip(output_paths, durations_sec):
+    if duration_sec > group_limit_sec:
+      raise ValueError(
+          "Single audio file has a duration (%f s) that exceeds streaming "
+          "length limit (%f s)" % (duration_sec, group_limit_sec))
+    if current_group_duration_sec + duration_sec > group_limit_sec:
+      path_groups.append([])
+      group_durations_sec.append(current_group_duration_sec)
+      current_group_duration_sec = 0
+    path_groups[-1].append(output_path)
+    current_group_duration_sec += duration_sec
+  if current_group_duration_sec:
+    group_durations_sec.append(current_group_duration_sec)
+
+  return path_groups, group_durations_sec
 
 
 def load_audio_data(file_path, config):
@@ -223,7 +255,8 @@ def regroup_utterances(utterances, words):
 def transcribe_audio_to_tsv(input_audio_paths,
                             output_tsv_path,
                             sample_rate,
-                            language_code):
+                            language_code,
+                            begin_sec=0.0):
   """Transcribe speech in input audio files and write results to .tsv file."""
   client = speech.SpeechClient()
   config = speech.RecognitionConfig(
@@ -236,9 +269,10 @@ def transcribe_audio_to_tsv(input_audio_paths,
   requests = audio_data_generator(input_audio_paths, config)
   responses = client.streaming_recognize(streaming_config, requests)
 
-  with open(output_tsv_path, "w") as f:
-    # Write the TSV header.
-    f.write("tBegin\ttEnd\tTier\tContent\n")
+  with open(output_tsv_path, "w" if not begin_sec else "a") as f:
+    if not begin_sec:
+      # Write the TSV header.
+      f.write("tBegin\ttEnd\tTier\tContent\n")
 
     for response in responses:
       if not response.results:
@@ -263,7 +297,10 @@ def transcribe_audio_to_tsv(input_audio_paths,
       # time relative to the beginning of the first file?
       start_time_sec = end_time_sec - 1
       line = "%.3f\t%.3f\t%s\t%s" % (
-          start_time_sec, end_time_sec, SPEECH_TRANSCRIPT_TIER_NAME, best_transcript)
+          start_time_sec + begin_sec,
+          end_time_sec + begin_sec,
+          SPEECH_TRANSCRIPT_TIER_NAME,
+          best_transcript)
       print(line)
       f.write(line + "\n")
 
@@ -272,7 +309,8 @@ def transcribe_audio_to_tsv_with_diarization(input_audio_paths,
                                              output_tsv_path,
                                              sample_rate,
                                              language_code,
-                                             speaker_count):
+                                             speaker_count,
+                                             begin_sec=0.0):
   """Transcribe speech in input audio files and write results to .tsv file.
 
   This method differs from transcribe_audio_to_tsv() in that it performs speaker
@@ -293,9 +331,10 @@ def transcribe_audio_to_tsv_with_diarization(input_audio_paths,
   requests = audio_data_generator(input_audio_paths, config)
   responses = client.streaming_recognize(streaming_config, requests)
 
-  with open(output_tsv_path, "w") as f:
-    # Write the TSV header.
-    f.write("tBegin\ttEnd\tTier\tContent\n")
+  with open(output_tsv_path, "w" if not begin_sec else "a") as f:
+    if not begin_sec:
+      # Write the TSV header.
+      f.write("tBegin\ttEnd\tTier\tContent\n")
     utterances = []
     for response in responses:
       if not response.results:
@@ -322,8 +361,8 @@ def transcribe_audio_to_tsv_with_diarization(input_audio_paths,
     for (regrouped_utterance,
          speaker_index, start_time_sec, end_time_sec) in regrouped_utterances:
       line = "%.3f\t%.3f\t%s\t%s (Speaker #%d)" % (
-          start_time_sec,
-          end_time_sec,
+          start_time_sec + begin_sec,
+          end_time_sec + begin_sec,
           SPEECH_TRANSCRIPT_TIER_NAME,
           regrouped_utterance,
           speaker_index)
@@ -333,20 +372,30 @@ def transcribe_audio_to_tsv_with_diarization(input_audio_paths,
 
 if __name__ == "__main__":
   args = parse_args()
-  audio_file_paths, total_duration_sec = get_consecutive_audio_file_paths(
+  path_groups, group_durations_sec = get_consecutive_audio_file_paths(
       args.first_audio_path)
+  num_audio_files = sum(len(group) for group in path_groups)
+  total_duration_sec = sum(group_durations_sec)
   print("Transcribing %d consecutive audio files (%f seconds):\n\t%s" % (
-      len(audio_file_paths), total_duration_sec, "\n\t".join(audio_file_paths)))
-  if args.speaker_count > 0:
-    transcribe_audio_to_tsv_with_diarization(
+      num_audio_files,
+      total_duration_sec,
+      "\n\t".join([",".join(group) for group in path_groups])))
+  cum_duration_sec = 0.0
+  for audio_file_paths, group_duration_sec in zip(
+        path_groups, group_durations_sec):
+    if args.speaker_count > 0:
+      transcribe_audio_to_tsv_with_diarization(
+          audio_file_paths,
+          args.output_tsv_path,
+          args.sample_rate,
+          args.language_code,
+          args.speaker_count,
+          begin_sec=cum_duration_sec)
+    else:
+      transcribe_audio_to_tsv(
         audio_file_paths,
         args.output_tsv_path,
         args.sample_rate,
         args.language_code,
-        args.speaker_count)
-  else:
-    transcribe_audio_to_tsv(
-        audio_file_paths,
-        args.output_tsv_path,
-        args.sample_rate,
-        args.language_code)
+        begin_sec=cum_duration_sec)
+    cum_duration_sec += group_duration_sec

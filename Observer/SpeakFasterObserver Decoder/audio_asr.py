@@ -133,10 +133,91 @@ def parse_args():
       type=str,
       default="en-US",
       help="Language code used for speech transcription.")
+  parser.add_argument(
+      "--speaker_count",
+      type=int,
+      default=0,
+      help="Number of speakers configured for diarization. "
+      "If the value is greater than 1, speaker diarization will be enabled.")
   return parser.parse_args()
 
 
 SPEECH_TRANSCRIPT_TIER_NAME = "SpeechTranscript"
+
+
+def regroup_utterances(utterances, words):
+  """Regroup utterances by using word-level timestamps and speaker indices.
+
+  A boundary between the utterances in `utterances` are respected in the
+    regrouped utterances, if and only if there is a gap between the two words
+    at the two sides of the boundary.
+
+  Args:
+    utterances: A list of utterances as a list of strings.
+    words: A list of words. Each element of the list must have the format
+      (word, speaker_index, start_time, end_time).
+
+  Returns:
+    A list of regrouped utterances, each of each corresponds to the same speaker.
+      Each element of the list has the format
+      (regrouped_utterance, speaker_index, start_time, end_time).
+  """
+  all_words = []
+  original_bounds = []
+  for utterance in utterances:
+    utterance_words = [w.strip() for w in utterance.split(" ") if w]
+    all_words.extend(utterance_words)
+    original_bounds.append(
+        (len(utterance_words) + original_bounds[-1]) if original_bounds
+        else len(utterance_words))
+  regrouped_utterances = []
+  current_utterance = []
+  current_utterance_start = None
+  current_utterance_end = None
+  current_speaker_index = -1  # -1 is a sentinel for the beginning.
+  # TODO(cais): Test number words.
+  word_index = 0
+  for i, (word,
+          word_speaker_index,
+          word_start_time,
+          word_end_time) in enumerate(words):
+    start_new_utterance = False
+    if current_speaker_index == -1:
+      start_new_utterance = True
+    elif current_speaker_index != word_speaker_index or (
+        i in original_bounds and word_start_time > current_utterance_end):
+      # There is a change in speaker, or a pause in the same speaker across an
+      # transcript boundary.
+      regrouped_utterances.append((
+          " ".join(current_utterance),
+          current_speaker_index,
+          current_utterance_start,
+          current_utterance_end))
+      start_new_utterance = True
+    if start_new_utterance:
+      current_utterance = []
+      current_speaker_index = word_speaker_index
+      current_utterance_start = word_start_time
+    if all_words[word_index] != word:
+      raise ValueError(
+          "Mismatch in words: %s != %s" % (word, all_words[word_index]))
+      current_utterance.append(word)
+    current_utterance_end = word_end_time
+    current_utterance.append(all_words[word_index])
+    word_index += 1
+
+  if current_utterance:
+    regrouped_utterances.append((
+        " ".join(current_utterance),
+        current_speaker_index,
+        current_utterance_start,
+        current_utterance_end))
+
+  if word_index != len(all_words):
+    raise ValueError(
+        "Some words in the transcripts are missing from word-level diarization")
+
+  return regrouped_utterances
 
 
 def transcribe_audio_to_tsv(input_audio_paths,
@@ -187,14 +268,85 @@ def transcribe_audio_to_tsv(input_audio_paths,
       f.write(line + "\n")
 
 
+def transcribe_audio_to_tsv_with_diarization(input_audio_paths,
+                                             output_tsv_path,
+                                             sample_rate,
+                                             language_code,
+                                             speaker_count):
+  """Transcribe speech in input audio files and write results to .tsv file.
+
+  This method differs from transcribe_audio_to_tsv() in that it performs speaker
+  diarization and uses the word-level speaker indices to regroup the transcripts.
+  """
+  client = speech.SpeechClient()
+  enable_speaker_diarization = speaker_count > 0
+  config = speech.RecognitionConfig(
+      encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
+      sample_rate_hertz=sample_rate,
+      audio_channel_count=1,
+      enable_separate_recognition_per_channel=False,
+      language_code=language_code,
+      enable_speaker_diarization=enable_speaker_diarization,
+      diarization_speaker_count=speaker_count)
+  streaming_config = speech.StreamingRecognitionConfig(
+      config=config, interim_results=False)
+  requests = audio_data_generator(input_audio_paths, config)
+  responses = client.streaming_recognize(streaming_config, requests)
+
+  with open(output_tsv_path, "w") as f:
+    # Write the TSV header.
+    f.write("tBegin\ttEnd\tTier\tContent\n")
+    utterances = []
+    for response in responses:
+      if not response.results:
+        continue
+      results = [result for result in response.results if result.is_final]
+      max_confidence = -1
+      best_transcript = None
+      result_end_time = None
+      for result in results:
+        for alt in result.alternatives:
+          if alt.confidence > max_confidence:
+            max_confidence = alt.confidence
+            best_transcript = alt.transcript.strip()
+            diarized_words = [(
+                word.word, word.speaker_tag, word.start_time.total_seconds(),
+                word.end_time.total_seconds()) for word in alt.words]
+            result_end_time = result.result_end_time
+      if not best_transcript:
+        continue
+      end_time_sec = result_end_time.total_seconds()
+      utterances.append(best_transcript)
+
+    regrouped_utterances = regroup_utterances(utterances, diarized_words)
+    for (regrouped_utterance,
+         speaker_index, start_time_sec, end_time_sec) in regrouped_utterances:
+      line = "%.3f\t%.3f\t%s\t%s (Speaker #%d)" % (
+          start_time_sec,
+          end_time_sec,
+          SPEECH_TRANSCRIPT_TIER_NAME,
+          regrouped_utterance,
+          speaker_index)
+      print(line)
+      f.write(line + "\n")
+
+
 if __name__ == "__main__":
   args = parse_args()
   audio_file_paths, total_duration_sec = get_consecutive_audio_file_paths(
       args.first_audio_path)
   print("Transcribing %d consecutive audio files (%f seconds):\n\t%s" % (
       len(audio_file_paths), total_duration_sec, "\n\t".join(audio_file_paths)))
-  transcribe_audio_to_tsv(
-      audio_file_paths,
-      args.output_tsv_path,
-      args.sample_rate,
-      args.language_code)
+  if args.speaker_count > 0:
+    transcribe_audio_to_tsv_with_diarization(
+        audio_file_paths,
+        args.output_tsv_path,
+        args.sample_rate,
+        args.language_code,
+        args.speaker_count)
+  else:
+    transcribe_audio_to_tsv(
+        audio_file_paths,
+        args.output_tsv_path,
+        args.sample_rate,
+        args.language_code)

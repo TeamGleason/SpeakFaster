@@ -207,7 +207,6 @@ def regroup_utterances(utterances, words):
   current_utterance_start = None
   current_utterance_end = None
   current_speaker_index = -1  # -1 is a sentinel for the beginning.
-  # TODO(cais): Test number words.
   word_index = 0
   for i, (word,
           word_speaker_index,

@@ -46,5 +46,17 @@ namespace SpeakFasterObserver.Properties {
                 this["IsRecordingScreenshots"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool IsRecordingMicWaveIn {
+            get {
+                return ((bool)(this["IsRecordingMicWaveIn"]));
+            }
+            set {
+                this["IsRecordingMicWaveIn"] = value;
+            }
+        }
     }
 }

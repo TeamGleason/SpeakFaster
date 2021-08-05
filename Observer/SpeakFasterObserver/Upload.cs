@@ -40,8 +40,13 @@ namespace SpeakFasterObserver
             Debug.Assert(_dataDirectory != null);
 
             var dataDirectory = new DirectoryInfo(_dataDirectory);
-            foreach(var fileInfo in dataDirectory.GetFiles())
+            foreach (var fileInfo in dataDirectory.GetFiles())
             {
+                if (FileNaming.isInProgress(fileInfo.FullName))
+                {
+                    // Skip uploading in-progress file.
+                    continue;
+                }
                 var putRequest = new PutObjectRequest
                 {
                     BucketName = _bucketName,

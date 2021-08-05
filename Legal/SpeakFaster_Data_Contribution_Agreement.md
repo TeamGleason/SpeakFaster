@@ -75,4 +75,4 @@ Unless applicable law requires otherwise: (a) this agreement is governed by the 
 
 ## 7. Questions
 
-If you have questions or concerns, if you want to withdraw from the Data Collection, or if you want to have your Research Data deleted, please contact SpeakFasterResearch@TeamGleason.org. The subject of your email should be "Request for Speak Faster Data Collection" and your email should include enough information so that Team Gleason Foundation can identify the Research Data collected from you (if applicable).
+If you have questions or concerns, if you want to withdraw from the Data Collection, or if you want to have your Research Data deleted, please contact Research@TeamGleason.org. The subject of your email should be "Request for Speak Faster Data Collection" and your email should include enough information so that Team Gleason Foundation can identify the Research Data collected from you (if applicable).

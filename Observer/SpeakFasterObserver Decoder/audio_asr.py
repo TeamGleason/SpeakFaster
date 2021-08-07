@@ -190,7 +190,7 @@ def regroup_utterances(utterances, words):
       (word, speaker_index, start_time, end_time).
 
   Returns:
-    A list of regrouped utterances, each of each corresponds to the same speaker.
+    A list of regrouped utterances, each of which corresponds to the same speaker.
       Each element of the list has the format
       (regrouped_utterance, speaker_index, start_time, end_time).
   """

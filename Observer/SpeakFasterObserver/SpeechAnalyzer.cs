@@ -36,17 +36,20 @@ namespace SpeakFasterObserver
         public void addSamples(byte[] samples, int numBytes)
         {
             recogBuffer.AddSamples(samples, 0, numBytes);
-            float bufferedSeconds = (float) recogBuffer.BufferedBytes / (audioFormat.BitsPerSample / 8) / audioFormat.SampleRate;
+            float bufferedSeconds = (float) recogBuffer.BufferedBytes / (
+                audioFormat.BitsPerSample / 8) / audioFormat.SampleRate;
             if (bufferedSeconds >= RECOG_PERIOD_SECONDS)
             {
-                byte[] frameBuffer = new byte[recogBuffer.BufferedBytes];
-                recogBuffer.Read(frameBuffer, 0, numBytes);
+                int bufferNumBytes = recogBuffer.BufferedBytes;
+                byte[] frameBuffer = new byte[bufferNumBytes];
+                recogBuffer.Read(frameBuffer, 0, bufferNumBytes);
                 Debug.WriteLine("Sending streaming recog request");  // DEBUG
                 try
                 {
                     recogStream.WriteAsync(new StreamingRecognizeRequest()
                     {
-                        AudioContent = Google.Protobuf.ByteString.CopyFrom(frameBuffer, 0, numBytes)
+                        AudioContent = Google.Protobuf.ByteString.CopyFrom(
+                            frameBuffer, 0, bufferNumBytes)
                     });
                 }
                 catch (Exception ex)

@@ -19,6 +19,7 @@ namespace SpeakFasterObserver
         private int[] buffer = null;
         private volatile bool isRecording = false;
         private static readonly object flacLock = new object();
+        private SpeechAnalyzer speechAnalyzer;
 
         public AudioInput(string dataDir) {
             this.dataDir = dataDir;
@@ -35,10 +36,12 @@ namespace SpeakFasterObserver
             {
                 return;
             }
+            WaveFormat waveFormat = new(AUDIO_SAMPLE_RATE_HZ, AUDIO_NUM_CHANNELS);
             waveIn = new WaveIn
             {
-                WaveFormat = new WaveFormat(AUDIO_SAMPLE_RATE_HZ, AUDIO_NUM_CHANNELS)
+                WaveFormat = waveFormat
             };
+            speechAnalyzer = new SpeechAnalyzer(waveFormat);
             if (waveIn.WaveFormat.BitsPerSample != AUDIO_BITS_PER_SAMPLE)
             {
                 // TODO(#64): Handle this exception add the app level.
@@ -82,6 +85,10 @@ namespace SpeakFasterObserver
                 }
                 MaybeCreateFlacWriter();
                 flacWriter.WriteSamples(buffer);
+            }
+            if (speechAnalyzer != null)
+            {
+                speechAnalyzer.addSamples(e.Buffer, e.BytesRecorded);
             }
         }
 

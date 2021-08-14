@@ -13,6 +13,10 @@ namespace SpeakFasterObserver
     class AudioAsr
     {
         private static readonly float RECOG_PERIOD_SECONDS = 2f;
+        // The streaming ASR API of Google Cloud has a length limit, beyond
+        // which the recognition object must be re-initialized. For details,
+        // see:
+        // https://cloud.google.com/speech-to-text/quotas#content
         private static readonly float STREAMING_RECOG_MAX_DURATION_SECONDS = 4 * 60f;
         private static readonly string LANGUAGE_CODE = "en-US";
 
@@ -25,8 +29,8 @@ namespace SpeakFasterObserver
 
         private readonly WaveFormat audioFormat;
         private readonly SpeechClient speechClient;
+        private readonly BufferedWaveProvider recogBuffer;
         private SpeechClient.StreamingRecognizeStream recogStream;
-        private BufferedWaveProvider recogBuffer;
         private float cummulativeRecogSeconds;
 
         public AudioAsr(WaveFormat audioFormat)
@@ -37,6 +41,11 @@ namespace SpeakFasterObserver
             ReInitStreamRecognizer();
         }
 
+        /**
+         * Feed samples to ASR and other analyses.
+         * The caller should call this whenever a new frame of PCM samples
+         * become available.
+         */
         public void AddSamples(byte[] samples, int numBytes)
         {
             recogBuffer.AddSamples(samples, 0, numBytes);
@@ -118,7 +127,7 @@ namespace SpeakFasterObserver
                         {
                             continue;
                         }
-                        string transcriptInfo = 
+                        string transcriptInfo =
                             $"Speech transcript: {DateTime.Now}: \"" +
                             $"{transcript}\" (confidence={bestAlt.Confidence})";
                         if (ENABLE_SPEAKER_DIARIZATION)

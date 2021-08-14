@@ -1,23 +1,27 @@
 ﻿using Google.Cloud.Speech.V1;
 using NAudio.Wave;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 /**
- * For speech recognition, speaker diarization, and potentially other analyses on
- * an audio input stream.
+ * For speech recognition, speaker diarization, and potentially other real-time
+ * analyses on an audio input stream.
  */
 namespace SpeakFasterObserver
 {
-    class SpeechAnalyzer
+    class AudioAsr
     {
         private static readonly float RECOG_PERIOD_SECONDS = 2f;
         private static readonly float STREAMING_RECOG_MAX_DURATION_SECONDS = 4 * 60f;
         private static readonly string LANGUAGE_CODE = "en-US";
+
+        // NOTE: To disable speaker diarization, set ENABLE_SPEKAER_DIARIZATION
+        // to false. For speaker diarization, the max and min # of speakers
+        // must be specified beforehand.
+        private static readonly bool ENABLE_SPEAKER_DIARIZATION = true;
+        private static readonly int MAX_SPEAKER_COUNT = 2;
+        private static readonly int MIN_SPEAKER_COUNT = 0;
 
         private readonly WaveFormat audioFormat;
         private readonly SpeechClient speechClient;
@@ -25,25 +29,24 @@ namespace SpeakFasterObserver
         private BufferedWaveProvider recogBuffer;
         private float cummulativeRecogSeconds;
 
-        public SpeechAnalyzer(WaveFormat audioFormat)
+        public AudioAsr(WaveFormat audioFormat)
         {
             this.audioFormat = audioFormat;
             recogBuffer = new BufferedWaveProvider(audioFormat);
             speechClient = SpeechClient.Create();
-            reInitStreamRecognizer();
+            ReInitStreamRecognizer();
         }
 
-        public void addSamples(byte[] samples, int numBytes)
+        public void AddSamples(byte[] samples, int numBytes)
         {
             recogBuffer.AddSamples(samples, 0, numBytes);
-            float bufferedSeconds = (float) recogBuffer.BufferedBytes / (
+            float bufferedSeconds = (float)recogBuffer.BufferedBytes / (
                 audioFormat.BitsPerSample / 8) / audioFormat.SampleRate;
             if (bufferedSeconds >= RECOG_PERIOD_SECONDS)
             {
                 int bufferNumBytes = recogBuffer.BufferedBytes;
                 byte[] frameBuffer = new byte[bufferNumBytes];
                 recogBuffer.Read(frameBuffer, 0, bufferNumBytes);
-                Debug.WriteLine("Sending streaming recog request");  // DEBUG
                 try
                 {
                     recogStream.WriteAsync(new StreamingRecognizeRequest()
@@ -61,17 +64,21 @@ namespace SpeakFasterObserver
                 recogBuffer.ClearBuffer();
                 if (cummulativeRecogSeconds > STREAMING_RECOG_MAX_DURATION_SECONDS)
                 {
-                    Debug.WriteLine("Reinitializing recognizer stream");  // DEBUG
-                    reInitStreamRecognizer();
+                    ReInitStreamRecognizer();
                 }
             }
         }
 
         /** (Re-)initializes the Cloud-based streaming speech recognizer. */
-        private void reInitStreamRecognizer()
+        private void ReInitStreamRecognizer()
         {
             recogStream = speechClient.StreamingRecognize();
-            Debug.WriteLine($"recogStream = {recogStream}");  // DEBUG
+            SpeakerDiarizationConfig diarizationConfig = new SpeakerDiarizationConfig()
+            {
+                EnableSpeakerDiarization = ENABLE_SPEAKER_DIARIZATION,
+                MaxSpeakerCount = MAX_SPEAKER_COUNT,
+                MinSpeakerCount = MIN_SPEAKER_COUNT,
+            };
             recogStream.WriteAsync(new StreamingRecognizeRequest()
             {
                 StreamingConfig = new StreamingRecognitionConfig()
@@ -82,23 +89,44 @@ namespace SpeakFasterObserver
                         AudioChannelCount = 1,
                         SampleRateHertz = audioFormat.SampleRate,
                         LanguageCode = LANGUAGE_CODE,
+                        DiarizationConfig = diarizationConfig,
                     },
                     SingleUtterance = false,
                 },
-            });
+            }); ;
             Task.Run(async () =>
             {
-                string saidWhat = "";
                 while (await recogStream.GetResponseStream().MoveNextAsync())
                 {
                     foreach (var result in recogStream.GetResponseStream().Current.Results)
                     {
+                        if (result.Alternatives.Count == 0)
+                        {
+                            continue;
+                        }
+                        // Identify the alternative with the highest confidence.
+                        SpeechRecognitionAlternative bestAlt = null;
                         foreach (var alternative in result.Alternatives)
                         {
-                            saidWhat = alternative.Transcript;
-                            string timestamp = DateTime.Now.ToString();
-                            Debug.WriteLine($"Speech transcript: {timestamp}: \"{saidWhat}\"");
+                            if (bestAlt == null || alternative.Confidence > bestAlt.Confidence)
+                            {
+                                bestAlt = alternative;
+                            }
                         }
+                        string transcript = bestAlt.Transcript.Trim();
+                        if (transcript.Length == 0)
+                        {
+                            continue;
+                        }
+                        string transcriptInfo = 
+                            $"Speech transcript: {DateTime.Now}: \"" +
+                            $"{transcript}\" (confidence={bestAlt.Confidence})";
+                        if (ENABLE_SPEAKER_DIARIZATION)
+                        {
+                            int speakerTag = bestAlt.Words[bestAlt.Words.Count - 1].SpeakerTag;
+                            transcriptInfo += $" (speakerTag={speakerTag})";
+                        }
+                        Debug.WriteLine(transcriptInfo);
                     }
                 }
             });

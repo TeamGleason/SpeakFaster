@@ -26,7 +26,7 @@ namespace SpeakFasterObserver
         // see:
         // https://cloud.google.com/speech-to-text/docs/libraries#setting_up_authentication
         private AudioAsr audioAsr;
-        private readonly bool useAudioAsr = true;
+        private readonly bool useAudioAsr = false;
 
         public AudioInput(string dataDir) {
             this.dataDir = dataDir;

@@ -9,13 +9,40 @@ import io
 import os
 import pathlib
 import struct
+import tempfile
 
 from absl import logging
 import numpy as np
 import pydub
 from google.cloud import speech_v1p1beta1 as speech
+from google.cloud import storage
 
 import file_naming
+
+
+# TODO(cais): Add test. DO NOT SUBMIT
+def concatenate_audio_files(input_paths, output_path):
+  """Concatenate audio files into one file.
+
+  Args:
+    input_paths: Paths to the input audio files.
+    output_path: Path to the output file.
+
+  Returns:
+    Duration of the concatenation result, in seconds.
+  """
+  pure_path = pathlib.PurePath(input_paths[0])
+  audio_seg = pydub.AudioSegment.from_file(pure_path, pure_path.suffix[1:])
+  for input_path in input_paths[1:]:
+    pure_path = pathlib.PurePath(input_path)
+    audio_seg += pydub.AudioSegment.from_file(pure_path, pure_path.suffix[1:])
+  pure_path = pathlib.PurePath(output_path)
+  output_format = pure_path.suffix[1:].lower()
+  audio_seg.export(pure_path, output_format)
+  if output_format != "wav":
+    audio_seg.export(pure_path.with_suffix(".wav"), "wav")
+  # print(dir(audio_seg))  # DEBUG
+  return len(audio_seg) / 1e3
 
 
 def get_audio_file_duration_sec(file_path):
@@ -72,7 +99,11 @@ def get_consecutive_audio_file_paths(
       audio_path = candidate_paths[0]
       del candidate_paths[0]
     else:
+      audio_path = None
       break
+  if audio_path:
+    durations_sec.append(get_audio_file_duration_sec(audio_path))
+  assert len(durations_sec) == len(output_paths)
 
   # Group paths by duration.
   path_groups = [[]]
@@ -171,6 +202,10 @@ def parse_args():
       default=0,
       help="Number of speakers configured for diarization. "
       "If the value is greater than 1, speaker diarization will be enabled.")
+  parser.add_argument(
+      "--use_async",
+      action="store_true",
+      help="Whether to use the async Speech-to-Text API")
   return parser.parse_args()
 
 
@@ -369,6 +404,76 @@ def transcribe_audio_to_tsv_with_diarization(input_audio_paths,
       f.write(line + "\n")
 
 
+def async_transcribe(audio_file_paths,
+                     output_tsv_path,
+                     sample_rate,
+                     language_code,
+                     speaker_count,
+                     begin_sec=0.0):
+  """Transcribe a given audio file using the async GCloud Speech-to-Text API.
+
+  The async API has the advantage of being able to handler longer audio without
+  state reset. Empirically, we've observed that the async calls lead to slightly
+  better accuracy than streaming calls.
+  """
+  tmp_audio_file = tempfile.mktemp(suffix=".flac")
+  print("Temporary audio file: %s" % tmp_audio_file)
+  concatenate_audio_files(audio_file_paths, tmp_audio_file)
+
+  storage_client = storage.Client()
+  bucket_name = "sf_test_audio_uploads"  # TODO(cais): DO NOT HARDCODE.
+  bucket = storage_client.bucket(bucket_name)
+  destination_blob_name = os.path.basename(tmp_audio_file)
+  blob = bucket.blob(destination_blob_name)
+  print("Uploading %s to GCS bucket %s" % (tmp_audio_file, bucket_name))
+  blob.upload_from_filename(tmp_audio_file)
+  gcs_uri = "gs://%s/%s" % (bucket_name, destination_blob_name)
+  print("Uploaded to GCS URI: %s" % gcs_uri)
+
+  client = speech.SpeechClient()
+  audio = speech.RecognitionAudio(uri=gcs_uri)
+  enable_speaker_diarization = speaker_count > 0
+  config = speech.RecognitionConfig(
+      encoding=speech.RecognitionConfig.AudioEncoding.FLAC,
+      sample_rate_hertz=sample_rate,
+      language_code=language_code,
+      enable_speaker_diarization=enable_speaker_diarization,
+      diarization_speaker_count=speaker_count)
+
+  operation = client.long_running_recognize(config=config, audio=audio)
+  print("Waiting for async ASR operation to complete...")
+  response = operation.result(timeout=90)
+  blob.delete()
+  os.remove(tmp_audio_file)
+
+  utterances = []
+  for result in response.results:
+    # The first alternative is the most likely one for this portion.
+    alt = result.alternatives[0]
+    utterances.append(alt.transcript)
+    print(u"Transcript: {}".format(alt.transcript))
+    diarized_words = [(
+        word.word, word.speaker_tag, word.start_time.total_seconds(),
+        word.end_time.total_seconds()) for word in alt.words]
+    # print("Confidence: {}".format(result.alternatives[0].confidence))
+
+  regrouped_utterances = regroup_utterances(utterances, diarized_words)
+  with open(output_tsv_path, "w" if not begin_sec else "a") as f:
+    if not begin_sec:
+      # Write the TSV header.
+      f.write("tBegin\ttEnd\tTier\tContent\n")
+    for (regrouped_utterance,
+        speaker_index, start_time_sec, end_time_sec) in regrouped_utterances:
+      line = "%.3f\t%.3f\t%s\t%s (Speaker #%d)" % (
+          start_time_sec + begin_sec,
+          end_time_sec + begin_sec,
+          SPEECH_TRANSCRIPT_TIER_NAME,
+          regrouped_utterance,
+          speaker_index)
+      print(line)
+      f.write(line + "\n")
+
+
 if __name__ == "__main__":
   args = parse_args()
   path_groups, group_durations_sec = get_consecutive_audio_file_paths(
@@ -380,21 +485,33 @@ if __name__ == "__main__":
       total_duration_sec,
       "\n\t".join([",".join(group) for group in path_groups])))
   cum_duration_sec = 0.0
-  for audio_file_paths, group_duration_sec in zip(
-        path_groups, group_durations_sec):
-    if args.speaker_count > 0:
-      transcribe_audio_to_tsv_with_diarization(
-          audio_file_paths,
-          args.output_tsv_path,
-          args.sample_rate,
-          args.language_code,
-          args.speaker_count,
-          begin_sec=cum_duration_sec)
-    else:
-      transcribe_audio_to_tsv(
+  if args.use_async:
+    audio_file_paths = []
+    for path_group in path_groups:
+      audio_file_paths.extend(path_group)
+    async_transcribe(
         audio_file_paths,
         args.output_tsv_path,
         args.sample_rate,
         args.language_code,
+        args.speaker_count,
         begin_sec=cum_duration_sec)
-    cum_duration_sec += group_duration_sec
+  else:
+    for audio_file_paths, group_duration_sec in zip(
+          path_groups, group_durations_sec):
+      if args.speaker_count > 0:
+        transcribe_audio_to_tsv_with_diarization(
+            audio_file_paths,
+            args.output_tsv_path,
+            args.sample_rate,
+            args.language_code,
+            args.speaker_count,
+            begin_sec=cum_duration_sec)
+      else:
+        transcribe_audio_to_tsv(
+          audio_file_paths,
+          args.output_tsv_path,
+          args.sample_rate,
+          args.language_code,
+          begin_sec=cum_duration_sec)
+      cum_duration_sec += group_duration_sec

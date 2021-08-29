@@ -68,6 +68,8 @@ class GetConsecutiveAudioFilePathsTest(tf.test.TestCase):
         [os.path.join(self.get_temp_dir(), "20210710T080000000-MicWavIn.wav")]])
     self.assertEqual(group_durations_sec, [10])
 
+  # TODO(cais): Add a test where the last file is included. DO NOT SUBMIT.
+
 
 class LoadAudioDataTest(tf.test.TestCase):
 

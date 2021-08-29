@@ -21,6 +21,42 @@ class GetAudioFileDurationSecTest(tf.test.TestCase):
     self.assertAllClose(audio_asr.get_audio_file_duration_sec(wav_path), 1.5)
 
 
+class ConcatenateAudioFilesTest(tf.test.TestCase):
+
+  def testEmptyPathsRaisesValueError(self):
+    with self.assertRaisesRegexp(ValueError, r"Empty input paths"):
+      audio_asr.concatenate_audio_files(
+          [], os.path.join(self.get_temp_dir(), "concatenated.wav"))
+
+  def testConcatenateASingleWavFiles(self):
+    wav_path_1 = os.path.join(
+        self.get_temp_dir(), "20210710T080000000-MicWavIn.wav")
+    wavfile.write(wav_path_1, 16000, np.zeros(16000 * 10, dtype=np.int16))
+    concat_path = os.path.join(self.get_temp_dir(), "concatenated.wav")
+    duration_s = audio_asr.concatenate_audio_files([wav_path_1], concat_path)
+    fs, xs = wavfile.read(concat_path)
+    self.assertEqual(duration_s, 10)
+    self.assertEqual(fs, 16000)
+    self.assertAllEqual(xs, np.zeros(16000 * 10, dtype=np.int16))
+
+  def testConcatenateTwoWavFiles(self):
+    wav_path_1 = os.path.join(
+        self.get_temp_dir(), "20210710T080000000-MicWavIn.wav")
+    wavfile.write(wav_path_1, 16000, np.zeros(16000 * 10, dtype=np.int16))
+    wav_path_2 = os.path.join(
+        self.get_temp_dir(), "20210710T080010000-MicWavIn.wav")
+    wavfile.write(wav_path_2, 16000, 12 * np.ones(16000 * 5, dtype=np.int16))
+    concat_path = os.path.join(self.get_temp_dir(), "concatenated.wav")
+    duration_s = audio_asr.concatenate_audio_files(
+        [wav_path_1, wav_path_2], concat_path)
+    fs, xs = wavfile.read(concat_path)
+    self.assertEqual(duration_s, 15)
+    self.assertEqual(fs, 16000)
+    self.assertAllClose(xs, np.concatenate([
+        np.zeros(16000 * 10, dtype=np.int16),
+        12 * np.ones(16000 * 5, dtype=np.int16)]))
+
+
 class GetConsecutiveAudioFilePathsTest(tf.test.TestCase):
 
   def testGetConsecutiveAudioFilePaths_findsCorrectPathsSkippingWrongOnes(self):

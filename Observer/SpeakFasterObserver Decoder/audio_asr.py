@@ -20,7 +20,6 @@ from google.cloud import storage
 import file_naming
 
 
-# TODO(cais): Add test. DO NOT SUBMIT
 def concatenate_audio_files(input_paths, output_path):
   """Concatenate audio files into one file.
 
@@ -31,6 +30,8 @@ def concatenate_audio_files(input_paths, output_path):
   Returns:
     Duration of the concatenation result, in seconds.
   """
+  if not input_paths:
+    raise ValueError("Empty input paths")
   pure_path = pathlib.PurePath(input_paths[0])
   audio_seg = pydub.AudioSegment.from_file(pure_path, pure_path.suffix[1:])
   for input_path in input_paths[1:]:
@@ -206,6 +207,10 @@ def parse_args():
       "--use_async",
       action="store_true",
       help="Whether to use the async Speech-to-Text API")
+  parser.add_arguemnt(
+      "--bucket_name",
+      default="sf_test_audio_uploads",
+      help="GCS bucket used for holding objects for async transcription.")
   return parser.parse_args()
 
 
@@ -405,23 +410,34 @@ def transcribe_audio_to_tsv_with_diarization(input_audio_paths,
 
 
 def async_transcribe(audio_file_paths,
+                     bucket_name,
                      output_tsv_path,
                      sample_rate,
                      language_code,
-                     speaker_count,
+                     speaker_count=0,
                      begin_sec=0.0):
   """Transcribe a given audio file using the async GCloud Speech-to-Text API.
 
   The async API has the advantage of being able to handler longer audio without
   state reset. Empirically, we've observed that the async calls lead to slightly
   better accuracy than streaming calls.
+
+  Args:
+    audio_file_paths: Paths to the audio files as a list of strings in the
+      correct order.
+    bucket_name: Name of GCS bucket used for holding objects temporarily.
+    output_tsv_path: Path to the output TSV file.
+    sample_rate: Audio sample rate.
+    language_code: Language code for recognition.
+    speaker_count: Number of speakers. If 0, speaker diarization will be
+      disabled.
+    begin_sec: Transcript begin timestamp in seconds.
   """
   tmp_audio_file = tempfile.mktemp(suffix=".flac")
   print("Temporary audio file: %s" % tmp_audio_file)
   concatenate_audio_files(audio_file_paths, tmp_audio_file)
 
   storage_client = storage.Client()
-  bucket_name = "sf_test_audio_uploads"  # TODO(cais): DO NOT HARDCODE.
   bucket = storage_client.bucket(bucket_name)
   destination_blob_name = os.path.basename(tmp_audio_file)
   blob = bucket.blob(destination_blob_name)
@@ -491,10 +507,11 @@ if __name__ == "__main__":
       audio_file_paths.extend(path_group)
     async_transcribe(
         audio_file_paths,
+        args.bucket_name,
         args.output_tsv_path,
         args.sample_rate,
         args.language_code,
-        args.speaker_count,
+        speaker_count=args.speaker_count,
         begin_sec=cum_duration_sec)
   else:
     for audio_file_paths, group_duration_sec in zip(

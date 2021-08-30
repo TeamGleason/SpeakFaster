@@ -20,6 +20,39 @@ def format_raw_data(input_dir,
   if not os.path.isdir(input_dir):
     raise ValueError("%s is not an existing directory" % input_dir)
 
+  (first_audio_path,
+   concatenated_audio_path,
+   audio_start_time_epoch,
+   audio_duration_s) = read_and_concatenate_audio_files(input_dir, timezone)
+
+  keypresses_paths = glob.glob(os.path.join(input_dir, "*-Keypresses.protobuf"))
+  if len(keypresses_paths) != 1:
+    raise ValueError(
+        "Cannot find exactly one Keypresses protobuf file in %s" % input_dir)
+  keypresses_path = keypresses_paths[0]
+  keypresses_tsv_path = os.path.join(input_dir, "keypresses.tsv")
+  format_keypresses(
+      keypresses_path, audio_start_time_epoch, keypresses_tsv_path)
+
+  # Extract audio events.
+  audio_events_tsv_path = os.path.join(input_dir, "audio_events.tsv")
+  extract_audio_events(concatenated_audio_path, audio_events_tsv_path)
+
+  # Perform ASR on audio.
+  # TODO(cais): Uncomment me. DO NOT SUBMIT.
+  asr_tsv_path = os.path.join(input_dir, "asr.tsv")
+  # run_asr(first_audio_path, asr_tsv_path, speaker_count=speaker_count)
+
+  # Merge the files.
+  merged_tsv_path = os.path.join(input_dir, "merged.tsv")
+  print("Merging TSV files...")
+  tsv_data.merge_tsv_files(
+      [keypresses_tsv_path, audio_events_tsv_path, asr_tsv_path], merged_tsv_path)
+
+  # TODO(cais): Add fake video file.
+
+
+def read_and_concatenate_audio_files(input_dir, timezone):
   first_audio_path = sorted(
       glob.glob(os.path.join(input_dir, "*-MicWaveIn.flac")))[0]
   audio_start_time = file_naming.parse_timestamp_from_filename(first_audio_path)
@@ -39,30 +72,9 @@ def format_raw_data(input_dir,
       all_audio_paths, concatenated_audio_path)
   print("Saved concatenated audio file to %s (duration = %.3f s)" % (
       concatenated_audio_path, audio_duration_s))
-#   print(path_groups, group_durations_sec)
+  return (first_audio_path,
+          concatenated_audio_path, audio_start_time_epoch, audio_duration_s)
 
-  keypresses_paths = glob.glob(os.path.join(input_dir, "*-Keypresses.protobuf"))
-  if len(keypresses_paths) != 1:
-    raise ValueError(
-        "Cannot find exactly one Keypresses protobuf file in %s" % input_dir)
-  keypresses_path = keypresses_paths[0]
-  keypresses_tsv_path = os.path.join(input_dir, "keypresses.tsv")
-  format_keypresses(
-      keypresses_path, audio_start_time_epoch, keypresses_tsv_path)
-
-  # Extract audio events.
-  audio_events_tsv_path = os.path.join(input_dir, "audio_events.tsv")
-  extract_audio_events(concatenated_audio_path, audio_events_tsv_path)
-
-  # Perform ASR on audio.
-  asr_tsv_path = os.path.join(input_dir, "asr.tsv")
-  run_asr(first_audio_path, asr_tsv_path, speaker_count=speaker_count)
-
-  # TODO(cais): Add fake video file.
-
-
-def read_and_merge_audio_file(input_dir):
-  
 
 
 DUMMY_KEYPRESS_DURATION_SEC = 0.1

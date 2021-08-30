@@ -21,6 +21,7 @@ regex==2021.4.4
 setuptools==47.1.0
 numpy==1.19.5
 pydub==0.25.1
+pytz==2021.1
 scipy==1.6.3
 six==1.15.0
 tensorflow==2.5.0

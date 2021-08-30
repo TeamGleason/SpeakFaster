@@ -58,7 +58,7 @@ def main():
       timestep_s=timestep_s)
   with open(args.output_tsv_path, mode="w") as f:
     tsv_writer = csv.writer(f, delimiter="\t")
-    tsv_writer.writerow(["tBegin", "tEnd", "Tier", "Content"])
+    tsv_writer.writerow(tsv_data.COLUMN_HEADS)
     for row in tsv_rows:
       tsv_writer.writerow(row)
 

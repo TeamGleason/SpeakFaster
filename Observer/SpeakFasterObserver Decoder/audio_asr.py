@@ -42,7 +42,6 @@ def concatenate_audio_files(input_paths, output_path):
   audio_seg.export(pure_path, output_format)
   if output_format != "wav":
     audio_seg.export(pure_path.with_suffix(".wav"), "wav")
-  # print(dir(audio_seg))  # DEBUG
   return len(audio_seg) / 1e3
 
 

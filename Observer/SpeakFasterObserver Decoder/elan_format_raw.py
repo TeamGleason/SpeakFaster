@@ -3,9 +3,12 @@
 import argparse
 import glob
 import os
+import pathlib
+import subprocess
 
 import audio_asr
 import keypresses_pb2
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument("input_dir", help="Input directory path")
@@ -35,9 +38,14 @@ def format_raw_data(input_dir):
   print("Saved concatenated audio file to %s (duration = %.3f s)" % (
       concatenated_audio_path, audio_duration_s))
 #   print(path_groups, group_durations_sec)
+
+  # Extract audio events.
+  audio_events_tsv_path = os.path.join(input_dir, "audio_events.tsv")
+  extract_audio_events(concatenated_audio_path, audio_events_tsv_path)
+
   # TODO(cais): Add asr.
-  # TODO(cais): Add audio event detection.
   # TODO(cais): Add fake video file.
+
 
 def format_keypresses(keypresses_path):
   keypresses = keypresses_pb2.KeyPresses()
@@ -48,6 +56,21 @@ def format_keypresses(keypresses_path):
   print("First keypress epoch ms: %d" % first_keypress_epoch_ms)
 #   for keypress in keypresses.keyPresses:
 #     print(keypress.KeyPress)  # DEBUG
+
+def extract_audio_events(concatenated_audio_path, output_tsv_path):
+  pure_path = pathlib.PurePath(concatenated_audio_path)
+  wav_path = (
+      concatenated_audio_path
+      if pure_path.suffix.lower() == ".wav"
+      else pure_path.with_suffix(".wav"))
+  if not os.path.isfile(wav_path):
+    raise ValueError("Cannot find concated .wav file")
+  subprocess.check_call([
+      "python",
+      os.path.join(os.path.dirname(__file__), "extract_audio_events.py"),
+      wav_path,
+      output_tsv_path])
+  print("Saved audio events to file: %s" % output_tsv_path)
 
 
 def main():

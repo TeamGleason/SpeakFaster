@@ -18,6 +18,7 @@ from google.cloud import speech_v1p1beta1 as speech
 from google.cloud import storage
 
 import file_naming
+import tsv_data
 
 
 def concatenate_audio_files(input_paths, output_path):
@@ -206,14 +207,14 @@ def parse_args():
       "--use_async",
       action="store_true",
       help="Whether to use the async Speech-to-Text API")
-  parser.add_arguemnt(
+  parser.add_argument(
       "--bucket_name",
       default="sf_test_audio_uploads",
       help="GCS bucket used for holding objects for async transcription.")
   return parser.parse_args()
 
 
-SPEECH_TRANSCRIPT_TIER_NAME = "SpeechTranscript"
+
 
 
 def regroup_utterances(utterances, words):
@@ -310,7 +311,7 @@ def transcribe_audio_to_tsv(input_audio_paths,
   with open(output_tsv_path, "w" if not begin_sec else "a") as f:
     if not begin_sec:
       # Write the TSV header.
-      f.write("tBegin\ttEnd\tTier\tContent\n")
+      f.write(tsv_data.HEADER + "\n")
 
     for response in responses:
       if not response.results:
@@ -337,7 +338,7 @@ def transcribe_audio_to_tsv(input_audio_paths,
       line = "%.3f\t%.3f\t%s\t%s" % (
           start_time_sec + begin_sec,
           end_time_sec + begin_sec,
-          SPEECH_TRANSCRIPT_TIER_NAME,
+          tsv_data.SPEECH_TRANSCRIPT_TIER_NAME,
           best_transcript)
       print(line)
       f.write(line + "\n")
@@ -372,7 +373,7 @@ def transcribe_audio_to_tsv_with_diarization(input_audio_paths,
   with open(output_tsv_path, "w" if not begin_sec else "a") as f:
     if not begin_sec:
       # Write the TSV header.
-      f.write("tBegin\ttEnd\tTier\tContent\n")
+      f.write(tsv_data.HEADER + "\n")
     utterances = []
     for response in responses:
       if not response.results:
@@ -401,7 +402,7 @@ def transcribe_audio_to_tsv_with_diarization(input_audio_paths,
       line = "%.3f\t%.3f\t%s\t%s (Speaker #%d)" % (
           start_time_sec + begin_sec,
           end_time_sec + begin_sec,
-          SPEECH_TRANSCRIPT_TIER_NAME,
+          tsv_data.SPEECH_TRANSCRIPT_TIER_NAME,
           regrouped_utterance,
           speaker_index)
       print(line)
@@ -476,13 +477,13 @@ def async_transcribe(audio_file_paths,
   with open(output_tsv_path, "w" if not begin_sec else "a") as f:
     if not begin_sec:
       # Write the TSV header.
-      f.write("tBegin\ttEnd\tTier\tContent\n")
+      f.write(tsv_data.HEADER + "\n")
     for (regrouped_utterance,
         speaker_index, start_time_sec, end_time_sec) in regrouped_utterances:
       line = "%.3f\t%.3f\t%s\t%s (Speaker #%d)" % (
           start_time_sec + begin_sec,
           end_time_sec + begin_sec,
-          SPEECH_TRANSCRIPT_TIER_NAME,
+          tsv_data.SPEECH_TRANSCRIPT_TIER_NAME,
           regrouped_utterance,
           speaker_index)
       print(line)

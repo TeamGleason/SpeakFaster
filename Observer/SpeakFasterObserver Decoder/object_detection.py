@@ -130,6 +130,3 @@ def detect_objects(frame_generator, threshold_score=0.5):
       frame_output.append((class_name, score))
     output.append(frame_output)
   return output
-
-
-VISUAL_OBJECTS_EVENTS_TIER = "VisualObjects1"

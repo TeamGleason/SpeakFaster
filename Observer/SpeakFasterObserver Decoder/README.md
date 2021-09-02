@@ -62,6 +62,19 @@ The script automatically finds consecutive audio files in the same directory as 
 first audio file based on the length of each audio file and the timestamps in the
 file names.
 
+To perform ASR and speaker diarization at the same time, use the `--speaker_count`
+argument. For example:
+
+```sh
+python audio_asr.py \
+    --speaker_count=2 \
+    data/20210710T095258428-MicWaveIn.flac /tmp/speech_transcript.tsv
+```
+
+The speaker count must be known beforehand. In the .tsv file, the `Content`
+column with contain the speaker index (e.g., "Speaker 2") appended to the
+transcripts.
+
 # TOOD(cais): Add instructions for Google Cloud credentials.
 
 ## Running unit tests in this folder

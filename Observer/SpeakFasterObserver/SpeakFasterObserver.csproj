@@ -52,6 +52,7 @@
     <PackageReference Include="libjpeg-turbo-native-win" Version="2.0.15" />
     <PackageReference Include="libjpeg-turbo-net" Version="2.0.15" />
     <PackageReference Include="NAudio" Version="2.0.1" />
+    <PackageReference Include="Sleddog.Blink1" Version="2.0.3" />
   </ItemGroup>
 
   <ItemGroup>

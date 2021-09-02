@@ -19,6 +19,14 @@ namespace SpeakFasterObserver
         private int[] buffer = null;
         private volatile bool isRecording = false;
         private static readonly object flacLock = new object();
+        // For speech recognition, diarization, and other real-time analyses 
+        // on the audio input stream. Currently it is disabled by default. To
+        // enable it, change useAudioAsr to true and make sure that the Google
+        // Cloud credentials for authentication are set properly. For details,
+        // see:
+        // https://cloud.google.com/speech-to-text/docs/libraries#setting_up_authentication
+        private AudioAsr audioAsr;
+        private readonly bool useAudioAsr = false;
 
         public AudioInput(string dataDir) {
             this.dataDir = dataDir;
@@ -35,10 +43,15 @@ namespace SpeakFasterObserver
             {
                 return;
             }
+            WaveFormat waveFormat = new(AUDIO_SAMPLE_RATE_HZ, AUDIO_NUM_CHANNELS);
             waveIn = new WaveIn
             {
-                WaveFormat = new WaveFormat(AUDIO_SAMPLE_RATE_HZ, AUDIO_NUM_CHANNELS)
+                WaveFormat = waveFormat
             };
+            if (useAudioAsr)
+            {
+                audioAsr = new AudioAsr(waveFormat);
+            }
             if (waveIn.WaveFormat.BitsPerSample != AUDIO_BITS_PER_SAMPLE)
             {
                 // TODO(#64): Handle this exception add the app level.
@@ -82,6 +95,10 @@ namespace SpeakFasterObserver
                 }
                 MaybeCreateFlacWriter();
                 flacWriter.WriteSamples(buffer);
+            }
+            if (audioAsr != null)
+            {
+                audioAsr.AddSamples(e.Buffer, e.BytesRecorded);
             }
         }
 

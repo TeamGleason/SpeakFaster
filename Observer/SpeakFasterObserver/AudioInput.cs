@@ -110,7 +110,7 @@ namespace SpeakFasterObserver
                 flacStream.Close();
                 File.Move(
                     flacFilePath,
-                    FileNaming.removeInProgressSuffix(flacFilePath));
+                    FileNaming.RemoveInProgressSuffix(flacFilePath));
                 flacFilePath = null;
                 flacStream = null;
                 flacWriter = null;
@@ -124,8 +124,8 @@ namespace SpeakFasterObserver
             {
                 return;
             }
-            flacFilePath = flacFilePath = FileNaming.addInProgressSuffix(
-                    FileNaming.getMicWavInFilePath(dataDir));
+            flacFilePath = flacFilePath = FileNaming.AddInProgressSuffix(
+                    FileNaming.GetMicWavInFilePath(dataDir));
             flacStream = File.Create(flacFilePath);
             flacWriter = new FlacWriter(flacStream);
             FlacStreaminfo streamInfo = new()

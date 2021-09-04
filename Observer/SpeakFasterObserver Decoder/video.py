@@ -41,6 +41,9 @@ def stitch_images_into_mp4(image_paths,
   timestamp0 = file_naming.parse_timestamp_from_filename(image_paths[0])
   for image_path in image_paths[1:]:
     timestamp = file_naming.parse_timestamp_from_filename(image_path)
+    if timestamp < timestamp0:
+      raise ValueError(
+          "Timestamp of image file is out of order: %s" % image_path)
     dt = timestamp - timestamp0
     pts.append(dt.seconds + dt.microseconds / 1e6)
   frame_durations_s = np.diff(pts)

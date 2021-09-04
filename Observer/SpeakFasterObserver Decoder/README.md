@@ -138,3 +138,14 @@ python elan_format_raw.py \
     /home/cais/sf_observer_data/session_3_with_screenshots/ \
     US/Eastern
 ```
+
+In case screenshot image files are missing from an input directory, use the
+`--dummy_vide_frame_image_path` flag to let the script generate a static
+dummy video:
+
+```sh
+python elan_format_raw.py \
+    /home/cais/sf_observer_data/session_2_with_keypresses/ \
+    US/Eastern \
+    --dummy_video_frame_image_path="${HOME}/SpeakFaster/Observer/SpeakFasterObserver Decoder/testdata/generic_windows_desktop.jpg"
+```

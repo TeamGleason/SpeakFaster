@@ -87,6 +87,34 @@ Use:
 
 ## Processing a raw observer data session
 
+### Installing Python dependencies ffmpeg
+
+As a prerequisite, make sure you have installed all the required Python:
+
+```sh
+pip install -r requirements.txt
+```
+
+ffmpeg is required for video processing. To install ffmpeg on Linux, do
+
+```sh
+sudo apt-get install ffmpeg
+```
+
+To install ffmpeg on Windows, download an ffmpeg build for Windows from
+https://github.com/BtbN/FFmpeg-Builds/releases, then unzip the binary
+files to an appropriate folder. Add the folder, e.g.,
+"C:\Program Files\ffmpeg-n4.4-80-gbf87bdd3f6-win64-lgpl\bin", to the
+Path environment variable.
+
+To install ffmpeg on Mac, you can use homebrew:
+
+```sh
+brew install ffmpeg
+```
+
+### Processing raw data for ELAN
+
 The following command processes a raw data session folder with the keypresses
 prorobuf file along with audio recordings. It extracts audio event labels and
 ASR transcripts (with tentative speaker IDs). These audio-based labels are
@@ -105,3 +133,8 @@ python elan_format_raw.py \
     --dummy_video_frame_image_path="${HOME}/SpeakFaster/Observer/SpeakFasterObserver Decoder/testdata/generic_windows_desktop.jpg"
 ```
 
+```sh
+python elan_format_raw.py \
+    /home/cais/sf_observer_data/session_3_with_screenshots/ \
+    US/Eastern
+```

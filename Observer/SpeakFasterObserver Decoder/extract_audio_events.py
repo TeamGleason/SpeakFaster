@@ -11,6 +11,7 @@ from scipy.io import wavfile
 
 import audio_events
 import events as events_lib
+import tsv_data
 
 
 parser = argparse.ArgumentParser()
@@ -43,11 +44,11 @@ def main():
 
   tsv_rows = events_lib.convert_events_to_tsv_rows(
       events,
-      audio_events.AUDIO_EVENTS_TIER,
+      tsv_data.AUDIO_EVENTS_TIER,
       ignore_class_names=audio_events.YAMNET_IGNORE_CLASS_NAMES)
   with open(args.output_tsv_path, mode="w") as f:
     tsv_writer = csv.writer(f, delimiter="\t")
-    tsv_writer.writerow(["tBegin", "tEnd", "Tier", "Content"])
+    tsv_writer.writerow(tsv_data.COLUMN_HEADS)
     for row in tsv_rows:
       tsv_writer.writerow(row)
 

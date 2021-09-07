@@ -124,6 +124,3 @@ def extract_audio_events(generator, fs, threshold_score=0.25):
   return output
 
 
-AUDIO_EVENTS_TIER = "AudioEvents1"
-
-

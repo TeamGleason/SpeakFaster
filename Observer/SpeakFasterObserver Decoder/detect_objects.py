@@ -9,6 +9,7 @@ import glob
 
 import object_detection
 import events as events_lib
+import tsv_data
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -53,11 +54,11 @@ def main():
 
   tsv_rows = events_lib.convert_events_to_tsv_rows(
       events,
-      object_detection.VISUAL_OBJECTS_EVENTS_TIER,
+      tsv_data.VISUAL_OBJECTS_EVENTS_TIER,
       timestep_s=timestep_s)
   with open(args.output_tsv_path, mode="w") as f:
     tsv_writer = csv.writer(f, delimiter="\t")
-    tsv_writer.writerow(["tBegin", "tEnd", "Tier", "Content"])
+    tsv_writer.writerow(tsv_data.COLUMN_HEADS)
     for row in tsv_rows:
       tsv_writer.writerow(row)
 

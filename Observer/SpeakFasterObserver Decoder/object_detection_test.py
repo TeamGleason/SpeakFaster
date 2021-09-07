@@ -19,7 +19,7 @@ class ObjectDetectionTest(tf.test.TestCase):
     self.assertEqual(image_tensor.dtype, tf.uint8)
 
   def testReadImagesByGlobPattern(self):
-    generator = object_detection.read_images("testdata/*.jpg", frame_rate=4.0)
+    generator = object_detection.read_images("testdata/pic*.jpg", frame_rate=4.0)
     output = list(generator)
     self.assertLen(output, 3)
     for i in range(3):

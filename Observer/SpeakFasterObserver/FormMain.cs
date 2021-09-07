@@ -251,7 +251,7 @@ namespace SpeakFasterObserver
                 toggleButtonOnOff.Text = "Recording On";
                 if (blink1 != null)
                 {
-                    blink1.Set(Color.Red);
+                    blink1.Blink(Color.Red, new TimeSpan(0, 0, 5), 10);
                 }
             }
             else

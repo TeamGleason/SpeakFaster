@@ -65,6 +65,16 @@ SPECIAL_KEYS = {
     "LWin": "🗔",
     "LControlKey": "🎛️",
     "LShiftKey": "↑",
+    "End": "🔚",
+    "Next": "⏭️",
+    "Up": "⬆️",
+    "Down": "⬇️",
+    "PageUp": "⏫",
+    "PageDown": "⏬",
+    "NumLock": "🔒",
+    "LButton, OemClear": "🆑",
+    "OemOpenBrackets": "[",
+    "OemCloseBrackets": "]",
     "D1": "1",
     "D2": "2",
     "D3": "3",
@@ -100,6 +110,7 @@ SHIFTED_SPECIAL_KEYS = {
     "Back": "🠠",
     "Space": " ",
     "Return": "↩",
+    "End": "🔚",
 }
 
 # pylint: disable=too-few-public-methods
@@ -258,9 +269,14 @@ class Phrase:
         KSR is Keystroke Savings Rate, defined as
         (total_chars - actual_num_of_keystrokes) / total_chars
         """
+
+        # The gaze_keypress_count for the phrase includes the two keypresses
+        # needed to trigger speech. We don't want to include those in the KSR
+        actual_num_of_keystrokes = self.gaze_keypress_count - 2
+
         if self.was_spoken and self.character_count > 0:
             self.ksr = (
-                self.character_count - self.gaze_keypress_count
+                self.character_count - actual_num_of_keystrokes
             ) / self.character_count
 
     def calculate_wpm(self):
@@ -458,10 +474,10 @@ def visualize_keypresses(keypresses, args):
             elif keypress.KeyPress == "LShiftKey":
                 if (
                     current_key_index + 1 < total_keyspresses
-                    and not keypresses.keyPresses[current_key_index + 1].KeyPress
-                    == "LShiftKey"
-                    and not keypresses.keyPresses[current_key_index + 1].KeyPress
-                    == "LControlKey"
+                    and keypresses.keyPresses[current_key_index + 1].KeyPress
+                    != "LShiftKey"
+                    and keypresses.keyPresses[current_key_index + 1].KeyPress
+                    != "LControlKey"
                 ):
                     current_phrase.visualized_string += output_for_keypress(
                         keypresses.keyPresses[current_key_index + 1].KeyPress, True
@@ -641,7 +657,7 @@ def list_keypresses(keypresses, args):
             keypresses, current_key_index, total_keys_pressed
         )
 
-        is_next_gaze_typed, next_delta_timestamp = is_key_gaze_initiated(
+        is_next_gaze_typed, _ = is_key_gaze_initiated(
             keypresses, current_key_index + 1, total_keys_pressed
         )
 
@@ -754,7 +770,8 @@ def output_for_keypress(keypress, shift_on):
     if shift_on and keypress in SHIFTED_SPECIAL_KEYS:
         return SHIFTED_SPECIAL_KEYS[keypress]
 
-    raise Exception(f"{keypress} not handled")
+    print(f"{keypress} not handled, outputting 👽")
+    return "👽"
 
 
 def datetime_from_protobuf_timestamp(protobuf_timestamp):

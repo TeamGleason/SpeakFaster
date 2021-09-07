@@ -12,6 +12,9 @@ Start Menu's startup director at `%appdata%\Microsoft\Windows\Start Menu\Startup
 Once running, the application will place an icon in the task tray. Clicking
 on that icon will open the user interface.
 
+The observer is also configured to work with the [blink(1) LED](https://www.amazon.com/gp/product/B07Q8944QK). 
+When set to record the LED will flash red periodically to indicate that recording is enabled.
+
 ## Inspecting Captured Data
 
 The captured data is stored at `%localappdata%\SpeakFasterObserver`. There are directories 

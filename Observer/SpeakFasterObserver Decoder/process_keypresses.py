@@ -276,7 +276,7 @@ class Phrase:
 
         if self.was_spoken and self.character_count > 0:
             self.ksr = (
-                self.character_count - (actual_num_of_keystrokes)
+                self.character_count - actual_num_of_keystrokes
             ) / self.character_count
 
     def calculate_wpm(self):
@@ -657,7 +657,7 @@ def list_keypresses(keypresses, args):
             keypresses, current_key_index, total_keys_pressed
         )
 
-        is_next_gaze_typed, _next_delta_timestamp = is_key_gaze_initiated(
+        is_next_gaze_typed, _ = is_key_gaze_initiated(
             keypresses, current_key_index + 1, total_keys_pressed
         )
 

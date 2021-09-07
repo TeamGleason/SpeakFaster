@@ -21,6 +21,42 @@ class GetAudioFileDurationSecTest(tf.test.TestCase):
     self.assertAllClose(audio_asr.get_audio_file_duration_sec(wav_path), 1.5)
 
 
+class ConcatenateAudioFilesTest(tf.test.TestCase):
+
+  def testEmptyPathsRaisesValueError(self):
+    with self.assertRaisesRegexp(ValueError, r"Empty input paths"):
+      audio_asr.concatenate_audio_files(
+          [], os.path.join(self.get_temp_dir(), "concatenated.wav"))
+
+  def testConcatenateASingleWavFiles(self):
+    wav_path_1 = os.path.join(
+        self.get_temp_dir(), "20210710T080000000-MicWavIn.wav")
+    wavfile.write(wav_path_1, 16000, np.zeros(16000 * 10, dtype=np.int16))
+    concat_path = os.path.join(self.get_temp_dir(), "concatenated.wav")
+    duration_s = audio_asr.concatenate_audio_files([wav_path_1], concat_path)
+    fs, xs = wavfile.read(concat_path)
+    self.assertEqual(duration_s, 10)
+    self.assertEqual(fs, 16000)
+    self.assertAllEqual(xs, np.zeros(16000 * 10, dtype=np.int16))
+
+  def testConcatenateTwoWavFiles(self):
+    wav_path_1 = os.path.join(
+        self.get_temp_dir(), "20210710T080000000-MicWavIn.wav")
+    wavfile.write(wav_path_1, 16000, np.zeros(16000 * 10, dtype=np.int16))
+    wav_path_2 = os.path.join(
+        self.get_temp_dir(), "20210710T080010000-MicWavIn.wav")
+    wavfile.write(wav_path_2, 16000, 12 * np.ones(16000 * 5, dtype=np.int16))
+    concat_path = os.path.join(self.get_temp_dir(), "concatenated.wav")
+    duration_s = audio_asr.concatenate_audio_files(
+        [wav_path_1, wav_path_2], concat_path)
+    fs, xs = wavfile.read(concat_path)
+    self.assertEqual(duration_s, 15)
+    self.assertEqual(fs, 16000)
+    self.assertAllClose(xs, np.concatenate([
+        np.zeros(16000 * 10, dtype=np.int16),
+        12 * np.ones(16000 * 5, dtype=np.int16)]))
+
+
 class GetConsecutiveAudioFilePathsTest(tf.test.TestCase):
 
   def testGetConsecutiveAudioFilePaths_findsCorrectPathsSkippingWrongOnes(self):
@@ -32,13 +68,13 @@ class GetConsecutiveAudioFilePathsTest(tf.test.TestCase):
         16000, np.zeros(16000 * 10))  # This is the first file.
     wavfile.write(
         os.path.join(self.get_temp_dir(), "20210710T080010000-MicWavIn.wav"),
-        16000, np.zeros(16000 * 5))
+        16000, np.zeros(16000 * 5))  # This file should be included.
     wavfile.write(
         os.path.join(self.get_temp_dir(), "20210710T080015000-MicWavIn.wav"),
-        16000, np.zeros(16000 * 1))
+        16000, np.zeros(16000 * 1))  # This file should be included.
     wavfile.write(
         os.path.join(self.get_temp_dir(), "20210710T120000000-MicWavIn.wav"),
-        16000, np.zeros(16000 * 1))
+        16000, np.zeros(16000 * 1))  # This file sould be excluded.
 
     (path_groups,
      group_durations_sec) = audio_asr.get_consecutive_audio_file_paths(
@@ -59,7 +95,7 @@ class GetConsecutiveAudioFilePathsTest(tf.test.TestCase):
         16000, np.zeros(16000 * 10))  # This is the first file.
     wavfile.write(
         os.path.join(self.get_temp_dir(), "20210710T090000000-MicWavIn.wav"),
-        16000, np.zeros(16000 * 5))
+        16000, np.zeros(16000 * 5))  # This file should be excluded.
 
     (path_groups,
      group_durations_sec) = audio_asr.get_consecutive_audio_file_paths(
@@ -67,6 +103,22 @@ class GetConsecutiveAudioFilePathsTest(tf.test.TestCase):
     self.assertEqual(path_groups, [
         [os.path.join(self.get_temp_dir(), "20210710T080000000-MicWavIn.wav")]])
     self.assertEqual(group_durations_sec, [10])
+
+  def testGetConsecutiveAudioFilePaths_lastOneIsIncluded(self):
+    wavfile.write(
+        os.path.join(self.get_temp_dir(), "20210710T080000000-MicWavIn.wav"),
+        16000, np.zeros(16000 * 5))  # This is the first file.
+    wavfile.write(
+        os.path.join(self.get_temp_dir(), "20210710T080005000-MicWavIn.wav"),
+        16000, np.zeros(16000 * 1))  # This file should be included.
+
+    (path_groups,
+     group_durations_sec) = audio_asr.get_consecutive_audio_file_paths(
+        os.path.join(self.get_temp_dir(), "20210710T080000000-MicWavIn.wav"))
+    self.assertEqual(path_groups, [
+        [os.path.join(self.get_temp_dir(), "20210710T080000000-MicWavIn.wav"),
+         os.path.join(self.get_temp_dir(), "20210710T080005000-MicWavIn.wav")]])
+    self.assertEqual(group_durations_sec, [6])
 
 
 class LoadAudioDataTest(tf.test.TestCase):

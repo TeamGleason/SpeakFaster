@@ -48,10 +48,12 @@
     <PackageReference Include="AWSSDK.Core" Version="3.7.0.17" />
     <PackageReference Include="AWSSDK.S3" Version="3.7.0.18" />
     <PackageReference Include="FlacBox" Version="1.0.1" />
+    <PackageReference Include="Google.Cloud.Speech.V1" Version="2.3.0" />
     <PackageReference Include="Google.Protobuf" Version="3.15.8" />
     <PackageReference Include="libjpeg-turbo-native-win" Version="2.0.15" />
     <PackageReference Include="libjpeg-turbo-net" Version="2.0.15" />
     <PackageReference Include="NAudio" Version="2.0.1" />
+    <PackageReference Include="System.Management" Version="5.0.0" />
     <PackageReference Include="Sleddog.Blink1" Version="2.0.3" />
   </ItemGroup>
 

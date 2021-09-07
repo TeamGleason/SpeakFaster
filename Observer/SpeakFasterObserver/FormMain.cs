@@ -154,8 +154,8 @@ namespace SpeakFasterObserver
 
         private void screenshotTimer_Tick(object sender, EventArgs e)
         {
-            var timestamp = FileNaming.getTimestamp();
-            var filePath = FileNaming.getScreenshotFilePath(dataPath, timestamp);
+            var timestamp = FileNaming.GetTimestamp();
+            var filePath = FileNaming.GetScreenshotFilePath(dataPath, timestamp);
             CaptureScreenshot(timestamp, filePath);
         }
 
@@ -198,8 +198,8 @@ namespace SpeakFasterObserver
 
                 if (lastKeypressString.Equals("LControlKey") && keypressString.Equals("W"))
                 {
-                    var timestamp = FileNaming.getTimestamp();
-                    var filePath = FileNaming.getSpeechScreenshotFilePath(dataPath, timestamp);
+                    var timestamp = FileNaming.GetTimestamp();
+                    var filePath = FileNaming.GetSpeechScreenshotFilePath(dataPath, timestamp);
                     CaptureScreenshot(timestamp, filePath);
                 }
 
@@ -356,7 +356,7 @@ namespace SpeakFasterObserver
 
             if (oldKeypresses.KeyPresses_.Count == 0) return;
 
-            var filename = FileNaming.getKeypressesProtobufFilePath(dataPath);
+            var filename = FileNaming.GetKeypressesProtobufFilePath(dataPath);
             using (var file = File.Create(filename))
             {
                 oldKeypresses.WriteTo(file);

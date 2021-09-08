@@ -68,7 +68,15 @@ def is_number(string):
 
 
 def infer_columns(tsv_path):
-  """Infers the columns of a curated tsv file."""
+  """Infers the columns of a curated tsv file.
+
+  Args:
+    tsv_path: Path to the input tsv file.
+
+  Returns:
+    A tuple of four numbers, indicating the 0-based column indices for:
+      tBegin, tEnd, Tier, and Content
+  """
   with open(tsv_path, "r") as f:
     reader = csv.reader(f, delimiter=tsv_data.DELIMITER)
     rows = list(reader)

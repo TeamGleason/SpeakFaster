@@ -45,5 +45,13 @@ class LoadSpeakerMapTest(tf.test.TestCase):
       elan_process_curated.load_speaker_map(modified_speaker_map_tsv_path)
 
 
+class InferColumnsTest(tf.test.TestCase):
+
+  def testInferColumns_success(self):
+    tsv_path = os.path.join("testdata", "curated_1.tsv")
+    column_order = elan_process_curated.infer_columns(tsv_path)
+    self.assertEqual(column_order, (1, 2, 0, 3))
+
+
 if __name__ == "__main__":
   tf.test.main()

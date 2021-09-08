@@ -20,6 +20,9 @@ KEYPRESS_TIER = "Keypress"
 SPEECH_TRANSCRIPT_TIER_NAME = "SpeechTranscript"
 VISUAL_OBJECTS_EVENTS_TIER = "VisualObjects1"
 
+ALL_TIERS = (AUDIO_EVENTS_TIER, KEYPRESS_TIER, SPEECH_TRANSCRIPT_TIER_NAME,
+             VISUAL_OBJECTS_EVENTS_TIER)
+
 
 def merge_tsv_files(tsv_paths, merged_path):
   """Merge multiple tsv files into one.

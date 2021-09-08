@@ -15,12 +15,16 @@ import csv
 import json
 import os
 
+import numpy as np
+
+import tsv_data
+
 SPEAKER_MAP_DELIMITER = "\t"
 SPEKAER_MAP_COLUMN_HEADS = ("RealName", "Pseudonym")
 
 
 def load_speaker_map(speaker_map_tsv_path):
-  """Load speaker map.
+  """Loads speaker map.
 
   Args:
     speaker_map_tsv_path: Path to the tsv file that contains the columns
@@ -55,6 +59,57 @@ def load_speaker_map(speaker_map_tsv_path):
   return realname_to_pseudonym
 
 
+def is_number(string):
+  try:
+    float(string)
+    return True
+  except ValueError:
+    return False
+
+
+def infer_columns(tsv_path):
+  """Infers the columns of a curated tsv file."""
+  with open(tsv_path, "r") as f:
+    reader = csv.reader(f, delimiter=tsv_data.DELIMITER)
+    rows = list(reader)
+    is_numeric = [[], [], [], []]
+    is_tier = [[], [], [], []]
+    for i, row in enumerate(rows):
+      if not row:
+        break
+      items = [item for item in row if item]
+      if len(items) != 4:
+        raise ValueError(
+            "Line %d of the file %s contains %d columns; expected %d" %
+            (i + 1, tsv_path, len(items), 4))
+      for j, item in enumerate(items):
+        is_numeric[j].append(is_number(item))
+        is_tier[j].append(item in tsv_data.ALL_TIERS)
+
+  column_is_numeric = [np.all(column) for column in is_numeric]
+  if column_is_numeric.count(True) < 2:
+    raise ValueError("Cannot find exactly two columns for tBegin and tEnd")
+  idx_column_tbegin = column_is_numeric.index(True)
+  if not column_is_numeric[idx_column_tbegin + 1]:
+    raise ValueError(
+        "Cannot find adjacent tBegin and tEnd columns in %s" % tsv_path)
+  idx_column_tend = idx_column_tbegin + 1
+  print("tBegin determined to be column %d" % (idx_column_tbegin + 1))
+  print("tEnd determined to be column %d" % (idx_column_tend + 1))
+
+  column_is_tier = [np.all(column) for column in is_tier]
+  if column_is_tier.count(True) < 1:
+    raise ValueError("Cannot find a tier column in %s" % tsv_path)
+  idx_column_tier = column_is_tier.index(True)
+  print("Tier determined to be column %d" % (idx_column_tier + 1))
+
+  idx_column_content = list(set((0, 1, 2, 3)) - set((
+      idx_column_tbegin, idx_column_tend, idx_column_tier)))[0]
+  print("Content determined to be column %d" % (idx_column_content + 1))
+
+  return (idx_column_tbegin, idx_column_tend, idx_column_tier, idx_column_content)
+
+
 def parse_args():
   parser = argparse.ArgumentParser()
   parser.add_argument(
@@ -73,6 +128,8 @@ def parse_args():
 def main():
   args = parse_args()
   realname_to_pseudonym = load_speaker_map(args.speaker_map_tsv_path)
+  curated_tsv_path = os.path.join(args.input_dir, "curated.tsv")
+  column_order = infer_columns(curated_tsv_path)
 
 
 if __name__ == "__main__":

@@ -77,6 +77,7 @@ def infer_columns(tsv_path):
     A tuple of four numbers, indicating the 0-based column indices for:
       tBegin, tEnd, Tier, and Content
   """
+  # TODO(cais): Deal with the case where there is actually a header.
   with open(tsv_path, "r") as f:
     reader = csv.reader(f, delimiter=tsv_data.DELIMITER)
     rows = list(reader)
@@ -107,7 +108,9 @@ def infer_columns(tsv_path):
 
   column_is_tier = [np.all(column) for column in is_tier]
   if column_is_tier.count(True) < 1:
-    raise ValueError("Cannot find a tier column in %s" % tsv_path)
+    raise ValueError(
+        "Cannot find a tier column in %s. "
+        "There may be invalid tier names in the file." % tsv_path)
   idx_column_tier = column_is_tier.index(True)
   print("Tier determined to be column %d" % (idx_column_tier + 1))
 
@@ -116,6 +119,7 @@ def infer_columns(tsv_path):
   print("Content determined to be column %d" % (idx_column_content + 1))
 
   return (idx_column_tbegin, idx_column_tend, idx_column_tier, idx_column_content)
+
 
 
 def parse_args():

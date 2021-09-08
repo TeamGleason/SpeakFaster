@@ -52,6 +52,12 @@ class InferColumnsTest(tf.test.TestCase):
     column_order = elan_process_curated.infer_columns(tsv_path)
     self.assertEqual(column_order, (1, 2, 0, 3))
 
+  def testCheckTierNames_detectsWrongTierName(self):
+    tsv_path = os.path.join("testdata", "curated_with_wrong_tier_name.tsv")
+    with self.assertRaisesRegex(
+        ValueError, "Cannot find a tier column.*invalid tier names."):
+      elan_process_curated.infer_columns(tsv_path)
+
 
 if __name__ == "__main__":
   tf.test.main()

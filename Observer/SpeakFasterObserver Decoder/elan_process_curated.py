@@ -12,7 +12,7 @@ file:
 
 import argparse
 import csv
-from dateutil import parser
+from datetime import datetime
 import json
 import os
 import re
@@ -159,6 +159,20 @@ def load_rows(tsv_path, column_order):
 _SPEECH_TRANSCRIPT_CONTENT_REGEX = re.compile(
     ".+(\[(Speaker|SpeakerTTS):[A-Za-z0-9]+\])$")
 _REDACT_TIME_RANGE_REGEX = re.compile("\[Redacted[A-Za-z]*?:.*?\]")
+_DUMMY_DATETIME_FORMAT_NO_MILLIS = "%Y-%m-%dT%H:%M:%S"
+_DUMMY_DATETIME_FORMAT_WITH_MILLIS = "%Y-%m-%dT%H:%M:%S.%f"
+
+
+def _parse_time_string(time_str):
+  time_str = time_str.strip()
+  base_time = ("2000-01-01T00:00:00.000" if ("." in time_str)
+               else "2000-01-01T00:00:00")
+  time_format = (_DUMMY_DATETIME_FORMAT_WITH_MILLIS if ("." in time_str)
+                 else _DUMMY_DATETIME_FORMAT_NO_MILLIS)
+  t0 = datetime.strptime(base_time, time_format)
+  t1 = datetime.strptime("2000-01-01T" + time_str, time_format)
+  dt = t1 - t0
+  return dt.seconds + dt.microseconds / 1e6
 
 
 def parse_time_range(tag):
@@ -174,23 +188,34 @@ def parse_time_range(tag):
         "Invalid redaction tag with time range: '%s'" % original_tag)
   tbegin_str = tag[:index_hyphen]
   tend_str = tag[index_hyphen + 1:]
-  t0 = parser.parse("2000-01-01T00:00:00.000")
-  tbegin = parser.parse("2000-01-01T" + tbegin_str) - t0
-  tbegin = tbegin.seconds + 1e6 * tbegin.microseconds
-  tend = parser.parse("2000-01-01T" + tend_str) - t0
-  tend = tend.seconds + 1e6 * tend.microseconds
+  tbegin = _parse_time_string(tbegin_str)
+  tend = _parse_time_string(tend_str)
   if tend <= tbegin:
-    raise ValueError("Invalid time range in tag: '%s'" % original_tag)
+    raise ValueError(
+        "Begin and end time out of order in tag: '%s'" % original_tag)
   return tbegin, tend
 
 
-def apply_speaker_map(rows, realname_to_pseudonym):
+def apply_speaker_map_get_keypress_redactions(rows, realname_to_pseudonym):
+  """Applies speaker map on rows and extracts keypress redaction time ranges.
+
+  Args:
+    rows: A list of data rows, in the order of (tBegin, tEnd, Tier, Content).
+    realname_to_pseudonym: A dict mapping lowercase real names to pseudonyms.
+
+  Returns:
+    Keypress redaction time ranges.
+  """
+  keypress_redaction_time_ranges = []
   for i, row in enumerate(rows):
     _, _, tier, content = row
-    if tier == tsv_data.SPEECH_TRANSCRIPT_TIER_NAME:
-      match = re.match(_SPEECH_TRANSCRIPT_CONTENT_REGEX, content)
+    if tier == tsv_data.SPEECH_TRANSCRIPT_TIER:
+      match = re.match(_SPEECH_TRANSCRIPT_CONTENT_REGEX, content.strip())
       if not match:
-        raise ValueError("Invalid SpeechTranscripts content: '%s'" % content)
+        raise ValueError(
+            "Invalid SpeechTranscripts content: '%s'. "
+            "Make sure to add Speaker or SpeakerTTS tag at the end "
+            "(e.g., '[Speaker:John]')" % content)
       realname_tag, tag_type = match.groups()
       realname = realname_tag[len("[" + tag_type) + 1:-1]
       if realname.lower() not in realname_to_pseudonym:
@@ -205,8 +230,31 @@ def apply_speaker_map(rows, realname_to_pseudonym):
       redaction_time_range_tags = re.findall(
           _REDACT_TIME_RANGE_REGEX, pseudonymized_content)
       for time_range_tag in redaction_time_range_tags:
-        print(time_range_tag)  # DEBUG
-        parse_time_range(time_range_tag)
+        tbegin, tend = parse_time_range(time_range_tag)
+        keypress_redaction_time_ranges.append((tbegin, tend))
+  return keypress_redaction_time_ranges
+
+
+REDACTED_KEY = "[RedactedKey]"
+
+
+def redact_keypresses(rows, time_ranges):
+  """Redact keypresses based on the time ranges."""
+  for i, row in enumerate(rows):
+    tbegin, _, tier, content = row
+    if tier == tsv_data.KEYPRESS_TIER:
+      if any((time_range[0] <= tbegin and time_range[1] > tbegin)
+              for time_range in time_ranges):
+        rows[i][3] = REDACTED_KEY
+
+
+def write_rows_to_tsv(rows, out_tsv_path):
+  with open(out_tsv_path, "w") as f:
+    f.write(tsv_data.HEADER + "\n")
+    for row in rows:
+      tbegin, tend, tier, content = row
+      str_items = ["%.3f" % tbegin, "%.3f" % tend, tier, content]
+      f.write(tsv_data.DELIMITER.join(str_items) + "\n")
 
 
 def parse_args():
@@ -230,7 +278,12 @@ def main():
   curated_tsv_path = os.path.join(args.input_dir, "curated.tsv")
   column_order = infer_columns(curated_tsv_path)
   rows = load_rows(curated_tsv_path, column_order)
-  apply_speaker_map(rows, realname_to_pseudonym)
+  keypress_redaction_time_ranges = apply_speaker_map_get_keypress_redactions(
+      rows, realname_to_pseudonym)
+  redact_keypresses(rows, keypress_redaction_time_ranges)
+  out_tsv_path = os.path.join(args.input_dir, "curated_processed.tsv")
+  write_rows_to_tsv(rows, out_tsv_path)
+  print("Success: Wrote postprocessed tsv file to: %s" % out_tsv_path)
 
 
 if __name__ == "__main__":

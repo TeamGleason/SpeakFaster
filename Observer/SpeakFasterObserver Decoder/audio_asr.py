@@ -338,7 +338,7 @@ def transcribe_audio_to_tsv(input_audio_paths,
       line = "%.3f\t%.3f\t%s\t%s" % (
           start_time_sec + begin_sec,
           end_time_sec + begin_sec,
-          tsv_data.SPEECH_TRANSCRIPT_TIER_NAME,
+          tsv_data.SPEECH_TRANSCRIPT_TIER,
           best_transcript)
       print(line)
       f.write(line + "\n")
@@ -402,7 +402,7 @@ def transcribe_audio_to_tsv_with_diarization(input_audio_paths,
       line = "%.3f\t%.3f\t%s\t%s (Speaker #%d)" % (
           start_time_sec + begin_sec,
           end_time_sec + begin_sec,
-          tsv_data.SPEECH_TRANSCRIPT_TIER_NAME,
+          tsv_data.SPEECH_TRANSCRIPT_TIER,
           regrouped_utterance,
           speaker_index)
       print(line)
@@ -483,7 +483,7 @@ def async_transcribe(audio_file_paths,
       line = "%.3f\t%.3f\t%s\t%s (Speaker #%d)" % (
           start_time_sec + begin_sec,
           end_time_sec + begin_sec,
-          tsv_data.SPEECH_TRANSCRIPT_TIER_NAME,
+          tsv_data.SPEECH_TRANSCRIPT_TIER,
           regrouped_utterance,
           speaker_index)
       print(line)

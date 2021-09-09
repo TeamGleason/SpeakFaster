@@ -12,8 +12,10 @@ file:
 
 import argparse
 import csv
+from dateutil import parser
 import json
 import os
+import re
 
 import numpy as np
 
@@ -31,7 +33,8 @@ def load_speaker_map(speaker_map_tsv_path):
       RealName and Pseudonym.
 
   Returns:
-    A dict mapping real name to pseudonym.
+    A dict mapping real name to pseudonym. The real name keys are converted
+      to all lowercase.
   """
   expected_header = SPEAKER_MAP_DELIMITER.join(SPEKAER_MAP_COLUMN_HEADS)
   realname_to_pseudonym = dict()
@@ -47,6 +50,7 @@ def load_speaker_map(speaker_map_tsv_path):
       if not row:
         break
       realname, pseudonym = row
+      realname = realname.lower()
       if realname in realname_to_pseudonym:
         raise ValueError("Duplicate real name found in %s: %s" %
             (speaker_map_tsv_path, realname))
@@ -80,10 +84,9 @@ def infer_columns(tsv_path):
   # TODO(cais): Deal with the case where there is actually a header.
   with open(tsv_path, "r") as f:
     reader = csv.reader(f, delimiter=tsv_data.DELIMITER)
-    rows = list(reader)
     is_numeric = [[], [], [], []]
     is_tier = [[], [], [], []]
-    for i, row in enumerate(rows):
+    for i, row in enumerate(reader):
       if not row:
         break
       items = [item for item in row if item]
@@ -121,6 +124,90 @@ def infer_columns(tsv_path):
   return (idx_column_tbegin, idx_column_tend, idx_column_tier, idx_column_content)
 
 
+def load_rows(tsv_path, column_order):
+  """Load the rows of the tsv file in ascending order of Begin.
+
+  Also checks tEnd >= tBegin for all rows.
+
+  Args:
+    tsv_path: Path to the input tsv file.
+    column_order: Column indices for tBegin, tEnd, Tier, and Contents, as a
+      tuple of integers.
+
+  Returns:
+    A list of rows, sorted in ascending order of tBegin. Each item of the list
+      are a list of (tBegin, tEnd, tier, contents).
+  """
+  col_tbegin, col_tend, col_tier, col_content = column_order
+  output_rows = []
+  with open(tsv_path, "r") as f:
+    reader = csv.reader(f, delimiter=tsv_data.DELIMITER)
+    for i, row in enumerate(reader):
+      items = [item for item in row if item]
+      tbegin = float(items[col_tbegin])
+      tend = float(items[col_tend])
+      tier = items[col_tier].strip()
+      content = items[col_content].strip()
+      if tend < tbegin:
+        raise ValueError(
+            "Line %d of %s has tBegin and tEnd out of order: %.3f < %.3f" %
+            (i + 1, tsv_path, tend, tbegin))
+      output_rows.append([tbegin, tend, tier, content])
+  return sorted(output_rows, key=lambda x: x[0])
+
+
+_SPEECH_TRANSCRIPT_CONTENT_REGEX = re.compile(
+    ".+(\[(Speaker|SpeakerTTS):[A-Za-z0-9]+\])$")
+_REDACT_TIME_RANGE_REGEX = re.compile("\[Redacted[A-Za-z]*?:.*?\]")
+
+
+def parse_time_range(tag):
+  original_tag = tag
+  index_colon = tag.index(":")
+  tag = tag[index_colon + 1:-1].strip()
+  if tag.count("-") != 1:
+    raise ValueError(
+        "Invalid redaction tag with time range: '%s'" % original_tag)
+  index_hyphen = tag.index("-")
+  if index_hyphen == 0:
+    raise ValueError(
+        "Invalid redaction tag with time range: '%s'" % original_tag)
+  tbegin_str = tag[:index_hyphen]
+  tend_str = tag[index_hyphen + 1:]
+  t0 = parser.parse("2000-01-01T00:00:00.000")
+  tbegin = parser.parse("2000-01-01T" + tbegin_str) - t0
+  tbegin = tbegin.seconds + 1e6 * tbegin.microseconds
+  tend = parser.parse("2000-01-01T" + tend_str) - t0
+  tend = tend.seconds + 1e6 * tend.microseconds
+  if tend <= tbegin:
+    raise ValueError("Invalid time range in tag: '%s'" % original_tag)
+  return tbegin, tend
+
+
+def apply_speaker_map(rows, realname_to_pseudonym):
+  for i, row in enumerate(rows):
+    _, _, tier, content = row
+    if tier == tsv_data.SPEECH_TRANSCRIPT_TIER_NAME:
+      match = re.match(_SPEECH_TRANSCRIPT_CONTENT_REGEX, content)
+      if not match:
+        raise ValueError("Invalid SpeechTranscripts content: '%s'" % content)
+      realname_tag, tag_type = match.groups()
+      realname = realname_tag[len("[" + tag_type) + 1:-1]
+      if realname.lower() not in realname_to_pseudonym:
+        raise ValueError("Cannot find real name in speaker tag: %s" % realname)
+      pseudonym = realname_to_pseudonym[realname.lower()]
+      pseudonym_tag = "[%s:%s]" % (tag_type, pseudonym)
+      index = content.rindex(realname_tag)
+      pseudonymized_content = content[:index] + pseudonym_tag
+      rows[i][3] = pseudonymized_content
+
+      # Check for redaction tags with time ranges.
+      redaction_time_range_tags = re.findall(
+          _REDACT_TIME_RANGE_REGEX, pseudonymized_content)
+      for time_range_tag in redaction_time_range_tags:
+        print(time_range_tag)  # DEBUG
+        parse_time_range(time_range_tag)
+
 
 def parse_args():
   parser = argparse.ArgumentParser()
@@ -142,6 +229,8 @@ def main():
   realname_to_pseudonym = load_speaker_map(args.speaker_map_tsv_path)
   curated_tsv_path = os.path.join(args.input_dir, "curated.tsv")
   column_order = infer_columns(curated_tsv_path)
+  rows = load_rows(curated_tsv_path, column_order)
+  apply_speaker_map(rows, realname_to_pseudonym)
 
 
 if __name__ == "__main__":

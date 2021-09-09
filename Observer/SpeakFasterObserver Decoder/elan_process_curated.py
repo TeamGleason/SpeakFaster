@@ -201,6 +201,7 @@ def apply_speaker_map_get_keypress_redactions(rows, realname_to_pseudonym):
 
   Args:
     rows: A list of data rows, in the order of (tBegin, tEnd, Tier, Content).
+      This list is modified in place.
     realname_to_pseudonym: A dict mapping lowercase real names to pseudonyms.
 
   Returns:
@@ -239,13 +240,39 @@ REDACTED_KEY = "[RedactedKey]"
 
 
 def redact_keypresses(rows, time_ranges):
-  """Redact keypresses based on the time ranges."""
+  """Redact keypresses based on the time ranges.
+
+  Verifies that each time range in time_range is used.
+  If this is not the case, an error will be thrown.
+
+  Args:
+    rows: Rows that contain (among other data) the keypress rows to
+      be redacted. This list is modified in place.
+    time_ranges: A list of (t0, t1) time ranges.
+  """
+  time_range_use_count = []
+  for _ in time_ranges:
+    time_range_use_count.append(0)
   for i, row in enumerate(rows):
     tbegin, _, tier, content = row
-    if tier == tsv_data.KEYPRESS_TIER:
-      if any((time_range[0] <= tbegin and time_range[1] > tbegin)
-              for time_range in time_ranges):
-        rows[i][3] = REDACTED_KEY
+    if tier != tsv_data.KEYPRESS_TIER:
+      continue
+    index_use = -1
+    for j, time_range in enumerate(time_ranges):
+      if time_range[0] <= tbegin and time_range[1] > tbegin:
+        index_use = j
+        break
+    if index_use != -1:
+      rows[i][3] = REDACTED_KEY
+      time_range_use_count[index_use] += 1
+  indices_unused = np.where(np.array(time_range_use_count) == 0)[0].tolist()
+  if indices_unused:
+    unused_ranges = []
+    for i in indices_unused:
+      unused_ranges.append(time_ranges[i])
+    raise ValueError(
+        "Found %d unused keypress redaction time range(s): %s" %
+        (len(unused_ranges), unused_ranges))
 
 
 def write_rows_to_tsv(rows, out_tsv_path):
@@ -283,7 +310,8 @@ def main():
   redact_keypresses(rows, keypress_redaction_time_ranges)
   out_tsv_path = os.path.join(args.input_dir, "curated_processed.tsv")
   write_rows_to_tsv(rows, out_tsv_path)
-  print("Success: Wrote postprocessed tsv file to: %s" % out_tsv_path)
+  print("Success: Wrote postprocessed tsv file and saved result to: %s" %
+        out_tsv_path)
 
 
 if __name__ == "__main__":

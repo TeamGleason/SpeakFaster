@@ -213,6 +213,28 @@ class RedactKeypressesTest(tf.test.TestCase):
         [22.8, 22.9, "Keypress", "e"],
         [23.8, 23.9, "Keypress", "f"]])
 
+  def testUnusedRedactionTimeRanges_raisesValueError(self):
+    rows = [
+        [0.1, 1.3, "SpeechTranscript", "Good morning. [Speaker:Partner005] "],
+        [1.5, 1.9, "SpeechTranscript",
+         "I have [RedactedSensitive:00:00:00-00:00:01] [SpeakerTTS:User001]"],
+        [2.0, 2.1, "Keypress", "I"],
+        [2.2, 2.3, "Keypress", "Space"],
+        [2.4, 2.5, "Keypress", "h"],
+        [2.6, 2.7, "Keypress", "a"],
+        [2.8, 2.9, "Keypress", "v"],
+        [2.8, 2.9, "Keypress", "e"],
+        [3.0, 3.1, "Keypress", "Space"],
+        [10.8, 10.9, "Keypress", "a"],
+        [11.8, 11.9, "Keypress", "b"],
+        [12.8, 12.9, "Keypress", "c"],
+        [15.2, 16.0, "SpeechTranscript",
+         "I have [RedactedSensitive:00:00:18.500-00:00:19] [SpeakerTTS:User001]"]]
+    with self.assertRaisesRegex(
+        ValueError, r"2 unused keypress redaction time range.*0, 1.*18\.5.* 19"):
+      elan_process_curated.redact_keypresses(rows, [(0, 1), (18.5, 19)])
+
+
 
 if __name__ == "__main__":
   tf.test.main()

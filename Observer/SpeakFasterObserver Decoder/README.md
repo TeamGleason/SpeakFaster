@@ -150,11 +150,11 @@ python elan_format_raw.py \
 Based on the Data Curation Playbook, you should export a TSV file named
 `curated.tsv` to the data-session directory at the end of the manual curation
 process. Once this file has been exported, use the `elan_process_curated.tsv`
-script to perform quality check and final conversion on  the file. Example
+script to perform quality check and final conversion on the file. Example
 command line:
 
 ```sh
-python \
+python elan_process_curated.py \
     /home/cais/sf_observer_data/session_5_practice_conversation_2 \
     path/to/speaker_map.tsv
 ```
@@ -168,16 +168,23 @@ and `Pseudonym`. E.g.,
 RealName\tPseudonym
 Sean\tUser001
 Sherry\tParnter001
+Tim\tPartner002
 ```
 
-The `elan_process_curated.tsv` script may identify the following types of errors
-(an incomplete list):
+The `elan_process_curated.py` script is able to find the following types of
+possible errors in `curated.tsv` (an incomplete list):
 
+- Duplicate real names or pseudonyms in the `speaker_map.tsv` file provided.
+- Incorrect # of columns
 - Incorrect tier names
-- tEnd value less than tBegin value
+- tEnd value less than tBegin value in any row
+- Real names in `[Speaker:${RealName}]` or `[SpeakerTTS:${RealName}]` tags
+  that are not found in the `speaker_map.tsv` file provided.
 - A row of the `SpeechTranscript` tier contains no speaker tag such as
   `[Speaker:Sherry]` at the end.
 - Incorrect keypress redaction time range format.
+- Keypress redaction time ranges that are not found in the Keypresses tier of
+  the `curated.tsv` file.
 
 When you run into these errors, go back to ELAN, fix the problem and re-export
 the `curated.tsv` file and re-run the `elan_process_curated.tsv`. Fix all problem

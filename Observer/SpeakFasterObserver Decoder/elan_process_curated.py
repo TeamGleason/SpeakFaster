@@ -81,7 +81,16 @@ def infer_columns(tsv_path):
     A tuple of four numbers, indicating the 0-based column indices for:
       tBegin, tEnd, Tier, and Content
   """
-  # TODO(cais): Deal with the case where there is actually a header.
+  # Check and see whether there file actually has a header row.
+  with open(tsv_path, "r") as f:
+    reader = csv.reader(f, delimiter=tsv_data.DELIMITER)
+    first_row = [item for item in next(reader) if item]
+    if sorted(first_row) == sorted(list(tsv_data.COLUMN_HEADS)):
+      return (first_row.index(tsv_data.TBEGIN_COLUMN_HEAD),
+              first_row.index(tsv_data.TEND_COLUMN_HEAD),
+              first_row.index(tsv_data.TIER_COLUMN_HEAD),
+              first_row.index(tsv_data.CONTENT_COLUMN_HEAD)), True
+
   with open(tsv_path, "r") as f:
     reader = csv.reader(f, delimiter=tsv_data.DELIMITER)
     is_numeric = [[], [], [], []]
@@ -121,10 +130,11 @@ def infer_columns(tsv_path):
       idx_column_tbegin, idx_column_tend, idx_column_tier)))[0]
   print("Content determined to be column %d" % (idx_column_content + 1))
 
-  return (idx_column_tbegin, idx_column_tend, idx_column_tier, idx_column_content)
+  return (idx_column_tbegin,
+          idx_column_tend, idx_column_tier, idx_column_content), False
 
 
-def load_rows(tsv_path, column_order):
+def load_rows(tsv_path, column_order, has_header=False):
   """Load the rows of the tsv file in ascending order of Begin.
 
   Also checks tEnd >= tBegin for all rows.
@@ -133,6 +143,7 @@ def load_rows(tsv_path, column_order):
     tsv_path: Path to the input tsv file.
     column_order: Column indices for tBegin, tEnd, Tier, and Contents, as a
       tuple of integers.
+    has_header: Whether the TSV file has a header row.
 
   Returns:
     A list of rows, sorted in ascending order of tBegin. Each item of the list
@@ -142,6 +153,8 @@ def load_rows(tsv_path, column_order):
   output_rows = []
   with open(tsv_path, "r") as f:
     reader = csv.reader(f, delimiter=tsv_data.DELIMITER)
+    if has_header:
+      next(reader)
     for i, row in enumerate(reader):
       items = [item for item in row if item]
       tbegin = float(items[col_tbegin])
@@ -303,14 +316,14 @@ def main():
   args = parse_args()
   realname_to_pseudonym = load_speaker_map(args.speaker_map_tsv_path)
   curated_tsv_path = os.path.join(args.input_dir, "curated.tsv")
-  column_order = infer_columns(curated_tsv_path)
-  rows = load_rows(curated_tsv_path, column_order)
+  column_order, has_header = infer_columns(curated_tsv_path)
+  rows = load_rows(curated_tsv_path, column_order, has_header=has_header)
   keypress_redaction_time_ranges = apply_speaker_map_get_keypress_redactions(
       rows, realname_to_pseudonym)
   redact_keypresses(rows, keypress_redaction_time_ranges)
   out_tsv_path = os.path.join(args.input_dir, "curated_processed.tsv")
   write_rows_to_tsv(rows, out_tsv_path)
-  print("Success: Wrote postprocessed tsv file and saved result to: %s" %
+  print("Success: Converted postprocessed tsv file and saved result to: %s" %
         out_tsv_path)
 
 

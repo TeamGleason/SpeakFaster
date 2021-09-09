@@ -67,5 +67,11 @@ class MergeTsvFilesTest(tf.test.TestCase):
           [self.tsv_path_1, self.tsv_path_2], merged_tsv_path)
 
 
+class TsvDataTest(tf.test.TestCase):
+
+  def testAllTierNamesAreUnique(self):
+    self.assertLen(set(tsv_data.ALL_TIERS), len(tsv_data.ALL_TIERS))
+
+
 if __name__ == "__main__":
   tf.test.main()

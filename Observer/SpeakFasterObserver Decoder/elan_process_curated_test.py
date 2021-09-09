@@ -47,10 +47,17 @@ class LoadSpeakerMapTest(tf.test.TestCase):
 
 class InferColumnsTest(tf.test.TestCase):
 
-  def testInferColumns_success(self):
-    tsv_path = os.path.join("testdata", "curated_1.tsv")
-    column_order = elan_process_curated.infer_columns(tsv_path)
+  def testInferColumns_noHeader_success(self):
+    tsv_path= os.path.join("testdata", "curated_1.tsv")
+    column_order, has_header = elan_process_curated.infer_columns(tsv_path)
     self.assertEqual(column_order, (1, 2, 0, 3))
+    self.assertEqual(has_header, False)
+
+  def testInferColumns_hasHeader_success(self):
+    tsv_path = os.path.join("testdata", "curated_with_header.tsv")
+    column_order, has_header = elan_process_curated.infer_columns(tsv_path)
+    self.assertEqual(column_order, (1, 2, 0, 3))
+    self.assertEqual(has_header, True)
 
   def testCheckTierNames_detectsWrongTierName(self):
     tsv_path = os.path.join("testdata", "curated_with_wrong_tier_name.tsv")
@@ -61,10 +68,22 @@ class InferColumnsTest(tf.test.TestCase):
 
 class LoadRowsTest(tf.test.TestCase):
 
-  def testLoadRows_success(self):
+  def testLoadRows_noHeader_success(self):
     tsv_path = os.path.join("testdata", "curated_1.tsv")
-    column_order = elan_process_curated.infer_columns(tsv_path)
-    rows = elan_process_curated.load_rows(tsv_path, column_order)
+    column_order, has_header = elan_process_curated.infer_columns(tsv_path)
+    rows = elan_process_curated.load_rows(
+        tsv_path, column_order, has_header=has_header)
+    self.assertEqual(rows, [
+        [0.1, 0.9, 'SpeechTranscript', 'Hello, my friend'],
+        [1.2, 2.5, 'SpeechTranscript', 'How are you doing today?'],
+        [2.5, 2.6, 'Keypress', 'V'],
+        [3.0, 3.2, 'AudioEvents1', 'Doorbell']])
+
+  def testLoadRows_noHeader_success(self):
+    tsv_path = os.path.join("testdata", "curated_with_header.tsv")
+    column_order, has_header = elan_process_curated.infer_columns(tsv_path)
+    rows = elan_process_curated.load_rows(
+        tsv_path, column_order, has_header=has_header)
     self.assertEqual(rows, [
         [0.1, 0.9, 'SpeechTranscript', 'Hello, my friend'],
         [1.2, 2.5, 'SpeechTranscript', 'How are you doing today?'],
@@ -73,10 +92,11 @@ class LoadRowsTest(tf.test.TestCase):
 
   def testLoadRows_incorrectTBeginRaisesValueError(self):
     tsv_path = os.path.join("testdata", "curated_with_wrong_tend.tsv")
-    column_order = elan_process_curated.infer_columns(tsv_path)
+    column_order, has_header = elan_process_curated.infer_columns(tsv_path)
     with self.assertRaisesRegex(
         ValueError, r"Line 4.*tBegin.*tEnd.*order.*2\.900.*<.*3\.000"):
-      elan_process_curated.load_rows(tsv_path, column_order)
+      elan_process_curated.load_rows(
+          tsv_path, column_order, has_header=has_header)
 
 
 class ParseTimeRangeTest(tf.test.TestCase):

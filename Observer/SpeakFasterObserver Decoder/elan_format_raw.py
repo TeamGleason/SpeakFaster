@@ -51,15 +51,12 @@ def format_raw_data(input_dir,
   screenshot_paths = sorted(
       glob.glob(os.path.join(input_dir, "*-Screenshot.jpg")))
   if screenshot_paths:
-    video_start_time = file_naming.parse_timestamp_from_filename(
-        screenshot_paths[0])
-    tz = pytz.timezone(timezone)
-    video_start_time = tz.localize(video_start_time)
     screenshots_video_path = os.path.join(input_dir, "screenshots.mp4")
     print("Writing screenshots video...")
     video.stitch_images_into_mp4(
         screenshot_paths,
-        video_start_time.timestamp() - audio_start_time_epoch,
+        audio_start_time_epoch,
+        timezone,
         screenshots_video_path)
     print("Saved screenshots video to %s\n" % screenshots_video_path)
   else:

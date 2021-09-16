@@ -13,21 +13,36 @@ import file_naming
 
 
 def stitch_images_into_mp4(image_paths,
-                           initial_frame_duration_s,
+                           start_time_epoch_s,
+                           timezone,
                            out_mp4_path):
   """Stitch a series of images of the same size into a video.
 
   The video will have no audio track.
 
   image_paths: The paths to the images.
-  initial_frame_duration_s: Duration of the added initial (blank) frame,
-    in seconds, as a float.
+  start_time_epoch_s: Seconds since epoch of the starting time. Frames
+    that are before it are discarded. The time gap between this starting
+    time and the time of the first included frame are filled with a
+    blank (black) frame.
+  timezone: Name of the timezone for the timestamps in the image file names.
   output_mp4_path: Path to the output mp4 video file.
   """
   if not image_paths:
     raise ValueError("Empty image paths")
-  if initial_frame_duration_s < 0:
-    raise ValueError("initial_frame_duration_s must not be negative")
+
+  # Find the first image path to include.
+  image_paths = sorted(image_paths)
+  for start_index, image_path in enumerate(image_paths):
+    video_start_epochs_s = file_naming.parse_epoch_seconds_from_filename(
+        image_path, timezone)
+    if video_start_epochs_s >= start_time_epoch_s:
+      initial_frame_duration_s = video_start_epochs_s - start_time_epoch_s
+      break
+  print("The screenshot video file will start from frame %d (0-based); "
+        "Discarding %d frames." % (start_index, start_index))
+  image_paths == image_paths[start_index:]
+
   tmp_dir = tempfile.mkdtemp()
   pts = [0]
 
@@ -35,6 +50,8 @@ def stitch_images_into_mp4(image_paths,
   image_width, image_height = Image.open(image_paths[0]).size
   # Create the image file for the first frame.
   if initial_frame_duration_s > 0:
+    print("Creating an initial blank frame with duration %f s" %
+          initial_frame_duration_s)
     initial_frame_image_path = os.path.join(tmp_dir, "first_frame.jpg")
     Image.new("RGB", (image_width, image_height)).save(initial_frame_image_path)
 

@@ -64,6 +64,11 @@ class ParseTimestampFromFilenameTest(tf.test.TestCase):
     self.assertEqual(out.second, 58)
     self.assertEqual(out.microsecond, 428000)
 
+  def testParseEpochS(self):
+    epoch_s = file_naming.parse_epoch_seconds_from_filename(
+        "20210710T095258428-MicWaveIn.flac", "US/Eastern")
+    self.assertAllClose(epoch_s, 1625925178.428)
+
 
 class GetDataStreamNameTest(tf.test.TestCase):
 

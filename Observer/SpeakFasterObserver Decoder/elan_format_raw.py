@@ -133,7 +133,7 @@ def format_keypresses(keypresses_paths,
   """Convert the keypress data from the protobuf format to TSV format.
 
   Args:
-    keypresses_paths: Path to the protobuf files that contains the raw
+    keypresses_paths: Paths to the protobuf files that contains the raw
       keypresses data.
     start_epoch_time: Starting time of the data collection session,
       in seconds since the epoch.

@@ -399,7 +399,7 @@ def transcribe_audio_to_tsv_with_diarization(input_audio_paths,
     regrouped_utterances = regroup_utterances(utterances, diarized_words)
     for (regrouped_utterance,
          speaker_index, start_time_sec, end_time_sec) in regrouped_utterances:
-      line = "%.3f\t%.3f\t%s\t%s (Speaker #%d)" % (
+      line = "%.3f\t%.3f\t%s\t%s [Speaker #%d]" % (
           start_time_sec + begin_sec,
           end_time_sec + begin_sec,
           tsv_data.SPEECH_TRANSCRIPT_TIER,
@@ -435,7 +435,7 @@ def async_transcribe(audio_file_paths,
   """
   tmp_audio_file = tempfile.mktemp(suffix=".flac")
   print("Temporary audio file: %s" % tmp_audio_file)
-  concatenate_audio_files(audio_file_paths, tmp_audio_file)
+  audio_duration_s = concatenate_audio_files(audio_file_paths, tmp_audio_file)
 
   storage_client = storage.Client()
   bucket = storage_client.bucket(bucket_name)
@@ -457,8 +457,12 @@ def async_transcribe(audio_file_paths,
       diarization_speaker_count=speaker_count)
 
   operation = client.long_running_recognize(config=config, audio=audio)
-  print("Waiting for async ASR operation to complete...")
-  response = operation.result(timeout=90)
+  timeout_s = int(audio_duration_s * 0.25)
+  print(
+      "Waiting for async ASR operation to complete "
+      "(audio duration: %.3f s; ASR timeout: %d s)..." %
+      (audio_duration_s, timeout_s))
+  response = operation.result(timeout=timeout_s)
   blob.delete()
   os.remove(tmp_audio_file)
 
@@ -480,7 +484,7 @@ def async_transcribe(audio_file_paths,
       f.write(tsv_data.HEADER + "\n")
     for (regrouped_utterance,
         speaker_index, start_time_sec, end_time_sec) in regrouped_utterances:
-      line = "%.3f\t%.3f\t%s\t%s (Speaker #%d)" % (
+      line = "%.3f\t%.3f\t%s\t%s [Speaker #%d]" % (
           start_time_sec + begin_sec,
           end_time_sec + begin_sec,
           tsv_data.SPEECH_TRANSCRIPT_TIER,

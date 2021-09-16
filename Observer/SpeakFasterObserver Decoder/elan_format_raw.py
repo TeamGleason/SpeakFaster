@@ -101,6 +101,10 @@ def format_raw_data(input_dir,
 
 
 def read_and_concatenate_audio_files(input_dir, timezone):
+  if not glob.glob(os.path.join(input_dir, "*-MicWaveIn.flac")):
+    raise ValueError(
+        "Cannot find any *-MicWaveIn.flac audio files in directory %s. "
+        "Make sure you are pointing to a valid data directory." % input_dir)
   first_audio_path = sorted(
       glob.glob(os.path.join(input_dir, "*-MicWaveIn.flac")))[0]
   audio_start_time = file_naming.parse_timestamp_from_filename(first_audio_path)

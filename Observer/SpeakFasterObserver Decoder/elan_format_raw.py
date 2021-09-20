@@ -190,7 +190,7 @@ def run_asr(first_audio_path,
       # Async mode gives slightly higher accuracy compared to streaming mode.
       "--use_async",
       "--speaker_count=%d" % speaker_count,
-      "--gcs_bucket_name=%s" % gcs_bucket_name,
+      "--bucket_name=%s" % gcs_bucket_name,
       first_audio_path,
       output_tsv_path])
 

@@ -1,7 +1,10 @@
 ﻿using Google.Cloud.Speech.V1;
 using NAudio.Wave;
+using Newtonsoft.Json.Linq;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Threading.Tasks;
 
 /**
@@ -33,12 +36,39 @@ namespace SpeakFasterObserver
         private SpeechClient.StreamingRecognizeStream recogStream;
         private float cummulativeRecogSeconds;
 
+        private string speakerIdEndpoint;
+        private string speakerIdSubscriptionKey;
+        private Dictionary<string, string> speakerMap;
+
         public AudioAsr(WaveFormat audioFormat)
         {
             this.audioFormat = audioFormat;
             recogBuffer = new BufferedWaveProvider(audioFormat);
             speechClient = SpeechClient.Create();
             ReInitStreamRecognizer();
+            InitializeSpeakerIdentifier();
+        }
+
+        private void InitializeSpeakerIdentifier()
+        {
+            string configPath = Environment.GetEnvironmentVariable("SPEAK_FASTER_SPEAKER_ID_CONFIG");
+            if (configPath != null && configPath.Length > 0)
+            {
+                // TODO(cais): Check path exists.
+                string configString = File.ReadAllText(configPath);
+                JObject configObj = JObject.Parse(configString);
+                // TODO(cais): Check type.
+                speakerIdEndpoint = configObj.GetValue("azure_endpoint").ToString();
+                speakerIdSubscriptionKey = configObj.GetValue("azure_subscription_key").ToString();
+                // Read speaker map.
+                speakerMap = new Dictionary<string, string>();
+                JObject speakerMapObj = (JObject) configObj.GetValue("speaker_map");
+                foreach (var speakerEntry in speakerMapObj)
+                {
+                    speakerMap.Add(speakerEntry.Key, speakerEntry.Value.ToString());
+                }
+                Debug.WriteLine($"Loaded {speakerMap.Count} speakers into speaker map");
+            }
         }
 
         /**
@@ -134,12 +164,45 @@ namespace SpeakFasterObserver
                         {
                             int speakerTag = bestAlt.Words[bestAlt.Words.Count - 1].SpeakerTag;
                             transcriptInfo += $" (speakerTag={speakerTag})";
+                            extractLastUtteranceBuffer(transcript, bestAlt);
                         }
                         Debug.WriteLine(transcriptInfo);
                     }
                 }
             });
             cummulativeRecogSeconds = 0f;
+        }
+
+        private byte[] extractLastUtteranceBuffer(string lastUtterance, SpeechRecognitionAlternative alt)
+        {
+            string[] utteranceWords = lastUtterance.Split(" ");
+            int numWords = utteranceWords.Length;
+            if (numWords == 0)
+            {
+                return null;
+            }
+            double startTime = 0;
+            double endTime = 0;
+            for (int i = 0; i < utteranceWords.Length; ++i)
+            {
+                string utteranceWord = utteranceWords[utteranceWords.Length - 1 - i].Trim();
+                WordInfo wordInfo = alt.Words[alt.Words.Count - 1 - i];
+                if (wordInfo.Word.Trim() != utteranceWord)
+                {
+                    // TODO(cais): Log a warning.
+                    return null;
+                }
+                if (i == 0)
+                {
+                    endTime = wordInfo.EndTime.Seconds + wordInfo.EndTime.Nanos / 1e9;
+                }
+                if (i == utteranceWords.Length - 1)
+                {
+                    startTime = wordInfo.StartTime.Seconds + wordInfo.StartTime.Nanos / 1e9;
+                }
+            }
+            Debug.WriteLine($"{lastUtterance}: {startTime} - {endTime}");  // DEBUG
+            return null;
         }
     }
 }

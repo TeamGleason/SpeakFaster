@@ -5,6 +5,8 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Net;
+using System.Net.Http;
 using System.Threading.Tasks;
 
 /**
@@ -16,6 +18,7 @@ namespace SpeakFasterObserver
     class AudioAsr
     {
         private static readonly float RECOG_PERIOD_SECONDS = 2f;
+        private static readonly float SPEAKER_ID_MIN_DURATION_SECONDS = 4f;
         // The streaming ASR API of Google Cloud has a length limit, beyond
         // which the recognition object must be re-initialized. For details,
         // see:
@@ -31,9 +34,16 @@ namespace SpeakFasterObserver
         private static readonly int MIN_SPEAKER_COUNT = 0;
 
         private readonly WaveFormat audioFormat;
-        private readonly SpeechClient speechClient;
-        private readonly BufferedWaveProvider recogBuffer;
+        private readonly SpeechClient speechClient;        
         private SpeechClient.StreamingRecognizeStream recogStream;
+        // Buffer for holding samples for speech recognition.
+        private readonly BufferedWaveProvider recogBuffer;
+        // Buffer for holding samples for speaker ID. Refreshed on when
+        // STREAMING_RECOG_MAX_DURATION_SECONDS has been reached. 
+        //private readonly BufferedWaveProvider speakerIdBuffer;
+        private readonly byte[] speakerIdBuffer;
+        private int speakerIdBufferPos = 0;
+        private readonly object speakerIdBufferLock = new object();
         private float cummulativeRecogSeconds;
 
         private string speakerIdEndpoint;
@@ -44,6 +54,11 @@ namespace SpeakFasterObserver
         {
             this.audioFormat = audioFormat;
             recogBuffer = new BufferedWaveProvider(audioFormat);
+            //speakerIdBuffer = new BufferedWaveProvider(audioFormat);
+            //speakerIdBuffer.BufferLength =
+            speakerIdBuffer = new byte[
+                (int)(STREAMING_RECOG_MAX_DURATION_SECONDS * audioFormat.SampleRate
+                      * (audioFormat.BitsPerSample / 8) * 1.1)];  // Add some safety room.
             speechClient = SpeechClient.Create();
             ReInitStreamRecognizer();
             InitializeSpeakerIdentifier();
@@ -78,7 +93,15 @@ namespace SpeakFasterObserver
          */
         public void AddSamples(byte[] samples, int numBytes)
         {
+            lock (speakerIdBufferLock)
+            {
+                Array.Copy(samples, 0, speakerIdBuffer, speakerIdBufferPos, numBytes);
+                speakerIdBufferPos += numBytes;
+                //speakerIdBuffer.AddSamples(samples, 0, numBytes);
+                //Debug.WriteLine($"Added {numBytes / 2} samples");  // DEBUG
+            }
             recogBuffer.AddSamples(samples, 0, numBytes);
+
             float bufferedSeconds = (float)recogBuffer.BufferedBytes / (
                 audioFormat.BitsPerSample / 8) / audioFormat.SampleRate;
             if (bufferedSeconds >= RECOG_PERIOD_SECONDS)
@@ -111,6 +134,10 @@ namespace SpeakFasterObserver
         /** (Re-)initializes the Cloud-based streaming speech recognizer. */
         private void ReInitStreamRecognizer()
         {
+            lock (speakerIdBufferLock)
+            {
+                speakerIdBufferPos = 0;
+            }
             recogStream = speechClient.StreamingRecognize();
             SpeakerDiarizationConfig diarizationConfig = new SpeakerDiarizationConfig()
             {
@@ -164,22 +191,22 @@ namespace SpeakFasterObserver
                         {
                             int speakerTag = bestAlt.Words[bestAlt.Words.Count - 1].SpeakerTag;
                             transcriptInfo += $" (speakerTag={speakerTag})";
-                            extractLastUtteranceBuffer(transcript, bestAlt);
+                            recognizeSpeaker(transcript, bestAlt);
                         }
-                        Debug.WriteLine(transcriptInfo);
+                        //Debug.WriteLine(transcriptInfo);
                     }
                 }
             });
             cummulativeRecogSeconds = 0f;
         }
 
-        private byte[] extractLastUtteranceBuffer(string lastUtterance, SpeechRecognitionAlternative alt)
+        private void recognizeSpeaker(string lastUtterance, SpeechRecognitionAlternative alt)
         {
             string[] utteranceWords = lastUtterance.Split(" ");
             int numWords = utteranceWords.Length;
             if (numWords == 0)
             {
-                return null;
+                return;
             }
             double startTime = 0;
             double endTime = 0;
@@ -190,7 +217,7 @@ namespace SpeakFasterObserver
                 if (wordInfo.Word.Trim() != utteranceWord)
                 {
                     // TODO(cais): Log a warning.
-                    return null;
+                    return;
                 }
                 if (i == 0)
                 {
@@ -201,8 +228,109 @@ namespace SpeakFasterObserver
                     startTime = wordInfo.StartTime.Seconds + wordInfo.StartTime.Nanos / 1e9;
                 }
             }
-            Debug.WriteLine($"{lastUtterance}: {startTime} - {endTime}");  // DEBUG
-            return null;
+            if (endTime - startTime < SPEAKER_ID_MIN_DURATION_SECONDS)
+            {
+                // TODO(cais): Log a warning.
+                Debug.WriteLine($"Utterance duration too short for speaker ID: {endTime - startTime} < {SPEAKER_ID_MIN_DURATION_SECONDS}");
+                return;
+            }
+            Debug.WriteLine($"Speaker ID candidate: \"{lastUtterance}\": {startTime} - {endTime}");  // DEBUG
+
+            int bytesPerSample = audioFormat.BitsPerSample / 8;
+            int bufferStartIndex = bytesPerSample * (int)(audioFormat.SampleRate * startTime);
+            int bufferEndIndex = bytesPerSample * (int)(audioFormat.SampleRate * endTime);
+            float bufferedSeconds = (float)speakerIdBufferPos / bytesPerSample / audioFormat.SampleRate;
+            //Debug.WriteLine($"buffered seconds = {bufferedSeconds}");  // DEBUG
+            //byte[] tempBuffer = new byte[bufferEndIndex];
+            byte[] snippetBuffer = new byte[bufferEndIndex - bufferStartIndex];
+            lock (speakerIdBufferLock)
+            {
+                //speakerIdBuffer.Read(tempBuffer, 0, bufferEndIndex);
+                Array.Copy(
+                    speakerIdBuffer, bufferStartIndex, snippetBuffer, 0,
+                    bufferEndIndex - bufferStartIndex);
+            }
+            //Array.Copy(tempBuffer, bufferStartIndex, snippetBuffer, 0, bufferEndIndex - bufferStartIndex);
+            MemoryStream snippetStream = new MemoryStream(snippetBuffer);
+            string tempWavFilePath = Path.GetTempFileName();
+            using (FileStream fs = File.Create(tempWavFilePath))
+            {
+                WaveFileWriter.WriteWavFileToStream(fs, new RawSourceWaveStream(snippetStream, audioFormat));
+            }
+            //Debug.WriteLine("Wrote to .wav file: " + tempWavFilePath);  // DEBUG
+            if (File.Exists(tempWavFilePath))
+            {
+                SendSpeakerIdHttpRequest(tempWavFilePath);
+            } else 
+            {
+                Debug.WriteLine("Failed to write file: " + tempWavFilePath);  // DEBUG
+            }
+        }
+
+        private async void SendSpeakerIdHttpRequest(string wavFilePath)
+        {
+            if (speakerIdEndpoint == null || speakerIdSubscriptionKey == null ||
+                speakerMap.Count == 0)
+            {
+                return;
+            }
+            using (var client = new HttpClient())
+            {
+                string[] profileIds = new string[speakerMap.Count];
+                speakerMap.Keys.CopyTo(profileIds, 0);
+                string url =
+                    $"{speakerIdEndpoint}/speaker/identification/v2.0/text-independent/profiles/" +
+                    $"identifySingleSpeaker?profileIds={String.Join(",", profileIds)}";
+                byte[] fileContent = File.ReadAllBytes(wavFilePath);
+                ByteArrayContent byteArrayContent = new ByteArrayContent(fileContent);
+                byteArrayContent.Headers.Add(
+                    "ContentType",
+                    $"audio/wav; codecs=audio/pcm; samplerate={audioFormat.SampleRate}");
+                byteArrayContent.Headers.Add("Ocp-Apim-Subscription-Key", speakerIdSubscriptionKey);
+                //Debug.WriteLine("Sending speaker ID HTTP request");  // DEBUG
+                var response = await client.PostAsync(url, byteArrayContent);
+                File.Delete(wavFilePath);
+                GetWinningSpeakerName(response);
+            }
+        }
+
+        private async void GetWinningSpeakerName(HttpResponseMessage speakerIdResponse)
+        {
+            if (speakerIdResponse.StatusCode != HttpStatusCode.OK)
+            {
+                string errorString = await speakerIdResponse.Content.ReadAsStringAsync();
+                Debug.WriteLine("Erorr: HTTP response status: " + speakerIdResponse.StatusCode);  // DEBUG
+                Debug.WriteLine("Erorr: HTTP response string: " + errorString);  // DEBUG
+                return;
+            }
+            string responseString = await speakerIdResponse.Content.ReadAsStringAsync();
+            //Debug.WriteLine(responseString);  // DEBUG
+            JObject responseObj = JObject.Parse(responseString);
+            if (!responseObj.ContainsKey("identifiedProfile"))
+            {
+                Debug.WriteLine($"*** Unknown speaker\n");
+                return;
+            }
+            JObject profile = (JObject)responseObj.GetValue("identifiedProfile");
+            if (!profile.ContainsKey("profileId"))
+            {
+                Debug.WriteLine($"*** Unknown speaker\n");
+                return;
+            }
+            string profileId = (string)profile.GetValue("profileId");
+            if (profileId.StartsWith("00000000"))
+            {
+                Debug.WriteLine($"*** Unknown speaker\n");
+                return;
+            }
+            float score = (float)profile.GetValue("score");
+            if (score < 0.5f)
+            {
+                Debug.WriteLine($"*** Unknown speaker (low confidence score={score})\n");
+                return;
+            }
+            Debug.WriteLine($"*** Detected known speaker: {speakerMap[profileId]} (score={score})\n");
         }
     }
 }
+

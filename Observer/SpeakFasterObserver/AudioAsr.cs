@@ -52,8 +52,7 @@ namespace SpeakFasterObserver
         // Buffer for holding samples for speech recognition.
         private readonly BufferedWaveProvider recogBuffer;
         // Buffer for holding samples for speaker ID. Refreshed on when
-        // STREAMING_RECOG_MAX_DURATION_SECONDS has been reached. 
-        //private readonly BufferedWaveProvider speakerIdBuffer;
+        // STREAMING_RECOG_MAX_DURATION_SECONDS has been reached.
         private readonly byte[] speakerIdBuffer;
         private int speakerIdBufferPos = 0;
         private readonly object speakerIdBufferLock = new object();

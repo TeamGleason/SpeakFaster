@@ -45,7 +45,6 @@ namespace SpeakFasterObserver
         private static readonly bool ENABLE_SPEAKER_ID = true;
         private static readonly string SPEAKER_ID_CONFIG_ENV_VAR_NAME =
             "SPEAK_FASTER_SPEAKER_ID_CONFIG";
-        private static readonly float SPEAKER_ID_THRESHOLD_SCORE = 0.5f;
 
         private readonly WaveFormat audioFormat;
         private readonly SpeechClient speechClient;        
@@ -266,23 +265,10 @@ namespace SpeakFasterObserver
                     speakerIdBuffer, bufferStartIndex, snippetBuffer, 0,
                     bufferEndIndex - bufferStartIndex);
             }
-            MemoryStream snippetStream = new MemoryStream(snippetBuffer);
-            string tempWavFilePath = Path.GetTempFileName();
-            using (FileStream fs = File.Create(tempWavFilePath))
-            {
-                WaveFileWriter.WriteWavFileToStream(
-                    fs, new RawSourceWaveStream(snippetStream, audioFormat));
-            }
-            if (File.Exists(tempWavFilePath))
-            {
-                SendSpeakerIdHttpRequest(tempWavFilePath);
-            } else 
-            {
-                Debug.WriteLine("Failed to write WAV file: " + tempWavFilePath);
-            }
+            SendSpeakerIdHttpRequest(snippetBuffer);
         }
 
-        private async void SendSpeakerIdHttpRequest(string wavFilePath)
+        private async void SendSpeakerIdHttpRequest(byte[] snippetBuffer)
         {
             if (speakerIdEndpoint == null || speakerIdSubscriptionKey == null ||
                 speakerMap.Count == 0)
@@ -295,15 +281,13 @@ namespace SpeakFasterObserver
                 speakerMap.Keys.CopyTo(profileIds, 0);
                 string url =
                     $"{speakerIdEndpoint}/speaker/identification/v2.0/text-independent/profiles/" +
-                    $"identifySingleSpeaker?profileIds={String.Join(",", profileIds)}";
-                byte[] fileContent = File.ReadAllBytes(wavFilePath);
-                ByteArrayContent byteArrayContent = new ByteArrayContent(fileContent);
+                    $"identifySingleSpeaker?profileIds={string.Join(",", profileIds)}";
+                ByteArrayContent byteArrayContent = new(snippetBuffer);
                 byteArrayContent.Headers.Add(
                     "ContentType",
                     $"audio/wav; codecs=audio/pcm; samplerate={audioFormat.SampleRate}");
                 byteArrayContent.Headers.Add("Ocp-Apim-Subscription-Key", speakerIdSubscriptionKey);
                 var response = await client.PostAsync(url, byteArrayContent);
-                File.Delete(wavFilePath);
                 PrintDetectedSpeakerName(response);
             }
         }
@@ -338,11 +322,6 @@ namespace SpeakFasterObserver
                 return;
             }
             float score = (float) profile["score"];
-            if (score < SPEAKER_ID_THRESHOLD_SCORE)
-            {
-                Debug.WriteLine($"*** Unknown speaker (low confidence score={score})\n");
-                return;
-            }
             Debug.WriteLine(
                 $"*** Detected known speaker: {speakerMap[profileId]} (score={score})\n");
         }

@@ -34,6 +34,7 @@ namespace SpeakFasterObserver
         private static readonly int MIN_SPEAKER_COUNT = 0;
 
         // Enable speaker ID with Azure Cognitive Service.
+        // Be sure to set ENABLE_SPEAKER_DIARIZATION to true to enable speaker ID.
         // To enable this feature, you must set an environment variable based on 
         // SPEAKER_ID_CONFIG_ENV_VAR_NAME below to point to a config json file
         // that contains the following fields:
@@ -44,6 +45,7 @@ namespace SpeakFasterObserver
         private static readonly bool ENABLE_SPEAKER_ID = true;
         private static readonly string SPEAKER_ID_CONFIG_ENV_VAR_NAME =
             "SPEAK_FASTER_SPEAKER_ID_CONFIG";
+        private static readonly float SPEAKER_ID_THRESHOLD_SCORE = 0.5f;
 
         private readonly WaveFormat audioFormat;
         private readonly SpeechClient speechClient;        
@@ -67,8 +69,8 @@ namespace SpeakFasterObserver
             this.audioFormat = audioFormat;
             recogBuffer = new BufferedWaveProvider(audioFormat);
             speakerIdBuffer = new byte[
-                (int)(STREAMING_RECOG_MAX_DURATION_SECONDS * audioFormat.SampleRate
-                      * (audioFormat.BitsPerSample / 8) * 1.1)];  // Add some safety room.
+                (int)(STREAMING_RECOG_MAX_DURATION_SECONDS * audioFormat.SampleRate *
+                      (audioFormat.BitsPerSample / 8) * 1.1)];  // Add some safety room.
             speechClient = SpeechClient.Create();
             ReInitStreamRecognizer();
             if (ENABLE_SPEAKER_ID)
@@ -302,11 +304,11 @@ namespace SpeakFasterObserver
                 byteArrayContent.Headers.Add("Ocp-Apim-Subscription-Key", speakerIdSubscriptionKey);
                 var response = await client.PostAsync(url, byteArrayContent);
                 File.Delete(wavFilePath);
-                GetWinningSpeakerName(response);
+                PrintDetectedSpeakerName(response);
             }
         }
 
-        private async void GetWinningSpeakerName(HttpResponseMessage speakerIdResponse)
+        private async void PrintDetectedSpeakerName(HttpResponseMessage speakerIdResponse)
         {
             if (speakerIdResponse.StatusCode != HttpStatusCode.OK)
             {
@@ -323,25 +325,26 @@ namespace SpeakFasterObserver
                 Debug.WriteLine($"*** Unknown speaker\n");
                 return;
             }
-            JObject profile = (JObject)responseObj.GetValue("identifiedProfile");
+            JObject profile = (JObject) responseObj["identifiedProfile"];
             if (!profile.ContainsKey("profileId"))
             {
                 Debug.WriteLine($"*** Unknown speaker\n");
                 return;
             }
-            string profileId = (string)profile.GetValue("profileId");
+            string profileId = (string) profile["profileId"];
             if (profileId.StartsWith("00000000"))
             {
                 Debug.WriteLine($"*** Unknown speaker\n");
                 return;
             }
-            float score = (float)profile.GetValue("score");
-            if (score < 0.5f)
+            float score = (float) profile["score"];
+            if (score < SPEAKER_ID_THRESHOLD_SCORE)
             {
                 Debug.WriteLine($"*** Unknown speaker (low confidence score={score})\n");
                 return;
             }
-            Debug.WriteLine($"*** Detected known speaker: {speakerMap[profileId]} (score={score})\n");
+            Debug.WriteLine(
+                $"*** Detected known speaker: {speakerMap[profileId]} (score={score})\n");
         }
     }
 }

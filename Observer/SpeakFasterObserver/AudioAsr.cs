@@ -33,6 +33,18 @@ namespace SpeakFasterObserver
         private static readonly int MAX_SPEAKER_COUNT = 2;
         private static readonly int MIN_SPEAKER_COUNT = 0;
 
+        // Enable speaker ID with Azure Cognitive Service.
+        // To enable this feature, you must set an environment variable based on 
+        // SPEAKER_ID_CONFIG_ENV_VAR_NAME below to point to a config json file
+        // that contains the following fields:
+        //   - "azure_subscription_key": The subscription fee for the Azure speech service.
+        //   - "azure_endpoint": The endpoint URL for Azure speech service, e.g.,
+        //     "https://{AZURE_REGION}.api.cognitive.microsoft.com"
+        //   - "speaker_map": An object mapping enrolled profile IDs to speaker's names.
+        private static readonly bool ENABLE_SPEAKER_ID = true;
+        private static readonly string SPEAKER_ID_CONFIG_ENV_VAR_NAME =
+            "SPEAK_FASTER_SPEAKER_ID_CONFIG";
+
         private readonly WaveFormat audioFormat;
         private readonly SpeechClient speechClient;        
         private SpeechClient.StreamingRecognizeStream recogStream;
@@ -54,36 +66,41 @@ namespace SpeakFasterObserver
         {
             this.audioFormat = audioFormat;
             recogBuffer = new BufferedWaveProvider(audioFormat);
-            //speakerIdBuffer = new BufferedWaveProvider(audioFormat);
-            //speakerIdBuffer.BufferLength =
             speakerIdBuffer = new byte[
                 (int)(STREAMING_RECOG_MAX_DURATION_SECONDS * audioFormat.SampleRate
                       * (audioFormat.BitsPerSample / 8) * 1.1)];  // Add some safety room.
             speechClient = SpeechClient.Create();
             ReInitStreamRecognizer();
-            InitializeSpeakerIdentifier();
+            if (ENABLE_SPEAKER_ID)
+            {
+                InitializeSpeakerIdentifier();
+            }
         }
 
         private void InitializeSpeakerIdentifier()
         {
-            string configPath = Environment.GetEnvironmentVariable("SPEAK_FASTER_SPEAKER_ID_CONFIG");
-            if (configPath != null && configPath.Length > 0)
+            string configPath = Environment.GetEnvironmentVariable(
+                SPEAKER_ID_CONFIG_ENV_VAR_NAME).Trim();
+            if (configPath == null || configPath.Length == 0)
             {
-                // TODO(cais): Check path exists.
-                string configString = File.ReadAllText(configPath);
-                JObject configObj = JObject.Parse(configString);
-                // TODO(cais): Check type.
-                speakerIdEndpoint = configObj.GetValue("azure_endpoint").ToString();
-                speakerIdSubscriptionKey = configObj.GetValue("azure_subscription_key").ToString();
-                // Read speaker map.
-                speakerMap = new Dictionary<string, string>();
-                JObject speakerMapObj = (JObject) configObj.GetValue("speaker_map");
-                foreach (var speakerEntry in speakerMapObj)
-                {
-                    speakerMap.Add(speakerEntry.Key, speakerEntry.Value.ToString());
-                }
-                Debug.WriteLine($"Loaded {speakerMap.Count} speakers into speaker map");
+                return;
             }
+            if (!File.Exists(configPath))
+            {
+                return;
+            }
+            string configString = File.ReadAllText(configPath);
+            JObject configObj = JObject.Parse(configString);
+            speakerIdEndpoint = (string) configObj["azure_endpoint"];
+            speakerIdSubscriptionKey = (string) configObj["azure_subscription_key"];
+            // Read speaker map.
+            speakerMap = new Dictionary<string, string>();
+            JObject speakerMapObj = (JObject) configObj["speaker_map"];
+            foreach (var speakerEntry in speakerMapObj)
+            {
+                speakerMap.Add(speakerEntry.Key, speakerEntry.Value.ToString());
+            }
+            Debug.WriteLine($"Loaded {speakerMap.Count} speakers into speaker map");
         }
 
         /**
@@ -97,8 +114,6 @@ namespace SpeakFasterObserver
             {
                 Array.Copy(samples, 0, speakerIdBuffer, speakerIdBufferPos, numBytes);
                 speakerIdBufferPos += numBytes;
-                //speakerIdBuffer.AddSamples(samples, 0, numBytes);
-                //Debug.WriteLine($"Added {numBytes / 2} samples");  // DEBUG
             }
             recogBuffer.AddSamples(samples, 0, numBytes);
 
@@ -191,9 +206,12 @@ namespace SpeakFasterObserver
                         {
                             int speakerTag = bestAlt.Words[bestAlt.Words.Count - 1].SpeakerTag;
                             transcriptInfo += $" (speakerTag={speakerTag})";
+                        }
+                        Debug.WriteLine(transcriptInfo);
+                        if (ENABLE_SPEAKER_DIARIZATION && ENABLE_SPEAKER_ID)
+                        {
                             recognizeSpeaker(transcript, bestAlt);
                         }
-                        //Debug.WriteLine(transcriptInfo);
                     }
                 }
             });
@@ -216,7 +234,7 @@ namespace SpeakFasterObserver
                 WordInfo wordInfo = alt.Words[alt.Words.Count - 1 - i];
                 if (wordInfo.Word.Trim() != utteranceWord)
                 {
-                    // TODO(cais): Log a warning.
+                    // Word mismatch: this is not expected.
                     return;
                 }
                 if (i == 0)
@@ -230,40 +248,35 @@ namespace SpeakFasterObserver
             }
             if (endTime - startTime < SPEAKER_ID_MIN_DURATION_SECONDS)
             {
-                // TODO(cais): Log a warning.
-                Debug.WriteLine($"Utterance duration too short for speaker ID: {endTime - startTime} < {SPEAKER_ID_MIN_DURATION_SECONDS}");
+                Debug.WriteLine(
+                    $"Utterance duration too short for speaker ID: " +
+                    $"{endTime - startTime} < {SPEAKER_ID_MIN_DURATION_SECONDS}");
                 return;
             }
-            Debug.WriteLine($"Speaker ID candidate: \"{lastUtterance}\": {startTime} - {endTime}");  // DEBUG
 
             int bytesPerSample = audioFormat.BitsPerSample / 8;
             int bufferStartIndex = bytesPerSample * (int)(audioFormat.SampleRate * startTime);
             int bufferEndIndex = bytesPerSample * (int)(audioFormat.SampleRate * endTime);
-            float bufferedSeconds = (float)speakerIdBufferPos / bytesPerSample / audioFormat.SampleRate;
-            //Debug.WriteLine($"buffered seconds = {bufferedSeconds}");  // DEBUG
-            //byte[] tempBuffer = new byte[bufferEndIndex];
             byte[] snippetBuffer = new byte[bufferEndIndex - bufferStartIndex];
             lock (speakerIdBufferLock)
             {
-                //speakerIdBuffer.Read(tempBuffer, 0, bufferEndIndex);
                 Array.Copy(
                     speakerIdBuffer, bufferStartIndex, snippetBuffer, 0,
                     bufferEndIndex - bufferStartIndex);
             }
-            //Array.Copy(tempBuffer, bufferStartIndex, snippetBuffer, 0, bufferEndIndex - bufferStartIndex);
             MemoryStream snippetStream = new MemoryStream(snippetBuffer);
             string tempWavFilePath = Path.GetTempFileName();
             using (FileStream fs = File.Create(tempWavFilePath))
             {
-                WaveFileWriter.WriteWavFileToStream(fs, new RawSourceWaveStream(snippetStream, audioFormat));
+                WaveFileWriter.WriteWavFileToStream(
+                    fs, new RawSourceWaveStream(snippetStream, audioFormat));
             }
-            //Debug.WriteLine("Wrote to .wav file: " + tempWavFilePath);  // DEBUG
             if (File.Exists(tempWavFilePath))
             {
                 SendSpeakerIdHttpRequest(tempWavFilePath);
             } else 
             {
-                Debug.WriteLine("Failed to write file: " + tempWavFilePath);  // DEBUG
+                Debug.WriteLine("Failed to write WAV file: " + tempWavFilePath);
             }
         }
 
@@ -287,7 +300,6 @@ namespace SpeakFasterObserver
                     "ContentType",
                     $"audio/wav; codecs=audio/pcm; samplerate={audioFormat.SampleRate}");
                 byteArrayContent.Headers.Add("Ocp-Apim-Subscription-Key", speakerIdSubscriptionKey);
-                //Debug.WriteLine("Sending speaker ID HTTP request");  // DEBUG
                 var response = await client.PostAsync(url, byteArrayContent);
                 File.Delete(wavFilePath);
                 GetWinningSpeakerName(response);
@@ -299,12 +311,12 @@ namespace SpeakFasterObserver
             if (speakerIdResponse.StatusCode != HttpStatusCode.OK)
             {
                 string errorString = await speakerIdResponse.Content.ReadAsStringAsync();
-                Debug.WriteLine("Erorr: HTTP response status: " + speakerIdResponse.StatusCode);  // DEBUG
-                Debug.WriteLine("Erorr: HTTP response string: " + errorString);  // DEBUG
+                Debug.WriteLine(
+                    $"Erorr: Speaker ID HTTP response contains error: {speakerIdResponse.StatusCode}: " +
+                    $"{errorString}");
                 return;
             }
             string responseString = await speakerIdResponse.Content.ReadAsStringAsync();
-            //Debug.WriteLine(responseString);  // DEBUG
             JObject responseObj = JObject.Parse(responseString);
             if (!responseObj.ContainsKey("identifiedProfile"))
             {

@@ -48,44 +48,39 @@ def format_raw_data(input_dir,
    audio_start_time_epoch,
    audio_duration_s) = read_and_concatenate_audio_files(input_dir, timezone)
 
-  # If screenshot image files are available, stitch them into a single video
-  # file.
   if not skip_screenshots:
+    # If screenshot image files are available, stitch them into a single video
+    # file.
     screenshot_paths = sorted(
         glob.glob(os.path.join(input_dir, "*-Screenshot.jpg")))
     if screenshot_paths:
-      video_start_time = file_naming.parse_timestamp_from_filename(
-          screenshot_paths[0])
-      tz = pytz.timezone(timezone)
-      video_start_time = tz.localize(video_start_time)
       screenshots_video_path = os.path.join(input_dir, "screenshots.mp4")
       print("Writing screenshots video...")
       video.stitch_images_into_mp4(
           screenshot_paths,
-          video_start_time.timestamp() - audio_start_time_epoch,
+          audio_start_time_epoch,
+          timezone,
           screenshots_video_path)
       print("Saved screenshots video to %s\n" % screenshots_video_path)
+    elif dummy_video_frame_image_path:
+      dummy_video_path = os.path.join(input_dir, "screenshots.mp4")
+      print("Generating dummy video (duration: %.3f s) based on %s..." %
+          (audio_duration_s, dummy_video_frame_image_path))
+      video.make_dummy_video_file(
+          audio_duration_s, dummy_video_frame_image_path, dummy_video_path)
+      print("Dummy video is generated at: %s" % dummy_video_path)
     else:
-      if dummy_video_frame_image_path:
-        dummy_video_path = os.path.join(input_dir, "screenshots.mp4")
-        print("Generating dummy video (duration: %.3f s) based on %s..." %
-            (audio_duration_s, dummy_video_frame_image_path))
-        video.make_dummy_video_file(
-            audio_duration_s, dummy_video_frame_image_path, dummy_video_path)
-        print("Dummy video is generated at: %s" % dummy_video_path)
-      else:
-        raise ValueError(
-            "No screenshot image files are found. "
-            "You must provide dummy_video_frame_image_path")
+      raise ValueError(
+          "No screenshot image files are found. "
+          "You must provide dummy_video_frame_image_path")
 
   keypresses_paths = glob.glob(os.path.join(input_dir, "*-Keypresses.protobuf"))
-  if len(keypresses_paths) != 1:
+  if not keypresses_paths:
     raise ValueError(
-        "Cannot find exactly one Keypresses protobuf file in %s" % input_dir)
-  keypresses_path = keypresses_paths[0]
+        "Cannot find at least one Keypresses protobuf file in %s" % input_dir)
   keypresses_tsv_path = os.path.join(input_dir, "keypresses.tsv")
   format_keypresses(
-      keypresses_path, audio_start_time_epoch, keypresses_tsv_path)
+      keypresses_paths, audio_start_time_epoch, keypresses_tsv_path)
 
   # Extract audio events.
   audio_events_tsv_path = os.path.join(input_dir, "audio_events.tsv")
@@ -134,32 +129,35 @@ def read_and_concatenate_audio_files(input_dir, timezone):
 DUMMY_KEYPRESS_DURATION_SEC = 0.1
 
 
-def format_keypresses(keypresses_path,
+def format_keypresses(keypresses_paths,
                       start_epoch_time,
                       output_tsv_path):
   """Convert the keypress data from the protobuf format to TSV format.
 
   Args:
-    keypresses_path: Path to the protobuf file that contains the raw
+    keypresses_paths: Paths to the protobuf files that contains the raw
       keypresses data.
     start_epoch_time: Starting time of the data collection session,
       in seconds since the epoch.
     output_tsv_path: Path to the output TSV file.
   """
-  keypresses = keypresses_pb2.KeyPresses()
-  with open(keypresses_path, "rb") as file:
-    keypresses.ParseFromString(file.read())
-  num_keypresses = len(keypresses.keyPresses)
-  first_keypress_epoch_ms = (
-      keypresses.keyPresses[0].Timestamp.ToMilliseconds())
-  print("First keypress epoch time: %.3f" % (first_keypress_epoch_ms / 1e3))
   with open(output_tsv_path, "w") as f:
     f.write(tsv_data.HEADER + "\n")
-    for keypress in keypresses.keyPresses:
-      relative_time = keypress.Timestamp.ToMilliseconds() / 1e3 - start_epoch_time
-      f.write("%.3f\t%.3f\t%s\t%s\n" % (
-          relative_time, relative_time + DUMMY_KEYPRESS_DURATION_SEC,
-          tsv_data.KEYPRESS_TIER, keypress.KeyPress))
+    for keypresses_path in keypresses_paths:
+      keypresses = keypresses_pb2.KeyPresses()
+      with open(keypresses_path, "rb") as file:
+        keypresses.ParseFromString(file.read())
+      num_keypresses = len(keypresses.keyPresses)
+      first_keypress_epoch_ms = (
+          keypresses.keyPresses[0].Timestamp.ToMilliseconds())
+      print("First keypress epoch time in file %s: %.3f" %
+            (keypresses_path, first_keypress_epoch_ms / 1e3))
+      for keypress in keypresses.keyPresses:
+        relative_time = (keypress.Timestamp.ToMilliseconds() / 1e3
+                         - start_epoch_time)
+        f.write("%.3f\t%.3f\t%s\t%s\n" % (
+            relative_time, relative_time + DUMMY_KEYPRESS_DURATION_SEC,
+            tsv_data.KEYPRESS_TIER, keypress.KeyPress))
   print("Saved data for %d keypresses to %s" % (
       len(keypresses.keyPresses), output_tsv_path))
 

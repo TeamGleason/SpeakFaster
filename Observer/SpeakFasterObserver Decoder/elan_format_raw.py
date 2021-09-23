@@ -21,7 +21,8 @@ def format_raw_data(input_dir,
                     timezone,
                     speaker_count,
                     gcs_bucket_name,
-                    dummy_video_frame_image_path=None):
+                    dummy_video_frame_image_path=None,
+                    skip_screenshots=False):
   """Processes a raw Observer data session.
 
   Args:
@@ -37,6 +38,7 @@ def format_raw_data(input_dir,
       The duration of the video will be approximately equal to the total
       duration of the audio files. This must be provided if there are not
       screenshot image files in input_dir.
+    skip_screenshots: Skip the processing of screenshots.
   """
   if not os.path.isdir(input_dir):
     raise ValueError("%s is not an existing directory" % input_dir)
@@ -48,32 +50,33 @@ def format_raw_data(input_dir,
 
   # If screenshot image files are available, stitch them into a single video
   # file.
-  screenshot_paths = sorted(
-      glob.glob(os.path.join(input_dir, "*-Screenshot.jpg")))
-  if screenshot_paths:
-    video_start_time = file_naming.parse_timestamp_from_filename(
-        screenshot_paths[0])
-    tz = pytz.timezone(timezone)
-    video_start_time = tz.localize(video_start_time)
-    screenshots_video_path = os.path.join(input_dir, "screenshots.mp4")
-    print("Writing screenshots video...")
-    video.stitch_images_into_mp4(
-        screenshot_paths,
-        video_start_time.timestamp() - audio_start_time_epoch,
-        screenshots_video_path)
-    print("Saved screenshots video to %s\n" % screenshots_video_path)
-  else:
-    if dummy_video_frame_image_path:
-      dummy_video_path = os.path.join(input_dir, "screenshots.mp4")
-      print("Generating dummy video (duration: %.3f s) based on %s..." %
-          (audio_duration_s, dummy_video_frame_image_path))
-      video.make_dummy_video_file(
-          audio_duration_s, dummy_video_frame_image_path, dummy_video_path)
-      print("Dummy video is generated at: %s" % dummy_video_path)
+  if not skip_screenshots:
+    screenshot_paths = sorted(
+        glob.glob(os.path.join(input_dir, "*-Screenshot.jpg")))
+    if screenshot_paths:
+      video_start_time = file_naming.parse_timestamp_from_filename(
+          screenshot_paths[0])
+      tz = pytz.timezone(timezone)
+      video_start_time = tz.localize(video_start_time)
+      screenshots_video_path = os.path.join(input_dir, "screenshots.mp4")
+      print("Writing screenshots video...")
+      video.stitch_images_into_mp4(
+          screenshot_paths,
+          video_start_time.timestamp() - audio_start_time_epoch,
+          screenshots_video_path)
+      print("Saved screenshots video to %s\n" % screenshots_video_path)
     else:
-      raise ValueError(
-          "No screenshot image files are found. "
-          "You must provide dummy_video_frame_image_path")
+      if dummy_video_frame_image_path:
+        dummy_video_path = os.path.join(input_dir, "screenshots.mp4")
+        print("Generating dummy video (duration: %.3f s) based on %s..." %
+            (audio_duration_s, dummy_video_frame_image_path))
+        video.make_dummy_video_file(
+            audio_duration_s, dummy_video_frame_image_path, dummy_video_path)
+        print("Dummy video is generated at: %s" % dummy_video_path)
+      else:
+        raise ValueError(
+            "No screenshot image files are found. "
+            "You must provide dummy_video_frame_image_path")
 
   keypresses_paths = glob.glob(os.path.join(input_dir, "*-Keypresses.protobuf"))
   if len(keypresses_paths) != 1:
@@ -187,6 +190,7 @@ def run_asr(first_audio_path,
       # Async mode gives slightly higher accuracy compared to streaming mode.
       "--use_async",
       "--speaker_count=%d" % speaker_count,
+      "--bucket_name=%s" % gcs_bucket_name,
       first_audio_path,
       output_tsv_path])
 
@@ -207,6 +211,10 @@ def parse_args():
       help="Number of speakers in the audio. Used for ASR and speaker "
       "diarization. A value of 0 disables the speaker diarization.")
   parser.add_argument(
+      "--skip_screenshots",
+      action="store_true",
+      help="Skip the processing of screenshots.")
+  parser.add_argument(
       "--gcs_bucket_name",
       type=str,
       default="sf_test_audio_uploads",
@@ -226,7 +234,8 @@ def main():
       args.timezone,
       args.speaker_count,
       args.gcs_bucket_name,
-      dummy_video_frame_image_path=args.dummy_video_frame_image_path)
+      dummy_video_frame_image_path=args.dummy_video_frame_image_path,
+      skip_screenshots=args.skip_screenshots)
 
 
 if __name__ == "__main__":

@@ -5,6 +5,8 @@ import requests
 
 from scipy.io import wavfile
 
+MIN_WAV_LENGTH_SECONDS = 20
+
 
 def parse_args():
   parser = argparse.ArgumentParser("Azure Speaker ID enrollment")
@@ -57,9 +59,6 @@ def _add_profile(region, subscription_key):
   profile_id = resp_json["profileId"]
   print("New speaker profile ID: %s" % profile_id)
   return profile_id
-
-
-MIN_WAV_LENGTH_SECONDS = 20
 
 
 def _check_and_load_wav_file_length(wav_path):

@@ -197,3 +197,40 @@ When you run into these errors, go back to ELAN, fix the problem and re-export
 the `curated.tsv` file and re-run the `elan_process_curated.tsv`. Fix all problem
 until the script says "Success..." and exports a file in the same directory named
 `curated_processed.tsv`. This new TSV file is ready for data ingestion.
+
+### Speaker ID enrollment and profile management
+
+We use Azure Cognitive Service's cloud speech API for real-time and offline speaker
+ID. The script in this directory `speaker_id_profiles.py` allows you to enroll
+new speakers by using their voice samples in the format of WAV file, list
+enrolled speakers, and delete existing enrolled speakers.
+
+To enroll a new speaker voice, make sure you have a mono (single-channel) WAV file
+with a sample rate 16000 Hz which contains at least 20 seconds of the speaker's
+voice sample. Then do:
+
+```sh
+python speaker_id_profile.py enroll \
+    --azure_subscription_key="${AZURE_SUBSCRIPTION_KEY}" \
+    --wav_path=/path/to/my/voice_sample.wav
+```
+
+The console printout will contain the profile ID of the new speaker voice.
+
+To list all enrolled voices, do:
+
+```sh
+python speaker_id_profile.py list \
+    --azure_subscription_key="${AZURE_SUBSCRIPTION_KEY}"
+```
+
+To delete an existing enrolled voice, do:
+
+```sh
+python speaker_id_profile.py delete \
+    --azure_subscription_key="${AZURE_SUBSCRIPTION_KEY}" \
+    --profile_id="${PROFILE_ID_TO_DELETE}"
+```
+
+If the response status code is 200, it means the deletion is successful. You can
+list the enrolled voices again to confirm that.

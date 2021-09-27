@@ -296,8 +296,10 @@ namespace SpeakFasterObserver
             if (speakerIdResponse.StatusCode != HttpStatusCode.OK)
             {
                 string errorString = await speakerIdResponse.Content.ReadAsStringAsync();
+                // TODO: throw error and catch the error in UI code to display an error
+                // message box.
                 Debug.WriteLine(
-                    $"Erorr: Speaker ID HTTP response contains error: {speakerIdResponse.StatusCode}: " +
+                    $"Erorr in Speaker ID HTTP response: {speakerIdResponse.StatusCode}: " +
                     $"{errorString}");
                 return;
             }

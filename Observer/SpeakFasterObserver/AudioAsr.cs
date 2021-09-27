@@ -1,12 +1,12 @@
 ﻿using Google.Cloud.Speech.V1;
 using NAudio.Wave;
-using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Net.Http;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 /**
@@ -17,33 +17,34 @@ namespace SpeakFasterObserver
 {
     class AudioAsr
     {
-        private static readonly float RECOG_PERIOD_SECONDS = 2f;
-        private static readonly float SPEAKER_ID_MIN_DURATION_SECONDS = 4f;
+        private const float RECOG_PERIOD_SECONDS = 2f;
+        private const float SPEAKER_ID_MIN_DURATION_SECONDS = 4f;
         // The streaming ASR API of Google Cloud has a length limit, beyond
         // which the recognition object must be re-initialized. For details,
         // see:
         // https://cloud.google.com/speech-to-text/quotas#content
-        private static readonly float STREAMING_RECOG_MAX_DURATION_SECONDS = 4 * 60f;
-        private static readonly string LANGUAGE_CODE = "en-US";
+        private const float STREAMING_RECOG_MAX_DURATION_SECONDS = 4 * 60f;
+        private const string LANGUAGE_CODE = "en-US";
 
         // NOTE: To disable speaker diarization, set ENABLE_SPEKAER_DIARIZATION
         // to false. For speaker diarization, the max and min # of speakers
         // must be specified beforehand.
-        private static readonly bool ENABLE_SPEAKER_DIARIZATION = true;
-        private static readonly int MAX_SPEAKER_COUNT = 2;
-        private static readonly int MIN_SPEAKER_COUNT = 0;
+        private const bool ENABLE_SPEAKER_DIARIZATION = true;
+        private const int MAX_SPEAKER_COUNT = 2;
+        private const int MIN_SPEAKER_COUNT = 0;
 
         // Enable speaker ID with Azure Cognitive Service.
         // Be sure to set ENABLE_SPEAKER_DIARIZATION to true to enable speaker ID.
-        // To enable this feature, you must set an environment variable based on 
-        // SPEAKER_ID_CONFIG_ENV_VAR_NAME below to point to a config json file
-        // that contains the following fields:
+        // To enable this feature, you must have a config JSON file located at
+        // "speak_faster_speaker_id_config.json" under your home directory (see
+        // Settings.settings).
+        // The JSON file must contains the following fields:
         //   - "azure_subscription_key": The subscription fee for the Azure speech service.
         //   - "azure_endpoint": The endpoint URL for Azure speech service, e.g.,
         //     "https://{AZURE_REGION}.api.cognitive.microsoft.com"
         //   - "speaker_map": An object mapping enrolled profile IDs to speaker's names.
-        private static readonly bool ENABLE_SPEAKER_ID = true;
-        private static readonly string SPEAKER_ID_CONFIG_ENV_VAR_NAME =
+        private const bool ENABLE_SPEAKER_ID = true;
+        private const string SPEAKER_ID_CONFIG_ENV_VAR_NAME =
             "SPEAK_FASTER_SPEAKER_ID_CONFIG";
 
         private readonly WaveFormat audioFormat;
@@ -74,32 +75,30 @@ namespace SpeakFasterObserver
             ReInitStreamRecognizer();
             if (ENABLE_SPEAKER_ID)
             {
-                InitializeSpeakerIdentifier();
+                InitializeSpeakerIdentification();
             }
         }
 
-        private void InitializeSpeakerIdentifier()
+        private void InitializeSpeakerIdentification()
         {
-            string configPath = Environment.GetEnvironmentVariable(
-                SPEAKER_ID_CONFIG_ENV_VAR_NAME).Trim();
-            if (configPath == null || configPath.Length == 0)
-            {
-                return;
-            }
+            string configPath = Path.Join(
+                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                Properties.Settings.Default.SpeakerIdConfigPath);
             if (!File.Exists(configPath))
             {
                 return;
             }
             string configString = File.ReadAllText(configPath);
-            JObject configObj = JObject.Parse(configString);
-            speakerIdEndpoint = (string) configObj["azure_endpoint"];
-            speakerIdSubscriptionKey = (string) configObj["azure_subscription_key"];
+            JsonDocument jsonDoc = JsonDocument.Parse(configString);
+            JsonElement jsonRoot = jsonDoc.RootElement;
+            speakerIdEndpoint = jsonRoot.GetProperty("azure_endpoint").GetString();
+            speakerIdSubscriptionKey = jsonRoot.GetProperty("azure_subscription_key").GetString();
             // Read speaker map.
             speakerMap = new Dictionary<string, string>();
-            JObject speakerMapObj = (JObject) configObj["speaker_map"];
-            foreach (var speakerEntry in speakerMapObj)
+            JsonElement speakerMapObj = jsonRoot.GetProperty("speaker_map");
+            foreach (var speakerEntry in speakerMapObj.EnumerateObject())
             {
-                speakerMap.Add(speakerEntry.Key, speakerEntry.Value.ToString());
+                speakerMap.Add(speakerEntry.Name, speakerEntry.Value.GetString());
             }
             Debug.WriteLine($"Loaded {speakerMap.Count} speakers into speaker map");
         }
@@ -303,25 +302,34 @@ namespace SpeakFasterObserver
                 return;
             }
             string responseString = await speakerIdResponse.Content.ReadAsStringAsync();
-            JObject responseObj = JObject.Parse(responseString);
-            if (!responseObj.ContainsKey("identifiedProfile"))
+            JsonDocument responseObj = JsonDocument.Parse(responseString);
+            JsonElement responseRoot = responseObj.RootElement;
+            JsonElement profile;
+            try
+            {
+                profile = responseRoot.GetProperty("identifiedProfile");
+            }
+            catch (KeyNotFoundException e)
             {
                 Debug.WriteLine($"*** Unknown speaker\n");
                 return;
             }
-            JObject profile = (JObject) responseObj["identifiedProfile"];
-            if (!profile.ContainsKey("profileId"))
+            string profileId;
+            try
+            {
+                profileId = profile.GetProperty("profileId").GetString();
+            }
+            catch (KeyNotFoundException)
             {
                 Debug.WriteLine($"*** Unknown speaker\n");
                 return;
             }
-            string profileId = (string) profile["profileId"];
             if (profileId.StartsWith("00000000"))
             {
                 Debug.WriteLine($"*** Unknown speaker\n");
                 return;
             }
-            float score = (float) profile["score"];
+            double score = profile.GetProperty("score").GetDouble();
             Debug.WriteLine(
                 $"*** Detected known speaker: {speakerMap[profileId]} (score={score})\n");
         }

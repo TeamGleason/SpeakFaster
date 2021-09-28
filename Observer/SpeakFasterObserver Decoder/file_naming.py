@@ -6,6 +6,8 @@ from __future__ import print_function
 from datetime import datetime
 import os
 
+import pytz
+
 
 def parse_timestamp(timestamp):
   """Parse timestamp into a Python datetime.datetime object.
@@ -25,6 +27,11 @@ def parse_timestamp_from_filename(filename):
   filename = os.path.basename(filename)
   return parse_timestamp(filename.split("-", 1)[0])
 
+
+def parse_epoch_seconds_from_filename(filename, timezone):
+  """Parse epoch timestamp (in seconds) from filename and timezone name."""
+  tz = pytz.timezone(timezone)
+  return tz.localize(parse_timestamp_from_filename(filename)).timestamp()
 
 def get_data_stream_name(filename):
   """Get the data stream name.

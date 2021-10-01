@@ -1,6 +1,37 @@
-## Python environment
+## Processing a raw Observer data session
+
+### Python environment
+
+Python version 3.8+ is required. You can check your Python version with the
+following command:
+
+```sh
+python --version
+```
 
 It is highly recommended that you do Python development in a virtualenv.
+
+If `virtualenv` is not on your path, it may be because it hasn't been installed.
+To install virtualenv on a Debian or Ubuntu machine, do:
+
+```sh
+sudo apt-get install python3-virtualenv
+```
+
+Once virtualenv is installed, you can create a virtualenv by running a command
+like:
+
+```sh
+virtualenv -p python3 /home/cais/speakfaster-venv
+```
+
+The "/home/cais/speakfaster-venv" here is just an example. You should
+use your own folder of choice. Once the virtualenv is created, you can
+activate the virtualenv by running command:
+
+```sh
+source /home/cais/speakfaster-venv/bin/activate
+```
 
 In install the required dependencies in the virtualenv, do:
 
@@ -8,92 +39,10 @@ In install the required dependencies in the virtualenv, do:
 python install -r requirements.txt
 ```
 
-## Postprocessing
-
-### Audio Event Classification
-
-We use [YAMNet](https://tfhub.dev/google/lite-model/yamnet/tflite/1)
-to extract audio event labels from input audio files.
-
-Command line example:
-
-```sh
-python extract_audio_events.py testdata/test_audio_1.wav /tmp/audio_events.tsv
-```
-
-### Visual Object Detection
-
-We use [SSD on MobileNetV2](https://tfhub.dev/tensorflow/ssd_mobilenet_v2/fpnlite_640x640/1) to detect visual objects in images captures from camera(s).
-
-Command line example for an input video file (e.g., an .mp4 file):
-
-```sh
-python detect_objects.py \
-    --input_video_path testdata/test_video_1.mp4 \
-    --output_tsv_path /tmp/visual_objects.tsv
-```
-
-Command line example for a series of image files specified by a glob pattern:
-
-```sh
-python detect_objects.py \
-    --input_image_glob 'testdata/pic*-standard-size.jpg' \
-    --frame_rate 2 \
-    --output_tsv_path /tmp/visual_objects.tsv
-```
-
-Note the test images in the testdata/ folder are under the CC0 (public domain)
-license and are obtained from the URLs such as:
-- https://search.creativecommons.org/photos/10590078-2f13-4caf-b96d-5d1db14eccd4
-- https://search.creativecommons.org/photos/832045ea-53f3-4a3d-9c35-9b51f9add43d
-
-## Automatic Speech Recognitino (ASR, Speech-to-text) on audio files
-
-The SpeakFaster Observer writes audio data to .flac files that are approximately
-60 second each in length. To transcribe a consecutive series of such .flac files,
-find the path to the first .flac file in the series and feed it to the audio_asr.py
-script. Additionally, provide path to the  output .tsv file. For example:
-
-```sh
-python audio_asr.py data/20210710T095258428-MicWaveIn.flac /tmp/speech_transcript.tsv
-```
-
-The script automatically finds consecutive audio files in the same directory as the
-first audio file based on the length of each audio file and the timestamps in the
-file names.
-
-To perform ASR and speaker diarization at the same time, use the `--speaker_count`
-argument. For example:
-
-```sh
-python audio_asr.py \
-    --speaker_count=2 \
-    data/20210710T095258428-MicWaveIn.flac /tmp/speech_transcript.tsv
-```
-
-The speaker count must be known beforehand. In the .tsv file, the `Content`
-column with contain the speaker index (e.g., "Speaker 2") appended to the
-transcripts.
-
-# TOOD(cais): Add instructions for Google Cloud credentials.
-
-## Running unit tests in this folder
-
-Use:
-
-```sh
-./run_tests.sh
-```
-
-## Processing a raw observer data session
+The requirements.txt is available in the same directory as this README file.
+It lists all the required Python packages.
 
 ### Installing Python dependencies ffmpeg
-
-As a prerequisite, make sure you have installed all the required Python:
-
-```sh
-pip install -r requirements.txt
-```
 
 ffmpeg is required for video processing. To install ffmpeg on Linux, do
 
@@ -113,13 +62,29 @@ To install ffmpeg on Mac, you can use homebrew:
 brew install ffmpeg
 ```
 
-### Processing raw data for ELAN
+### Setting up Google Cloud credentials
 
-The following command processes a raw data session folder with the keypresses
-prorobuf file along with audio recordings. It extracts audio event labels and
-ASR transcripts (with tentative speaker IDs). These audio-based labels are
-merged with the keypress data as a single merged.tsv file, which can be loaded
-into ELAN.
+The pre-processing script uses Google Cloud Speech-to-Text API for automatic speech
+recognition (ASR) and speaker diarization. You should create or obtain a JSON key file
+associated with your Google Cloud account and put it at a secure location under
+your home directory (e.g., "/home/cais/keys/my-google-cloud-key.json"). Then
+modify your .bashrc or .zshrc (depending on what type of Linux shell is used) file
+by adding a line that defines the environment variable:
+
+```sh
+export GOOGLE_APPLICATION_CREDENTIALS=/home/cais/keys/my-google-cloud-key.json
+```
+
+(Actual path may differ). Save the file. To make the change take effect, either
+open a new Linux terminal or do `source ~/.bashrc` or `source ~/.zshrc`.
+
+### Pre-processing raw data for ELAN
+
+The following command processes a raw data session folder from the Observer with
+the keypresses protobuf file along with audio recordings and image files.
+It extracts audio event labels and ASR transcripts (with tentative speaker IDs).
+These audio-based labels are merged with the keypress data as a single merged.tsv file,
+which can be loaded into ELAN.
 
 These other files are also generated by the script and can be loaded into ELAN:
 - concatenated_audio.wav: The concatenated audio file.
@@ -198,7 +163,87 @@ the `curated.tsv` file and re-run the `elan_process_curated.tsv`. Fix all proble
 until the script says "Success..." and exports a file in the same directory named
 `curated_processed.tsv`. This new TSV file is ready for data ingestion.
 
-### Speaker ID enrollment and profile management
+## Individual Pre- and Post-processing Steps
+
+NOTE: The aforementioned `elan_format_raw.py` and `elan_process_curated.py`
+scripts should automatically
+take care of the post-processing. The info in this section is relevant only if
+you plan to perform individual aspects of the pre- or post-processing yourself.
+
+### Audio Event Classification
+
+We use [YAMNet](https://tfhub.dev/google/lite-model/yamnet/tflite/1)
+to extract audio event labels from input audio files.
+
+Command line example:
+
+```sh
+python extract_audio_events.py testdata/test_audio_1.wav /tmp/audio_events.tsv
+```
+
+### Visual Object Detection
+
+We use [SSD on MobileNetV2](https://tfhub.dev/tensorflow/ssd_mobilenet_v2/fpnlite_640x640/1) to detect visual objects in images captures from camera(s).
+
+Command line example for an input video file (e.g., an .mp4 file):
+
+```sh
+python detect_objects.py \
+    --input_video_path testdata/test_video_1.mp4 \
+    --output_tsv_path /tmp/visual_objects.tsv
+```
+
+Command line example for a series of image files specified by a glob pattern:
+
+```sh
+python detect_objects.py \
+    --input_image_glob 'testdata/pic*-standard-size.jpg' \
+    --frame_rate 2 \
+    --output_tsv_path /tmp/visual_objects.tsv
+```
+
+Note the test images in the testdata/ folder are under the CC0 (public domain)
+license and are obtained from the URLs such as:
+- https://search.creativecommons.org/photos/10590078-2f13-4caf-b96d-5d1db14eccd4
+- https://search.creativecommons.org/photos/832045ea-53f3-4a3d-9c35-9b51f9add43d
+
+### Automatic Speech Recognition (ASR, Speech-to-text) on audio files
+
+The SpeakFaster Observer writes audio data to .flac files that are approximately
+60 second each in length. To transcribe a consecutive series of such .flac files,
+find the path to the first .flac file in the series and feed it to the audio_asr.py
+script. Additionally, provide path to the  output .tsv file. For example:
+
+```sh
+python audio_asr.py data/20210710T095258428-MicWaveIn.flac /tmp/speech_transcript.tsv
+```
+
+The script automatically finds consecutive audio files in the same directory as the
+first audio file based on the length of each audio file and the timestamps in the
+file names.
+
+To perform ASR and speaker diarization at the same time, use the `--speaker_count`
+argument. For example:
+
+```sh
+python audio_asr.py \
+    --speaker_count=2 \
+    data/20210710T095258428-MicWaveIn.flac /tmp/speech_transcript.tsv
+```
+
+The speaker count must be known beforehand. In the .tsv file, the `Content`
+column with contain the speaker index (e.g., "Speaker 2") appended to the
+transcripts.
+
+## Running unit tests in this folder
+
+Use:
+
+```sh
+./run_tests.sh
+```
+
+## Speaker ID enrollment and profile management
 
 We use Azure Cognitive Service's cloud speech API for real-time and offline speaker
 ID. The script in this directory `speaker_id_profiles.py` allows you to enroll

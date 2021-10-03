@@ -24,6 +24,13 @@ import tsv_data
 SPEAKER_MAP_DELIMITER = "\t"
 SPEKAER_MAP_COLUMN_HEADS = ("RealName", "Pseudonym")
 
+_SPEECH_TRANSCRIPT_CONTENT_REGEX = re.compile(
+    ".+(\[(Speaker|SpeakerTTS):[A-Za-z0-9]+\])$")
+_REDACT_TIME_RANGE_REGEX = re.compile("\[Redacted[A-Za-z]*?:.*?\]")
+_DUMMY_DATETIME_FORMAT_NO_MILLIS = "%Y-%m-%dT%H:%M:%S"
+_DUMMY_DATETIME_FORMAT_WITH_MILLIS = "%Y-%m-%dT%H:%M:%S.%f"
+_UTTERANCE_ID_REGEX = r"\[U[0-9]+\]"
+
 
 def load_speaker_map(speaker_map_tsv_path):
   """Loads speaker map.
@@ -169,13 +176,6 @@ def load_rows(tsv_path, column_order, has_header=False):
   return sorted(output_rows, key=lambda x: x[0])
 
 
-_SPEECH_TRANSCRIPT_CONTENT_REGEX = re.compile(
-    ".+(\[(Speaker|SpeakerTTS):[A-Za-z0-9]+\])$")
-_REDACT_TIME_RANGE_REGEX = re.compile("\[Redacted[A-Za-z]*?:.*?\]")
-_DUMMY_DATETIME_FORMAT_NO_MILLIS = "%Y-%m-%dT%H:%M:%S"
-_DUMMY_DATETIME_FORMAT_WITH_MILLIS = "%Y-%m-%dT%H:%M:%S.%f"
-
-
 def _parse_time_string(time_str):
   time_str = time_str.strip()
   base_time = ("2000-01-01T00:00:00.000" if ("." in time_str)
@@ -207,6 +207,82 @@ def parse_time_range(tag):
     raise ValueError(
         "Begin and end time out of order in tag: '%s'" % original_tag)
   return tbegin, tend
+
+
+def parse_utterance_id(transcript, expected_counter=None):
+  match = re.search(_UTTERANCE_ID_REGEX, transcript)
+  if not match:
+    return None
+  match_begin, match_end = match.span()
+  utterance_id_with_brackets = transcript[match_begin : match_end]
+  if expected_counter is not None:
+    assert utterance_id_with_brackets == "[U%d]" % expected_counter
+  utterance_id = utterance_id_with_brackets[1:-1]
+  return utterance_id_with_brackets, utterance_id
+
+
+def calculate_speech_curation_stats(merged_tsv_path, rows):
+  """Calculate statistics about the speech transcript and their curation.
+
+  This function also checks for errors including:
+    - Inadvertent deletion of the [UX] utterance label.
+
+  # TODO(cais): Handle SpeechTranscripts2 tier.
+  """
+  column_order, has_header = infer_columns(merged_tsv_path)
+  original_rows = load_rows(
+      merged_tsv_path, column_order, has_header=has_header)
+  original_rows = [
+      row for row in original_rows
+      if row[2] == tsv_data.SPEECH_TRANSCRIPT_TIER]
+  curated_rows = [
+      row for row in rows
+      if row[2] == tsv_data.SPEECH_TRANSCRIPT_TIER]
+  stats = {
+      "original_num_utterances": len(original_rows),
+      "curated_num_utterances:": len(curated_rows),
+      "deleted_utterances": [],
+      "added_utterance_indices": 0,
+      "utterance_edits": [],
+      "curated_speaker_id_to_original_speaker_id": [],
+  }
+  # If there is an annotation with tBegin and tEnd matching
+  # exactly that of an original. Report an error.
+  for i, row in enumerate(original_rows):
+    tbegin, tend, _, transcript = row
+    utterance_id_with_braket, utterance_id = parse_utterance_id(
+        transcript, i + 1)
+    matching_rows = [
+        r for r in curated_rows if r[0] == tbegin and r[1] == tend]
+    if not matching_rows:
+      stats["deleted_utterances"].append({
+        "utterance_id": utterance_id,
+        "num_tokens": -1,  # TODO(cais):
+        "num_chars": -1,  # TODO(cais):
+      })
+      continue
+    elif len(matching_rows) > 1:
+      raise ValueError(
+          "Found multiple speech transcripts of timestamp: %.3f - %.3f" %
+         (tbegin, tend))
+    else:
+      matching_row = matching_rows[0]
+      if utterance_id_with_braket not in matching_row[3]:
+        raise ValueError(
+            "In curated.tsv, it seems that you have deleted or changed "
+            "the utterance ID "
+            "'%s' from the utterance: '%s'. Please add it back." %
+            (utterance_id_with_braket, matching_row))
+  # Go over the curated speech rows, find which are added.
+  for i, row in enumerate(curated_rows):
+    tbegin, tend, _, transcript = row
+    if not parse_utterance_id(transcript):
+      stats["added_utterance_indices"].append(i)
+
+  # Calculate the edit distances of words in transcripts.
+  print(stats)
+  import sys; sys.exit(1)  # DEBUG
+  return stats
 
 
 def apply_speaker_map_get_keypress_redactions(rows, realname_to_pseudonym):
@@ -315,12 +391,15 @@ def parse_args():
 def main():
   args = parse_args()
   realname_to_pseudonym = load_speaker_map(args.speaker_map_tsv_path)
+  merged_tsv_path = os.path.join(args.input_dir, "merged.tsv")
   curated_tsv_path = os.path.join(args.input_dir, "curated.tsv")
   column_order, has_header = infer_columns(curated_tsv_path)
   rows = load_rows(curated_tsv_path, column_order, has_header=has_header)
+  calculate_speech_curation_stats(merged_tsv_path, rows)
   keypress_redaction_time_ranges = apply_speaker_map_get_keypress_redactions(
       rows, realname_to_pseudonym)
   redact_keypresses(rows, keypress_redaction_time_ranges)
+  out_json_path = os.path.join(args.input_dir, "curated_processed.json")
   out_tsv_path = os.path.join(args.input_dir, "curated_processed.tsv")
   write_rows_to_tsv(rows, out_tsv_path)
   print("Success: Converted postprocessed tsv file and saved result to: %s" %

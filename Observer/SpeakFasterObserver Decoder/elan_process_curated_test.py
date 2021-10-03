@@ -136,6 +136,25 @@ class ParseTimeRangeTest(tf.test.TestCase):
       elan_process_curated.parse_time_range("[Redacted: -00:01:23]")
 
 
+class ParseUtteranceIdTest(tf.test.TestCase):
+
+  def testParsingSucceeds_hasValidUtteranceId(self):
+    utter_id_with_brakets, utter_id = elan_process_curated.parse_utterance_id(
+        "Hi, there [U2] [Speaker: 1]", expected_counter=2)
+    self.assertEqual(utter_id_with_brakets, "[U2]")
+    self.assertEqual(utter_id, "U2")
+
+  def testParsingThrowsAssertionError_expectedCounterNotMet(self):
+    with self.assertRaises(AssertionError):
+      utter_id_with_brakets, utter_id = elan_process_curated.parse_utterance_id(
+          "Hi, there [U2] [Speaker: 1]", expected_counter=3)
+
+  def testParsingReturnsNone_hasNoValidUtteranceId(self):
+    output = elan_process_curated.parse_utterance_id(
+        "Hi, there [Speaker:Sean]")
+    self.assertIsNone(output)
+
+
 class ApplySpeakerMapGetKeypressRedactionsTest(tf.test.TestCase):
 
   def setUp(self):

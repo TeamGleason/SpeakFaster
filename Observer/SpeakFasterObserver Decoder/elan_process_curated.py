@@ -190,8 +190,6 @@ def _parse_time_string(time_str):
 
 def parse_time_range(tag):
   original_tag = tag
-  index_colon = tag.index(":")
-  tag = tag[index_colon + 1:-1].strip()
   if tag.count("-") != 1:
     raise ValueError(
         "Invalid redaction tag with time range: '%s'" % original_tag)
@@ -219,6 +217,64 @@ def parse_utterance_id(transcript, expected_counter=None):
     assert utterance_id_with_brackets == "[U%d]" % expected_counter
   utterance_id = utterance_id_with_brackets[1:-1]
   return utterance_id_with_brackets, utterance_id
+
+
+def parse_redacted_segments(transcript):
+  """Given an utterance transcript, parse all segments with redaction.
+
+  Args:
+    transcript: The transcript of an utterance, as a string.
+
+  Returns:
+    A list of (begin, end, redaction_tag, redacted_text, (tbegin, tend))
+      tuples, wherein,
+      - begin is the beginning index of the redacted segment in the input
+        string.
+      - end is the ending index (exclusive).
+      - redaction_tag is the name of the redaction tag, e.g., RedactedSensitive.
+      - redacted_text is the text body of the redacted text.
+      - (tbegin, tend) is the optional keystroke time range, which is applicable
+        only to speech utterance from AAC user's TTS. If not applicable, this is
+        None.
+  """
+  output = []
+  offset = 0
+  while True:
+    if "<Redacted" not in transcript:
+      break
+    begin = transcript.index("<Redacted")
+    if ">" not in transcript[begin:]:
+      raise ValueError("Invalid redaction syntax in %s" % transcript)
+    begin_tag = transcript[begin:transcript.index(">") + 1]
+    tag_tokens = begin_tag[1:-1].split(" ")
+    redaction_tag = tag_tokens.pop(0)
+    t_span = None
+    for token in tag_tokens:
+      if token.count("=") != 1:
+        raise ValueError("Invalid syntax in tag: %s" % begin_tag)
+      attr_type, attr_value = token.split("=")
+      if not (attr_value.startswith("\"") and attr_value.endswith("\"")):
+        raise ValueError(
+            "Invalid syntax (missing quotes) in tag: %s" % begin_tag)
+      if attr_type == "time":
+        t_span = parse_time_range(attr_value[1:-1])
+      else:
+        raise ValueError(
+            "Unsupported attribute type %s in tag %s" % (attr_type, begin_tag))
+    end_tag = "</%s>" % redaction_tag
+    if end_tag not in transcript[begin:]:
+      raise ValueError(
+          "Cannot find closing tag '%s' in '%s'" % (end_tag, transcript))
+    end_tag_index = transcript[begin:].index(end_tag)
+    if end_tag_index < len(begin_tag):
+      raise ValueError("Invalid tag syntax in: %s" % transcript)
+    end = begin + end_tag_index + len(end_tag)
+    redacted_text = transcript[begin + len(begin_tag):begin + end_tag_index]
+    output.append(
+        (begin + offset, end + offset, redaction_tag, redacted_text, t_span))
+    offset += end
+    transcript = transcript[end:]
+  return output
 
 
 def calculate_speech_curation_stats(merged_tsv_path, rows):
@@ -294,7 +350,7 @@ def apply_speaker_map_get_keypress_redactions(rows, realname_to_pseudonym):
     realname_to_pseudonym: A dict mapping lowercase real names to pseudonyms.
 
   Returns:
-    Keypress redaction time ranges.
+    Keypress redaction time ranges, as a list of (tbegin, tend) tuples.
   """
   keypress_redaction_time_ranges = []
   for i, row in enumerate(rows):
@@ -314,14 +370,24 @@ def apply_speaker_map_get_keypress_redactions(rows, realname_to_pseudonym):
       pseudonym_tag = "[%s:%s]" % (tag_type, pseudonym)
       index = content.rindex(realname_tag)
       pseudonymized_content = content[:index] + pseudonym_tag
-      rows[i][3] = pseudonymized_content
 
-      # Check for redaction tags with time ranges.
+      # Check for redaction tags with time ranges, replace the redacted spans
+      # with tags like "[RedactedSenitive]"
       redaction_time_range_tags = re.findall(
           _REDACT_TIME_RANGE_REGEX, pseudonymized_content)
-      for time_range_tag in redaction_time_range_tags:
-        tbegin, tend = parse_time_range(time_range_tag)
-        keypress_redaction_time_ranges.append((tbegin, tend))
+      redacted_segments = parse_redacted_segments(pseudonymized_content)
+      for begin, end, redaction_tag, _, tspan in reversed(
+          redacted_segments):
+        if tspan:
+          keypress_redaction_time_ranges.append(tspan)
+          redaction_mask = "[%s time=\"%.3f-%.3f\"]" % (
+              redaction_tag, tspan[0], tspan[1])
+        else:
+          redaction_mask = "[%s]" % redaction_tag
+        pseudonymized_content = (
+            pseudonymized_content[:begin] + redaction_mask +
+            pseudonymized_content[end:])
+      rows[i][3] = pseudonymized_content
   return keypress_redaction_time_ranges
 
 

@@ -103,37 +103,101 @@ class ParseTimeRangeTest(tf.test.TestCase):
 
   def testParseTimeRange_noMilliseconds(self):
     tbegin, tend = elan_process_curated.parse_time_range(
-        "[RedactedSensitive:13:00:48-13:01:45]")
+        "13:00:48-13:01:45")
     self.assertEqual(tbegin, 13 * 3600 + 48)
     self.assertEqual(tend, 13 * 3600 + 60 + 45)
 
   def testParseTimeRange_withMilliseconds(self):
     tbegin, tend = elan_process_curated.parse_time_range(
-        "[RedactedInfo:13:00:48.123-13:01:45.789]")
+        "13:00:48.123-13:01:45.789")
     self.assertEqual(tbegin, 13 * 3600 + 48 + 0.123)
     self.assertEqual(tend, 13 * 3600 + 60 + 45 + 0.789)
 
   def testParseTimeRange_wrongOrderRaisesValueError(self):
     with self.assertRaisesRegex(ValueError, r"Begin and end time out of order"):
       elan_process_curated.parse_time_range(
-          "[RedactedInfo:13:00:48.123-12:59:45.789]")
+          "13:00:48.123-12:59:45.789")
     with self.assertRaisesRegex(ValueError, r"Begin and end time out of order"):
-      elan_process_curated.parse_time_range("[RedactedName:13:00:48-12:59:45]")
+      elan_process_curated.parse_time_range("13:00:48-12:59:45")
     with self.assertRaisesRegex(ValueError, r"Begin and end time out of order"):
       elan_process_curated.parse_time_range(
-          "[RedactedName:13:00:00.500-13:00:00]")
+          "13:00:00.500-13:00:00")
 
   def testParseTimeRange_invalidFormat_raisesValueError(self):
     with self.assertRaises(ValueError):
-      elan_process_curated.parse_time_range("[RedactedName:]")
+      elan_process_curated.parse_time_range("")
     with self.assertRaises(ValueError):
-      elan_process_curated.parse_time_range("[Redacted:00:01:23-]")
+      elan_process_curated.parse_time_range("00:01:23-")
     with self.assertRaises(ValueError):
-      elan_process_curated.parse_time_range("[Redacted:00:01:23- ]")
+      elan_process_curated.parse_time_range("00:01:23- ")
     with self.assertRaises(ValueError):
-      elan_process_curated.parse_time_range("[Redacted:-00:01:23]")
+      elan_process_curated.parse_time_range("-00:01:23")
     with self.assertRaises(ValueError):
-      elan_process_curated.parse_time_range("[Redacted: -00:01:23]")
+      elan_process_curated.parse_time_range("-00:01:23")
+
+
+class ParseRedactedSegmentsTest(tf.test.TestCase):
+
+  def testParseZeroRedactedSegments(self):
+    transcript = "I had a great day [Speaker:Tim]"
+    segments = elan_process_curated.parse_redacted_segments(transcript)
+    self.assertEqual(segments, [])
+
+  def testParseOneRedactedSegmentSuccessfully_noTimeSpan(self):
+    transcript = "Who is <RedactedName>Ellis</RedactedName>? [Speaker:Tim]"
+    segments = elan_process_curated.parse_redacted_segments(transcript)
+    self.assertEqual(segments, [(7, 41, "RedactedName", "Ellis", None)])
+
+  def testParseTwoRedactedSegmentsSuccessfully_noTimeSpan(self):
+    transcript = (
+        "Who are <RedactedName>Ellis</RedactedName>, "
+        "who lives in <RedactedInfo>130 Pine St</RedactedInfo>? [Speaker:Tim]")
+    segments = elan_process_curated.parse_redacted_segments(transcript)
+    self.assertEqual(
+        segments, [(8, 42, "RedactedName", "Ellis", None),
+                   (57, 97, "RedactedInfo", "130 Pine St", None)])
+
+  def testParseOneRedactedSegment_withTimeSpanSecondsPrecision(self):
+    transcript = (
+        "Who is <RedactedName time=\"00:01:23-00:01:53\">Ellis</RedactedName>?"
+        " [Speaker:Tim]")
+    segments = elan_process_curated.parse_redacted_segments(transcript)
+    self.assertEqual(
+        segments, [(7, 66, "RedactedName", "Ellis", (83.0, 113.0))])
+
+  def testParsOneRedactedSegment_withTimeSpanMillisecondPrecision(self):
+    transcript = (
+        "Who is <RedactedName time=\"00:01:23.123-00:01:53.234\">"
+        "Mr. Miller</RedactedName>? [Speaker:Tim]")
+    segments = elan_process_curated.parse_redacted_segments(transcript)
+    self.assertEqual(
+        segments, [(7, 79, "RedactedName", "Mr. Miller", (83.123, 113.234))])
+
+  def testRaisesError_forMissingClosingTag(self):
+    transcript = "Who is <RedactedName>Ellis [Speaker:Tim]"
+    with self.assertRaisesRegex(ValueError, r"Cannot find closing tag"):
+      elan_process_curated.parse_redacted_segments(transcript)
+
+  def testRaisesError_forMissingClosingBracket(self):
+    transcript = "Who is <RedactedName Ellis</RedactedName> [Speaker:Tim]"
+    with self.assertRaisesRegex(ValueError, r"Invalid syntax in tag"):
+      elan_process_curated.parse_redacted_segments(transcript)
+
+  def testRaisesError_unsupportedAttributeType(self):
+    transcript = (
+        "Who is <RedactedName location=\"foo\">Ellis</RedactedName>? "
+        "[Speaker:Tim]")
+    with self.assertRaisesRegex(
+        ValueError, r"Unsupported attribute type location"):
+      elan_process_curated.parse_redacted_segments(transcript)
+
+  def testRaisesReror_invalidAttributeSyntax(self):
+    transcript = (
+        "Who is <RedactedName time=00:01:23-00:01:54>Ellis</RedactedName>? "
+        "[Speaker:Tim]")
+    with self.assertRaisesRegex(
+        ValueError, r"Invalid syntax \(missing quotes\) in tag"):
+      elan_process_curated.parse_redacted_segments(transcript)
 
 
 class ParseUtteranceIdTest(tf.test.TestCase):
@@ -195,6 +259,26 @@ class ApplySpeakerMapGetKeypressRedactionsTest(tf.test.TestCase):
       elan_process_curated.apply_speaker_map_get_keypress_redactions(
           rows, self._realname_to_pseudonym)
 
+  def testAppliesRedactionMasksAndSpeakerPseudonyms_forNoTimeSpans(self):
+    rows = [
+        [5.2, 6.0, "SpeechTranscript",
+         "Hi, Sean [Speaker:Danielle]"],
+        [15.2, 16.0, "SpeechTranscript",
+         "I have <RedactedSensitive>foo</RedactedSensitive> [Speaker:Danielle]"],
+        [25.2, 26.0, "SpeechTranscript",
+         "I think <RedactedSensitive>bar baz</RedactedSensitive> [Speaker:Danielle]"]]
+    ranges = elan_process_curated.apply_speaker_map_get_keypress_redactions(
+        rows, self._realname_to_pseudonym)
+    self.assertEqual(
+        rows[0],
+        [5.2, 6.0, "SpeechTranscript", "Hi, Sean [Speaker:Partner005]"])
+    self.assertEqual(
+        rows[1],
+        [15.2, 16.0, "SpeechTranscript", "I have [RedactedSensitive] [Speaker:Partner005]"])
+    self.assertEqual(
+        rows[2],
+        [25.2, 26.0, "SpeechTranscript", "I think [RedactedSensitive] [Speaker:Partner005]"])
+
   def testExtractsRedactionTimeRangesCorrectly(self):
     rows = [
         [0.1, 1.3, "SpeechTranscript", "Good morning. [Speaker:Danielle] "],
@@ -202,14 +286,20 @@ class ApplySpeakerMapGetKeypressRedactionsTest(tf.test.TestCase):
         [2.8, 2.9, "Keypress", "b"],
         [3.8, 3.9, "Keypress", "c"],
         [15.2, 16.0, "SpeechTranscript",
-         "I have [RedactedSensitive:00:00:01.500-00:00:04] [SpeakerTTS:Sean]"],
+         "I have <RedactedSensitive time=\"00:00:01.500-00:00:04\">abc</RedactedSensitive> [SpeakerTTS:Sean]"],
         [21.8, 21.9, "Keypress", "d"],
         [22.8, 22.9, "Keypress", "e"],
         [23.8, 23.9, "Keypress", "f"],
         [25.2, 26.0, "SpeechTranscript",
-         "I have [RedactedSensitive:00:00:21.500-00:00:23.600] [SpeakerTTS:Sean]"]]
+         "I have <RedactedSensitive time=\"00:00:21.500-00:00:23.600\">de</RedactedSensitive> [SpeakerTTS:Sean]"]]
     ranges = elan_process_curated.apply_speaker_map_get_keypress_redactions(
         rows, self._realname_to_pseudonym)
+    self.assertEqual(
+        rows[4][3],
+        "I have [RedactedSensitive time=\"1.500-4.000\"] [SpeakerTTS:User001]")
+    self.assertEqual(
+        rows[8][3],
+        "I have [RedactedSensitive time=\"21.500-23.600\"] [SpeakerTTS:User001]")
     self.assertEqual(ranges, [(1.5, 4.0), (21.5, 23.6)])
 
 

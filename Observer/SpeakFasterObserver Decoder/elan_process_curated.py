@@ -20,16 +20,14 @@ import re
 import numpy as np
 
 import tsv_data
+import transcript as transcript_lib
 
 SPEAKER_MAP_DELIMITER = "\t"
 SPEKAER_MAP_COLUMN_HEADS = ("RealName", "Pseudonym")
-
+REDACTED_KEY = "[RedactedKey]"
 _SPEECH_TRANSCRIPT_CONTENT_REGEX = re.compile(
     ".+(\[(Speaker|SpeakerTTS):[A-Za-z0-9]+\])$")
 _REDACT_TIME_RANGE_REGEX = re.compile("\[Redacted[A-Za-z]*?:.*?\]")
-_DUMMY_DATETIME_FORMAT_NO_MILLIS = "%Y-%m-%dT%H:%M:%S"
-_DUMMY_DATETIME_FORMAT_WITH_MILLIS = "%Y-%m-%dT%H:%M:%S.%f"
-_UTTERANCE_ID_REGEX = r"\[U[0-9]+\]"
 
 
 def load_speaker_map(speaker_map_tsv_path):
@@ -75,7 +73,7 @@ def is_number(string):
     float(string)
     return True
   except ValueError:
-    return False
+    return
 
 
 def infer_columns(tsv_path):
@@ -176,107 +174,6 @@ def load_rows(tsv_path, column_order, has_header=False):
   return sorted(output_rows, key=lambda x: x[0])
 
 
-def _parse_time_string(time_str):
-  time_str = time_str.strip()
-  base_time = ("2000-01-01T00:00:00.000" if ("." in time_str)
-               else "2000-01-01T00:00:00")
-  time_format = (_DUMMY_DATETIME_FORMAT_WITH_MILLIS if ("." in time_str)
-                 else _DUMMY_DATETIME_FORMAT_NO_MILLIS)
-  t0 = datetime.strptime(base_time, time_format)
-  t1 = datetime.strptime("2000-01-01T" + time_str, time_format)
-  dt = t1 - t0
-  return dt.seconds + dt.microseconds / 1e6
-
-
-def parse_time_range(tag):
-  original_tag = tag
-  if tag.count("-") != 1:
-    raise ValueError(
-        "Invalid redaction tag with time range: '%s'" % original_tag)
-  index_hyphen = tag.index("-")
-  if index_hyphen == 0:
-    raise ValueError(
-        "Invalid redaction tag with time range: '%s'" % original_tag)
-  tbegin_str = tag[:index_hyphen]
-  tend_str = tag[index_hyphen + 1:]
-  tbegin = _parse_time_string(tbegin_str)
-  tend = _parse_time_string(tend_str)
-  if tend <= tbegin:
-    raise ValueError(
-        "Begin and end time out of order in tag: '%s'" % original_tag)
-  return tbegin, tend
-
-
-def parse_utterance_id(transcript, expected_counter=None):
-  match = re.search(_UTTERANCE_ID_REGEX, transcript)
-  if not match:
-    return None
-  match_begin, match_end = match.span()
-  utterance_id_with_brackets = transcript[match_begin : match_end]
-  if expected_counter is not None:
-    assert utterance_id_with_brackets == "[U%d]" % expected_counter
-  utterance_id = utterance_id_with_brackets[1:-1]
-  return utterance_id_with_brackets, utterance_id
-
-
-def parse_redacted_segments(transcript):
-  """Given an utterance transcript, parse all segments with redaction.
-
-  Args:
-    transcript: The transcript of an utterance, as a string.
-
-  Returns:
-    A list of (begin, end, redaction_tag, redacted_text, (tbegin, tend))
-      tuples, wherein,
-      - begin is the beginning index of the redacted segment in the input
-        string.
-      - end is the ending index (exclusive).
-      - redaction_tag is the name of the redaction tag, e.g., RedactedSensitive.
-      - redacted_text is the text body of the redacted text.
-      - (tbegin, tend) is the optional keystroke time range, which is applicable
-        only to speech utterance from AAC user's TTS. If not applicable, this is
-        None.
-  """
-  output = []
-  offset = 0
-  while True:
-    if "<Redacted" not in transcript:
-      break
-    begin = transcript.index("<Redacted")
-    if ">" not in transcript[begin:]:
-      raise ValueError("Invalid redaction syntax in %s" % transcript)
-    begin_tag = transcript[begin:transcript.index(">") + 1]
-    tag_tokens = begin_tag[1:-1].split(" ")
-    redaction_tag = tag_tokens.pop(0)
-    t_span = None
-    for token in tag_tokens:
-      if token.count("=") != 1:
-        raise ValueError("Invalid syntax in tag: %s" % begin_tag)
-      attr_type, attr_value = token.split("=")
-      if not (attr_value.startswith("\"") and attr_value.endswith("\"")):
-        raise ValueError(
-            "Invalid syntax (missing quotes) in tag: %s" % begin_tag)
-      if attr_type == "time":
-        t_span = parse_time_range(attr_value[1:-1])
-      else:
-        raise ValueError(
-            "Unsupported attribute type %s in tag %s" % (attr_type, begin_tag))
-    end_tag = "</%s>" % redaction_tag
-    if end_tag not in transcript[begin:]:
-      raise ValueError(
-          "Cannot find closing tag '%s' in '%s'" % (end_tag, transcript))
-    end_tag_index = transcript[begin:].index(end_tag)
-    if end_tag_index < len(begin_tag):
-      raise ValueError("Invalid tag syntax in: %s" % transcript)
-    end = begin + end_tag_index + len(end_tag)
-    redacted_text = transcript[begin + len(begin_tag):begin + end_tag_index]
-    output.append(
-        (begin + offset, end + offset, redaction_tag, redacted_text, t_span))
-    offset += end
-    transcript = transcript[end:]
-  return output
-
-
 def calculate_speech_curation_stats(merged_tsv_path, rows):
   """Calculate statistics about the speech transcript and their curation.
 
@@ -306,15 +203,14 @@ def calculate_speech_curation_stats(merged_tsv_path, rows):
   # exactly that of an original. Report an error.
   for i, row in enumerate(original_rows):
     tbegin, tend, _, transcript = row
-    utterance_id_with_braket, utterance_id = parse_utterance_id(
+    utterance_id_with_braket, utterance_id = transcript_lib.parse_utterance_id(
         transcript, i + 1)
     matching_rows = [
         r for r in curated_rows if r[0] == tbegin and r[1] == tend]
     if not matching_rows:
       stats["deleted_utterances"].append({
         "utterance_id": utterance_id,
-        "num_tokens": -1,  # TODO(cais):
-        "num_chars": -1,  # TODO(cais):
+        "utterance_summary": transcript_lib.summarize_speech_content(transcript),
       })
       continue
     elif len(matching_rows) > 1:
@@ -332,7 +228,7 @@ def calculate_speech_curation_stats(merged_tsv_path, rows):
   # Go over the curated speech rows, find which are added.
   for i, row in enumerate(curated_rows):
     tbegin, tend, _, transcript = row
-    if not parse_utterance_id(transcript):
+    if not transcript_lib.parse_utterance_id(transcript):
       stats["added_utterance_indices"].append(i)
 
   # Calculate the edit distances of words in transcripts.
@@ -341,8 +237,10 @@ def calculate_speech_curation_stats(merged_tsv_path, rows):
   return stats
 
 
-def apply_speaker_map_get_keypress_redactions(rows, realname_to_pseudonym):
-  """Applies speaker map on rows and extracts keypress redaction time ranges.
+def apply_speaker_map_and_redaction_masks(rows, realname_to_pseudonym):
+  """Applies speaker map and redactoin masks.
+
+  Also extracts keypress redaction time ranges if exist.
 
   Args:
     rows: A list of data rows, in the order of (tBegin, tEnd, Tier, Content).
@@ -375,7 +273,8 @@ def apply_speaker_map_get_keypress_redactions(rows, realname_to_pseudonym):
       # with tags like "[RedactedSenitive]"
       redaction_time_range_tags = re.findall(
           _REDACT_TIME_RANGE_REGEX, pseudonymized_content)
-      redacted_segments = parse_redacted_segments(pseudonymized_content)
+      redacted_segments = transcript_lib.parse_redacted_segments(
+          pseudonymized_content)
       for begin, end, redaction_tag, _, tspan in reversed(
           redacted_segments):
         if tspan:
@@ -389,9 +288,6 @@ def apply_speaker_map_get_keypress_redactions(rows, realname_to_pseudonym):
             pseudonymized_content[end:])
       rows[i][3] = pseudonymized_content
   return keypress_redaction_time_ranges
-
-
-REDACTED_KEY = "[RedactedKey]"
 
 
 def redact_keypresses(rows, time_ranges):
@@ -462,7 +358,7 @@ def main():
   column_order, has_header = infer_columns(curated_tsv_path)
   rows = load_rows(curated_tsv_path, column_order, has_header=has_header)
   calculate_speech_curation_stats(merged_tsv_path, rows)
-  keypress_redaction_time_ranges = apply_speaker_map_get_keypress_redactions(
+  keypress_redaction_time_ranges = apply_speaker_map_and_redaction_masks(
       rows, realname_to_pseudonym)
   redact_keypresses(rows, keypress_redaction_time_ranges)
   out_json_path = os.path.join(args.input_dir, "curated_processed.json")

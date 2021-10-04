@@ -2,13 +2,28 @@
 import re
 from datetime import datetime
 
+import jiwer
 import nlp
 
 _DUMMY_DATETIME_FORMAT_NO_MILLIS = "%Y-%m-%dT%H:%M:%S"
 _DUMMY_DATETIME_FORMAT_WITH_MILLIS = "%Y-%m-%dT%H:%M:%S.%f"
 _REDACTION_MASK_REGEX = r"\[Redacted.*\]"
 _SPEAKER_ID_REGEX = r"\[(Speaker:|SpeakerTTS:).*\]"
+_SPEECH_TRANSCRIPT_CONTENT_REGEX = re.compile(
+    ".+(\[(Speaker|SpeakerTTS):?\s?([A-Za-z0-9#]+)\])$")
 _UTTERANCE_ID_REGEX = r"\[U[0-9]+\]"
+
+
+def extract_speaker_tag(transcript):
+  """Extract speaker tag, tag type, and tag_value."""
+  match = re.match(_SPEECH_TRANSCRIPT_CONTENT_REGEX, transcript.strip())
+  if not match:
+    raise ValueError(
+        "Invalid SpeechTranscripts content: '%s'. "
+        "Make sure to add Speaker or SpeakerTTS tag at the end "
+        "(e.g., '[Speaker:John]')" % transcript)
+  speaker_tag, tag_type, tag_value = match.groups()
+  return speaker_tag, tag_type, tag_value
 
 
 def extract_speech_content(transcript):
@@ -161,3 +176,22 @@ def summarize_speech_content(transcript):
       "pos_tags": pos_tags,
   }
   return output
+
+
+JIWER_TRANSFORM = jiwer.Compose([
+    jiwer.RemovePunctuation(),
+    jiwer.RemoveMultipleSpaces(),
+    jiwer.Strip(),
+    jiwer.SentencesToListOfWords(),
+    jiwer.RemoveEmptyStrings()
+])
+
+
+def wer(ref_string, string):
+  ref_speech_content = extract_speech_content(ref_string)
+  speech_content = extract_speech_content(string)
+  return jiwer.wer(
+      ref_speech_content,
+      speech_content,
+      truth_transform=JIWER_TRANSFORM,
+      hypothesis_transform=JIWER_TRANSFORM)

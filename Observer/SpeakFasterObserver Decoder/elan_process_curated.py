@@ -19,14 +19,13 @@ import re
 
 import numpy as np
 
+import transcript_lib
 import tsv_data
-import transcript as transcript_lib
+
 
 SPEAKER_MAP_DELIMITER = "\t"
 SPEKAER_MAP_COLUMN_HEADS = ("RealName", "Pseudonym")
 REDACTED_KEY = "[RedactedKey]"
-_SPEECH_TRANSCRIPT_CONTENT_REGEX = re.compile(
-    ".+(\[(Speaker|SpeakerTTS):[A-Za-z0-9]+\])$")
 _REDACT_TIME_RANGE_REGEX = re.compile("\[Redacted[A-Za-z]*?:.*?\]")
 
 
@@ -174,7 +173,9 @@ def load_rows(tsv_path, column_order, has_header=False):
   return sorted(output_rows, key=lambda x: x[0])
 
 
-def calculate_speech_curation_stats(merged_tsv_path, rows):
+def calculate_speech_curation_stats(merged_tsv_path,
+                                    rows,
+                                    realname_to_pseudonym):
   """Calculate statistics about the speech transcript and their curation.
 
   This function also checks for errors including:
@@ -195,8 +196,8 @@ def calculate_speech_curation_stats(merged_tsv_path, rows):
       "original_num_utterances": len(original_rows),
       "curated_num_utterances:": len(curated_rows),
       "deleted_utterances": [],
-      "added_utterance_indices": 0,
-      "utterance_edits": [],
+      "added_utterance_indices": [],
+      "utterance_wers": {},
       "curated_speaker_id_to_original_speaker_id": [],
   }
   # If there is an annotation with tBegin and tEnd matching
@@ -219,21 +220,33 @@ def calculate_speech_curation_stats(merged_tsv_path, rows):
          (tbegin, tend))
     else:
       matching_row = matching_rows[0]
-      if utterance_id_with_braket not in matching_row[3]:
+      original_transcript = row[3]
+      curated_transcript = matching_row[3]
+      original_speaker_id = transcript_lib.extract_speaker_tag(
+          original_transcript)[-1]
+      curated_speaker_id = transcript_lib.extract_speaker_tag(
+          curated_transcript)[-1]
+      if utterance_id_with_braket not in curated_transcript:
         raise ValueError(
             "In curated.tsv, it seems that you have deleted or changed "
             "the utterance ID "
             "'%s' from the utterance: '%s'. Please add it back." %
             (utterance_id_with_braket, matching_row))
+      wer = transcript_lib.wer(curated_transcript, original_transcript)
+      stats["utterance_wers"]["utterance_id"] = wer
+      stats["curated_speaker_id_to_original_speaker_id"].append({
+          "utterance_id": utterance_id,
+          "original_speaker_id": original_speaker_id,
+          "curated_speaker_id":
+              realname_to_pseudonym[curated_speaker_id.lower()],
+      })
+      print("\"%s\" - \"%s\": WER = %.3f" %
+            (original_transcript, curated_transcript, wer))
   # Go over the curated speech rows, find which are added.
   for i, row in enumerate(curated_rows):
     tbegin, tend, _, transcript = row
     if not transcript_lib.parse_utterance_id(transcript):
       stats["added_utterance_indices"].append(i)
-
-  # Calculate the edit distances of words in transcripts.
-  print(stats)
-  import sys; sys.exit(1)  # DEBUG
   return stats
 
 
@@ -254,14 +267,8 @@ def apply_speaker_map_and_redaction_masks(rows, realname_to_pseudonym):
   for i, row in enumerate(rows):
     _, _, tier, content = row
     if tier == tsv_data.SPEECH_TRANSCRIPT_TIER:
-      match = re.match(_SPEECH_TRANSCRIPT_CONTENT_REGEX, content.strip())
-      if not match:
-        raise ValueError(
-            "Invalid SpeechTranscripts content: '%s'. "
-            "Make sure to add Speaker or SpeakerTTS tag at the end "
-            "(e.g., '[Speaker:John]')" % content)
-      realname_tag, tag_type = match.groups()
-      realname = realname_tag[len("[" + tag_type) + 1:-1]
+      realname_tag, tag_type, realname = transcript_lib.extract_speaker_tag(
+          content.strip())
       if realname.lower() not in realname_to_pseudonym:
         raise ValueError("Cannot find real name in speaker tag: %s" % realname)
       pseudonym = realname_to_pseudonym[realname.lower()]
@@ -357,15 +364,25 @@ def main():
   curated_tsv_path = os.path.join(args.input_dir, "curated.tsv")
   column_order, has_header = infer_columns(curated_tsv_path)
   rows = load_rows(curated_tsv_path, column_order, has_header=has_header)
-  calculate_speech_curation_stats(merged_tsv_path, rows)
+  speech_curation_stats = calculate_speech_curation_stats(
+      merged_tsv_path, rows, realname_to_pseudonym)
   keypress_redaction_time_ranges = apply_speaker_map_and_redaction_masks(
       rows, realname_to_pseudonym)
   redact_keypresses(rows, keypress_redaction_time_ranges)
   out_json_path = os.path.join(args.input_dir, "curated_processed.json")
   out_tsv_path = os.path.join(args.input_dir, "curated_processed.tsv")
   write_rows_to_tsv(rows, out_tsv_path)
-  print("Success: Converted postprocessed tsv file and saved result to: %s" %
+  print("\nSuccess: Converted postprocessed tsv file and saved result to: %s" %
         out_tsv_path)
+
+  with open(out_json_path, "wt") as f:
+    out_json = {
+        "proprocessing_timestamp":
+            str(datetime.utcnow().strftime("%Y%m%dT%H%M%S.%fZ")),
+        "speech_curation_stats": speech_curation_stats,
+    }
+    json.dump(out_json, f, indent=2)
+    print("Wrote additional info to JSON file: %s" % out_json_path)
 
 
 if __name__ == "__main__":

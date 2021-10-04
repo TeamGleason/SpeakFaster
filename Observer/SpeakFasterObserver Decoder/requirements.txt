@@ -10,6 +10,7 @@ google-cloud-speech==2.5.0
 google-cloud-storage==1.40.0
 importlib-metadata==4.0.1
 isort==5.8.0
+jiwer==2.2.0
 jsonpickle==2.0.0
 lazy-object-proxy==1.6.0
 mccabe==0.6.1

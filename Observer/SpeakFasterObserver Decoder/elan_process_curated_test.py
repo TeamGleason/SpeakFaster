@@ -5,6 +5,7 @@ import shutil
 import tensorflow as tf
 
 import elan_process_curated
+import tsv_data
 
 
 class LoadSpeakerMapTest(tf.test.TestCase):
@@ -243,6 +244,92 @@ class RedactKeypressesTest(tf.test.TestCase):
         ValueError, r"2 unused keypress redaction time range.*0, 1.*18\.5.* 19"):
       elan_process_curated.redact_keypresses(rows, [(0, 1), (18.5, 19)])
 
+
+class CalculuateSpeechCurationStatsTest(tf.test.TestCase):
+
+  def setUp(self):
+    super().setUp()
+    original_rows = [
+        (1.0, 2.0, "SpeechTranscript", "When do you want to sleep [U1] [Speaker #1]"),
+        (10.0, 20.0, "SpeechTranscript", "How about kate o'clock [U2] [Speaker #2]"),
+        (21.0, 22.0, "SpeechTranscript", "Beep [U3] [Speaker #1]"),
+    ]
+    self.merged_tsv_path = os.path.join(self.get_temp_dir(), "merged.tsv")
+    with open(self.merged_tsv_path, "w") as f:
+      f.write(tsv_data.HEADER + "\n")
+      for row in original_rows:
+        f.write(tsv_data.DELIMITER.join([str(item) for item in row]) + "\n")
+    self.realname_to_pseudonym = {
+        "sean": "User001",
+        "tim": "Partner001",
+    }
+
+  def testCalculateStats_withAdditionsDeletionsAndEdits(self):
+    curated_rows = [
+        (1.0, 2.0, "SpeechTranscript", "When do you want to leave [U1] [SpeakerTTS:Sean]"),
+        (10.0, 20.0, "SpeechTranscript", "How about eight o'clock [U2] [Speaker:Tim]"),
+        (24.0, 25.0, "SpeechTranscript", "OK [SpeakerTTS:Sean]"),
+    ]
+    stats = elan_process_curated.calculate_speech_curation_stats(
+        self.merged_tsv_path, curated_rows, self.realname_to_pseudonym)
+    self.assertEqual(stats["original_num_utterances"], 3)
+    self.assertEqual(stats["curated_num_utterances"], 3)
+    self.assertEqual(stats["deleted_utterances"], [{
+        "utterance_id": "U3",
+        "utterance_summary": {
+            "char_length": 4,
+            "num_tokens": 1,
+            "token_lengths": [4],
+            "pos_tags": ["NN"],
+        },
+    }])
+    self.assertEqual(stats["added_utterance_indices"], [2])
+    self.assertEqual(stats["utterance_wers"], {
+        "U1": 1 / 6,
+        "U2": 1 / 4,
+    })
+    self.assertEqual(stats["curated_speaker_id_to_original_speaker_id"], [{
+        "utterance_id": "U1",
+        "original_speaker_id": "#1",
+        "curated_speaker_id": "User001",
+    }, {
+        "utterance_id": "U2",
+        "original_speaker_id": "#2",
+        "curated_speaker_id": "Partner001",
+    }])
+
+  def testCalculateStats_raisesErrorForRemovedUtteranceId(self):
+    curated_rows = [
+        (1.0, 2.0, "SpeechTranscript", "When do you want to sleep [U1] [SpeakerTTS:Sean]"),
+        (10.0, 20.0, "SpeechTranscript", "How about kate o'clock [U2] [Speaker:Tim]"),
+        (21.0, 22.0, "SpeechTranscript", "Beep [Speaker #1]"),
+    ]
+    with self.assertRaisesRegex(
+        ValueError, r"deleted or changed .* utterance ID .*\[U3\]"):
+      elan_process_curated.calculate_speech_curation_stats(
+          self.merged_tsv_path, curated_rows, self.realname_to_pseudonym)
+
+  def testCalculateStats_raisesErrorForChangedUtteranceId(self):
+    curated_rows = [
+        (1.0, 2.0, "SpeechTranscript", "When do you want to sleep [U1] [SpeakerTTS:Sean]"),
+        (10.0, 20.0, "SpeechTranscript", "How about kate o'clock [U2] [Speaker:Tim]"),
+        (21.0, 22.0, "SpeechTranscript", "Beep [U30] [Speaker #1]"),
+    ]
+    with self.assertRaisesRegex(
+        ValueError, r"deleted or changed .* utterance ID .*\[U3\]"):
+      elan_process_curated.calculate_speech_curation_stats(
+          self.merged_tsv_path, curated_rows, self.realname_to_pseudonym)
+
+  def testCalculateStats_raisesErrorForDuplicateUtteranceTimeSpans(self):
+    curated_rows = [
+        (1.0, 2.0, "SpeechTranscript", "When do you want to sleep [U1] [SpeakerTTS:Sean]"),
+        (10.0, 20.0, "SpeechTranscript", "How about eight o'clock [U2] [Speaker:Tim]"),
+        (10.0, 20.0, "SpeechTranscript", "How about eight o'clock [U2] [Speaker:Tim]"),
+    ]
+    with self.assertRaisesRegex(
+        ValueError, r"multiple .* timestamp.*10.*20"):
+      elan_process_curated.calculate_speech_curation_stats(
+          self.merged_tsv_path, curated_rows, self.realname_to_pseudonym)
 
 
 if __name__ == "__main__":

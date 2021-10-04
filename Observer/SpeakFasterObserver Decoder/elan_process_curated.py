@@ -174,7 +174,7 @@ def load_rows(tsv_path, column_order, has_header=False):
 
 
 def calculate_speech_curation_stats(merged_tsv_path,
-                                    rows,
+                                    curated_rows,
                                     realname_to_pseudonym):
   """Calculate statistics about the speech transcript and their curation.
 
@@ -190,11 +190,11 @@ def calculate_speech_curation_stats(merged_tsv_path,
       row for row in original_rows
       if row[2] == tsv_data.SPEECH_TRANSCRIPT_TIER]
   curated_rows = [
-      row for row in rows
+      row for row in curated_rows
       if row[2] == tsv_data.SPEECH_TRANSCRIPT_TIER]
   stats = {
       "original_num_utterances": len(original_rows),
-      "curated_num_utterances:": len(curated_rows),
+      "curated_num_utterances": len(curated_rows),
       "deleted_utterances": [],
       "added_utterance_indices": [],
       "utterance_wers": {},
@@ -233,10 +233,12 @@ def calculate_speech_curation_stats(merged_tsv_path,
             "'%s' from the utterance: '%s'. Please add it back." %
             (utterance_id_with_braket, matching_row))
       wer = transcript_lib.wer(curated_transcript, original_transcript)
-      stats["utterance_wers"]["utterance_id"] = wer
+      stats["utterance_wers"][utterance_id] = wer
       stats["curated_speaker_id_to_original_speaker_id"].append({
           "utterance_id": utterance_id,
-          "original_speaker_id": original_speaker_id,
+          "original_speaker_id":
+              realname_to_pseudonym.get(original_speaker_id.lower(),
+                                        original_speaker_id),
           "curated_speaker_id":
               realname_to_pseudonym[curated_speaker_id.lower()],
       })

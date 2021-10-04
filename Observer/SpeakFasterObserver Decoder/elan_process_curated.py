@@ -19,6 +19,7 @@ import re
 
 import numpy as np
 
+import nlp
 import transcript_lib
 import tsv_data
 
@@ -196,8 +197,8 @@ def calculate_speech_curation_stats(merged_tsv_path,
       "original_num_utterances": len(original_rows),
       "curated_num_utterances": len(curated_rows),
       "deleted_utterances": [],
-      "added_utterance_indices": [],
-      "utterance_wers": {},
+      "added_utterances": [],
+      "edited_utterances": [],
       "curated_speaker_id_to_original_speaker_id": [],
   }
   # If there is an annotation with tBegin and tEnd matching
@@ -232,8 +233,13 @@ def calculate_speech_curation_stats(merged_tsv_path,
             "the utterance ID "
             "'%s' from the utterance: '%s'. Please add it back." %
             (utterance_id_with_braket, matching_row))
-      wer = transcript_lib.wer(curated_transcript, original_transcript)
-      stats["utterance_wers"][utterance_id] = wer
+      stats["edited_utterances"].append({
+          "utterance_id": utterance_id,
+          "utterance_summary":
+              transcript_lib.summarize_speech_content(
+                  curated_transcript,
+                  hypothesis_transcript=original_transcript),
+      })
       stats["curated_speaker_id_to_original_speaker_id"].append({
           "utterance_id": utterance_id,
           "original_speaker_id":
@@ -243,12 +249,17 @@ def calculate_speech_curation_stats(merged_tsv_path,
               realname_to_pseudonym[curated_speaker_id.lower()],
       })
       print("\"%s\" - \"%s\": WER = %.3f" %
-            (original_transcript, curated_transcript, wer))
+            (original_transcript, curated_transcript,
+             stats["edited_utterances"][-1]["utterance_summary"]["wer"]))
   # Go over the curated speech rows, find which are added.
   for i, row in enumerate(curated_rows):
     tbegin, tend, _, transcript = row
     if not transcript_lib.parse_utterance_id(transcript):
-      stats["added_utterance_indices"].append(i)
+      stats["added_utterances"].append({
+          "index": i,
+          "utterance_summary":
+              transcript_lib.summarize_speech_content(transcript),
+      })
   return stats
 
 
@@ -361,6 +372,8 @@ def parse_args():
 
 def main():
   args = parse_args()
+  nlp.init()
+
   realname_to_pseudonym = load_speaker_map(args.speaker_map_tsv_path)
   merged_tsv_path = os.path.join(args.input_dir, "merged.tsv")
   curated_tsv_path = os.path.join(args.input_dir, "curated.tsv")

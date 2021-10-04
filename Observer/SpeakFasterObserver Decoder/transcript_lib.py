@@ -142,7 +142,7 @@ def parse_redacted_segments(transcript):
   return output
 
 
-def summarize_speech_content(transcript):
+def summarize_speech_content(transcript, hypothesis_transcript=None):
   """Extract the speech content from a transcript.
 
   Tags for redacted segments are removed before commuting the summary metrics.
@@ -153,6 +153,8 @@ def summarize_speech_content(transcript):
       (curated.tsv), and does *not* contain redaction masks. It can
       contain utterance IDs (e.g., "[U23]") and speaker IDs
       (e.g., "[Speaker:Sean]"), which are ignored during the summarization.
+    ground_truth: The hypothesis truth phrase as a string (e.g., from ASR).
+      If provided, will cause the "wer" field to be populated in the output.
 
   Returns:
     Summaries about the speech content of the transcript as a dict.
@@ -175,6 +177,8 @@ def summarize_speech_content(transcript):
       "token_lengths": [len(token) for token in tokens],
       "pos_tags": pos_tags,
   }
+  if hypothesis_transcript is not None:
+    output["wer"] = wer(content, hypothesis_transcript)
   return output
 
 

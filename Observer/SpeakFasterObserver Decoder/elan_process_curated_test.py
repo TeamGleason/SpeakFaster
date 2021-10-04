@@ -267,7 +267,7 @@ class CalculuateSpeechCurationStatsTest(tf.test.TestCase):
   def testCalculateStats_withAdditionsDeletionsAndEdits(self):
     curated_rows = [
         (1.0, 2.0, "SpeechTranscript", "When do you want to leave [U1] [SpeakerTTS:Sean]"),
-        (10.0, 20.0, "SpeechTranscript", "How about eight o'clock [U2] [Speaker:Tim]"),
+        (10.0, 20.0, "SpeechTranscript", "<RedactedSensitive>How about eight o'clock</RedactedSensitive> [U2] [Speaker:Tim]"),
         (24.0, 25.0, "SpeechTranscript", "OK [SpeakerTTS:Sean]"),
     ]
     stats = elan_process_curated.calculate_speech_curation_stats(
@@ -283,10 +283,35 @@ class CalculuateSpeechCurationStatsTest(tf.test.TestCase):
             "pos_tags": ["NN"],
         },
     }])
-    self.assertEqual(stats["added_utterance_indices"], [2])
-    self.assertEqual(stats["utterance_wers"], {
-        "U1": 1 / 6,
-        "U2": 1 / 4,
+    self.assertEqual(stats["added_utterances"], [{
+        "index": 2,
+        "utterance_summary": {
+            "char_length": 2,
+            "num_tokens": 1,
+            "pos_tags": ["NN"],
+            "token_lengths": [2],
+        },
+    }])
+    self.assertLen(stats["edited_utterances"], 2)
+    self.assertEqual(stats["edited_utterances"][0], {
+        "utterance_id": "U1",
+        "utterance_summary": {
+            "char_length": 25,
+            "num_tokens": 6,
+            "pos_tags": ["WRB", "VBP", "PRP", "VB", "TO", "VB"],
+            "token_lengths": [4, 2, 3, 4, 2, 5],
+            "wer": 1 / 6,
+        },
+    })
+    self.assertEqual(stats["edited_utterances"][1], {
+        "utterance_id": "U2",
+        "utterance_summary": {
+            "char_length": 23,
+            "num_tokens": 4,
+            "pos_tags": ["WRB", "RB", "CD", "NNS"],
+            "token_lengths": [3, 5, 5, 7],
+            "wer": 1 / 4,
+        },
     })
     self.assertEqual(stats["curated_speaker_id_to_original_speaker_id"], [{
         "utterance_id": "U1",

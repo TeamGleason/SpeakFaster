@@ -1,0 +1,65 @@
+<style>
+
+    :host {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+      font-size: 16px;
+      background-color: black;
+      color: #333;
+      box-sizing: border-box;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    button {
+      margin-bottom: 10px;
+      min-height: 40px;
+      min-width: 160px;
+    }
+
+    .snackbar-info {
+      background-color: rgb(153, 50, 50) !important;
+      color: beige;
+    }
+
+    .auth-instruction-row {
+      margin-top: 6px;
+    }
+
+    .label {
+      display: inline-block;
+      min-width: 120px;
+    }
+
+    .value {
+      display: inline-block;
+      margin-left: 12px;
+    }
+
+  </style>
+
+  <div class="content" role="main">
+    <div *ngIf="accessToken === ''">
+      <button (click)="authenticate()">Authenticate</button>
+    </div>
+
+    <div *ngIf="deviceCodeData !== null && accessToken === ''">
+      <div class="auth-instruction-row">
+        <div class="label">Go to URL</div>
+        <div class="value"><a href="{{deviceCodeData.verification_url}}">
+          {{deviceCodeData.verification_url}}
+        </a></div>
+      </div>
+
+      <div class="auth-instruction-row">
+        <div class="label">and enter code</div>
+        <input class="value" value="{{deviceCodeData.user_code}}"/>
+      </div>
+    </div>
+
+    <div *ngIf="accessToken !== ''">
+      <div>Authenticated!</div>
+    </div>
+
+  </div>
+
+  <router-outlet></router-outlet>

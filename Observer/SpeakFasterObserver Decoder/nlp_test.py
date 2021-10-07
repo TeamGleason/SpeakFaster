@@ -19,7 +19,7 @@ class NlpTest(tf.test.TestCase):
     self.assertEquals(
         tokens,
         ["As", "far", "as", "I", "can", "see", ",", "this", "is", "a", "pipe",
-         "made", "in", "1965", "."])
+         "made", "in", "1965."])
 
   def testTokenize_twoSentencesWithPunctuation(self):
     tokens = nlp.tokenize("What is this?\nThis is a pipe.")

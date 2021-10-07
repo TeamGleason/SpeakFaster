@@ -307,9 +307,9 @@ class CalculuateSpeechCurationStatsTest(tf.test.TestCase):
         "utterance_id": "U2",
         "utterance_summary": {
             "char_length": 23,
-            "num_tokens": 4,
-            "pos_tags": ["WRB", "RB", "CD", "NNS"],
-            "token_lengths": [3, 5, 5, 7],
+            "num_tokens": 6,
+            "pos_tags": ["WRB", "RB", "CD", "NNS", "POS", "NN"],
+            "token_lengths": [3, 5, 5, 1, 1, 5],
             "wer": 1 / 4,
         },
     })

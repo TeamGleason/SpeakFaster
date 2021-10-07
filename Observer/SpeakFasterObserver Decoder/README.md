@@ -36,7 +36,7 @@ source /home/cais/speakfaster-venv/bin/activate
 In install the required dependencies in the virtualenv, do:
 
 ```sh
-python install -r requirements.txt
+pip install -r requirements.txt
 ```
 
 The requirements.txt is available in the same directory as this README file.

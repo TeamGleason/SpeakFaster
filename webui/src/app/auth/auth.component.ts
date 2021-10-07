@@ -1,13 +1,15 @@
 import {Component} from '@angular/core';
-import {MatSnackBar} from '@angular/material/snack-bar';
+import {MatSnackBar, MatSnackBarConfig} from '@angular/material/snack-bar';
 import {ActivatedRoute} from '@angular/router';
 
-import {DeviceCodeResponse, GoogleDeviceAuthService, TokenResponse} from './google-device-auth-service';
+import {DeviceCodeResponse, GoogleDeviceAuthService, GoogleDeviceAuthServiceStub, TokenResponse} from './google-device-auth-service';
 
 @Component({
   selector: 'auth-component',
   templateUrl: './auth.component.html',
-  providers: [GoogleDeviceAuthService],
+  providers: [
+    GoogleDeviceAuthService
+  ],
 })
 export class AuthComponent {
   clientId = '';
@@ -19,12 +21,13 @@ export class AuthComponent {
 
   constructor(
       private route: ActivatedRoute,
-      private authService: GoogleDeviceAuthService,
+      public authService: GoogleDeviceAuthService,
       private snackBar: MatSnackBar) {}
 
   ngOnInit() {
     this.route.queryParams.subscribe(params => {
       if (params['client_secret'] && this.clientSecret === '') {
+        console.log('params:', params);  // DEBUG
         this.clientSecret = params['client_secret'];
       }
       if (params['client_id'] && this.clientId === '') {
@@ -38,19 +41,34 @@ export class AuthComponent {
 
   authenticate() {
     if (this.clientId === '') {
-      this.snackBar.open('Cannot authenticate. Missing client ID.')
-    }
-    if (this.clientSecret === '') {
-      this.snackBar.open('Cannot authenticate. Missing client secret.')
+      console.log('100');  // DEBUG
+      this.showSnackBar('Cannot authenticate. Missing client ID.', 'error');
       return;
     }
-    this.authService.getDeviceCode(this.clientId).subscribe(async data => {
-      this.deviceCodeData = data;
-      this.copyTextToClipboard(data.user_code);
-      await this.pollForAccessTokenUntilSuccess();
-      this.applyRefreshTokenIndefinitely();
-      this.snackBar.dismiss();
-    });
+    if (this.clientSecret === '') {
+      console.log('200');  // DEBUG
+      this.showSnackBar('Cannot authenticate. Missing client secret.', 'error');
+      return;
+    }
+    console.log('300:', this.authService);  // DEBUG
+    this.authService.getDeviceCode(this.clientId)
+        .subscribe(
+            async data => {
+              console.log('400: data');  // DEBUG
+              this.deviceCodeData = data;
+              this.copyTextToClipboard(data.user_code);
+              // await this.pollForAccessTokenUntilSuccess();
+              // this.applyRefreshTokenIndefinitely();
+              console.log('500:');  // DEBUG
+              // this.snackBar.dismiss();
+              console.log('600:');  // DEBUG
+            },
+            error => {
+              this.showSnackBar(
+                  'Failed to start authentication. Check your network.',
+                  'error');
+            });
+    console.log('310');
   }
 
   clientSecretChange(event: Event) {
@@ -87,12 +105,18 @@ export class AuthComponent {
    * This should be called only after getting the device code.
    */
   private async pollForAccessTokenUntilSuccess() {
+    console.log('pollForAccessTokenUntilSuccess(): 100');  // DEBUG
     if (this.deviceCodeData == null) {
       throw new Error(
           'Cannot poll for access token yet. Device code unavailable.');
     }
+    console.log('pollForAccessTokenUntilSuccess(): 200');  // DEBUG
+    if (this.deviceCodeData.interval < 0) {
+      return;
+    }
+    console.log('pollForAccessTokenUntilSuccess(): 300');  // DEBUG
     while (true) {
-      await this.sleepForSeconds(this.deviceCodeData!.interval);
+      await this.sleepForSeconds(this.deviceCodeData.interval);
       try {
         const tokenResponse = await this.pollForAccessTokenOnce();
         if (tokenResponse.access_token != null) {
@@ -112,6 +136,10 @@ export class AuthComponent {
    * available.
    */
   private async applyRefreshTokenIndefinitely() {
+    if (this.deviceCodeData!.interval < 0) {
+      return;
+    }
+    console.log('B100'); // DEBUG
     if (this.refreshToken === '') {
       throw new Error('Cannot apply refresh token: refresh token unavailable');
     }
@@ -136,8 +164,14 @@ export class AuthComponent {
     }
   }
 
+  private showSnackBar(text: string, type: 'info'|'error') {
+    const config: MatSnackBarConfig = new MatSnackBarConfig();
+    config.panelClass = [type];
+    this.snackBar.open(text, 'X', config);
+  }
+
   private async copyTextToClipboard(text: string) {
-    await this.sleepForSeconds(0.5);
+    // await this.sleepForSeconds(0.5);
     const textNode = document.createTextNode(text);
     document.body.appendChild(textNode);
     const range = document.createRange();
@@ -150,7 +184,6 @@ export class AuthComponent {
     textNode.remove();
     console.log(`Copied ${text} to clipboard`);
 
-    // TODO(cais): properly style the snack bar.
-    this.snackBar.open(`Copied ${text} to clipboard`, 'X');
+    this.showSnackBar(`Copied ${text} to clipboard`, 'info');
   }
 }

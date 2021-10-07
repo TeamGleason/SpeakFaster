@@ -2,6 +2,7 @@
 
 import {HttpClient} from '@angular/common/http';
 import {Injectable} from '@angular/core';
+import {Observable} from 'rxjs';
 
 export interface DeviceCodeResponse {
   user_code: string;
@@ -15,14 +16,27 @@ export interface TokenResponse {
   refresh_token: string|undefined;
 }
 
+export interface GoogleDeviceAuthServiceStub {
+  getDeviceCode(client_id: string): Observable<DeviceCodeResponse>;
+
+  pollForAccessToken(
+      client_id: string, client_secret: string,
+      device_code: string): Observable<TokenResponse>;
+
+  applyRefreshToken(
+      client_id: string, client_secret: string,
+      refresh_token: string): Observable<TokenResponse>;
+}
+
 @Injectable()
-export class GoogleDeviceAuthService {
+export class GoogleDeviceAuthService implements GoogleDeviceAuthServiceStub {
   readonly DEVICE_CODE_URL = 'https://oauth2.googleapis.com/device/code';
   readonly TOKEN_URL = 'https://oauth2.googleapis.com/token';
 
   constructor(private http: HttpClient) {}
 
   getDeviceCode(client_id: string) {
+    console.log('Actual getDeviceCode():', client_id);  // DEBUG
     return this.http.post<DeviceCodeResponse>(this.DEVICE_CODE_URL, {
       client_id,
       scope: 'email profile',

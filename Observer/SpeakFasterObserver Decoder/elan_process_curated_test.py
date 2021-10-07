@@ -33,7 +33,7 @@ class LoadSpeakerMapTest(tf.test.TestCase):
         json_obj["realname_to_pseudonym"]["danielle"] = "Partner007"
         json.dump(json_obj, f_out)
     with self.assertRaisesRegex(
-        ValueError, r"Duplicate real name.*modified.*json: danielle"):
+        ValueError, r"Duplicate real names.*modified.*json: danielle"):
       elan_process_curated.load_speaker_map(modified_speaker_map_tsv_path)
 
   def testLoadSpeakerMap_duplicatePseudonymRaisesValueError(self):

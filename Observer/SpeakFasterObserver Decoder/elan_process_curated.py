@@ -55,7 +55,7 @@ def load_speaker_map(speaker_map_json_path):
     realname = realname.strip().lower()
     pseudonym = pseudonym.strip()
     if realname in realname_to_pseudonym:
-      raise ValueError("Duplicate real name in %s: %s" %
+      raise ValueError("Duplicate real names in %s: %s" %
                        (speaker_map_json_path, realname))
     realname_to_pseudonym[realname] = pseudonym
     if pseudonym in pseudonym_to_realname:

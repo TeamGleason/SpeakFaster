@@ -133,7 +133,7 @@ python elan_process_curated.py \
 
 The first argument is the path to directory where the `curated.tsv` is located.
 The second argument is the path to a JSON file which is expected to contain a
-field `realname_to_pseudonym`, which maps speaker's real names
+field `realname_to_pseudonym`, which maps speakers' real names
 to their respective pseudonyms. The JSON is also used by Observer for online
 speaker recognition. So it may have other fields such as `id_to_realname` and
 fields related to Azure speaker recognition configurations. These other fields

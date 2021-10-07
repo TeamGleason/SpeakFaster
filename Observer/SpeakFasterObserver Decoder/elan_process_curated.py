@@ -19,10 +19,15 @@ import re
 
 import numpy as np
 
+import nlp
+import transcript_lib
 import tsv_data
+
 
 SPEAKER_MAP_DELIMITER = "\t"
 SPEKAER_MAP_COLUMN_HEADS = ("RealName", "Pseudonym")
+REDACTED_KEY = "[RedactedKey]"
+_REDACT_TIME_RANGE_REGEX = re.compile("\[Redacted[A-Za-z]*?:.*?\]")
 
 
 def load_speaker_map(speaker_map_tsv_path):
@@ -68,7 +73,7 @@ def is_number(string):
     float(string)
     return True
   except ValueError:
-    return False
+    return
 
 
 def infer_columns(tsv_path):
@@ -169,48 +174,99 @@ def load_rows(tsv_path, column_order, has_header=False):
   return sorted(output_rows, key=lambda x: x[0])
 
 
-_SPEECH_TRANSCRIPT_CONTENT_REGEX = re.compile(
-    ".+(\[(Speaker|SpeakerTTS):[A-Za-z0-9]+\])$")
-_REDACT_TIME_RANGE_REGEX = re.compile("\[Redacted[A-Za-z]*?:.*?\]")
-_DUMMY_DATETIME_FORMAT_NO_MILLIS = "%Y-%m-%dT%H:%M:%S"
-_DUMMY_DATETIME_FORMAT_WITH_MILLIS = "%Y-%m-%dT%H:%M:%S.%f"
+def calculate_speech_curation_stats(merged_tsv_path,
+                                    curated_rows,
+                                    realname_to_pseudonym):
+  """Calculate statistics about the speech transcript and their curation.
+
+  This function also checks for errors including:
+    - Inadvertent deletion of the [UX] utterance label.
+
+  # TODO(cais): Handle SpeechTranscripts2 tier.
+  """
+  column_order, has_header = infer_columns(merged_tsv_path)
+  original_rows = load_rows(
+      merged_tsv_path, column_order, has_header=has_header)
+  original_rows = [
+      row for row in original_rows
+      if row[2] == tsv_data.SPEECH_TRANSCRIPT_TIER]
+  curated_rows = [
+      row for row in curated_rows
+      if row[2] == tsv_data.SPEECH_TRANSCRIPT_TIER]
+  stats = {
+      "original_num_utterances": len(original_rows),
+      "curated_num_utterances": len(curated_rows),
+      "deleted_utterances": [],
+      "added_utterances": [],
+      "edited_utterances": [],
+      "curated_speaker_id_to_original_speaker_id": [],
+  }
+  # If there is an annotation with tBegin and tEnd matching
+  # exactly that of an original. Report an error.
+  for i, row in enumerate(original_rows):
+    tbegin, tend, _, transcript = row
+    utterance_id_with_braket, utterance_id = transcript_lib.parse_utterance_id(
+        transcript, i + 1)
+    matching_rows = [
+        r for r in curated_rows if r[0] == tbegin and r[1] == tend]
+    if not matching_rows:
+      stats["deleted_utterances"].append({
+        "utterance_id": utterance_id,
+        "utterance_summary": transcript_lib.summarize_speech_content(transcript),
+      })
+      continue
+    elif len(matching_rows) > 1:
+      raise ValueError(
+          "Found multiple speech transcripts of timestamp: %.3f - %.3f" %
+         (tbegin, tend))
+    else:
+      matching_row = matching_rows[0]
+      original_transcript = row[3]
+      curated_transcript = matching_row[3]
+      original_speaker_id = transcript_lib.extract_speaker_tag(
+          original_transcript)[-1]
+      curated_speaker_id = transcript_lib.extract_speaker_tag(
+          curated_transcript)[-1]
+      if utterance_id_with_braket not in curated_transcript:
+        raise ValueError(
+            "In curated.tsv, it seems that you have deleted or changed "
+            "the utterance ID "
+            "'%s' from the utterance: '%s'. Please add it back." %
+            (utterance_id_with_braket, matching_row))
+      stats["edited_utterances"].append({
+          "utterance_id": utterance_id,
+          "utterance_summary":
+              transcript_lib.summarize_speech_content(
+                  curated_transcript,
+                  hypothesis_transcript=original_transcript),
+      })
+      stats["curated_speaker_id_to_original_speaker_id"].append({
+          "utterance_id": utterance_id,
+          "original_speaker_id":
+              realname_to_pseudonym.get(original_speaker_id.lower(),
+                                        original_speaker_id),
+          "curated_speaker_id":
+              realname_to_pseudonym[curated_speaker_id.lower()],
+      })
+      print("\"%s\" - \"%s\": WER = %.3f" %
+            (original_transcript, curated_transcript,
+             stats["edited_utterances"][-1]["utterance_summary"]["wer"]))
+  # Go over the curated speech rows, find which are added.
+  for i, row in enumerate(curated_rows):
+    tbegin, tend, _, transcript = row
+    if not transcript_lib.parse_utterance_id(transcript):
+      stats["added_utterances"].append({
+          "index": i,
+          "utterance_summary":
+              transcript_lib.summarize_speech_content(transcript),
+      })
+  return stats
 
 
-def _parse_time_string(time_str):
-  time_str = time_str.strip()
-  base_time = ("2000-01-01T00:00:00.000" if ("." in time_str)
-               else "2000-01-01T00:00:00")
-  time_format = (_DUMMY_DATETIME_FORMAT_WITH_MILLIS if ("." in time_str)
-                 else _DUMMY_DATETIME_FORMAT_NO_MILLIS)
-  t0 = datetime.strptime(base_time, time_format)
-  t1 = datetime.strptime("2000-01-01T" + time_str, time_format)
-  dt = t1 - t0
-  return dt.seconds + dt.microseconds / 1e6
+def apply_speaker_map_and_redaction_masks(rows, realname_to_pseudonym):
+  """Applies speaker map and redactoin masks.
 
-
-def parse_time_range(tag):
-  original_tag = tag
-  index_colon = tag.index(":")
-  tag = tag[index_colon + 1:-1].strip()
-  if tag.count("-") != 1:
-    raise ValueError(
-        "Invalid redaction tag with time range: '%s'" % original_tag)
-  index_hyphen = tag.index("-")
-  if index_hyphen == 0:
-    raise ValueError(
-        "Invalid redaction tag with time range: '%s'" % original_tag)
-  tbegin_str = tag[:index_hyphen]
-  tend_str = tag[index_hyphen + 1:]
-  tbegin = _parse_time_string(tbegin_str)
-  tend = _parse_time_string(tend_str)
-  if tend <= tbegin:
-    raise ValueError(
-        "Begin and end time out of order in tag: '%s'" % original_tag)
-  return tbegin, tend
-
-
-def apply_speaker_map_get_keypress_redactions(rows, realname_to_pseudonym):
-  """Applies speaker map on rows and extracts keypress redaction time ranges.
+  Also extracts keypress redaction time ranges if exist.
 
   Args:
     rows: A list of data rows, in the order of (tBegin, tEnd, Tier, Content).
@@ -218,38 +274,40 @@ def apply_speaker_map_get_keypress_redactions(rows, realname_to_pseudonym):
     realname_to_pseudonym: A dict mapping lowercase real names to pseudonyms.
 
   Returns:
-    Keypress redaction time ranges.
+    Keypress redaction time ranges, as a list of (tbegin, tend) tuples.
   """
   keypress_redaction_time_ranges = []
   for i, row in enumerate(rows):
     _, _, tier, content = row
     if tier == tsv_data.SPEECH_TRANSCRIPT_TIER:
-      match = re.match(_SPEECH_TRANSCRIPT_CONTENT_REGEX, content.strip())
-      if not match:
-        raise ValueError(
-            "Invalid SpeechTranscripts content: '%s'. "
-            "Make sure to add Speaker or SpeakerTTS tag at the end "
-            "(e.g., '[Speaker:John]')" % content)
-      realname_tag, tag_type = match.groups()
-      realname = realname_tag[len("[" + tag_type) + 1:-1]
+      realname_tag, tag_type, realname = transcript_lib.extract_speaker_tag(
+          content.strip())
       if realname.lower() not in realname_to_pseudonym:
         raise ValueError("Cannot find real name in speaker tag: %s" % realname)
       pseudonym = realname_to_pseudonym[realname.lower()]
       pseudonym_tag = "[%s:%s]" % (tag_type, pseudonym)
       index = content.rindex(realname_tag)
       pseudonymized_content = content[:index] + pseudonym_tag
-      rows[i][3] = pseudonymized_content
 
-      # Check for redaction tags with time ranges.
+      # Check for redaction tags with time ranges, replace the redacted spans
+      # with tags like "[RedactedSenitive]"
       redaction_time_range_tags = re.findall(
           _REDACT_TIME_RANGE_REGEX, pseudonymized_content)
-      for time_range_tag in redaction_time_range_tags:
-        tbegin, tend = parse_time_range(time_range_tag)
-        keypress_redaction_time_ranges.append((tbegin, tend))
+      redacted_segments = transcript_lib.parse_redacted_segments(
+          pseudonymized_content)
+      for begin, end, redaction_tag, _, tspan in reversed(
+          redacted_segments):
+        if tspan:
+          keypress_redaction_time_ranges.append(tspan)
+          redaction_mask = "[%s time=\"%.3f-%.3f\"]" % (
+              redaction_tag, tspan[0], tspan[1])
+        else:
+          redaction_mask = "[%s]" % redaction_tag
+        pseudonymized_content = (
+            pseudonymized_content[:begin] + redaction_mask +
+            pseudonymized_content[end:])
+      rows[i][3] = pseudonymized_content
   return keypress_redaction_time_ranges
-
-
-REDACTED_KEY = "[RedactedKey]"
 
 
 def redact_keypresses(rows, time_ranges):
@@ -314,17 +372,32 @@ def parse_args():
 
 def main():
   args = parse_args()
+  nlp.init()
+
   realname_to_pseudonym = load_speaker_map(args.speaker_map_tsv_path)
+  merged_tsv_path = os.path.join(args.input_dir, "merged.tsv")
   curated_tsv_path = os.path.join(args.input_dir, "curated.tsv")
   column_order, has_header = infer_columns(curated_tsv_path)
   rows = load_rows(curated_tsv_path, column_order, has_header=has_header)
-  keypress_redaction_time_ranges = apply_speaker_map_get_keypress_redactions(
+  speech_curation_stats = calculate_speech_curation_stats(
+      merged_tsv_path, rows, realname_to_pseudonym)
+  keypress_redaction_time_ranges = apply_speaker_map_and_redaction_masks(
       rows, realname_to_pseudonym)
   redact_keypresses(rows, keypress_redaction_time_ranges)
+  out_json_path = os.path.join(args.input_dir, "curated_processed.json")
   out_tsv_path = os.path.join(args.input_dir, "curated_processed.tsv")
   write_rows_to_tsv(rows, out_tsv_path)
-  print("Success: Converted postprocessed tsv file and saved result to: %s" %
+  print("\nSuccess: Converted postprocessed tsv file and saved result to: %s" %
         out_tsv_path)
+
+  with open(out_json_path, "wt") as f:
+    out_json = {
+        "proprocessing_timestamp":
+            str(datetime.utcnow().strftime("%Y%m%dT%H%M%S.%fZ")),
+        "speech_curation_stats": speech_curation_stats,
+    }
+    json.dump(out_json, f, indent=2)
+    print("Wrote additional info to JSON file: %s" % out_json_path)
 
 
 if __name__ == "__main__":

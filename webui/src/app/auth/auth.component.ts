@@ -27,7 +27,6 @@ export class AuthComponent {
   ngOnInit() {
     this.route.queryParams.subscribe(params => {
       if (params['client_secret'] && this.clientSecret === '') {
-        console.log('params:', params);  // DEBUG
         this.clientSecret = params['client_secret'];
       }
       if (params['client_id'] && this.clientId === '') {
@@ -41,23 +40,19 @@ export class AuthComponent {
 
   authenticate() {
     if (this.clientId === '') {
-      console.log('100');  // DEBUG
       this.showSnackBar('Cannot authenticate. Missing client ID.', 'error');
       return;
     }
     if (this.clientSecret === '') {
-      console.log('200');  // DEBUG
       this.showSnackBar('Cannot authenticate. Missing client secret.', 'error');
       return;
     }
-    console.log('300:', this.authService);  // DEBUG
     this.authService.getDeviceCode(this.clientId)
         .subscribe(
             async data => {
-              console.log('400: data');  // DEBUG
               this.deviceCodeData = data;
               this.copyTextToClipboard(data.user_code);
-              // await this.pollForAccessTokenUntilSuccess();
+              await this.pollForAccessTokenUntilSuccess();
               // this.applyRefreshTokenIndefinitely();
               console.log('500:');  // DEBUG
               // this.snackBar.dismiss();
@@ -68,7 +63,6 @@ export class AuthComponent {
                   'Failed to start authentication. Check your network.',
                   'error');
             });
-    console.log('310');
   }
 
   clientSecretChange(event: Event) {
@@ -105,26 +99,26 @@ export class AuthComponent {
    * This should be called only after getting the device code.
    */
   private async pollForAccessTokenUntilSuccess() {
-    console.log('pollForAccessTokenUntilSuccess(): 100');  // DEBUG
     if (this.deviceCodeData == null) {
       throw new Error(
           'Cannot poll for access token yet. Device code unavailable.');
     }
-    console.log('pollForAccessTokenUntilSuccess(): 200');  // DEBUG
     if (this.deviceCodeData.interval < 0) {
       return;
     }
-    console.log('pollForAccessTokenUntilSuccess(): 300');  // DEBUG
+    console.log('pollForAccessTokenUntilSuccess:', this.deviceCodeData.interval);  // DEBUG
     while (true) {
       await this.sleepForSeconds(this.deviceCodeData.interval);
       try {
         const tokenResponse = await this.pollForAccessTokenOnce();
+        console.log('tokenResponse:', tokenResponse);  // DEBUG
         if (tokenResponse.access_token != null) {
           this.accessToken = tokenResponse.access_token;
           this.refreshToken = tokenResponse.refresh_token!;
           break;
         }
       } catch (error) {
+        // console.log('pollForAccessTokenUntilSuccess: error:', error);  // DEBUG
       }
     }
   }
@@ -164,7 +158,7 @@ export class AuthComponent {
     }
   }
 
-  private showSnackBar(text: string, type: 'info'|'error') {
+  showSnackBar(text: string, type: 'info'|'error') {
     const config: MatSnackBarConfig = new MatSnackBarConfig();
     config.panelClass = [type];
     this.snackBar.open(text, 'X', config);

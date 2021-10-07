@@ -26,54 +26,17 @@ class ActivatedRouteForTest {
   }
 }
 
-@Injectable()
-class GoogleDeviceAuthServiceForTest implements GoogleDeviceAuthServiceStub {
-  getDeviceCode(client_id: string) {
-    console.log('getDeviceCode(): A100:', client_id);  // DEBUG
-    return of({
-      user_code: 'test_user_code',
-      verification_url: 'https://www.google.com/device',
-      interval: 5,
-      device_code: 'test_device_Code',
-    });
-  }
-
-  pollForAccessToken(
-      client_id: string, client_secret: string, device_code: string) {
-    return of({
-      access_token: 'test_access_token',
-      refresh_token: 'test_refresh_token',
-    });  // TODO(cais): DO NOT SUBMIT.
-  }
-
-  applyRefreshToken(
-      client_id: string, client_secret: string, refresh_token: string) {
-    return of({
-      access_token: 'test_new_access_token',
-      refresh_token: 'test_refresh_token',
-    });  // TODO(cais): DO NOT SUBMIT
-  }
-}
-
 describe('AuthComponent', () => {
   let fixture: ComponentFixture<AuthComponent>;
   let compiled: HTMLElement;
   let mockActivatedRoute: ActivatedRouteForTest;
-  let mockGoogleDeviceAuthService: GoogleDeviceAuthServiceStub;
 
   beforeEach(() => {
     mockActivatedRoute = new ActivatedRouteForTest();
-    mockGoogleDeviceAuthService = new GoogleDeviceAuthServiceForTest();
     TestBed.configureTestingModule({
       imports: [RouterTestingModule, AuthModule],
       declarations: [AuthComponent],
-      providers: [
-        // {
-        //   provide: GoogleDeviceAuthService,
-        //   useValue: mockGoogleDeviceAuthService
-        // },
-        {provide: ActivatedRoute, useValue: mockActivatedRoute}
-      ]
+      providers: [{provide: ActivatedRoute, useValue: mockActivatedRoute}]
     });
     fixture = TestBed.createComponent(AuthComponent);
     compiled = fixture.nativeElement as HTMLElement;
@@ -93,25 +56,49 @@ describe('AuthComponent', () => {
        expect(compiled.querySelectorAll('.auth-success').length).toEqual(0);
      });
 
-  it('clicking authenticaton button should call device code route and display url and user code',
+  it('clicking authenticate button without client_id leads to error snackbar',
+     () => {
+       fixture.detectChanges();
+       const spy =
+           spyOn(fixture.componentInstance, 'showSnackBar').and.callThrough();
+       const button = fixture.debugElement.query(By.css('#authenticate'));
+       button.triggerEventHandler('click', null);
+       expect(spy).toHaveBeenCalledWith(
+           'Cannot authenticate. Missing client ID.', 'error');
+     });
+
+  it('clicking authenticate button without client_secret leads to error snackbar',
+     () => {
+       mockActivatedRoute.testParams = {
+         client_id: 'foo_client_id',
+       };
+       fixture.detectChanges();
+       const spy =
+           spyOn(fixture.componentInstance, 'showSnackBar').and.callThrough();
+       const button = fixture.debugElement.query(By.css('#authenticate'));
+       button.triggerEventHandler('click', null);
+       expect(spy).toHaveBeenCalledWith(
+           'Cannot authenticate. Missing client secret.', 'error');
+     });
+
+  it('clicking authenticate button should call device code route and display url and user code',
      () => {
        mockActivatedRoute.testParams = {
          client_id: 'foo_client_id',
          client_secret: 'bar_client_secret'
        };
        fixture.detectChanges();
-
-       const spy =
-           spyOn(fixture.componentRef.instance.authService, 'getDeviceCode')
-               .and.returnValue(of({
-                 user_code: 'test_user_code',
-                 verification_url: 'https://www.google.com/device',
-                 interval: -1,
-                 device_code: 'test_device_Code',
-               }));
+       const spy = spyOn(fixture.componentInstance.authService, 'getDeviceCode')
+                       .and.returnValue(of({
+                         user_code: 'test_user_code',
+                         verification_url: 'https://www.google.com/device',
+                         interval: 5,
+                         device_code: 'test_device_Code',
+                       }));
        const button = fixture.debugElement.query(By.css('#authenticate'));
        button.triggerEventHandler('click', null);
        fixture.detectChanges();
+
        expect(spy).toHaveBeenCalledWith('foo_client_id');
        fixture.detectChanges();
        const anchor = fixture.debugElement.query(By.css('#verification-url'))
@@ -119,4 +106,38 @@ describe('AuthComponent', () => {
        expect(anchor.href).toEqual('https://www.google.com/device');
        expect(anchor.innerText).toEqual('https://www.google.com/device');
      });
+
+  it('poll token success hides info and displays auth success', done => {
+    console.log('=== TEST BEGINS');  // DEBUG
+    mockActivatedRoute.testParams = {
+      client_id: 'foo_client_id',
+      client_secret: 'bar_client_secret'
+    };
+    fixture.detectChanges();
+    const interval = 0.2;
+    spyOn(fixture.componentInstance.authService, 'getDeviceCode')
+        .and.returnValue(of({
+          user_code: 'test_user_code',
+          verification_url: 'https://www.google.com/device',
+          interval,
+          device_code: 'test_device_Code',
+        }));
+    spyOn(fixture.componentInstance.authService, 'pollForAccessToken')
+        .and.returnValue(of({
+          access_token: 'test_access_token',
+          refresh_token: 'test_refresh_token',
+        }));
+    const button = fixture.debugElement.query(By.css('#authenticate'));
+    button.triggerEventHandler('click', null);
+    fixture.detectChanges();
+
+    setTimeout(() => {
+      fixture.detectChanges();
+      const authSuccess =
+          fixture.debugElement.query(By.css('.auth-success')).nativeElement as
+          HTMLDivElement;
+      expect(authSuccess.innerText).toEqual('Authenticated!');
+      done();
+    }, interval * 1e3 * 1.1);
+  });
 });

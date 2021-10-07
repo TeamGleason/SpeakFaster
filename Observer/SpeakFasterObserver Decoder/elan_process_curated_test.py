@@ -5,6 +5,7 @@ import shutil
 import tensorflow as tf
 
 import elan_process_curated
+import tsv_data
 
 
 class LoadSpeakerMapTest(tf.test.TestCase):
@@ -99,43 +100,6 @@ class LoadRowsTest(tf.test.TestCase):
           tsv_path, column_order, has_header=has_header)
 
 
-class ParseTimeRangeTest(tf.test.TestCase):
-
-  def testParseTimeRange_noMilliseconds(self):
-    tbegin, tend = elan_process_curated.parse_time_range(
-        "[RedactedSensitive:13:00:48-13:01:45]")
-    self.assertEqual(tbegin, 13 * 3600 + 48)
-    self.assertEqual(tend, 13 * 3600 + 60 + 45)
-
-  def testParseTimeRange_withMilliseconds(self):
-    tbegin, tend = elan_process_curated.parse_time_range(
-        "[RedactedInfo:13:00:48.123-13:01:45.789]")
-    self.assertEqual(tbegin, 13 * 3600 + 48 + 0.123)
-    self.assertEqual(tend, 13 * 3600 + 60 + 45 + 0.789)
-
-  def testParseTimeRange_wrongOrderRaisesValueError(self):
-    with self.assertRaisesRegex(ValueError, r"Begin and end time out of order"):
-      elan_process_curated.parse_time_range(
-          "[RedactedInfo:13:00:48.123-12:59:45.789]")
-    with self.assertRaisesRegex(ValueError, r"Begin and end time out of order"):
-      elan_process_curated.parse_time_range("[RedactedName:13:00:48-12:59:45]")
-    with self.assertRaisesRegex(ValueError, r"Begin and end time out of order"):
-      elan_process_curated.parse_time_range(
-          "[RedactedName:13:00:00.500-13:00:00]")
-
-  def testParseTimeRange_invalidFormat_raisesValueError(self):
-    with self.assertRaises(ValueError):
-      elan_process_curated.parse_time_range("[RedactedName:]")
-    with self.assertRaises(ValueError):
-      elan_process_curated.parse_time_range("[Redacted:00:01:23-]")
-    with self.assertRaises(ValueError):
-      elan_process_curated.parse_time_range("[Redacted:00:01:23- ]")
-    with self.assertRaises(ValueError):
-      elan_process_curated.parse_time_range("[Redacted:-00:01:23]")
-    with self.assertRaises(ValueError):
-      elan_process_curated.parse_time_range("[Redacted: -00:01:23]")
-
-
 class ApplySpeakerMapGetKeypressRedactionsTest(tf.test.TestCase):
 
   def setUp(self):
@@ -150,7 +114,7 @@ class ApplySpeakerMapGetKeypressRedactionsTest(tf.test.TestCase):
         [0.1, 1.3, "SpeechTranscript", "Good morning. [Speaker:Danielle] "],
         [1.8, 1.9, "Keypress", "v"],
         [5.2, 6.0, "SpeechTranscript", "What a nice day. [SpeakerTTS:Sean]"]]
-    ranges = elan_process_curated.apply_speaker_map_get_keypress_redactions(
+    ranges = elan_process_curated.apply_speaker_map_and_redaction_masks(
         rows, self._realname_to_pseudonym)
     self.assertEqual(ranges, [])
     self.assertEqual(rows, [
@@ -164,7 +128,7 @@ class ApplySpeakerMapGetKeypressRedactionsTest(tf.test.TestCase):
         [5.2, 6.0, "SpeechTranscript", "What a nice day. [SpeakerTTS:Shan]"]]
     with self.assertRaisesRegex(
         ValueError, r"Cannot find real name in speaker tag: Shan"):
-      elan_process_curated.apply_speaker_map_get_keypress_redactions(
+      elan_process_curated.apply_speaker_map_and_redaction_masks(
           rows, self._realname_to_pseudonym)
 
   def testMissingSpeakerTag_raisesValueError(self):
@@ -173,8 +137,28 @@ class ApplySpeakerMapGetKeypressRedactionsTest(tf.test.TestCase):
         [1.8, 1.9, "Keypress", "v"],
         [5.2, 6.0, "SpeechTranscript", "What a nice day. [SpeakerTTS:Sean]"]]
     with self.assertRaisesRegex(ValueError, r"add Speaker or SpeakerTTS tag"):
-      elan_process_curated.apply_speaker_map_get_keypress_redactions(
+      elan_process_curated.apply_speaker_map_and_redaction_masks(
           rows, self._realname_to_pseudonym)
+
+  def testAppliesRedactionMasksAndSpeakerPseudonyms_forNoTimeSpans(self):
+    rows = [
+        [5.2, 6.0, "SpeechTranscript",
+         "Hi, Sean [Speaker:Danielle]"],
+        [15.2, 16.0, "SpeechTranscript",
+         "I have <RedactedSensitive>foo</RedactedSensitive> [Speaker:Danielle]"],
+        [25.2, 26.0, "SpeechTranscript",
+         "I think <RedactedSensitive>bar baz</RedactedSensitive> [Speaker:Danielle]"]]
+    ranges = elan_process_curated.apply_speaker_map_and_redaction_masks(
+        rows, self._realname_to_pseudonym)
+    self.assertEqual(
+        rows[0],
+        [5.2, 6.0, "SpeechTranscript", "Hi, Sean [Speaker:Partner005]"])
+    self.assertEqual(
+        rows[1],
+        [15.2, 16.0, "SpeechTranscript", "I have [RedactedSensitive] [Speaker:Partner005]"])
+    self.assertEqual(
+        rows[2],
+        [25.2, 26.0, "SpeechTranscript", "I think [RedactedSensitive] [Speaker:Partner005]"])
 
   def testExtractsRedactionTimeRangesCorrectly(self):
     rows = [
@@ -183,14 +167,20 @@ class ApplySpeakerMapGetKeypressRedactionsTest(tf.test.TestCase):
         [2.8, 2.9, "Keypress", "b"],
         [3.8, 3.9, "Keypress", "c"],
         [15.2, 16.0, "SpeechTranscript",
-         "I have [RedactedSensitive:00:00:01.500-00:00:04] [SpeakerTTS:Sean]"],
+         "I have <RedactedSensitive time=\"00:00:01.500-00:00:04\">abc</RedactedSensitive> [SpeakerTTS:Sean]"],
         [21.8, 21.9, "Keypress", "d"],
         [22.8, 22.9, "Keypress", "e"],
         [23.8, 23.9, "Keypress", "f"],
         [25.2, 26.0, "SpeechTranscript",
-         "I have [RedactedSensitive:00:00:21.500-00:00:23.600] [SpeakerTTS:Sean]"]]
-    ranges = elan_process_curated.apply_speaker_map_get_keypress_redactions(
+         "I have <RedactedSensitive time=\"00:00:21.500-00:00:23.600\">de</RedactedSensitive> [SpeakerTTS:Sean]"]]
+    ranges = elan_process_curated.apply_speaker_map_and_redaction_masks(
         rows, self._realname_to_pseudonym)
+    self.assertEqual(
+        rows[4][3],
+        "I have [RedactedSensitive time=\"1.500-4.000\"] [SpeakerTTS:User001]")
+    self.assertEqual(
+        rows[8][3],
+        "I have [RedactedSensitive time=\"21.500-23.600\"] [SpeakerTTS:User001]")
     self.assertEqual(ranges, [(1.5, 4.0), (21.5, 23.6)])
 
 
@@ -254,6 +244,117 @@ class RedactKeypressesTest(tf.test.TestCase):
         ValueError, r"2 unused keypress redaction time range.*0, 1.*18\.5.* 19"):
       elan_process_curated.redact_keypresses(rows, [(0, 1), (18.5, 19)])
 
+
+class CalculuateSpeechCurationStatsTest(tf.test.TestCase):
+
+  def setUp(self):
+    super().setUp()
+    original_rows = [
+        (1.0, 2.0, "SpeechTranscript", "When do you want to sleep [U1] [Speaker #1]"),
+        (10.0, 20.0, "SpeechTranscript", "How about kate o'clock [U2] [Speaker #2]"),
+        (21.0, 22.0, "SpeechTranscript", "Beep [U3] [Speaker #1]"),
+    ]
+    self.merged_tsv_path = os.path.join(self.get_temp_dir(), "merged.tsv")
+    with open(self.merged_tsv_path, "w") as f:
+      f.write(tsv_data.HEADER + "\n")
+      for row in original_rows:
+        f.write(tsv_data.DELIMITER.join([str(item) for item in row]) + "\n")
+    self.realname_to_pseudonym = {
+        "sean": "User001",
+        "tim": "Partner001",
+    }
+
+  def testCalculateStats_withAdditionsDeletionsAndEdits(self):
+    curated_rows = [
+        (1.0, 2.0, "SpeechTranscript", "When do you want to leave [U1] [SpeakerTTS:Sean]"),
+        (10.0, 20.0, "SpeechTranscript", "<RedactedSensitive>How about eight o'clock</RedactedSensitive> [U2] [Speaker:Tim]"),
+        (24.0, 25.0, "SpeechTranscript", "OK [SpeakerTTS:Sean]"),
+    ]
+    stats = elan_process_curated.calculate_speech_curation_stats(
+        self.merged_tsv_path, curated_rows, self.realname_to_pseudonym)
+    self.assertEqual(stats["original_num_utterances"], 3)
+    self.assertEqual(stats["curated_num_utterances"], 3)
+    self.assertEqual(stats["deleted_utterances"], [{
+        "utterance_id": "U3",
+        "utterance_summary": {
+            "char_length": 4,
+            "num_tokens": 1,
+            "token_lengths": [4],
+            "pos_tags": ["NN"],
+        },
+    }])
+    self.assertEqual(stats["added_utterances"], [{
+        "index": 2,
+        "utterance_summary": {
+            "char_length": 2,
+            "num_tokens": 1,
+            "pos_tags": ["NN"],
+            "token_lengths": [2],
+        },
+    }])
+    self.assertLen(stats["edited_utterances"], 2)
+    self.assertEqual(stats["edited_utterances"][0], {
+        "utterance_id": "U1",
+        "utterance_summary": {
+            "char_length": 25,
+            "num_tokens": 6,
+            "pos_tags": ["WRB", "VBP", "PRP", "VB", "TO", "VB"],
+            "token_lengths": [4, 2, 3, 4, 2, 5],
+            "wer": 1 / 6,
+        },
+    })
+    self.assertEqual(stats["edited_utterances"][1], {
+        "utterance_id": "U2",
+        "utterance_summary": {
+            "char_length": 23,
+            "num_tokens": 6,
+            "pos_tags": ["WRB", "RB", "CD", "NNS", "POS", "NN"],
+            "token_lengths": [3, 5, 5, 1, 1, 5],
+            "wer": 1 / 4,
+        },
+    })
+    self.assertEqual(stats["curated_speaker_id_to_original_speaker_id"], [{
+        "utterance_id": "U1",
+        "original_speaker_id": "#1",
+        "curated_speaker_id": "User001",
+    }, {
+        "utterance_id": "U2",
+        "original_speaker_id": "#2",
+        "curated_speaker_id": "Partner001",
+    }])
+
+  def testCalculateStats_raisesErrorForRemovedUtteranceId(self):
+    curated_rows = [
+        (1.0, 2.0, "SpeechTranscript", "When do you want to sleep [U1] [SpeakerTTS:Sean]"),
+        (10.0, 20.0, "SpeechTranscript", "How about kate o'clock [U2] [Speaker:Tim]"),
+        (21.0, 22.0, "SpeechTranscript", "Beep [Speaker #1]"),
+    ]
+    with self.assertRaisesRegex(
+        ValueError, r"deleted or changed .* utterance ID .*\[U3\]"):
+      elan_process_curated.calculate_speech_curation_stats(
+          self.merged_tsv_path, curated_rows, self.realname_to_pseudonym)
+
+  def testCalculateStats_raisesErrorForChangedUtteranceId(self):
+    curated_rows = [
+        (1.0, 2.0, "SpeechTranscript", "When do you want to sleep [U1] [SpeakerTTS:Sean]"),
+        (10.0, 20.0, "SpeechTranscript", "How about kate o'clock [U2] [Speaker:Tim]"),
+        (21.0, 22.0, "SpeechTranscript", "Beep [U30] [Speaker #1]"),
+    ]
+    with self.assertRaisesRegex(
+        ValueError, r"deleted or changed .* utterance ID .*\[U3\]"):
+      elan_process_curated.calculate_speech_curation_stats(
+          self.merged_tsv_path, curated_rows, self.realname_to_pseudonym)
+
+  def testCalculateStats_raisesErrorForDuplicateUtteranceTimeSpans(self):
+    curated_rows = [
+        (1.0, 2.0, "SpeechTranscript", "When do you want to sleep [U1] [SpeakerTTS:Sean]"),
+        (10.0, 20.0, "SpeechTranscript", "How about eight o'clock [U2] [Speaker:Tim]"),
+        (10.0, 20.0, "SpeechTranscript", "How about eight o'clock [U2] [Speaker:Tim]"),
+    ]
+    with self.assertRaisesRegex(
+        ValueError, r"multiple .* timestamp.*10.*20"):
+      elan_process_curated.calculate_speech_curation_stats(
+          self.merged_tsv_path, curated_rows, self.realname_to_pseudonym)
 
 
 if __name__ == "__main__":

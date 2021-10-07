@@ -158,6 +158,12 @@ possible errors in `curated.tsv` (an incomplete list):
 - Keypress redaction time ranges that are not found in the Keypresses tier of
   the `curated.tsv` file.
 
+Additionally, the postprocessing script generates a JSON file named
+`curated_processed.json` to accompany the TSV file. This file contains metadata such
+as timestamps and statistics of the curated speech utterances (e.g., automatically
+extracted part-of-speech tags, token count, token lenghts, etc.) prior to masking
+out the redacted sections.
+
 When you run into these errors, go back to ELAN, fix the problem and re-export
 the `curated.tsv` file and re-run the `elan_process_curated.tsv`. Fix all problem
 until the script says "Success..." and exports a file in the same directory named

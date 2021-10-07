@@ -14,18 +14,21 @@ It is written in the [Angular framework](https://angular.io/)
 3. Install the Angular CLI: `npm instal -g @angular/cli`
    - Make sure that the Angular CLI binary (`ng`) available on your path.
 
+It is recommended to use VSCode as the code editor for this project.
+
 ### Serving app locally
 
 ```sh
-cd WebUi
+cd webui
 ng serve
 ```
 
 Then open your browser and navigate to
 
-http://localhost:4200/?client_id=${CLIENT_ID}&client_secret=${CLIENT_SECRET}
+http://localhost:4200/?client_id=${CLIENT_ID}&client_secret=${CLIENT_SECRET}&endpoint=${SPEAKFASTER_ENDPOINT}
 
-wherr `CLIENT_ID` and `CLIENT_SECRET` are the Google OAuth2 credentials.
+where `CLIENT_ID` and `CLIENT_SECRET` are the Google OAuth2 credentials, and
+`SPEAKFASTER_ENDPOINT` is the HTTPS endpoint for the SpeakFaster server.
 
 ### Running unit tests
 
@@ -38,3 +41,9 @@ ng test
 ```sh
 ng lint
 ```
+
+### Auto-formatting TypeScript code.
+
+In VSCode, you can auto format the .ts file by using the shortcut key
+`Ctrl + Shift + I` (or the equivalent shortcut key on operatings systems
+other than Linux).

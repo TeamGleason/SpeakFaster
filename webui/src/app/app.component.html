@@ -13,7 +13,8 @@
 </style>
 
 <div class="content" role="main">
-  <auth-component></auth-component>
+  <!-- TODO(cais): Hide auth-component on newAccessToken. -->
+  <auth-component (newAccessToken)="onNewAccessToken($event)"></auth-component>
 </div>
 
 <router-outlet></router-outlet>

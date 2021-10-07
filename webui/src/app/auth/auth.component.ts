@@ -1,4 +1,4 @@
-import {Component} from '@angular/core';
+import {Component, EventEmitter, Output} from '@angular/core';
 import {MatSnackBar, MatSnackBarConfig} from '@angular/material/snack-bar';
 import {ActivatedRoute} from '@angular/router';
 
@@ -7,9 +7,7 @@ import {DeviceCodeResponse, GoogleDeviceAuthService, GoogleDeviceAuthServiceStub
 @Component({
   selector: 'auth-component',
   templateUrl: './auth.component.html',
-  providers: [
-    GoogleDeviceAuthService
-  ],
+  providers: [GoogleDeviceAuthService],
 })
 export class AuthComponent {
   clientId = '';
@@ -17,7 +15,10 @@ export class AuthComponent {
   accessToken = '';
   refreshToken = '';
 
-  readonly REFRESH_TOKEN_INTERVAL_SECONDS = 60 * 5;
+  private refreshTokenIntervalSeconds = 60 * 5;
+  private shouldStopRefreshToken = false;
+
+  @Output() newAccessToken: EventEmitter<string> = new EventEmitter();
 
   constructor(
       private route: ActivatedRoute,
@@ -53,10 +54,8 @@ export class AuthComponent {
               this.deviceCodeData = data;
               this.copyTextToClipboard(data.user_code);
               await this.pollForAccessTokenUntilSuccess();
-              // this.applyRefreshTokenIndefinitely();
-              console.log('500:');  // DEBUG
-              // this.snackBar.dismiss();
-              console.log('600:');  // DEBUG
+              this.applyRefreshTokenIndefinitely();
+              this.snackBar.dismiss();
             },
             error => {
               this.showSnackBar(
@@ -92,6 +91,17 @@ export class AuthComponent {
     });
   }
 
+  private async applyRefreshTokenOnce(): Promise<TokenResponse> {
+    return new Promise((resolve, reject) => {
+      this.authService
+          .applyRefreshToken(
+              this.clientId, this.clientSecret, this.refreshToken)
+          .subscribe(tokenResponse => {
+            return resolve(tokenResponse);
+          }, error => reject(error));
+    });
+  }
+
   /**
    * Poll the /token endpoint until an access token and a refresh token are
    * available.
@@ -106,19 +116,17 @@ export class AuthComponent {
     if (this.deviceCodeData.interval < 0) {
       return;
     }
-    console.log('pollForAccessTokenUntilSuccess:', this.deviceCodeData.interval);  // DEBUG
     while (true) {
       await this.sleepForSeconds(this.deviceCodeData.interval);
       try {
         const tokenResponse = await this.pollForAccessTokenOnce();
-        console.log('tokenResponse:', tokenResponse);  // DEBUG
         if (tokenResponse.access_token != null) {
           this.accessToken = tokenResponse.access_token;
           this.refreshToken = tokenResponse.refresh_token!;
+          this.newAccessToken.emit(this.accessToken);
           break;
         }
       } catch (error) {
-        // console.log('pollForAccessTokenUntilSuccess: error:', error);  // DEBUG
       }
     }
   }
@@ -133,28 +141,25 @@ export class AuthComponent {
     if (this.deviceCodeData!.interval < 0) {
       return;
     }
-    console.log('B100'); // DEBUG
     if (this.refreshToken === '') {
       throw new Error('Cannot apply refresh token: refresh token unavailable');
     }
-    while (true) {
-      await this.sleepForSeconds(this.REFRESH_TOKEN_INTERVAL_SECONDS);
-      this.authService
-          .applyRefreshToken(
-              this.clientId, this.clientSecret, this.refreshToken)
-          .subscribe(
-              data => {
-                if (data.access_token != null) {
-                  this.accessToken = data.access_token;
-                  console.log('Access token refreshed successfully');
-                } else {
-                  console.log(
-                      'Application of refresh token failed: No access_token found in response');
-                }
-              },
-              error => {
-                console.error('Application of refresh token failed:', error);
-              });
+    this.shouldStopRefreshToken = false;
+    while (!this.shouldStopRefreshToken) {
+      await this.sleepForSeconds(this.refreshTokenIntervalSeconds);
+      try {
+        const tokenResponse = await this.applyRefreshTokenOnce();
+        if (tokenResponse.access_token != null) {
+          this.accessToken = tokenResponse.access_token;
+          this.newAccessToken.emit(this.accessToken);
+          console.log('Access token refreshed successfully');
+        } else {
+          console.log(
+              'Application of refresh token failed: No access_token found in response');
+        }
+      } catch (error) {
+        console.error('Application of refresh token failed:', error);
+      }
     }
   }
 
@@ -165,7 +170,6 @@ export class AuthComponent {
   }
 
   private async copyTextToClipboard(text: string) {
-    // await this.sleepForSeconds(0.5);
     const textNode = document.createTextNode(text);
     document.body.appendChild(textNode);
     const range = document.createRange();
@@ -179,5 +183,13 @@ export class AuthComponent {
     console.log(`Copied ${text} to clipboard`);
 
     this.showSnackBar(`Copied ${text} to clipboard`, 'info');
+  }
+
+  setRefreshTokenIntervalSecondsForTest(refreshTokenIntervalSeconds: number) {
+    this.refreshTokenIntervalSeconds = refreshTokenIntervalSeconds;
+  }
+
+  stopRefreshTokenForTest() {
+    this.shouldStopRefreshToken = true;
   }
 }

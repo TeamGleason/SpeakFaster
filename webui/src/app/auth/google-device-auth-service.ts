@@ -17,12 +17,32 @@ export interface TokenResponse {
 }
 
 export interface GoogleDeviceAuthServiceStub {
+  /**
+   * Get device code. This is the first step in the limited-input-device
+   * authentication workflow.
+   * @param client_id
+   */
   getDeviceCode(client_id: string): Observable<DeviceCodeResponse>;
 
+  /**
+   * Poll for access token. This awaits the user to go to the verification URL,
+   * enter the user code, and select the Google Account for authentication.
+   * @param client_id
+   * @param client_secret
+   * @param device_code This comes from the return value of `getDeviceCode()`.
+   */
   pollForAccessToken(
       client_id: string, client_secret: string,
       device_code: string): Observable<TokenResponse>;
 
+  /**
+   * Use the refresh token from `pollForAccessToken()` to get a new access
+   * token.
+   * @param client_id
+   * @param client_secret
+   * @param refresh_token This comes from the return value of
+   *     `pollForAccessToken()`.
+   */
   applyRefreshToken(
       client_id: string, client_secret: string,
       refresh_token: string): Observable<TokenResponse>;
@@ -36,7 +56,6 @@ export class GoogleDeviceAuthService implements GoogleDeviceAuthServiceStub {
   constructor(private http: HttpClient) {}
 
   getDeviceCode(client_id: string) {
-    console.log('Actual getDeviceCode():', client_id);  // DEBUG
     return this.http.post<DeviceCodeResponse>(this.DEVICE_CODE_URL, {
       client_id,
       scope: 'email profile',

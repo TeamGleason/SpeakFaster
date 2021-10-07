@@ -128,25 +128,38 @@ command line:
 ```sh
 python elan_process_curated.py \
     /home/cais/sf_observer_data/session_5_practice_conversation_2 \
-    path/to/speaker_map.tsv
+    path/to/speaker_map.json
 ```
 
 The first argument is the path to directory where the `curated.tsv` is located.
-The second argument is the path to a TSV file that maps speaker's real first names
-to their respective pseudonyms. It is assumed to have two columns: `RealName`
-and `Pseudonym`. E.g.,
+The second argument is the path to a JSON file which is expected to contain a
+field `realname_to_pseudonym`, which maps speaker's real names
+to their respective pseudonyms. The JSON is also used by Observer for online
+speaker recognition. So it may have other fields such as `id_to_realname` and
+fields related to Azure speaker recognition configurations. These other fields
+are unused by the `elan_process_curated.py` script.
 
-```tsv
-RealName\tPseudonym
-Sean\tUser001
-Sherry\tParnter001
-Tim\tPartner002
+```json
+{
+  "azure_subscription_key": "<REDACTED>",
+  "azure_endpoint": "https://westus.api.cognitive.microsoft.com",
+  "id_to_realname": {
+    "c15e9704-bedf-4cab-9425-7aeedf7f0f79": "Sean",
+    "86b5bca5-903b-4e1a-853e-1ec6e3d1aad0": "Sherry"
+  },
+  "realname_to_pseudonym": {
+    "Sean": "User001",
+    "Sherry": "Partner001"
+  }
+}
 ```
+
+(The UUIDs, names, and pseudonyms in the sample JSON above are just examples.)
 
 The `elan_process_curated.py` script is able to find the following types of
 possible errors in `curated.tsv` (an incomplete list):
 
-- Duplicate real names or pseudonyms in the `speaker_map.tsv` file provided.
+- Duplicate real names or pseudonyms in the `speaker_map.json` file provided.
 - Incorrect # of columns
 - Incorrect tier names
 - tEnd value less than tBegin value in any row
@@ -173,8 +186,9 @@ until the script says "Success..." and exports a file in the same directory name
 
 NOTE: The aforementioned `elan_format_raw.py` and `elan_process_curated.py`
 scripts should automatically
-take care of the post-processing. The info in this section is relevant only if
-you plan to perform individual aspects of the pre- or post-processing yourself.
+take care of the pre- and post-processing. The info in this section is relevant
+only if you plan to perform individual aspects of the pre- or post-processing
+yourself.
 
 ### Audio Event Classification
 

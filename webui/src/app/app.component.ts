@@ -1,4 +1,4 @@
-import {Component} from '@angular/core';
+import {Component, OnInit} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
 
 import {SpeakFasterService} from './speakfaster-service';
@@ -8,7 +8,7 @@ import {SpeakFasterService} from './speakfaster-service';
   templateUrl: './app.component.html',
   providers: [SpeakFasterService],
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
   title = 'SpeakFasterApp';
 
   private endpoint: string = '';

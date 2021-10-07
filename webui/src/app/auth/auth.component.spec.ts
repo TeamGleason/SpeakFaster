@@ -145,7 +145,6 @@ describe('AuthComponent', () => {
   });
 
   it('applying refresh token should update access token', done => {
-    console.log('=== TEST BEGINS');  // DEBUG
     mockActivatedRoute.testParams = {
       client_id: 'foo_client_id',
       client_secret: 'bar_client_secret'
@@ -154,9 +153,6 @@ describe('AuthComponent', () => {
     const interval = 0.1;
     const refreshTokenInterval = 0.1;
     let seenAccessToken = '';
-    component.newAccessToken.subscribe(accessToken => {
-      seenAccessToken = accessToken;
-    });
     spyOn(component.authService, 'getDeviceCode').and.returnValue(of({
       user_code: 'test_user_code',
       verification_url: 'https://www.google.com/device',
@@ -178,8 +174,11 @@ describe('AuthComponent', () => {
 
     setTimeout(() => {
       fixture.detectChanges();
-      setTimeout(() => {
+      component.newAccessToken.subscribe(accessToken => {
+        seenAccessToken = accessToken;
         component.stopRefreshTokenForTest();
+      });
+      setTimeout(() => {
         fixture.detectChanges();
         expect(seenAccessToken).toEqual('new_test_access_token');
         done();

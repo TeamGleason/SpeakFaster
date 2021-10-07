@@ -26,10 +26,10 @@ describe('AppComponent', () => {
     expect(app.title).toEqual('SpeakFasterApp');
   });
 
-  it('should render title', () => {
+  it('should render app-auth-component initially', () => {
     const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('auth-component')).toBeTruthy();
+    expect(compiled.querySelector('app-auth-component')).toBeTruthy();
   });
 });

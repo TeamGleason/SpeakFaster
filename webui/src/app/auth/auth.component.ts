@@ -1,15 +1,15 @@
-import {Component, EventEmitter, Output} from '@angular/core';
+import {Component, EventEmitter, OnInit, Output} from '@angular/core';
 import {MatSnackBar, MatSnackBarConfig} from '@angular/material/snack-bar';
 import {ActivatedRoute} from '@angular/router';
 
 import {DeviceCodeResponse, GoogleDeviceAuthService, GoogleDeviceAuthServiceStub, TokenResponse} from './google-device-auth-service';
 
 @Component({
-  selector: 'auth-component',
+  selector: 'app-auth-component',
   templateUrl: './auth.component.html',
   providers: [GoogleDeviceAuthService],
 })
-export class AuthComponent {
+export class AuthComponent implements OnInit {
   clientId = '';
   clientSecret = '';
   accessToken = '';

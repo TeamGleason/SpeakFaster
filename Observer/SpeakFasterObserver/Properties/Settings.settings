@@ -11,5 +11,8 @@
     <Setting Name="IsRecordingMicWaveIn" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">True</Value>
     </Setting>
+    <Setting Name="SpeakerIdConfigPath" Type="System.String" Scope="User">
+      <Value Profile="(Default)">speak_faster_speaker_id_config.json</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

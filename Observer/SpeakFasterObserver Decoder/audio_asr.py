@@ -397,13 +397,16 @@ def transcribe_audio_to_tsv_with_diarization(input_audio_paths,
       utterances.append(best_transcript)
 
     regrouped_utterances = regroup_utterances(utterances, diarized_words)
+    utterance_counter = 0
     for (regrouped_utterance,
          speaker_index, start_time_sec, end_time_sec) in regrouped_utterances:
-      line = "%.3f\t%.3f\t%s\t%s [Speaker #%d]" % (
+      utterance_counter += 1
+      line = "%.3f\t%.3f\t%s\t%s [U%d] [Speaker #%d]" % (
           start_time_sec + begin_sec,
           end_time_sec + begin_sec,
           tsv_data.SPEECH_TRANSCRIPT_TIER,
           regrouped_utterance,
+          utterance_counter,
           speaker_index)
       print(line)
       f.write(line + "\n")
@@ -482,13 +485,16 @@ def async_transcribe(audio_file_paths,
     if not begin_sec:
       # Write the TSV header.
       f.write(tsv_data.HEADER + "\n")
+    utterance_counter = 0
     for (regrouped_utterance,
         speaker_index, start_time_sec, end_time_sec) in regrouped_utterances:
-      line = "%.3f\t%.3f\t%s\t%s [Speaker #%d]" % (
+      utterance_counter += 1
+      line = "%.3f\t%.3f\t%s\t%s [U%d] [Speaker #%d]" % (
           start_time_sec + begin_sec,
           end_time_sec + begin_sec,
           tsv_data.SPEECH_TRANSCRIPT_TIER,
           regrouped_utterance,
+          utterance_counter,
           speaker_index)
       print(line)
       f.write(line + "\n")

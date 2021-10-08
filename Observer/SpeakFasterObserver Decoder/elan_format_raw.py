@@ -79,8 +79,14 @@ def format_raw_data(input_dir,
     raise ValueError(
         "Cannot find at least one Keypresses protobuf file in %s" % input_dir)
   keypresses_tsv_path = os.path.join(input_dir, "keypresses.tsv")
-  format_keypresses(
+  first_keypress_time_sec = format_keypresses(
       keypresses_paths, audio_start_time_epoch, keypresses_tsv_path)
+
+  # Create a TSV file for TextEditorNavigation tier.
+  text_editor_navigation_tsv_path = os.path.join(
+      input_dir, "text_editor_navigation.tsv")
+  create_text_editor_nagivation_tier(
+      text_editor_navigation_tsv_path, first_keypress_time_sec)
 
   # Extract audio events.
   audio_events_tsv_path = os.path.join(input_dir, "audio_events.tsv")
@@ -93,8 +99,10 @@ def format_raw_data(input_dir,
   # Merge the files.
   merged_tsv_path = os.path.join(input_dir, "merged.tsv")
   print("Merging TSV files...")
+
   tsv_data.merge_tsv_files(
-      [keypresses_tsv_path, audio_events_tsv_path, asr_tsv_path], merged_tsv_path)
+      [keypresses_tsv_path, text_editor_navigation_tsv_path,
+       audio_events_tsv_path, asr_tsv_path], merged_tsv_path)
   print("Merged TSV file is at: %s" % merged_tsv_path)
 
 
@@ -140,7 +148,15 @@ def format_keypresses(keypresses_paths,
     start_epoch_time: Starting time of the data collection session,
       in seconds since the epoch.
     output_tsv_path: Path to the output TSV file.
+
+  Return:
+    Starting time of the first keypress, relative to start_epoch_time, in
+      seconds.
+
+  Raises:
+    ValueError, if there are no keypresses.
   """
+  first_keypress_time_sec = None
   with open(output_tsv_path, "w") as f:
     f.write(tsv_data.HEADER + "\n")
     for keypresses_path in keypresses_paths:
@@ -155,11 +171,27 @@ def format_keypresses(keypresses_paths,
       for keypress in keypresses.keyPresses:
         relative_time = (keypress.Timestamp.ToMilliseconds() / 1e3
                          - start_epoch_time)
+        if first_keypress_time_sec is None:
+          first_keypress_time_sec = relative_time
         f.write("%.3f\t%.3f\t%s\t%s\n" % (
             relative_time, relative_time + DUMMY_KEYPRESS_DURATION_SEC,
             tsv_data.KEYPRESS_TIER, keypress.KeyPress))
   print("Saved data for %d keypresses to %s" % (
       len(keypresses.keyPresses), output_tsv_path))
+  if first_keypress_epoch_ms is None:
+    raise ValueError("Found no keypress data at paths: %s" % keypresses_paths)
+  return first_keypress_time_sec
+
+
+def create_text_editor_nagivation_tier(tsv_path, first_keypress_time_sec):
+  """Create a TSV file with the TextEditorNavigation tier and only one event."""
+  with open(tsv_path, "w") as f:
+    f.write(tsv_data.HEADER + "\n")
+    f.write(tsv_data.DELIMITER.join(
+        ("%.3f" % first_keypress_time_sec,
+         "%.3f" % first_keypress_time_sec,
+         tsv_data.TEXT_EDITOR_NAVIGATION_TIER,
+         "FirstKeyStroke")))
 
 
 def extract_audio_events(concatenated_audio_path, output_tsv_path):

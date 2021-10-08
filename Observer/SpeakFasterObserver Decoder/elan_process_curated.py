@@ -30,8 +30,10 @@ REDACTED_KEY = "[RedactedKey]"
 _REDACT_TIME_RANGE_REGEX = re.compile("\[Redacted[A-Za-z]*?:.*?\]")
 
 
-def load_speaker_map(speaker_map_tsv_path):
-  """Loads speaker map.
+def load_speaker_map(speaker_map_json_path):
+  """Loads speaker map from JSON file.
+
+  See README.md for a definition of the expected schema of the JSON file.
 
   Args:
     speaker_map_tsv_path: Path to the tsv file that contains the columns
@@ -42,28 +44,24 @@ def load_speaker_map(speaker_map_tsv_path):
       to all lowercase.
   """
   expected_header = SPEAKER_MAP_DELIMITER.join(SPEKAER_MAP_COLUMN_HEADS)
+  with open(speaker_map_json_path, "r") as f:
+    json_obj = json.load(f)
+  if not "realname_to_pseudonym" in json_obj:
+    raise ValueError("Cannot find the field realname_to_pseudonym in %s" %
+                      speaker_map_json_path)
   realname_to_pseudonym = dict()
   pseudonym_to_realname = dict()
-  with open(speaker_map_tsv_path, "r") as f:
-    reader = csv.reader(f, delimiter="\t")
-    rows = list(reader)
-    if tuple(rows[0]) != SPEKAER_MAP_COLUMN_HEADS:
-      raise ValueError(
-          "Expected speaker map file to have header '%s', but got '%s'" %
-          (SPEKAER_MAP_COLUMN_HEADS, rows[0]))
-    for row in rows[1:]:
-      if not row:
-        break
-      realname, pseudonym = row
-      realname = realname.lower()
-      if realname in realname_to_pseudonym:
-        raise ValueError("Duplicate real name found in %s: %s" %
-            (speaker_map_tsv_path, realname))
-      if pseudonym in pseudonym_to_realname:
-        raise ValueError("Duplicate pseudonym found in %s: %s" %
-            (speaker_map_tsv_path, pseudonym))
-      realname_to_pseudonym[realname] = pseudonym
-      pseudonym_to_realname[pseudonym] = realname
+  for realname, pseudonym in json_obj["realname_to_pseudonym"].items():
+    realname = realname.strip().lower()
+    pseudonym = pseudonym.strip()
+    if realname in realname_to_pseudonym:
+      raise ValueError("Duplicate real names in %s: %s" %
+                       (speaker_map_json_path, realname))
+    realname_to_pseudonym[realname] = pseudonym
+    if pseudonym in pseudonym_to_realname:
+      raise ValueError("Duplicate pseudonyms in %s: %s" %
+                       (speaker_map_json_path, pseudonym))
+    pseudonym_to_realname[pseudonym] = realname
   print("Speaker map:", json.dumps(realname_to_pseudonym))
   return realname_to_pseudonym
 

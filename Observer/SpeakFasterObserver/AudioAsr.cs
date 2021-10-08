@@ -42,13 +42,14 @@ namespace SpeakFasterObserver
         //   - "azure_subscription_key": The subscription fee for the Azure speech service.
         //   - "azure_endpoint": The endpoint URL for Azure speech service, e.g.,
         //     "https://{AZURE_REGION}.api.cognitive.microsoft.com"
-        //   - "speaker_map": An object mapping enrolled profile IDs to speaker's names.
+        //   - "id_to_realname": An object mapping enrolled profile IDs to speaker's names.
+        //   - Potentially other fields used by other programs and scripts.
         private const bool ENABLE_SPEAKER_ID = true;
         private const string SPEAKER_ID_CONFIG_ENV_VAR_NAME =
             "SPEAK_FASTER_SPEAKER_ID_CONFIG";
 
         private readonly WaveFormat audioFormat;
-        private readonly SpeechClient speechClient;        
+        private readonly SpeechClient speechClient;
         private SpeechClient.StreamingRecognizeStream recogStream;
         // Buffer for holding samples for speech recognition.
         private readonly BufferedWaveProvider recogBuffer;
@@ -94,7 +95,7 @@ namespace SpeakFasterObserver
             speakerIdSubscriptionKey = jsonRoot.GetProperty("azure_subscription_key").GetString();
             // Read speaker map.
             speakerMap = new Dictionary<string, string>();
-            JsonElement speakerMapObj = jsonRoot.GetProperty("speaker_map");
+            JsonElement speakerMapObj = jsonRoot.GetProperty("id_to_realname");
             foreach (var speakerEntry in speakerMapObj.EnumerateObject())
             {
                 speakerMap.Add(speakerEntry.Name, speakerEntry.Value.GetString());

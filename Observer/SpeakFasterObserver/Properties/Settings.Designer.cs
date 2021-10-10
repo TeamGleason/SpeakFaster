@@ -70,5 +70,29 @@ namespace SpeakFasterObserver.Properties {
                 this["SpeakerIdConfigPath"] = value;
             }
         }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("speakfaster-webui")]
+        public string WebUiStaticFilesDir {
+            get {
+                return ((string)(this["WebUiStaticFilesDir"]));
+            }
+            set {
+                this["WebUiStaticFilesDir"] = value;
+            }
+        }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("43737")]
+        public int WebUiPort {
+            get {
+                return ((int)(this["WebUiPort"]));
+            }
+            set {
+                this["WebUiPort"] = value;
+            }
+        }
     }
 }

@@ -14,5 +14,11 @@
     <Setting Name="SpeakerIdConfigPath" Type="System.String" Scope="User">
       <Value Profile="(Default)">speak_faster_speaker_id_config.json</Value>
     </Setting>
+    <Setting Name="WebUiStaticFilesDir" Type="System.String" Scope="User">
+      <Value Profile="(Default)">speakfaster-webui</Value>
+    </Setting>
+    <Setting Name="WebUiPort" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">43737</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

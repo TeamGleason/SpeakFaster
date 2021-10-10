@@ -77,7 +77,8 @@ namespace SpeakFasterObserver
             Upload._dataDirectory = (dataPath);
             uploadTimer.Change(0, 60 * 1000);
 
-            // Start static content web server.
+            // Start static content web server if static content is found at the
+            // specified directory.
             StaticWebServer server = new();
             server.StartHttpServerIfStaticContentExists();
         }

@@ -19,10 +19,25 @@
   width: fit-content;
 }
 
+.focused-turn {
+  border: 3px solid gold;
+}
+
 .speaker-tag {
   background-color: green;
   border: 2px solid #888;
   color: gold;
+  border-radius: 5px;
+  display: inline-block;
+  font-size: 28px;
+  margin-right: 10px;
+  padding: 2px 5px;
+}
+
+.time-tag {
+  background-color: lightblue;
+  border: 2px solid #888;
+  color: black;
   border-radius: 5px;
   display: inline-block;
   font-size: 28px;
@@ -36,9 +51,12 @@
 
 </style>
 
-<div class="conversation-turn">
+<div class="conversation-turn" [ngClass]="{'focused-turn': isFocus}">
   <div *ngIf="turn.speaker !== null" class="speaker-tag">
     {{turn.speaker}}
+  </div>
+  <div class="time-tag">
+    {{agoString}}
   </div>
   <div class="turn-content">{{turn.content}}</div>
 </div>

@@ -1,4 +1,4 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, Input, OnInit} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
 
 import {SpeakFasterService} from './speakfaster-service';
@@ -35,5 +35,9 @@ export class AppComponent implements OnInit {
             console.log('Ping response:', data);
           });
     }
+  }
+
+  hasAccessToken(): boolean {
+    return this.accessToken !== '';
   }
 }

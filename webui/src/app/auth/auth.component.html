@@ -51,7 +51,7 @@
 
   </style>
 
-  <div class="content" role="main" (keypress)="onKeypress($event)">
+  <div class="content" role="main">
     <div *ngIf="accessToken === ''">
       <button (click)="authenticate()" id="authenticate">Authenticate (A)</button>
     </div>

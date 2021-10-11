@@ -1,20 +1,32 @@
 <style>
 
-  :host {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
-    font-size: 16px;
-    background-color: black;
-    color: #333;
-    box-sizing: border-box;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-  }
+:host {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  font-size: 16px;
+  background-color: black;
+  color: #333;
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.main-area {
+  border: 2px solid green;
+}
 
 </style>
 
 <div class="content" role="main">
-  <!-- TODO(cais): Hide app-auth-component on newAccessToken. -->
-  <app-auth-component (newAccessToken)="onNewAccessToken($event)"></app-auth-component>
+  <div *ngIf="!hasAccessToken()">
+    <app-auth-component (newAccessToken)="onNewAccessToken($event)"></app-auth-component>
+  </div>
+
+  <!-- TODO(cais): Guard with ngIf. DO NOT SUBMIT. -->
+  <!-- <div *ngIf="hasAccessToken()"> -->
+  <div class="main-area">
+    <app-context-component></app-context-component>
+  </div>
+
 </div>
 
 <router-outlet></router-outlet>

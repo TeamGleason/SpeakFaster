@@ -10,14 +10,21 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+.auth-area {
+  border: 2px solid yellow;
+  border-radius: 7px;
+  padding: 10px;
+}
+
 .main-area {
   border: 2px solid green;
+  border-radius: 7px;
 }
 
 </style>
 
 <div class="content" role="main">
-  <div *ngIf="!hasAccessToken()">
+  <div *ngIf="!hasAccessToken()" class="auth-area">
     <app-auth-component (newAccessToken)="onNewAccessToken($event)"></app-auth-component>
   </div>
 

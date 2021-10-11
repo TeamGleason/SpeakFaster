@@ -27,9 +27,11 @@
 </div>
 
 <div
-    *ngFor="let conversationTurn of conversationTurns"
+    *ngFor="let conversationTurn of conversationTurns; let i = index"
     class="conversation-turn">
   <app-conversation-turn-component
     [turn]="conversationTurn"
+    [isFocus]="i === focusIndex"
+    (click)="onTurnClicked($event, i)"
   ></app-conversation-turn-component>
 </div>

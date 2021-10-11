@@ -51,16 +51,16 @@
 
   </style>
 
-  <div class="content" role="main">
+  <div class="content" role="main" (keypress)="onKeypress($event)">
     <div *ngIf="accessToken === ''">
-      <button (click)="authenticate()" id="authenticate">Authenticate</button>
+      <button (click)="authenticate()" id="authenticate">Authenticate (A)</button>
     </div>
 
     <div *ngIf="deviceCodeData !== null && accessToken === ''" class="auth-instruction">
       <div class="auth-instruction-row">
         <div class="label">Go to URL</div>
         <div class="link">
-          <a href="{{deviceCodeData.verification_url}}" id="verification-url">
+          <a href="{{deviceCodeData.verification_url}}" target="_blank" id="verification-url">
             {{deviceCodeData.verification_url}}
           </a>
         </div>

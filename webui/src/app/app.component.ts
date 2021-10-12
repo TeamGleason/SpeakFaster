@@ -1,6 +1,7 @@
-import {Component, Input, OnInit} from '@angular/core';
+import {Component, OnInit} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
 
+import {ConversationTurn} from './context/context';
 import {SpeakFasterService} from './speakfaster-service';
 
 @Component({
@@ -11,8 +12,11 @@ import {SpeakFasterService} from './speakfaster-service';
 export class AppComponent implements OnInit {
   title = 'SpeakFasterApp';
 
-  private endpoint: string = '';
-  private accessToken: string = '';
+  private _endpoint: string = '';
+  private _accessToken: string = '';
+
+  speechContent: string|null = null;
+  inputAbbreviation: string = 'iwtnsh';
 
   constructor(
       private route: ActivatedRoute,
@@ -21,16 +25,15 @@ export class AppComponent implements OnInit {
   ngOnInit() {
     this.route.queryParams.subscribe(params => {
       if (params['endpoint'] && this.endpoint === '') {
-        this.endpoint = params['endpoint'];
-        console.log('SpeakFaster endpoint:', this.endpoint);
+        this._endpoint = params['endpoint'];
       }
     });
   }
 
   onNewAccessToken(accessToken: string) {
-    this.accessToken = accessToken;
+    this._accessToken = accessToken;
     if (this.endpoint) {
-      this.speakFasterService.ping(this.endpoint, this.accessToken)
+      this.speakFasterService.ping(this.endpoint, this._accessToken)
           .subscribe(data => {
             console.log('Ping response:', data);
           });
@@ -38,6 +41,22 @@ export class AppComponent implements OnInit {
   }
 
   hasAccessToken(): boolean {
-    return this.accessToken !== '';
+    return this._accessToken !== '';
+  }
+
+  get endpoint() {
+    return this._endpoint;
+  }
+
+  get accessToken() {
+    return this._accessToken;
+  }
+
+  onContextTurnSelected(contextTurn: ConversationTurn) {
+    this.speechContent = contextTurn.content;
+  }
+
+  onAbbreviationInput(event: Event) {
+    this.inputAbbreviation = (event.target as HTMLInputElement).value;
   }
 }

@@ -1,4 +1,4 @@
-import {Component, HostListener, OnInit} from '@angular/core';
+import {Component, EventEmitter, HostListener, OnInit, Output} from '@angular/core';
 
 import {secondsBeforeNow} from '../../utils/datetime-utils';
 
@@ -24,12 +24,16 @@ export class ContextComponent implements OnInit {
     }
   ];
 
+  @Output()
+  contextTurnSelected: EventEmitter<ConversationTurn> = new EventEmitter();
+
   private focusTurnIndex: number = -1;
 
   constructor() {}
 
   ngOnInit() {
     this.focusTurnIndex = this.conversationTurns.length - 1;
+    this.contextTurnSelected.emit(this.conversationTurns[this.focusTurnIndex]);
   }
 
   get focusIndex(): number {
@@ -38,14 +42,14 @@ export class ContextComponent implements OnInit {
 
   onTurnClicked(event: Event, index: number) {
     this.focusTurnIndex = index;
+    this.contextTurnSelected.emit(this.conversationTurns[index]);
   }
 
   // NOTE: document:keydown can prevent the default tab-switching
   // action of Alt + number keys.
   @HostListener('document:keydown', ['$event'])
   onKeydown(event: KeyboardEvent) {
-    event.preventDefault();
-    event.stopPropagation();
+    // event.stopPropagation();
     if (!event.altKey) {
       return;
     }
@@ -55,6 +59,7 @@ export class ContextComponent implements OnInit {
     const keyIndex = Number.parseInt(event.key) - 1;
     if (keyIndex >= 0 && keyIndex < this.conversationTurns.length) {
       this.focusTurnIndex = keyIndex;
+      event.preventDefault();
     }
   }
 }

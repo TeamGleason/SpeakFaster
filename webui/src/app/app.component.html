@@ -10,6 +10,18 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+app-context-component {
+  display: block;
+}
+
+.abbreviation-input {
+  border: 2px solid #888;
+  border-radius: 3px;
+  font-size: 32px;
+  margin: 6px 8px;
+  padding: 2px 4px;
+}
+
 .auth-area {
   border: 2px solid yellow;
   border-radius: 7px;
@@ -28,12 +40,22 @@
     <app-auth-component (newAccessToken)="onNewAccessToken($event)"></app-auth-component>
   </div>
 
-  <!-- TODO(cais): Guard with ngIf. DO NOT SUBMIT. -->
-  <!-- <div *ngIf="hasAccessToken()"> -->
-  <div class="main-area">
-    <app-context-component></app-context-component>
+  <div *ngIf="hasAccessToken()">
+    <app-context-component
+      (contextTurnSelected)="onContextTurnSelected($event)"
+    ></app-context-component>
+    <app-abbreviation-component
+      [endpoint]="endpoint"
+      [accessToken]="accessToken"
+      [abbreviation]="inputAbbreviation"
+      [speechContent]="speechContent"
+    ></app-abbreviation-component>
+    <input
+        class="abbreviation-input"
+        type="text"
+        value="{{inputAbbreviation}}"
+        (input)="onAbbreviationInput($event)" />
   </div>
-
 </div>
 
 <router-outlet></router-outlet>

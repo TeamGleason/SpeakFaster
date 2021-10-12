@@ -8,8 +8,17 @@ export interface PingResponse {
   ping_response: string;
 }
 
+export interface AbbreviationExpansionRespnose {
+  exactMatches?: string[];
+  prefixMatches?: string[];
+}
+
 export interface SpeakFasterServiceStub {
   ping(endpoint: string, accessToken: string): Observable<PingResponse>;
+
+  expandAbbreviation(
+      endpoint: string, accessToken: string, contextTurn: string,
+      abbreviation: string): Observable<AbbreviationExpansionRespnose>;
 }
 
 @Injectable()
@@ -20,6 +29,22 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
     return this.http.get<PingResponse>(endpoint, {
       params: {
         mode: 'ping',
+      },
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+      }
+    });
+  }
+
+  // TODO(cais): Add other parameters.
+  expandAbbreviation(
+      endpoint: string, accessToken: string, speechContent: string,
+      abbreviation: string) {
+    return this.http.get<AbbreviationExpansionRespnose>(endpoint, {
+      params: {
+        mode: 'abbreviation_expansion',
+        acronym: abbreviation,
+        speechContent,
       },
       headers: {
         'Authorization': `Bearer ${accessToken}`,

@@ -1,7 +1,8 @@
 import {Component, EventEmitter, HostListener, OnInit, Output} from '@angular/core';
 import {MatSnackBar, MatSnackBarConfig} from '@angular/material/snack-bar';
 import {ActivatedRoute} from '@angular/router';
-import { isPlainAlphanumericKey } from '../../utils/keyboard-utils';
+
+import {isPlainAlphanumericKey} from '../../utils/keyboard-utils';
 
 import {DeviceCodeResponse, GoogleDeviceAuthService, GoogleDeviceAuthServiceStub, TokenResponse} from './google-device-auth-service';
 
@@ -65,8 +66,8 @@ export class AuthComponent implements OnInit {
             });
   }
 
-  @HostListener('document:keypress', ['$event'])
-  onKeypress(event: KeyboardEvent) {
+  @HostListener('document:keydown', ['$event'])
+  onKeydown(event: KeyboardEvent) {
     if (isPlainAlphanumericKey(event, 'a') && this.deviceCodeData === null) {
       this.authenticate();
     }

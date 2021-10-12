@@ -206,7 +206,7 @@ namespace SpeakFasterObserver
             // 
             // screenshotTimer
             // 
-            this.screenshotTimer.Interval = 200;
+            this.screenshotTimer.Interval = 500;
             this.screenshotTimer.Tick += new System.EventHandler(this.screenshotTimer_Tick);
             // 
             // processCheckerTimer

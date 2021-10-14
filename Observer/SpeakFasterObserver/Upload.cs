@@ -12,8 +12,7 @@ namespace SpeakFasterObserver
     internal class Upload
     {
         private const string SCHEMA_VERSION = "SPO-2105";
-        // TODO(cais): Restore. DO NOT SUBMIT.
-        private const string BUCKET_NAME = "speak-faster-cais-test";  
+        private const string BUCKET_NAME = "speak-faster";  
 
         private static readonly AmazonS3Client _client;
 
@@ -69,8 +68,7 @@ namespace SpeakFasterObserver
 
             Debug.Assert(_client != null);
             Debug.Assert(_dataDirectory != null);
-            // TODO(cais): Restore. DO NOT SUBMIT.
-            //Debug.Assert(_gazeDevice != null);
+            Debug.Assert(_gazeDevice != null);
 
             if (_salt == null)
             {
@@ -93,9 +91,7 @@ namespace SpeakFasterObserver
                 var putRequest = new PutObjectRequest
                 {
                     BucketName = BUCKET_NAME,
-                    Key = $"observer_data/{SCHEMA_VERSION}/{FileNaming.CloudStoragePath(relativePathParts, "foo_gaze_device", _salt)}"
-                    // TODO(cais): Restore. DO NOT SUBMIT.
-                    //Key = $"observer_data/{SCHEMA_VERSION}/{FileNaming.CloudStoragePath(fileInfo, _gazeDevice, _salt)}"
+                    Key = $"observer_data/{SCHEMA_VERSION}/{FileNaming.CloudStoragePath(relativePathParts, _gazeDevice, _salt)}"
                 };
 
                 PutObjectResponse putResponse;
@@ -118,7 +114,6 @@ namespace SpeakFasterObserver
                         }
                         Debug.WriteLine($"Deleted directory of ended session: {sessionDir}");
                     }
-                    Debug.WriteLine("Uploaded " + fileInfo.FullName);  // DEBUG
                 }
             }
 

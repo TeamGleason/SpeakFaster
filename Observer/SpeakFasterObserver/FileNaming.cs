@@ -13,8 +13,7 @@ namespace SpeakFasterObserver
         private const string IN_PROGRESS_SUFFIX = ".InProgress";
         private const string SESSION_END_TOKEN_SUFFIX = "-SessionEnd.bin";
         private const string SESSION_DIR_PREFIX = "session-";
-        // TODO(cais): Change to 10. DO NOT SUBMIT.
-        private const double SESSION_DIR_DEBOUNCE_TIMESPAN_MINUTES = 2.0;
+        private const double SESSION_DIR_DEBOUNCE_TIMESPAN_MINUTES = 10.0;
         private static readonly object SESSION_LOCK = new object();
 
         private static string _cmfCache;

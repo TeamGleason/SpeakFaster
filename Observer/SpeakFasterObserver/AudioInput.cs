@@ -64,6 +64,12 @@ namespace SpeakFasterObserver
             isRecording = true;
         }
 
+        /** Sets the directory in which the audio data files will be stored. */
+        public void SetDataDirectory(string directoryPath)
+        {
+
+        }
+
         /**
          * Stops any ongoing recording from microphone.
          * 

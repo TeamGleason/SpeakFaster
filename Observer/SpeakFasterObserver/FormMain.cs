@@ -75,7 +75,9 @@ namespace SpeakFasterObserver
             keylogger = new Keylogger(KeyboardHookHandler);
 
             Upload._dataDirectory = (dataPath);
-            uploadTimer.Change(0, 60 * 1000);
+            //uploadTimer.Change(0, 60 * 1000);
+            // TODO(cais): Restore. DO NOT SUBMIT.
+            uploadTimer.Change(0, 10 * 1000);
         }
 
         #region Event Handlers
@@ -205,6 +207,8 @@ namespace SpeakFasterObserver
 
                 lastKeypressString = keypressString;
 
+                //keyloggerTimer.Change(10 * 1000, System.Threading.Timeout.Infinite);
+                // TODO(cais): Restore. DO NOT SUBMIT.
                 keyloggerTimer.Change(60 * 1000, System.Threading.Timeout.Infinite);
             }
         }
@@ -220,6 +224,9 @@ namespace SpeakFasterObserver
                                                     //&& tobiiComputerControlRunning      //  AND Tobii Computer Control
                 )
             {
+                FileNaming.RotateSessionDirectory(debounce: true);
+                // TODO(cais): Call it somewhere else. 
+                Debug.WriteLine("New session folder:.. ");  // DEBUG
                 // TODO: Optimize raw capture data to best time synchronize the captures
                 //   e.g. capture raw data to memory first, and compress/serialize/store later
 
@@ -253,6 +260,7 @@ namespace SpeakFasterObserver
                 {
                     blink1.Blink(Color.Red, new TimeSpan(0, 0, 5), 10);
                 }
+                FileNaming.RotateSessionDirectory(debounce: false);
             }
             else
             {

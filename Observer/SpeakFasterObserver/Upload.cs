@@ -1,7 +1,7 @@
 ﻿using Amazon.Runtime.CredentialManagement;
 using Amazon.S3;
 using Amazon.S3.Model;
-using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
@@ -80,7 +80,6 @@ namespace SpeakFasterObserver
                     return;
             }
 
-            var dataDirectory = new DirectoryInfo(_dataDirectory);
             foreach (string filePath in Directory.EnumerateFiles(_dataDirectory, "*", SearchOption.AllDirectories))
             {
                 FileInfo fileInfo = new(filePath);
@@ -109,12 +108,30 @@ namespace SpeakFasterObserver
                 if (putResponse.HttpStatusCode == HttpStatusCode.OK)
                 {
                     fileInfo.Delete();
-                    // TODO(cais): Delete the file's parent directory if there is nothing left in it?
+                    // If the file that was just uploaded successfully is a session-end token, remove the session directory.
+                    if (FileNaming.IsSessionEndToken(filePath))
+                    {
+                        string sessionDir = Path.GetDirectoryName(filePath);
+                        if (IsDirectoryEmpty(sessionDir))
+                        {
+                            Directory.Delete(sessionDir);
+                        }
+                        Debug.WriteLine($"Deleted directory of ended session: {sessionDir}");
+                    }
                     Debug.WriteLine("Uploaded " + fileInfo.FullName);  // DEBUG
                 }
             }
 
             _uploading = false;
+        }
+
+        private static bool IsDirectoryEmpty(string dirPath)
+        {
+            IEnumerable<string> items = Directory.EnumerateFileSystemEntries(dirPath);
+            using (var enumerator = items.GetEnumerator())
+            {
+                return !enumerator.MoveNext();
+            }
         }
     }
 }

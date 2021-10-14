@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Globalization;
 using System.Management;
@@ -10,9 +11,11 @@ namespace SpeakFasterObserver
     class FileNaming
     {
         private const string IN_PROGRESS_SUFFIX = ".InProgress";
+        private const string SESSION_END_TOKEN_SUFFIX = "-SessionEnd.bin";
         private const string SESSION_DIR_PREFIX = "session-";
-        // TODO(cais): Maybe change to 10.0 minutes.
-        private const double SESSION_DIR_DEBOUNCE_TIMESPAN_MINUTES = 1.0;
+        // TODO(cais): Change to 10. DO NOT SUBMIT.
+        private const double SESSION_DIR_DEBOUNCE_TIMESPAN_MINUTES = 2.0;
+        private static readonly object SESSION_LOCK = new object();
 
         private static string _cmfCache;
         public static string ComputerManufacturerFamily
@@ -48,7 +51,7 @@ namespace SpeakFasterObserver
             return $"{DateTime.Now:yyyyMMddTHHmmssfff}";
         }
 
-        public static string GetTimestampUtc()
+        public static string GetUtcTimestamp()
         {
             return $"{DateTime.UtcNow:yyyyMMddTHHmmssfffZ}";
         }
@@ -108,7 +111,18 @@ namespace SpeakFasterObserver
             return filePath;
         }
 
-        private static string sessionDirectoryName = $"{SESSION_DIR_PREFIX}{GetTimestampUtc()}";
+        public static Boolean IsSessionEndToken(String filePath)
+        {
+            return filePath.EndsWith(SESSION_END_TOKEN_SUFFIX);
+        }
+
+        private static string GetSessionEndTokenFilePath(string dataDir)
+        {
+            string dirName = GetCurrentSessionDirectory(dataDir);
+            return Path.Combine(dirName, $"{GetTimestamp()}{SESSION_END_TOKEN_SUFFIX}");
+        }
+
+        private static string sessionDirectoryName = null;
 
         /**
          * Gets the current session directory. 
@@ -120,28 +134,58 @@ namespace SpeakFasterObserver
          */
         private static string GetCurrentSessionDirectory(string dataDir)
         {
-            string sessionDirectory = Path.Combine(dataDir, sessionDirectoryName);
-            // Create the directory if and only if it doesn't exist yet.
-            Directory.CreateDirectory(sessionDirectory);
-            return sessionDirectory;
+            lock (SESSION_LOCK)
+            {
+                string sessionDirectory = Path.Combine(dataDir, sessionDirectoryName);
+                // Create the directory if and only if it doesn't exist yet.
+                Directory.CreateDirectory(sessionDirectory);
+                return sessionDirectory;
+            }
         }
 
-        public static void RotateSessionDirectory(bool debounce = false)
+        /**
+         * Rotate session directory, optionally with debouncing.
+         * 
+         * Args:
+         *   dataDir: Path to the root directory in which the session directories reside.
+         *   debounce: Optional flag for debouncing. If false, a new session directory will
+         *     always be created.
+         * 
+         * Returns:
+         *   A boolean indicating whether a new session directory is created.
+         */
+        public static bool RotateSessionDirectory(string dataDir, bool debounce = false)
         {
-            if (debounce)
+            lock (SESSION_LOCK)
             {
-                string timestamp = sessionDirectoryName.Substring(SESSION_DIR_PREFIX.Length);
-                DateTime prevDateTime;
-                DateTime.TryParseExact(
-                    timestamp, "yyyyMMddTHHmmssfffZ", CultureInfo.CurrentCulture, DateTimeStyles.None,
-                    out prevDateTime);
-                var elapsed = DateTime.UtcNow.Subtract(prevDateTime);
-                if (elapsed.CompareTo(TimeSpan.FromMinutes(SESSION_DIR_DEBOUNCE_TIMESPAN_MINUTES)) < 0)
+                if (debounce && sessionDirectoryName != null)
                 {
-                    return;
+                    string timestamp = sessionDirectoryName.Substring(SESSION_DIR_PREFIX.Length);
+                    DateTime prevDateTime;
+                    DateTime.TryParseExact(
+                        timestamp, "yyyyMMddTHHmmssfffZ", CultureInfo.InvariantCulture, DateTimeStyles.None,
+                        out prevDateTime);
+                    prevDateTime = prevDateTime.ToUniversalTime();
+                    var elapsed = DateTime.UtcNow.Subtract(prevDateTime);
+                    if (elapsed.CompareTo(TimeSpan.FromMinutes(SESSION_DIR_DEBOUNCE_TIMESPAN_MINUTES)) < 0)
+                    {
+                        Debug.WriteLine("Creation of session bounced.");
+                        return false;
+                    }
                 }
+                // Put a session end token in the old session directory to indicate its end.
+                if (sessionDirectoryName != null)
+                {
+                    string sessionEndToken = GetSessionEndTokenFilePath(dataDir);
+                    if (!File.Exists(sessionEndToken))
+                    {
+                        File.Create(sessionEndToken).Dispose();
+                    }
+                }
+                sessionDirectoryName = $"{SESSION_DIR_PREFIX}{GetUtcTimestamp()}";
+                Debug.WriteLine($"Created new session directory: {sessionDirectoryName}");
+                return true;
             }
-            sessionDirectoryName = $"session-{GetTimestampUtc()}";
         }
     }
 }

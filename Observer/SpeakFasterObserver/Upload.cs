@@ -86,6 +86,11 @@ namespace SpeakFasterObserver
                     // Skip uploading in-progress file.
                     continue;
                 }
+                if (FileNaming.IsNonSessionBufferFile(fileInfo.FullName))
+                {
+                    // Skip non-session buffer files.
+                    continue;
+                }
 
                 string[] relativePathParts = Path.GetRelativePath(_dataDirectory, filePath).Split(Path.DirectorySeparatorChar);
                 var putRequest = new PutObjectRequest

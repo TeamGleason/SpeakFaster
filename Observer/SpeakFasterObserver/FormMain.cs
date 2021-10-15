@@ -23,7 +23,7 @@ namespace SpeakFasterObserver
         static bool balabolkaRunning = false;
         static bool balabolkaFocused = false;
         static bool tobiiComputerControlRunning = false;
-        static bool isRecordingInBalabolka = false;
+        static SessionManager sessionManager;
         static AudioInput audioInput;
         static ScreenCapture screenCapture;
         private static string lastKeypressString = String.Empty;
@@ -42,7 +42,8 @@ namespace SpeakFasterObserver
                 "SpeakFasterObserver");
 
             gazeDevice = new ToltTech.GazeInput.TobiiStreamEngine();
-            audioInput = new AudioInput(dataPath);
+            sessionManager = new(dataPath);
+            audioInput = new();
 
             if (!gazeDevice.IsAvailable)
             {
@@ -148,6 +149,7 @@ namespace SpeakFasterObserver
             if (isRecording && isRecordingMicWaveIn)
             {
                 audioInput.RotateFlacWriter();
+                audioInput.SetNewFlacPath(sessionManager.GetMicWavInFilePath());
             }
 
             Upload.Timer_Tick(state);
@@ -155,9 +157,9 @@ namespace SpeakFasterObserver
 
         private void screenshotTimer_Tick(object sender, EventArgs e)
         {
-            RotateSessionWithDebouncing();
+            UpdateSessionManagerState();
             var timestamp = FileNaming.GetTimestamp();
-            var filePath = FileNaming.GetScreenshotFilePath(dataPath, timestamp);
+            var filePath = sessionManager.GetScreenshotFilePath();
             CaptureScreenshot(timestamp, filePath);
         }
 
@@ -178,21 +180,22 @@ namespace SpeakFasterObserver
             SaveKeypresses();
         }
 
-        private static void RotateSessionWithDebouncing()
+        private static void UpdateSessionManagerState()
         {
-            bool newIsRecordingInBalabolka = isRecording && balabolkaFocused;
-            if (newIsRecordingInBalabolka && !isRecordingInBalabolka)
-            {
+            bool isRecordingInBalabolka = isRecording && balabolkaFocused;
+            sessionManager.SetFocusFlag(isRecordingInBalabolka, () => { 
                 SaveKeypresses();
-                bool isNewSessionCreated = FileNaming.RotateSessionDirectory(dataPath, debounce: true);
-                if (isNewSessionCreated)
+                if (isRecordingMicWaveIn)
                 {
-                    if (isRecordingMicWaveIn) {
-                        audioInput.RotateFlacWriter();
-                    }
+                    audioInput.RotateFlacWriter();
                 }
-            }
-            isRecordingInBalabolka = newIsRecordingInBalabolka;
+            }, () =>
+            {
+                if (isRecordingMicWaveIn)
+                {
+                    audioInput.SetNewFlacPath(sessionManager.GetMicWavInFilePath());
+                }
+            });
         }
 
         private static void KeyboardHookHandler(int vkCode)
@@ -218,7 +221,7 @@ namespace SpeakFasterObserver
                 if (lastKeypressString.Equals("LControlKey") && keypressString.Equals("W"))
                 {
                     var timestamp = FileNaming.GetTimestamp();
-                    var filePath = FileNaming.GetSpeechScreenshotFilePath(dataPath, timestamp);
+                    var filePath = sessionManager.GetSpeechScreenshotFilePath();
                     CaptureScreenshot(timestamp, filePath);
                 }
 
@@ -272,10 +275,12 @@ namespace SpeakFasterObserver
                 {
                     blink1.Blink(Color.Red, new TimeSpan(0, 0, 5), 10);
                 }
-                FileNaming.RotateSessionDirectory(dataPath, debounce: false);
+                UpdateSessionManagerState();
             }
             else
             {
+                SaveKeypresses();
+                sessionManager.EndCurrentSession();
                 notifyIcon.Icon = new Icon("Assets\\RecordingOff.ico");
                 notifyIcon.Text = "Observer - Recording Off";
                 toggleButtonOnOff.Text = "Recording Off";
@@ -310,7 +315,7 @@ namespace SpeakFasterObserver
 
             if (isRecording && isRecordingMicWaveIn)
             {
-                audioInput.StartRecordingFromMicrophone();
+                audioInput.StartRecordingFromMicrophone(sessionManager.GetMicWavInFilePath());
             }
             else
             {
@@ -376,7 +381,7 @@ namespace SpeakFasterObserver
 
             if (oldKeypresses.KeyPresses_.Count == 0) return;
 
-            var filename = FileNaming.GetKeypressesProtobufFilePath(dataPath);
+            var filename = sessionManager.GetKeypressesProtobufFilePath();
             using (var file = File.Create(filename))
             {
                 oldKeypresses.WriteTo(file);
@@ -393,6 +398,7 @@ namespace SpeakFasterObserver
 
             audioInput.StopRecordingFromMicrophone();
             SaveKeypresses();
+            sessionManager.EndCurrentSession();
 
             keylogger.Dispose();
             keylogger = null;

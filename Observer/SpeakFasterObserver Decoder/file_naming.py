@@ -18,20 +18,30 @@ def parse_timestamp(timestamp):
 
   Returns:
     A datetime.datetime object.
+    A boolean indicating whether the timestamp is in UTC.
   """
-  return datetime.strptime(timestamp, "%Y%m%dT%H%M%S%f")
+  is_utc = timestamp.endswith("Z")
+  if is_utc:
+    timestamp = timestamp[:-1]
+  return datetime.strptime(timestamp, "%Y%m%dT%H%M%S%f"), is_utc
 
 
 def parse_timestamp_from_filename(filename):
   """Parse timestamp from a SpeakFaster Observer data filename."""
   filename = os.path.basename(filename)
-  return parse_timestamp(filename.split("-", 1)[0])
+  timestamp = filename.split("-", 1)[0]
+  return parse_timestamp(timestamp)
 
 
 def parse_epoch_seconds_from_filename(filename, timezone):
   """Parse epoch timestamp (in seconds) from filename and timezone name."""
-  tz = pytz.timezone(timezone)
-  return tz.localize(parse_timestamp_from_filename(filename)).timestamp()
+  dt, is_utc = parse_timestamp_from_filename(filename)
+  if is_utc:
+    tz = pytz.timezone("UTC")
+  else:
+    tz = pytz.timezone(timezone)
+  return tz.localize(dt).timestamp()
+
 
 def get_data_stream_name(filename):
   """Get the data stream name.

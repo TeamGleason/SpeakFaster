@@ -13,7 +13,8 @@ import file_naming
 class ParseTimestampTest(tf.test.TestCase):
 
   def testParsesTimestamp_resultsCorrectResult_beforeNoon(self):
-    out = file_naming.parse_timestamp("20210710T095258428")
+    out, is_utc = file_naming.parse_timestamp("20210710T095258428")
+    self.assertFalse(is_utc)
     self.assertEqual(out.year, 2021)
     self.assertEqual(out.month, 7)
     self.assertEqual(out.day, 10)
@@ -23,11 +24,23 @@ class ParseTimestampTest(tf.test.TestCase):
     self.assertEqual(out.microsecond, 428000)
 
   def testParsesTimestamp_resultsCorrectResult_afterNoon(self):
-    out = file_naming.parse_timestamp("20210710T235258428")
+    out, is_utc = file_naming.parse_timestamp("20210710T235258428")
+    self.assertFalse(is_utc)
     self.assertEqual(out.year, 2021)
     self.assertEqual(out.month, 7)
     self.assertEqual(out.day, 10)
     self.assertEqual(out.hour, 23)
+    self.assertEqual(out.minute, 52)
+    self.assertEqual(out.second, 58)
+    self.assertEqual(out.microsecond, 428000)
+
+  def testParseTimestamp_utc(self):
+    out, is_utc = file_naming.parse_timestamp("20210710T095258428Z")
+    self.assertTrue(is_utc)
+    self.assertEqual(out.year, 2021)
+    self.assertEqual(out.month, 7)
+    self.assertEqual(out.day, 10)
+    self.assertEqual(out.hour, 9)
     self.assertEqual(out.minute, 52)
     self.assertEqual(out.second, 58)
     self.assertEqual(out.microsecond, 428000)
@@ -43,8 +56,9 @@ class ParseTimestampTest(tf.test.TestCase):
 class ParseTimestampFromFilenameTest(tf.test.TestCase):
 
   def testParse_basenameOnly_returnsCorrectValue(self):
-    out = file_naming.parse_timestamp_from_filename(
+    out, is_utc = file_naming.parse_timestamp_from_filename(
         "20210710T095258428-MicWaveIn.flac")
+    self.assertFalse(is_utc)
     self.assertEqual(out.year, 2021)
     self.assertEqual(out.month, 7)
     self.assertEqual(out.day, 10)
@@ -54,8 +68,9 @@ class ParseTimestampFromFilenameTest(tf.test.TestCase):
     self.assertEqual(out.microsecond, 428000)
 
   def testParse_fullPath_returnsCorrectValue(self):
-    out = file_naming.parse_timestamp_from_filename(
-        os.path.join("tmp", "data", "20210710T095258428-MicWaveIn.flac"))
+    out, is_utc = file_naming.parse_timestamp_from_filename(
+        os.path.join("tmp", "data", "20210710T095258428Z-MicWaveIn.flac"))
+    self.assertTrue(is_utc)
     self.assertEqual(out.year, 2021)
     self.assertEqual(out.month, 7)
     self.assertEqual(out.day, 10)

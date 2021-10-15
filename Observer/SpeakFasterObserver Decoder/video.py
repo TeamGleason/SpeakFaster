@@ -55,9 +55,9 @@ def stitch_images_into_mp4(image_paths,
     initial_frame_image_path = os.path.join(tmp_dir, "first_frame.jpg")
     Image.new("RGB", (image_width, image_height)).save(initial_frame_image_path)
 
-  timestamp0 = file_naming.parse_timestamp_from_filename(image_paths[0])
+  timestamp0, _ = file_naming.parse_timestamp_from_filename(image_paths[0])
   for image_path in image_paths[1:]:
-    timestamp = file_naming.parse_timestamp_from_filename(image_path)
+    timestamp, _ = file_naming.parse_timestamp_from_filename(image_path)
     if timestamp < timestamp0:
       raise ValueError(
           "Timestamp of image file is out of order: %s" % image_path)

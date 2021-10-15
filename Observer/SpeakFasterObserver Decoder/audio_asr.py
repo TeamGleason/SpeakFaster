@@ -88,11 +88,11 @@ def get_consecutive_audio_file_paths(
   total_duration_sec = 0.0
   audio_path = first_audio_path
   while candidate_paths:
-    timestamp = file_naming.parse_timestamp_from_filename(audio_path)
+    timestamp, _ = file_naming.parse_timestamp_from_filename(audio_path)
     duration_sec = get_audio_file_duration_sec(audio_path)
     durations_sec.append(duration_sec)
     total_duration_sec += duration_sec
-    next_timestamp = file_naming.parse_timestamp_from_filename(
+    next_timestamp, _ = file_naming.parse_timestamp_from_filename(
         candidate_paths[0])
     time_diff = next_timestamp - timestamp
     if np.abs(time_diff.total_seconds() - duration_sec) < tolerance_seconds:

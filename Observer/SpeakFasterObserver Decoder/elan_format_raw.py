@@ -113,12 +113,10 @@ def read_and_concatenate_audio_files(input_dir, timezone):
         "Make sure you are pointing to a valid data directory." % input_dir)
   first_audio_path = sorted(
       glob.glob(os.path.join(input_dir, "*-MicWaveIn.flac")))[0]
-  audio_start_time = file_naming.parse_timestamp_from_filename(first_audio_path)
-  tz = pytz.timezone(timezone)
-  audio_start_time = tz.localize(audio_start_time)
-  audio_start_time_epoch = audio_start_time.timestamp()
-  print("Audio data start time: %s (%.3f)" % (
-      audio_start_time, audio_start_time_epoch))
+  audio_start_time, audio_start_time_epoch = get_epoch_time_from_file_path(
+      first_audio_path, timezone)
+  print("Audio data start time: %s (%s)" %
+        (audio_start_time, audio_start_time_epoch))
   path_groups, group_durations_sec = audio_asr.get_consecutive_audio_file_paths(
       first_audio_path)
   all_audio_paths = []
@@ -132,6 +130,17 @@ def read_and_concatenate_audio_files(input_dir, timezone):
       concatenated_audio_path, audio_duration_s))
   return (first_audio_path,
           concatenated_audio_path, audio_start_time_epoch, audio_duration_s)
+
+
+def get_epoch_time_from_file_path(file_path, timezone):
+  (audio_start_time,
+   is_utc) = file_naming.parse_timestamp_from_filename(file_path)
+  if is_utc:
+    tz = pytz.timezone("UTC")
+  else:
+    tz = pytz.timezone(timezone)
+  dt = tz.localize(audio_start_time)
+  return dt, dt.timestamp()
 
 
 DUMMY_KEYPRESS_DURATION_SEC = 0.1

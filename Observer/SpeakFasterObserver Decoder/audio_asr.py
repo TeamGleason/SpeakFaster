@@ -578,7 +578,7 @@ if __name__ == "__main__":
     if not args.use_async:
       raise ValueError("--fill_gaps is supported only under --use_async")
     # Gaps will be filled. Just use a large enough tolerance.
-    tolerance_seconds = 24.0 * 3600 * 3600
+    tolerance_seconds = 24.0 * 3600
   else:
     tolerance_seconds = 1.0
   path_groups, group_durations_sec = get_consecutive_audio_file_paths(

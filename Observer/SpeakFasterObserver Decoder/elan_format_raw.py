@@ -111,23 +111,17 @@ def read_and_concatenate_audio_files(input_dir, timezone):
     raise ValueError(
         "Cannot find any *-MicWaveIn.flac audio files in directory %s. "
         "Make sure you are pointing to a valid data directory." % input_dir)
-  first_audio_path = sorted(
-      glob.glob(os.path.join(input_dir, "*-MicWaveIn.flac")))[0]
+  all_audio_paths = sorted(
+      glob.glob(os.path.join(input_dir, "*-MicWaveIn.flac")))
+  print("Found %s audio file: %s" % (len(all_audio_paths), all_audio_paths))
+  first_audio_path = all_audio_paths[0]
   audio_start_time, audio_start_time_epoch = get_epoch_time_from_file_path(
       first_audio_path, timezone)
   print("Audio data start time: %s (%s)" %
         (audio_start_time, audio_start_time_epoch))
-  path_groups, group_durations_sec = audio_asr.get_consecutive_audio_file_paths(
-      first_audio_path)
-  all_audio_paths = []
-  for path_group in path_groups:
-    all_audio_paths.extend(path_group)
-  print("Found %s audio file: %s" % (len(all_audio_paths), all_audio_paths))
   concatenated_audio_path = os.path.join(input_dir, "concatenated_audio.flac")
   audio_duration_s = audio_asr.concatenate_audio_files(
-      all_audio_paths, concatenated_audio_path)
-  print("Saved concatenated audio file to %s (duration = %.3f s)" % (
-      concatenated_audio_path, audio_duration_s))
+      all_audio_paths, concatenated_audio_path, fill_gaps=True)
   return (first_audio_path,
           concatenated_audio_path, audio_start_time_epoch, audio_duration_s)
 
@@ -228,6 +222,7 @@ def run_asr(first_audio_path,
       os.path.join(os.path.dirname(__file__), "audio_asr.py"),
       # Async mode gives slightly higher accuracy compared to streaming mode.
       "--use_async",
+      "--fill_gaps",
       "--speaker_count=%d" % speaker_count,
       "--bucket_name=%s" % gcs_bucket_name,
       first_audio_path,

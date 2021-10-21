@@ -16,28 +16,77 @@ import numpy as np
 import pydub
 from google.cloud import speech_v1p1beta1 as speech
 from google.cloud import storage
+from scipy.io import wavfile
 
 import file_naming
 import tsv_data
 
 
-def concatenate_audio_files(input_paths, output_path):
+def concatenate_audio_files(input_paths,
+                            output_path,
+                            fill_gaps=False,
+                            timestamp_error_tolerance_sec=0.5):
   """Concatenate audio files into one file.
 
   Args:
     input_paths: Paths to the input audio files.
     output_path: Path to the output file.
+    fill_gaps: Whether the gaps between the consecutive audio files
+      will be filled with all-zero samples.
+    timestamp_error_tolerance_sec: Maximum tolerated error for timestamp
+      errors. This applies only if fill_gaps is True, in which case
+      the "negative gaps" (where the timestamp of an audio file happens
+      before the end time of the previous audio file) are asserted to be
+      less than this tolerance. If the tolerance is exceeded, an error will
+      be thrown.
 
   Returns:
     Duration of the concatenation result, in seconds.
   """
   if not input_paths:
     raise ValueError("Empty input paths")
+
+  if fill_gaps:
+    # Determine the duration of each audio file and the gaps between them.
+    input_paths = sorted(input_paths)
+    start_timestamps = []
+    durations_sec = []
+    for input_path in input_paths:
+      timestamp, _ = file_naming.parse_timestamp_from_filename(input_path)
+      start_timestamps.append(timestamp.timestamp())
+      durations_sec.append(get_audio_file_duration_sec(input_path))
+    start_delays = np.diff(np.array(start_timestamps))
+    durations_sec = np.array(durations_sec)[:-1]
+    gaps_sec = start_delays - durations_sec
+
   pure_path = pathlib.PurePath(input_paths[0])
   audio_seg = pydub.AudioSegment.from_file(pure_path, pure_path.suffix[1:])
-  for input_path in input_paths[1:]:
+  sample_rate_hz = get_sample_rate(pure_path)
+  num_channels = audio_seg.channels
+  sample_width = audio_seg.sample_width
+  for i, input_path in enumerate(input_paths[1:]):
+    if fill_gaps:
+      if gaps_sec[i] > 0:
+        temp_wav_path = tempfile.mktemp(suffix=".wav")
+        create_all_zeros_wav_file(
+            temp_wav_path,
+            sample_rate_hz,
+            gaps_sec[i],
+            sample_width=audio_seg.sample_width,
+            num_channels=audio_seg.channels)
+        audio_seg += pydub.AudioSegment.from_file(temp_wav_path, "wav")
+        print("Filled a gap between audio files of length %.3f s" % gaps_sec[i])
+        os.remove(temp_wav_path)
+      elif gaps_sec[i] < -timestamp_error_tolerance_sec:
+        raise ValueError(
+            "Timestamp of audio file %s is too early compared to the "
+            "end timestamp of the previous audio file %s." %
+            (input_path, input_paths[i - 1]))
     pure_path = pathlib.PurePath(input_path)
-    audio_seg += pydub.AudioSegment.from_file(pure_path, pure_path.suffix[1:])
+    new_audio_seg = pydub.AudioSegment.from_file(pure_path, pure_path.suffix[1:])
+    assert new_audio_seg.channels == num_channels, "Channel count mismatch"
+    assert new_audio_seg.sample_width == sample_width, "Sample width mismatch"
+    audio_seg += new_audio_seg
   pure_path = pathlib.PurePath(output_path)
   output_format = pure_path.suffix[1:].lower()
   audio_seg.export(pure_path, output_format)
@@ -46,11 +95,28 @@ def concatenate_audio_files(input_paths, output_path):
   return len(audio_seg) / 1e3
 
 
+
+def get_sample_rate(audio_file_path):
+  return int(pydub.utils.mediainfo(audio_file_path)["sample_rate"])
+
+
 def get_audio_file_duration_sec(file_path):
   """Get the duration of given audio file, in seconds."""
   pure_path = pathlib.PurePath(file_path)
   audio_seg = pydub.AudioSegment.from_file(pure_path, pure_path.suffix[1:])
   return audio_seg.duration_seconds
+
+
+def create_all_zeros_wav_file(file_path,
+                              sample_rate_hz,
+                              duration_sec,
+                              sample_width=2,
+                              num_channels=1):
+  assert sample_width == 2
+  assert num_channels == 1
+  wavfile.write(
+      file_path, sample_rate_hz,
+      np.zeros([int(sample_rate_hz * duration_sec)], dtype=np.int16))
 
 
 GCLOUD_SPEECH_STREAMING_LENGTH_LIMIT_SEC = 240
@@ -63,7 +129,8 @@ def get_consecutive_audio_file_paths(
   """Get the paths to the consecutive audio files.
 
   It is assumed that the audio basename of the file path has the format:
-      yyyymmddThhmmssf-{DataStream}.{Extension}.
+      yyyymmddThhmmssf-{DataStream}.{Extension}, or if the UTC timezone is used:
+      yyyymmddThhmmssfZ-{DataStream}.{Extension}
 
   NOTE: It is assumed that there is no interleaving of more than one series
       of audio files.
@@ -95,7 +162,8 @@ def get_consecutive_audio_file_paths(
     next_timestamp, _ = file_naming.parse_timestamp_from_filename(
         candidate_paths[0])
     time_diff = next_timestamp - timestamp
-    if np.abs(time_diff.total_seconds() - duration_sec) < tolerance_seconds:
+    if tolerance_seconds > 0 and (
+        np.abs(time_diff.total_seconds() - duration_sec) < tolerance_seconds):
       output_paths.append(candidate_paths[0])
       audio_path = candidate_paths[0]
       del candidate_paths[0]
@@ -211,10 +279,12 @@ def parse_args():
       "--bucket_name",
       default="sf_test_audio_uploads",
       help="GCS bucket used for holding objects for async transcription.")
+  parser.add_argument(
+      "--fill_gaps",
+      action="store_true",
+      help="Use all audio files in the same input dir and after first_audio_path, "
+      "and fill in the gaps (if any) between the files.")
   return parser.parse_args()
-
-
-
 
 
 def regroup_utterances(utterances, words):
@@ -418,7 +488,8 @@ def async_transcribe(audio_file_paths,
                      sample_rate,
                      language_code,
                      speaker_count=0,
-                     begin_sec=0.0):
+                     begin_sec=0.0,
+                     fill_gaps=False):
   """Transcribe a given audio file using the async GCloud Speech-to-Text API.
 
   The async API has the advantage of being able to handler longer audio without
@@ -438,7 +509,8 @@ def async_transcribe(audio_file_paths,
   """
   tmp_audio_file = tempfile.mktemp(suffix=".flac")
   print("Temporary audio file: %s" % tmp_audio_file)
-  audio_duration_s = concatenate_audio_files(audio_file_paths, tmp_audio_file)
+  audio_duration_s = concatenate_audio_files(
+      audio_file_paths, tmp_audio_file, fill_gaps=fill_gaps)
 
   storage_client = storage.Client()
   bucket = storage_client.bucket(bucket_name)
@@ -502,8 +574,15 @@ def async_transcribe(audio_file_paths,
 
 if __name__ == "__main__":
   args = parse_args()
+  if args.fill_gaps:
+    if not args.use_async:
+      raise ValueError("--fill_gaps is supported only under --use_async")
+    # Gaps will be filled. Just use a large enough tolerance.
+    tolerance_seconds = 24.0 * 3600
+  else:
+    tolerance_seconds = 1.0
   path_groups, group_durations_sec = get_consecutive_audio_file_paths(
-      args.first_audio_path)
+      args.first_audio_path, tolerance_seconds=tolerance_seconds)
   num_audio_files = sum(len(group) for group in path_groups)
   total_duration_sec = sum(group_durations_sec)
   print("Transcribing %d consecutive audio files (%f seconds):\n\t%s" % (
@@ -522,7 +601,8 @@ if __name__ == "__main__":
         args.sample_rate,
         args.language_code,
         speaker_count=args.speaker_count,
-        begin_sec=cum_duration_sec)
+        begin_sec=cum_duration_sec,
+        fill_gaps=args.fill_gaps)
   else:
     for audio_file_paths, group_duration_sec in zip(
           path_groups, group_durations_sec):

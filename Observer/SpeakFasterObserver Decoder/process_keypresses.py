@@ -215,6 +215,9 @@ class Phrase:
         self.end_index = 0  # Index of the last keypress in the phrase
         self.start_timestamp = None
         self.end_timestamp = None
+        # A string used for visualizing the key sequences. It includes
+        # the gaze-initiated and machine-predicted characters, backspaces,
+        # and so forth.
         self.visualized_string = ""
         self.ending_string = ""
         self.was_spoken = False
@@ -230,6 +233,33 @@ class Phrase:
         self.wpm = 0.0
         self.ksr = 0.0
         self.error = 0.0
+
+    def add_control_key(self, control_key, num_gaze_keypresses):
+        """Add a control key (i.e., a key entered with the Ctrl key on).
+
+        Args:
+          control_key: The control key to be added. This is the second of
+            the keypresses used to enter the control key, represented as
+            a KeyPress proto.
+          num_gaze_keypresses: Number of gaze keypreses used to enter this
+            control key.
+        """
+        self.visualized_string += CONTROL_KEYS[control_key.KeyPress]
+        self.gaze_keypress_count += num_gaze_keypresses
+        # TODO(cais): Process control keys including cut, paste, undo, and redo.
+
+    def add_non_control_key(self, keypress, shift_on=False):
+        """Add a non-control key (i.e., a key entered without the Ctrl key).
+
+        Args:
+          keypress: The non-control key, represented as a KeyPress proto.
+          shift_on: Whether the Shift key is held when `key` is entered.
+        """
+        self.visualized_string += output_for_keypress(
+            keypress.KeyPress, shift_on=shift_on)
+        self.character_count += 1
+        self.gaze_keypress_count += 2 if shift_on else 1
+        # TODO(cais): Handle Backspace and other special keys.
 
     def finalize(self):
         """
@@ -381,22 +411,101 @@ def visualize_keypresses(keypresses, args):
 
     current_key_index = 0
 
+    # Assume the first key is gaze initialized.
     while current_key_index < total_keyspresses:
         keypress = keypresses.keyPresses[current_key_index]
         current_timestamp = datetime_from_protobuf_timestamp(keypress.Timestamp)
+        is_current_gaze_initialized, _ = is_key_gaze_initiated(
+            keypresses, current_key_index, total_keyspresses
+        )
         is_next_gaze_initialized, next_character_delta = is_key_gaze_initiated(
             keypresses, current_key_index + 1, total_keyspresses
         )
 
         if is_phrase_start:
+            # print(f"{current_key_index}: new phrase")  # DEBUG
             current_phrase = Phrase()
             current_phrase.start_index = current_key_index
             is_phrase_start = False
             is_phrase_end = False
             current_phrase.start_timestamp = current_timestamp
 
-        if not is_next_gaze_initialized:
-            # there is a subsequent character, and it was inserted programmatically
+        if (
+            keypress.KeyPress == "LControlKey" or keypress.KeyPress == "RControlKey"
+        ) and (
+            is_current_gaze_initialized or is_next_gaze_initialized
+        ) and current_key_index + 1 < total_keyspresses:
+            # TODO How does the user erase the state of the previously spoken phrase
+            # before entering the next phrase? Without the state erasure, the previous
+            # phrase will be spoken alongside the next one, which is undesirable.
+            next_keypress = keypresses.keyPresses[current_key_index + 1]
+            if next_keypress.KeyPress == "W":
+                # Ctrl-W == Speak
+                is_phrase_end = True
+                current_key_index += 2
+                current_phrase.gaze_keypress_count += 2
+                current_phrase.speak()
+            elif next_keypress.KeyPress in CANCEL_KEYS:
+                # TODO If ctrl-A is followed by ctrl-W, was phrase cancelled?
+                is_phrase_end = True
+                current_key_index += 2
+                current_phrase.gaze_keypress_count += 2
+                current_phrase.cancel(CANCEL_KEYS[next_keypress.KeyPress])
+            elif next_keypress.KeyPress in CONTROL_KEYS:
+                current_phrase.add_control_key(
+                    next_keypress, num_gaze_keypresses=2)
+                current_key_index += 2
+            else:
+                # Handle the control key in isolation
+                current_phrase.add_non_control_key(keypress, shift_on=False)
+                # current_phrase.visualized_string += output_for_keypress(
+                #     keypress.KeyPress, False
+                # )
+                # current_phrase.character_count += 1
+                # current_phrase.gaze_keypress_count += 1
+                current_key_index += 1
+        elif keypress.KeyPress == "LShiftKey":
+            if (
+                current_key_index + 1 < total_keyspresses
+                and keypresses.keyPresses[current_key_index + 1].KeyPress
+                != "LShiftKey"
+                and keypresses.keyPresses[current_key_index + 1].KeyPress
+                != "LControlKey"
+            ):
+                current_phrase.add_non_control_key(
+                    keypresses.keyPresses[current_key_index + 1], shift_on=True)
+                # current_phrase.visualized_string += output_for_keypress(
+                #     keypresses.keyPresses[current_key_index + 1].KeyPress,
+                #     shift_on=True
+                # )
+                current_key_index += 2
+                # current_phrase.character_count += 1
+                # current_phrase.gaze_keypress_count += 2
+            else:
+                current_phrase.add_non_control_key(keypress, shift_on=False)
+                # current_phrase.visualized_string += output_for_keypress(
+                #     keypress.KeyPress,
+                #     shift_on=False
+                # )
+                # current_phrase.character_count += 1
+                current_key_index += 1
+                # current_phrase.gaze_keypress_count += 1
+        elif is_next_gaze_initialized:
+            # next character is gaze initated.
+            if keypress.KeyPress == "Back":
+                current_phrase.backspace_count += 1
+                current_phrase.character_count -= 1
+                current_phrase.gaze_keypress_count += 1
+            else:
+                current_phrase.character_count += 1
+                current_phrase.gaze_keypress_count += 1
+            # current_phrase.add_non_control_key(keypress, shift_on=False)
+            current_phrase.visualized_string += output_for_keypress(
+                keypress.KeyPress, shift_on=False
+            )
+            current_key_index += 1
+        else:
+            # next character is not gaze initiated.
             if (
                 keypress.KeyPress == "LControlKey"
                 and current_key_index + 3 < total_keyspresses
@@ -439,72 +548,6 @@ def visualize_keypresses(keypresses, args):
                 current_phrase.visualized_string += str(current_prediction)
 
                 current_phrase.predictions.append(current_prediction)
-        else:
-            # next character is gaze initated
-            if (
-                keypress.KeyPress == "LControlKey" or keypress.KeyPress == "RControlKey"
-            ) and current_key_index + 1 < total_keyspresses:
-                next_keypress = keypresses.keyPresses[current_key_index + 1]
-                if next_keypress.KeyPress == "W":
-                    # Ctrl-W == Speak
-                    is_phrase_end = True
-                    current_key_index += 2
-                    current_phrase.gaze_keypress_count += 2
-                    current_phrase.speak()
-                elif next_keypress.KeyPress in CANCEL_KEYS:
-                    # TODO If ctrl-A is followed by ctrl-W, was phrase cancelled?
-                    is_phrase_end = True
-                    current_key_index += 2
-                    current_phrase.gaze_keypress_count += 2
-                    current_phrase.cancel(CANCEL_KEYS[next_keypress.KeyPress])
-                elif next_keypress.KeyPress in CONTROL_KEYS:
-                    current_phrase.visualized_string += CONTROL_KEYS[
-                        next_keypress.KeyPress
-                    ]
-                    current_key_index += 2
-                    current_phrase.gaze_keypress_count += 2
-                else:
-                    # Handle the control key in isolation
-                    current_phrase.visualized_string += output_for_keypress(
-                        keypress.KeyPress, False
-                    )
-                    current_phrase.character_count += 1
-                    current_phrase.gaze_keypress_count += 1
-                    current_key_index += 1
-            elif keypress.KeyPress == "LShiftKey":
-                if (
-                    current_key_index + 1 < total_keyspresses
-                    and keypresses.keyPresses[current_key_index + 1].KeyPress
-                    != "LShiftKey"
-                    and keypresses.keyPresses[current_key_index + 1].KeyPress
-                    != "LControlKey"
-                ):
-                    current_phrase.visualized_string += output_for_keypress(
-                        keypresses.keyPresses[current_key_index + 1].KeyPress, True
-                    )
-                    current_key_index += 2
-                    current_phrase.character_count += 1
-                    current_phrase.gaze_keypress_count += 2
-                else:
-                    current_phrase.visualized_string += output_for_keypress(
-                        keypress.KeyPress, False
-                    )
-                    current_phrase.character_count += 1
-                    current_key_index += 1
-                    current_phrase.gaze_keypress_count += 1
-            else:
-                if keypress.KeyPress == "Back":
-                    current_phrase.backspace_count += 1
-                    current_phrase.character_count -= 1
-                    current_phrase.gaze_keypress_count += 1
-                else:
-                    current_phrase.character_count += 1
-                    current_phrase.gaze_keypress_count += 1
-
-                current_phrase.visualized_string += output_for_keypress(
-                    keypress.KeyPress, False
-                )
-                current_key_index += 1
 
         if next_character_delta > LONG_DELTA_TIME:
             is_phrase_end = True
@@ -615,7 +658,6 @@ def visualize_keypresses(keypresses, args):
             f"Predictions mismatch, {predictions_count} predicitons but found {len(predictions)}"
         )
 
-    visualization_string += f"{phrase}\n"
     visualization_string += "\n"
     visualization_string += f"🗪[Speak: {spoken_count}, AverageWPM: {average_wpms:5.1f}, TopWPM: {top_wpm:5.1f}]\n"
     visualization_string += f"Total Keypresses: {total_keyspresses} Gaze: {total_gaze_keypress_count} Characters: {total_character_count}\n"

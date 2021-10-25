@@ -275,7 +275,6 @@ def main():
         args.input_dir)
     tsv_path = os.path.join(args.input_dir, "keypresses_phrases.tsv")
     process_keypresses.visualize_keypresses(keypresses_data, tsv_path=tsv_path)
-    # TODO(cais): Make this write to TSV file.
   else:
     format_raw_data(
         args.input_dir,

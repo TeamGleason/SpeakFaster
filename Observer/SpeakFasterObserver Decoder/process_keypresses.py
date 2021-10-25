@@ -13,6 +13,7 @@ import string
 import sys
 
 import keypresses_pb2
+import tsv_data
 
 # Assuming that eye gaze activation faster than 300ms is faster than
 # realistically possible.  This is useful for detecting automatic insertion of
@@ -116,6 +117,7 @@ SHIFTED_SPECIAL_KEYS = {
     "End": "🔚",
 }
 
+
 # pylint: disable=too-few-public-methods
 class Prediction:
     """
@@ -140,7 +142,7 @@ class Prediction:
             -1  # the number of extra characters contributed to the actual output, 3 in the case of "🗩🠠🠠HELLO "
         )
         self.start_index = current_key_index
-        self.end_index = 0
+        self.end_index = 0  # Inclusive end index.
         self.prediction_string = ""
         self.keystrokes = []
 
@@ -210,10 +212,10 @@ class Phrase:
     """
 
     # pylint: disable=too-many-instance-attributes
-    def __init__(self, start_timestamp):
+    def __init__(self, start_timestamp, start_index):
         """Creates a `Phrase` instance."""
         # TODO: Better encapsulation by making more public members private.
-        self.start_index = 0  # Index of the first keypress in the phrase
+        self.start_index = start_index  # Index of the first keypress in the phrase
         self.end_index = 0  # Index of the last keypress in the phrase
         self._start_timestamp = start_timestamp
         self._end_timestamp = None
@@ -316,13 +318,14 @@ class Phrase:
           prediction: A `Prediction` object.
         """
         self.gaze_keypress_count += 1
-        # TODO(cais): Should this be prediciton.length?
         self.machine_keypress_count += prediction.length - 1
         for prediction_char in prediction.prediction_string:
             if prediction_char == "🠠" and self._recon_string:
                 self._recon_string = self._recon_string[:-1]
             elif is_character(prediction_char):
-                self._recon_string += prediction_char
+                # TODO Find a way to determine whether prediction contains upper
+                # or lower case letters.
+                self._recon_string += prediction_char.lower()
             else:
                 raise ValueError(
                     "Unable to process character '%s' in prediction" %
@@ -339,20 +342,36 @@ class Phrase:
     def character_count(self):
         return len(self._recon_string)
 
-    def finalize(self, end_timestamp):
+    @property
+    def start_timestamp(self):
+        return self._start_timestamp
+
+    @property
+    def end_timestamp(self):
+        return self._end_timestamp
+
+    def finalize(self, keypresses, end_index):
         """
         When the phrase is complete, we want to run various calculations for
         WPM, KSR, and Error rate.  We also validate to ensure there are no
         missing Keypresses in the range.
+
+        Args:
+          keypresses: A KeyPresses proto that the phrase belong to.
+            self.start_index is assumed to belong to `keypresses`.
+          end_index: Inclusive ending index among `keypresses`.
         """
-        self._end_timestamp = end_timestamp
+        assert end_index >= 0 and end_index < len(keypresses.keyPresses)
+        self.end_index = end_index
+        self._end_timestamp = datetime_from_protobuf_timestamp(
+            keypresses.keyPresses[end_index].Timestamp)
         self.calculate_wpm()
         self.calculate_ksr()
         self.calculate_error()
         self.validate()
 
         for idx in range(self.start_index, self.end_index):
-            current_keypress = KEYPRESSES.keyPresses[idx]
+            current_keypress = keypresses.keyPresses[idx]
             self.keystrokes.append(
                 {
                     current_keypress.KeyPress,
@@ -484,7 +503,11 @@ class Phrase:
 # pylint: disable=too-many-branches
 # pylint: disable=too-many-statements
 # pylint: disable=too-many-locals
-def visualize_keypresses(keypresses, args):
+def visualize_keypresses(keypresses,
+                         visualize_path=None,
+                         prediction_path=None,
+                         phrases_path=None,
+                         tsv_path=None):
     """
     Processes the keypresses object, breaking it down into Phrases.
 
@@ -512,8 +535,7 @@ def visualize_keypresses(keypresses, args):
         )
 
         if is_phrase_start:
-            current_phrase = Phrase(current_timestamp)
-            current_phrase.start_index = current_key_index
+            current_phrase = Phrase(current_timestamp, current_key_index)
             is_phrase_start = False
             is_phrase_end = False
         if (
@@ -616,10 +638,7 @@ def visualize_keypresses(keypresses, args):
             # The current_key_index is pointing to the beginning of the next
             # phrase. Grab the timestamp from the keypress just before it,
             # which is the end of the current phrase.
-            current_phrase.end_index = current_key_index - 1
-            end_keypress = keypresses.keyPresses[current_phrase.end_index]
-            current_phrase.finalize(datetime_from_protobuf_timestamp(
-                end_keypress.Timestamp))
+            current_phrase.finalize(keypresses, end_index=(current_key_index - 1))
 
             phrases.append(current_phrase)
 
@@ -718,17 +737,21 @@ def visualize_keypresses(keypresses, args):
     predictions_string = jsonpickle.encode(predictions)
     phrases_string = jsonpickle.encode(phrases)
 
-    if args.visualize_path:
-        save_string_to_file(args.visualize_path, visualization_string)
-        print(f"Visualization saved to {args.visualize_path}")
+    if visualize_path:
+        save_string_to_file(visualize_path, visualization_string)
+        print(f"Visualization saved to {visualize_path}")
 
-    if args.prediction_path:
-        save_string_to_file(args.prediction_path, predictions_string)
-        print(f"Predictions saved to {args.prediction_path}")
+    if prediction_path:
+        save_string_to_file(prediction_path, predictions_string)
+        print(f"Predictions saved to {prediction_path}")
 
-    if args.phrases_path:
-        save_string_to_file(args.phrases_path, phrases_string)
-        print(f"Phrases saved to {args.phrases_path}")
+    if phrases_path:
+        save_string_to_file(phrases_path, phrases_string)
+        print(f"Phrases saved to {phrases_path}")
+
+    if tsv_path:
+        save_recon_strings_to_tsv_file(tsv_path, phrases)
+        print(f"Reconstructed strings saved to {tsv_path}")
 
 
 def list_keypresses(keypresses, args):
@@ -925,6 +948,29 @@ def save_string_to_file(output_filepath, output_string):
         file.write(output_string.encode())
 
 
+def save_recon_strings_to_tsv_file(tsv_path, phrases):
+    """Saves the reconstructed strings from the phrases to a TSV file.
+
+    Args:
+      tsv_path: Path to the output tsv file.
+      phrases: An iterable of Phrase objects.
+    """
+    if not phrases:
+        raise ValueError("Empty phrases")
+    firt_timestamp = phrases[0].start_timestamp.timestamp()
+    with open(tsv_path, "w") as f:
+        f.write(tsv_data.HEADER + "\n")
+        for phrase in phrases:
+            if not phrase.recon_string:
+                continue
+            line = "%.3f\t%.3f\t%s\t%s" % (
+                phrase.start_timestamp.timestamp() - firt_timestamp,
+                phrase.end_timestamp.timestamp() - firt_timestamp,
+                tsv_data.KEYPRESS_PHRASE_TIER,
+                phrase.recon_string)
+            f.write(line + "\n")
+
+
 def parse_arguments():
     """Parses command line arguments.
 
@@ -1002,6 +1048,10 @@ if __name__ == "__main__":
         sys.exit()
 
     list_keypresses(KEYPRESSES, parsed_args)
-    visualize_keypresses(KEYPRESSES, parsed_args)
+    visualize_keypresses(
+        KEYPRESSES,
+        visualize_path=parsed_args.visualize_path,
+        prediction_path=parsed_args.prediction_path,
+        phrases_path=parsed_args.phrases_path)
 
     print("Processing Complete")

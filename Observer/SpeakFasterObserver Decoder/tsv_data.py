@@ -17,6 +17,8 @@ HEADER = DELIMITER.join(COLUMN_HEADS)
 # Tier names. Must be unique.
 AUDIO_EVENTS_TIER = "AudioEvents1"
 KEYPRESS_TIER = "Keypress"
+# Phrase reconstructed from keypresses.
+KEYPRESS_PHRASE_TIER = "KeypressPhrase"
 SPEECH_TRANSCRIPT_TIER = "SpeechTranscript"
 TEXT_EDITOR_NAVIGATION_TIER = "TextEditorNavigation"
 VISUAL_OBJECTS_EVENTS_TIER = "VisualObjects1"

@@ -13,8 +13,9 @@ import pytz
 import audio_asr
 import file_naming
 import keypresses_pb2
-import video
+import process_keypresses
 import tsv_data
+import video
 
 
 def format_raw_data(input_dir,
@@ -22,7 +23,8 @@ def format_raw_data(input_dir,
                     speaker_count,
                     gcs_bucket_name,
                     dummy_video_frame_image_path=None,
-                    skip_screenshots=False):
+                    skip_screenshots=False,
+                    keypresses_only=False):
   """Processes a raw Observer data session.
 
   Args:
@@ -249,6 +251,11 @@ def parse_args():
       action="store_true",
       help="Skip the processing of screenshots.")
   parser.add_argument(
+      "--keypresses_only",
+      action="store_true",
+      help="Process only the keystrokes. Skip audio data and screenshots "
+      "(if any).")
+  parser.add_argument(
       "--gcs_bucket_name",
       type=str,
       default="sf_test_audio_uploads",
@@ -263,13 +270,20 @@ def parse_args():
 
 def main():
   args = parse_args()
-  format_raw_data(
-      args.input_dir,
-      args.timezone,
-      args.speaker_count,
-      args.gcs_bucket_name,
-      dummy_video_frame_image_path=args.dummy_video_frame_image_path,
-      skip_screenshots=args.skip_screenshots)
+  if args.keypresses_only:
+    keypresses_data = process_keypresses.load_keypresses_from_directory(
+        args.input_dir)
+    tsv_path = os.path.join(args.input_dir, "keypresses_phrases.tsv")
+    process_keypresses.visualize_keypresses(keypresses_data, tsv_path=tsv_path)
+    # TODO(cais): Make this write to TSV file.
+  else:
+    format_raw_data(
+        args.input_dir,
+        args.timezone,
+        args.speaker_count,
+        args.gcs_bucket_name,
+        dummy_video_frame_image_path=args.dummy_video_frame_image_path,
+        skip_screenshots=args.skip_screenshots)
 
 
 if __name__ == "__main__":

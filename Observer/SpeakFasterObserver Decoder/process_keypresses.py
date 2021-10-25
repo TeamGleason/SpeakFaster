@@ -154,7 +154,7 @@ class Prediction:
             current_keypress = keypresses.keyPresses[index]
 
             self.prediction_string += output_for_keypress(
-                current_keypress.KeyPress, False
+                current_keypress.KeyPress, shift_on=False
             )
 
             # Just keep processing automatic keypresses until next gaze initiated key
@@ -283,6 +283,24 @@ class Phrase:
         self.machine_keypress_count += 3
         # TODO(cais): Calculate the deleted word.
 
+    def add_prediction(self, prediction):
+        """Register a prediction.
+
+        A prediction is a sequence of automatically entered keys that
+        corresponds to a selected word or phrase prediction. It potentially
+        includes Back keys for deleting an existing part of the current word
+        or phrase that includes mistakes.
+
+        Args:
+          prediction: A `Prediction` object.
+        """
+        self.character_count += prediction.gain + 1
+        self.gaze_keypress_count += 1
+        # TODO(cais): Should this be prediciton.length?
+        self.machine_keypress_count += prediction.length - 1
+        self.visualized_string += str(prediction)
+        self.predictions.append(prediction)
+
     def finalize(self):
         """
         When the phrase is complete, we want to run various calculations for
@@ -357,12 +375,17 @@ class Phrase:
                 "Phrase end error. Phrase was not Cancelled, Timeout, or Spoken!"
             )
 
-    def cancel(self, ending_string):
+    def cancel(self, keypress):
         """
-        End phrase via Cancellation.
+        End phrase via a Cancellation keypress.
         """
         self.was_cancelled = True
         self.ending_string = ending_string
+        if (keypress.KeyPress in CANCEL_KEYS) or (
+            keypress.KeyPress in WINDOWS_KEYS):
+            self.gaze_keypress_count += 2  # Includes the Ctrl or Win key.
+        if keypress.KeyPress in WINDOWS_KEYS:
+            self.machine_keypress_count += 1
 
     def timeout(self):
         """
@@ -468,7 +491,6 @@ def visualize_keypresses(keypresses, args):
                 and keypresses.keyPresses[current_key_index + 3].KeyPress == "Back"
                 and not is_next_gaze_initiated
             ):
-                print("Deleting:", is_current_gaze_initiated, is_next_gaze_initiated)  # DEBUG
                 current_phrase.delete_word_backward()
                 current_key_index += 4
             elif next_keypress.KeyPress == "W":
@@ -481,8 +503,7 @@ def visualize_keypresses(keypresses, args):
                 # TODO If ctrl-A is followed by ctrl-W, was phrase cancelled?
                 is_phrase_end = True
                 current_key_index += 2
-                current_phrase.gaze_keypress_count += 2
-                current_phrase.cancel(CANCEL_KEYS[next_keypress.KeyPress])
+                current_phrase.cancel(next_keypress)
             elif next_keypress.KeyPress in CONTROL_KEYS:
                 current_phrase.add_control_key(
                     next_keypress, num_gaze_keypresses=2)
@@ -529,9 +550,7 @@ def visualize_keypresses(keypresses, args):
                 if next_keypress.KeyPress in WINDOWS_KEYS:
                     is_phrase_end = True
                     current_key_index += 2
-                    current_phrase.gaze_keypress_count += 1
-                    current_phrase.machine_keypress_count += 1
-                    current_phrase.cancel(WINDOWS_KEYS[next_keypress.KeyPress])
+                    current_phrase.cancel(next_keypress)
                 else:
                     raise Exception(
                         f"Unknown windows key combo Win+{next_keypress.KeyPress}"
@@ -542,13 +561,7 @@ def visualize_keypresses(keypresses, args):
                     keypresses, current_key_index, total_keyspresses
                 )
                 current_key_index += current_prediction.length
-                current_phrase.character_count += current_prediction.gain + 1
-                current_phrase.gaze_keypress_count += 1
-                current_phrase.machine_keypress_count += current_prediction.length - 1
-
-                current_phrase.visualized_string += str(current_prediction)
-
-                current_phrase.predictions.append(current_prediction)
+                current_phrase.add_prediction(current_prediction)
 
         if next_character_delta > LONG_DELTA_TIME:
             is_phrase_end = True

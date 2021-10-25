@@ -248,18 +248,40 @@ class Phrase:
         self.gaze_keypress_count += num_gaze_keypresses
         # TODO(cais): Process control keys including cut, paste, undo, and redo.
 
-    def add_non_control_key(self, keypress, shift_on=False):
+    def add_non_control_key(self,
+                            keypress,
+                            shift_on=False,
+                            is_gaze_initialized=False):
         """Add a non-control key (i.e., a key entered without the Ctrl key).
 
         Args:
           keypress: The non-control key, represented as a KeyPress proto.
           shift_on: Whether the Shift key is held when `key` is entered.
+          is_gaze_initiazted: Whether the keypress is gaze-initiated (as versus
+            automatically entered such as a selected word prediction).
         """
-        self.visualized_string += output_for_keypress(
-            keypress.KeyPress, shift_on=shift_on)
-        self.character_count += 1
-        self.gaze_keypress_count += 2 if shift_on else 1
-        # TODO(cais): Handle Backspace and other special keys.
+        if is_gaze_initialized:
+            self.gaze_keypress_count += 2 if shift_on else 1
+        if keypress.KeyPress == "Back":
+            self.backspace_count += 1
+            self.character_count -= 1
+        else:
+            self.character_count += 1
+        char = output_for_keypress(keypress.KeyPress, shift_on=shift_on)
+        self.visualized_string += char
+        # TODO(cais): Handle other special keys.
+
+    def delete_word_backward(self):
+        """Register a backward word deletion.
+
+        It is assumed that the backward word deletion is initiated by gaze
+        clicking the "Delete word" button of the eye gaze keyboard.
+        """
+        self.visualized_string += "↞"
+        self.delword_count += 1
+        self.gaze_keypress_count += 1
+        self.machine_keypress_count += 3
+        # TODO(cais): Calculate the deleted word.
 
     def finalize(self):
         """
@@ -415,10 +437,10 @@ def visualize_keypresses(keypresses, args):
     while current_key_index < total_keyspresses:
         keypress = keypresses.keyPresses[current_key_index]
         current_timestamp = datetime_from_protobuf_timestamp(keypress.Timestamp)
-        is_current_gaze_initialized, _ = is_key_gaze_initiated(
+        is_current_gaze_initiated, _ = is_key_gaze_initiated(
             keypresses, current_key_index, total_keyspresses
         )
-        is_next_gaze_initialized, next_character_delta = is_key_gaze_initiated(
+        is_next_gaze_initiated, next_character_delta = is_key_gaze_initiated(
             keypresses, current_key_index + 1, total_keyspresses
         )
 
@@ -433,13 +455,23 @@ def visualize_keypresses(keypresses, args):
         if (
             keypress.KeyPress == "LControlKey" or keypress.KeyPress == "RControlKey"
         ) and (
-            is_current_gaze_initialized or is_next_gaze_initialized
+            is_current_gaze_initiated or is_next_gaze_initiated
         ) and current_key_index + 1 < total_keyspresses:
             # TODO How does the user erase the state of the previously spoken phrase
             # before entering the next phrase? Without the state erasure, the previous
             # phrase will be spoken alongside the next one, which is undesirable.
             next_keypress = keypresses.keyPresses[current_key_index + 1]
-            if next_keypress.KeyPress == "W":
+            if (
+                current_key_index + 3 < total_keyspresses
+                and next_keypress.KeyPress == "LShiftKey"
+                and keypresses.keyPresses[current_key_index + 2].KeyPress == "Left"
+                and keypresses.keyPresses[current_key_index + 3].KeyPress == "Back"
+                and not is_next_gaze_initiated
+            ):
+                print("Deleting:", is_current_gaze_initiated, is_next_gaze_initiated)  # DEBUG
+                current_phrase.delete_word_backward()
+                current_key_index += 4
+            elif next_keypress.KeyPress == "W":
                 # Ctrl-W == Speak
                 is_phrase_end = True
                 current_key_index += 2
@@ -457,14 +489,13 @@ def visualize_keypresses(keypresses, args):
                 current_key_index += 2
             else:
                 # Handle the control key in isolation
-                current_phrase.add_non_control_key(keypress, shift_on=False)
-                # current_phrase.visualized_string += output_for_keypress(
-                #     keypress.KeyPress, False
-                # )
-                # current_phrase.character_count += 1
-                # current_phrase.gaze_keypress_count += 1
+                current_phrase.add_non_control_key(
+                    keypress, shift_on=False, is_gaze_initialized=True)
                 current_key_index += 1
-        elif keypress.KeyPress == "LShiftKey":
+        elif keypress.KeyPress == "LShiftKey" and (
+            is_current_gaze_initiated or is_next_gaze_initiated
+        ):
+            # TODO(cais): Add predicate for gaze initiated.
             if (
                 current_key_index + 1 < total_keyspresses
                 and keypresses.keyPresses[current_key_index + 1].KeyPress
@@ -473,53 +504,23 @@ def visualize_keypresses(keypresses, args):
                 != "LControlKey"
             ):
                 current_phrase.add_non_control_key(
-                    keypresses.keyPresses[current_key_index + 1], shift_on=True)
-                # current_phrase.visualized_string += output_for_keypress(
-                #     keypresses.keyPresses[current_key_index + 1].KeyPress,
-                #     shift_on=True
-                # )
+                    keypresses.keyPresses[current_key_index + 1],
+                    shift_on=True,
+                    is_gaze_initialized=True)
                 current_key_index += 2
-                # current_phrase.character_count += 1
-                # current_phrase.gaze_keypress_count += 2
             else:
-                current_phrase.add_non_control_key(keypress, shift_on=False)
-                # current_phrase.visualized_string += output_for_keypress(
-                #     keypress.KeyPress,
-                #     shift_on=False
-                # )
-                # current_phrase.character_count += 1
+                current_phrase.add_non_control_key(
+                    keypress,
+                    shift_on=False,
+                    is_gaze_initialized=True)
                 current_key_index += 1
-                # current_phrase.gaze_keypress_count += 1
-        elif is_next_gaze_initialized:
-            # next character is gaze initated.
-            if keypress.KeyPress == "Back":
-                current_phrase.backspace_count += 1
-                current_phrase.character_count -= 1
-                current_phrase.gaze_keypress_count += 1
-            else:
-                current_phrase.character_count += 1
-                current_phrase.gaze_keypress_count += 1
-            # current_phrase.add_non_control_key(keypress, shift_on=False)
-            current_phrase.visualized_string += output_for_keypress(
-                keypress.KeyPress, shift_on=False
-            )
+        elif is_next_gaze_initiated:
+            current_phrase.add_non_control_key(
+                keypress, shift_on=False, is_gaze_initialized=True)
             current_key_index += 1
         else:
             # next character is not gaze initiated.
             if (
-                keypress.KeyPress == "LControlKey"
-                and current_key_index + 3 < total_keyspresses
-                and keypresses.keyPresses[current_key_index + 1].KeyPress == "LShiftKey"
-                and keypresses.keyPresses[current_key_index + 2].KeyPress == "Left"
-                and keypresses.keyPresses[current_key_index + 3].KeyPress == "Back"
-            ):
-                # ctrl-shift-left-back == DelWord
-                current_phrase.visualized_string += "↞"
-                current_key_index += 4
-                current_phrase.delword_count += 1
-                current_phrase.gaze_keypress_count += 1
-                current_phrase.machine_keypress_count += 3
-            elif (
                 keypress.KeyPress == "LWin"
                 and current_key_index + 1 < total_keyspresses
             ):

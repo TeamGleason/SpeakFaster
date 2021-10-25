@@ -3,13 +3,15 @@ Processes keypress protobuffers to generate visualized results.
 Can generate various statistics (WPM, KSR, Error Rate) as well
 as output files capable of being used in other tools.
 """
-import os
-import re
-import sys
 import argparse
 import datetime
 import glob
 import jsonpickle
+import os
+import re
+import string
+import sys
+
 import keypresses_pb2
 
 # Assuming that eye gaze activation faster than 300ms is faster than
@@ -285,11 +287,18 @@ class Phrase:
         self.visualized_string += "↞"
         self.delword_count += 1
         self.gaze_keypress_count += 1
+        if not self._recon_string:
+            return
         self.machine_keypress_count += 3
+        last_char = self._recon_string[-1]
         i = len(self._recon_string) - 1
+        if last_char in string.punctuation or re.match("\s", last_char):
+            while i >= 0 and (self._recon_string[i] in string.punctuation or
+                              re.match("\s", self._recon_string[i])):
+                i -= 1
         while i >= 0:
-            # TODO(cais): this should cover punctuation as well.
-            if re.match("\s", self._recon_string[i]):
+            char = self._recon_string[i]
+            if re.match("\s", char) or char in string.punctuation:
                 break
             i -= 1
         if i + 1 >= 0:
@@ -547,7 +556,6 @@ def visualize_keypresses(keypresses, args):
         elif keypress.KeyPress == "LShiftKey" and (
             is_current_gaze_initiated or is_next_gaze_initiated
         ):
-            # TODO(cais): Add predicate for gaze initiated.
             if (
                 current_key_index + 1 < total_keyspresses
                 and keypresses.keyPresses[current_key_index + 1].KeyPress

@@ -4,6 +4,7 @@ Can generate various statistics (WPM, KSR, Error Rate) as well
 as output files capable of being used in other tools.
 """
 import os
+import re
 import sys
 import argparse
 import datetime
@@ -201,29 +202,30 @@ class Prediction:
 # A phrase is defined as a series of keypresses over a period of time
 # The phrase may end with it being spoken or not spoken
 class Phrase:
-    """
-    A Phrase is a series keypresses that ends in a termination state.
+    """A Phrase is a series keypresses that ends in a termination state.
+
     Possible termination states are Spoken, Cancelled, or Timeout.
     """
 
     # pylint: disable=too-many-instance-attributes
-    def __init__(self):
-        """
-        Creates a `Phrase` instance.
-        """
+    def __init__(self, start_timestamp):
+        """Creates a `Phrase` instance."""
+        # TODO: Better encapsulation by making more public members private.
         self.start_index = 0  # Index of the first keypress in the phrase
         self.end_index = 0  # Index of the last keypress in the phrase
-        self.start_timestamp = None
-        self.end_timestamp = None
+        self._start_timestamp = start_timestamp
+        self._end_timestamp = None
         # A string used for visualizing the key sequences. It includes
         # the gaze-initiated and machine-predicted characters, backspaces,
         # and so forth.
         self.visualized_string = ""
+        # Reconstructed string. This is the text that shows up in the target
+        # text box or text editor. Takes into control keys including but not
+        # limited to Back, word deletion, etc.
         self.ending_string = ""
         self.was_spoken = False
         self.was_cancelled = False
         self.was_timeout = False
-        self.character_count = 0
         self.backspace_count = 0
         self.delword_count = 0
         self.gaze_keypress_count = 0
@@ -233,6 +235,7 @@ class Phrase:
         self.wpm = 0.0
         self.ksr = 0.0
         self.error = 0.0
+        self._recon_string = ""
 
     def add_control_key(self, control_key, num_gaze_keypresses):
         """Add a control key (i.e., a key entered with the Ctrl key on).
@@ -251,7 +254,7 @@ class Phrase:
     def add_non_control_key(self,
                             keypress,
                             shift_on=False,
-                            is_gaze_initialized=False):
+                            is_gaze_initiated=False):
         """Add a non-control key (i.e., a key entered without the Ctrl key).
 
         Args:
@@ -260,16 +263,18 @@ class Phrase:
           is_gaze_initiazted: Whether the keypress is gaze-initiated (as versus
             automatically entered such as a selected word prediction).
         """
-        if is_gaze_initialized:
+        char = output_for_keypress(keypress.KeyPress, shift_on=shift_on)
+        if is_gaze_initiated:
             self.gaze_keypress_count += 2 if shift_on else 1
         if keypress.KeyPress == "Back":
             self.backspace_count += 1
-            self.character_count -= 1
+            if self._recon_string:
+                self._recon_string = self._recon_string[:-1]
         else:
-            self.character_count += 1
-        char = output_for_keypress(keypress.KeyPress, shift_on=shift_on)
+            self._recon_string += char.upper() if shift_on else char.lower()
         self.visualized_string += char
-        # TODO(cais): Handle other special keys.
+        # TODO: This is based on the assumption of CapsLock is off. Maybe find
+        # a way to determine if CapsLock is on.
 
     def delete_word_backward(self):
         """Register a backward word deletion.
@@ -281,7 +286,14 @@ class Phrase:
         self.delword_count += 1
         self.gaze_keypress_count += 1
         self.machine_keypress_count += 3
-        # TODO(cais): Calculate the deleted word.
+        i = len(self._recon_string) - 1
+        while i >= 0:
+            # TODO(cais): this should cover punctuation as well.
+            if re.match("\s", self._recon_string[i]):
+                break
+            i -= 1
+        if i + 1 >= 0:
+            self._recon_string = self._recon_string[:i + 1]
 
     def add_prediction(self, prediction):
         """Register a prediction.
@@ -294,19 +306,37 @@ class Phrase:
         Args:
           prediction: A `Prediction` object.
         """
-        self.character_count += prediction.gain + 1
         self.gaze_keypress_count += 1
         # TODO(cais): Should this be prediciton.length?
         self.machine_keypress_count += prediction.length - 1
+        for prediction_char in prediction.prediction_string:
+            if prediction_char == "🠠" and self._recon_string:
+                self._recon_string = self._recon_string[:-1]
+            elif is_character(prediction_char):
+                self._recon_string += prediction_char
+            else:
+                raise ValueError(
+                    "Unable to process character '%s' in prediction" %
+                    prediction_char)
         self.visualized_string += str(prediction)
         self.predictions.append(prediction)
 
-    def finalize(self):
+    @property
+    def recon_string(self):
+        """Get the reconstructed string."""
+        return self._recon_string
+
+    @property
+    def character_count(self):
+        return len(self._recon_string)
+
+    def finalize(self, end_timestamp):
         """
         When the phrase is complete, we want to run various calculations for
         WPM, KSR, and Error rate.  We also validate to ensure there are no
         missing Keypresses in the range.
         """
+        self._end_timestamp = end_timestamp
         self.calculate_wpm()
         self.calculate_ksr()
         self.calculate_error()
@@ -355,7 +385,7 @@ class Phrase:
         """
         if self.was_spoken and self.character_count > 1:
             self.wpm = (self.character_count / 5) / (
-                (self.end_timestamp - self.start_timestamp).total_seconds() / 60
+                (self._end_timestamp - self._start_timestamp).total_seconds() / 60
             )
 
     def validate(self):
@@ -380,12 +410,16 @@ class Phrase:
         End phrase via a Cancellation keypress.
         """
         self.was_cancelled = True
-        self.ending_string = ending_string
-        if (keypress.KeyPress in CANCEL_KEYS) or (
-            keypress.KeyPress in WINDOWS_KEYS):
-            self.gaze_keypress_count += 2  # Includes the Ctrl or Win key.
-        if keypress.KeyPress in WINDOWS_KEYS:
+        key = keypress.KeyPress if hasattr(keypress, "KeyPress") else keypress
+        if key in CANCEL_KEYS:
+            self.ending_string = CANCEL_KEYS[key]
+            self.gaze_keypress_count += 2  # Includes the Ctrl key.
+        elif key in WINDOWS_KEYS:
+            self.ending_string = WINDOWS_KEYS[key]
+            self.gaze_keypress_count += 2  # Includes the Win key.
             self.machine_keypress_count += 1
+        else:
+            self.ending_string = key
 
     def timeout(self):
         """
@@ -394,12 +428,13 @@ class Phrase:
         self.was_timeout = True
         self.ending_string = "⏰"
 
-    def speak(self):
+    def speak(self, gaze_keypress_count):
         """
         End phrase via Speech.
         """
         self.was_spoken = True
         self.ending_string = "💬"
+        self.gaze_keypress_count += gaze_keypress_count
 
     def keypress_count(self):
         """
@@ -415,7 +450,7 @@ class Phrase:
         """
         return_string = (
             f"[{self.start_index:8}:{self.end_index:8}] "
-            + f"Time:{self.end_timestamp} "
+            + f"Time:{self._end_timestamp} "
             + f"{self.ending_string} "
             + f"␂{self.visualized_string}␃ "
             + f"{self.ending_string}"
@@ -468,13 +503,10 @@ def visualize_keypresses(keypresses, args):
         )
 
         if is_phrase_start:
-            # print(f"{current_key_index}: new phrase")  # DEBUG
-            current_phrase = Phrase()
+            current_phrase = Phrase(current_timestamp)
             current_phrase.start_index = current_key_index
             is_phrase_start = False
             is_phrase_end = False
-            current_phrase.start_timestamp = current_timestamp
-
         if (
             keypress.KeyPress == "LControlKey" or keypress.KeyPress == "RControlKey"
         ) and (
@@ -497,8 +529,7 @@ def visualize_keypresses(keypresses, args):
                 # Ctrl-W == Speak
                 is_phrase_end = True
                 current_key_index += 2
-                current_phrase.gaze_keypress_count += 2
-                current_phrase.speak()
+                current_phrase.speak(gaze_keypress_count=2)
             elif next_keypress.KeyPress in CANCEL_KEYS:
                 # TODO If ctrl-A is followed by ctrl-W, was phrase cancelled?
                 is_phrase_end = True
@@ -511,7 +542,7 @@ def visualize_keypresses(keypresses, args):
             else:
                 # Handle the control key in isolation
                 current_phrase.add_non_control_key(
-                    keypress, shift_on=False, is_gaze_initialized=True)
+                    keypress, shift_on=False, is_gaze_initiated=True)
                 current_key_index += 1
         elif keypress.KeyPress == "LShiftKey" and (
             is_current_gaze_initiated or is_next_gaze_initiated
@@ -527,17 +558,17 @@ def visualize_keypresses(keypresses, args):
                 current_phrase.add_non_control_key(
                     keypresses.keyPresses[current_key_index + 1],
                     shift_on=True,
-                    is_gaze_initialized=True)
+                    is_gaze_initiated=True)
                 current_key_index += 2
             else:
                 current_phrase.add_non_control_key(
                     keypress,
                     shift_on=False,
-                    is_gaze_initialized=True)
+                    is_gaze_initiated=True)
                 current_key_index += 1
         elif is_next_gaze_initiated:
             current_phrase.add_non_control_key(
-                keypress, shift_on=False, is_gaze_initialized=True)
+                keypress, shift_on=False, is_gaze_initiated=True)
             current_key_index += 1
         else:
             # next character is not gaze initiated.
@@ -579,10 +610,8 @@ def visualize_keypresses(keypresses, args):
             # which is the end of the current phrase.
             current_phrase.end_index = current_key_index - 1
             end_keypress = keypresses.keyPresses[current_phrase.end_index]
-            current_phrase.end_timestamp = datetime_from_protobuf_timestamp(
-                end_keypress.Timestamp
-            )
-            current_phrase.finalize()
+            current_phrase.finalize(datetime_from_protobuf_timestamp(
+                end_keypress.Timestamp))
 
             phrases.append(current_phrase)
 
@@ -948,22 +977,23 @@ def parse_arguments():
     return is_valid, args
 
 
-is_valid_arguments, parsed_args = parse_arguments()
+if __name__ == "__main__":
+    is_valid_arguments, parsed_args = parse_arguments()
 
-if not is_valid_arguments:
-    sys.exit()
+    if not is_valid_arguments:
+        sys.exit()
 
-KEYPRESSES = None
-if parsed_args.input_directory_path:
-    KEYPRESSES = load_keypresses_from_directory(parsed_args.input_directory_path)
-elif parsed_args.input_filepath:
-    KEYPRESSES = load_keypresses_from_file(parsed_args.input_filepath)
+    KEYPRESSES = None
+    if parsed_args.input_directory_path:
+        KEYPRESSES = load_keypresses_from_directory(parsed_args.input_directory_path)
+    elif parsed_args.input_filepath:
+        KEYPRESSES = load_keypresses_from_file(parsed_args.input_filepath)
 
-if not KEYPRESSES:
-    print("Failed loading keypresses!")
-    sys.exit()
+    if not KEYPRESSES:
+        print("Failed loading keypresses!")
+        sys.exit()
 
-list_keypresses(KEYPRESSES, parsed_args)
-visualize_keypresses(KEYPRESSES, parsed_args)
+    list_keypresses(KEYPRESSES, parsed_args)
+    visualize_keypresses(KEYPRESSES, parsed_args)
 
-print("Processing Complete")
+    print("Processing Complete")

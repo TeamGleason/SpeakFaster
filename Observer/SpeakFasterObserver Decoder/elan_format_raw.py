@@ -45,10 +45,45 @@ def format_raw_data(input_dir,
   if not os.path.isdir(input_dir):
     raise ValueError("%s is not an existing directory" % input_dir)
 
-  (first_audio_path,
-   concatenated_audio_path,
-   audio_start_time_epoch,
-   audio_duration_s) = read_and_concatenate_audio_files(input_dir, timezone)
+  merged_tsv_path = os.path.join(input_dir, "merged.tsv")
+
+  if keypresses_only:
+    # Keypresses-only: The start timestamp will be from the first keypress.
+    keypresses_data = process_keypresses.load_keypresses_from_directory(
+        input_dir)
+    if not keypresses_data.keyPresses:
+      raise ValueError(
+          "No keypress data is available in directory %s" % input_dir)
+    first_timestamp = keypresses_data.keyPresses[0].Timestamp
+    start_time_epoch = first_timestamp.seconds + first_timestamp.nanos / 1e9
+    print("Determined start timestamp: %.3f" % start_time_epoch)
+    keypresses_phrases_tsv_path = os.path.join(
+        input_dir, "keypresses_phrases.tsv")
+    process_keypresses.visualize_keypresses(
+        keypresses_data, tsv_path=keypresses_phrases_tsv_path,
+        start_time_epoch=start_time_epoch)
+  else:
+    # Not keypresses-only: The start timestamp will be extracted from the first
+    # audio file.
+    (first_audio_path,
+     concatenated_audio_path,
+     start_time_epoch,
+     audio_duration_s) = read_and_concatenate_audio_files(input_dir, timezone)
+
+  keypresses_paths = glob.glob(os.path.join(input_dir, "*-Keypresses.protobuf"))
+  if not keypresses_paths:
+    raise ValueError(
+        "Cannot find at least one Keypresses protobuf file in %s" % input_dir)
+  keypresses_tsv_path = os.path.join(input_dir, "keypresses.tsv")
+  first_keypress_time_sec = format_keypresses(
+      keypresses_paths, start_time_epoch, keypresses_tsv_path)
+
+  if keypresses_only:
+    print("Merging TSV files (keypresses-only)...")
+    tsv_data.merge_tsv_files(
+        [keypresses_tsv_path, keypresses_phrases_tsv_path], merged_tsv_path)
+    print("Merged TSV file (keypresses-only) is at: %s" % merged_tsv_path)
+    return
 
   if not skip_screenshots:
     # If screenshot image files are available, stitch them into a single video
@@ -60,7 +95,7 @@ def format_raw_data(input_dir,
       print("Writing screenshots video...")
       video.stitch_images_into_mp4(
           screenshot_paths,
-          audio_start_time_epoch,
+          start_time_epoch,
           timezone,
           screenshots_video_path)
       print("Saved screenshots video to %s\n" % screenshots_video_path)
@@ -75,14 +110,6 @@ def format_raw_data(input_dir,
       raise ValueError(
           "No screenshot image files are found. "
           "You must provide dummy_video_frame_image_path")
-
-  keypresses_paths = glob.glob(os.path.join(input_dir, "*-Keypresses.protobuf"))
-  if not keypresses_paths:
-    raise ValueError(
-        "Cannot find at least one Keypresses protobuf file in %s" % input_dir)
-  keypresses_tsv_path = os.path.join(input_dir, "keypresses.tsv")
-  first_keypress_time_sec = format_keypresses(
-      keypresses_paths, audio_start_time_epoch, keypresses_tsv_path)
 
   # Create a TSV file for TextEditorNavigation tier.
   text_editor_navigation_tsv_path = os.path.join(
@@ -99,9 +126,7 @@ def format_raw_data(input_dir,
   run_asr(first_audio_path, asr_tsv_path, speaker_count, gcs_bucket_name)
 
   # Merge the files.
-  merged_tsv_path = os.path.join(input_dir, "merged.tsv")
   print("Merging TSV files...")
-
   tsv_data.merge_tsv_files(
       [keypresses_tsv_path, text_editor_navigation_tsv_path,
        audio_events_tsv_path, asr_tsv_path], merged_tsv_path)
@@ -270,19 +295,14 @@ def parse_args():
 
 def main():
   args = parse_args()
-  if args.keypresses_only:
-    keypresses_data = process_keypresses.load_keypresses_from_directory(
-        args.input_dir)
-    tsv_path = os.path.join(args.input_dir, "keypresses_phrases.tsv")
-    process_keypresses.visualize_keypresses(keypresses_data, tsv_path=tsv_path)
-  else:
-    format_raw_data(
-        args.input_dir,
-        args.timezone,
-        args.speaker_count,
-        args.gcs_bucket_name,
-        dummy_video_frame_image_path=args.dummy_video_frame_image_path,
-        skip_screenshots=args.skip_screenshots)
+  format_raw_data(
+      args.input_dir,
+      args.timezone,
+      args.speaker_count,
+      args.gcs_bucket_name,
+      dummy_video_frame_image_path=args.dummy_video_frame_image_path,
+      skip_screenshots=args.skip_screenshots,
+      keypresses_only=args.keypresses_only)
 
 
 if __name__ == "__main__":

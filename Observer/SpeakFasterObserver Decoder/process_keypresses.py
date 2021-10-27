@@ -13,6 +13,7 @@ import string
 import sys
 
 import keypresses_pb2
+import transcript_lib
 import tsv_data
 
 # Assuming that eye gaze activation faster than 300ms is faster than
@@ -507,7 +508,8 @@ def visualize_keypresses(keypresses,
                          visualize_path=None,
                          prediction_path=None,
                          phrases_path=None,
-                         tsv_path=None):
+                         tsv_path=None,
+                         start_time_epoch=None):
     """
     Processes the keypresses object, breaking it down into Phrases.
 
@@ -750,7 +752,11 @@ def visualize_keypresses(keypresses,
         print(f"Phrases saved to {phrases_path}")
 
     if tsv_path:
-        save_recon_strings_to_tsv_file(tsv_path, phrases)
+        if start_time_epoch is None:
+            raise ValueError(
+                "If tsv_path is specified, start_time_epoch is required, "
+                "but got None")
+        save_recon_strings_to_tsv_file(tsv_path, phrases, start_time_epoch)
         print(f"Reconstructed strings saved to {tsv_path}")
 
 
@@ -948,26 +954,31 @@ def save_string_to_file(output_filepath, output_string):
         file.write(output_string.encode())
 
 
-def save_recon_strings_to_tsv_file(tsv_path, phrases):
+def save_recon_strings_to_tsv_file(tsv_path, phrases, start_time_epoch):
     """Saves the reconstructed strings from the phrases to a TSV file.
 
     Args:
       tsv_path: Path to the output tsv file.
       phrases: An iterable of Phrase objects.
+      start_time_epoch: A float number for the starting time since the epoch,
+        in seconds.
     """
     if not phrases:
         raise ValueError("Empty phrases")
-    firt_timestamp = phrases[0].start_timestamp.timestamp()
     with open(tsv_path, "w") as f:
         f.write(tsv_data.HEADER + "\n")
-        for phrase in phrases:
+        for i, phrase in enumerate(phrases):
             if not phrase.recon_string:
                 continue
-            line = "%.3f\t%.3f\t%s\t%s" % (
-                phrase.start_timestamp.timestamp() - firt_timestamp,
-                phrase.end_timestamp.timestamp() - firt_timestamp,
+            recon_string_with_utterance_id = (
+                phrase.recon_string + " " +
+                transcript_lib.get_utterance_id(i + 1))
+            line = "%.3f\t%.3f\t%s\t %s %s" % (
+                phrase.start_timestamp.timestamp() - start_time_epoch,
+                phrase.end_timestamp.timestamp() - start_time_epoch,
                 tsv_data.KEYPRESS_PHRASE_TIER,
-                phrase.recon_string)
+                recon_string_with_utterance_id,
+                "[SpeakerTTS:]")
             f.write(line + "\n")
 
 

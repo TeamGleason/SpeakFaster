@@ -140,7 +140,8 @@ This file contain rows of reconstructed phrases with the tier name
 it into ELAN or editing it directly in a text edit such as VSCode and
 Notepad++.
 
-TODO(cais): Add instructions for post-processing keypress-only data sessions.
+See the data curation playbook for instructions on how to manually curate and
+post-processing keypress-only data sessions.
 
 ### Postprocessing curation result
 

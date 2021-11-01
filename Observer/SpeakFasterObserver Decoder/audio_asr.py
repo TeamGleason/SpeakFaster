@@ -19,6 +19,7 @@ from google.cloud import storage
 from scipy.io import wavfile
 
 import file_naming
+import transcript_lib
 import tsv_data
 
 
@@ -471,12 +472,12 @@ def transcribe_audio_to_tsv_with_diarization(input_audio_paths,
     for (regrouped_utterance,
          speaker_index, start_time_sec, end_time_sec) in regrouped_utterances:
       utterance_counter += 1
-      line = "%.3f\t%.3f\t%s\t%s [U%d] [Speaker #%d]" % (
+      line = "%.3f\t%.3f\t%s\t%s %s [Speaker #%d]" % (
           start_time_sec + begin_sec,
           end_time_sec + begin_sec,
           tsv_data.SPEECH_TRANSCRIPT_TIER,
           regrouped_utterance,
-          utterance_counter,
+          transcript_lib.get_utterance_id(utterance_counter),
           speaker_index)
       print(line)
       f.write(line + "\n")
@@ -561,12 +562,12 @@ def async_transcribe(audio_file_paths,
     for (regrouped_utterance,
         speaker_index, start_time_sec, end_time_sec) in regrouped_utterances:
       utterance_counter += 1
-      line = "%.3f\t%.3f\t%s\t%s [U%d] [Speaker #%d]" % (
+      line = "%.3f\t%.3f\t%s\t%s %s [Speaker #%d]" % (
           start_time_sec + begin_sec,
           end_time_sec + begin_sec,
           tsv_data.SPEECH_TRANSCRIPT_TIER,
           regrouped_utterance,
-          utterance_counter,
+          transcript_lib.get_utterance_id(utterance_counter),
           speaker_index)
       print(line)
       f.write(line + "\n")

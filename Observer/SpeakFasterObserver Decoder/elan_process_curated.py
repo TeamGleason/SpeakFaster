@@ -36,7 +36,7 @@ def load_speaker_map(speaker_map_json_path):
   See README.md for a definition of the expected schema of the JSON file.
 
   Args:
-    speaker_map_tsv_path: Path to the tsv file that contains the columns
+    speaker_map_json_path: Path to the tsv file that contains the columns
       RealName and Pseudonym.
 
   Returns:
@@ -72,6 +72,11 @@ def is_number(string):
     return True
   except ValueError:
     return
+
+
+def is_speech_content_tier(tier):
+  return tier in (tsv_data.KEYPRESS_PHRASE_TIER,
+                  tsv_data.SPEECH_TRANSCRIPT_TIER)
 
 
 def infer_columns(tsv_path):
@@ -186,11 +191,9 @@ def calculate_speech_curation_stats(merged_tsv_path,
   original_rows = load_rows(
       merged_tsv_path, column_order, has_header=has_header)
   original_rows = [
-      row for row in original_rows
-      if row[2] == tsv_data.SPEECH_TRANSCRIPT_TIER]
+      row for row in original_rows if is_speech_content_tier(row[2])]
   curated_rows = [
-      row for row in curated_rows
-      if row[2] == tsv_data.SPEECH_TRANSCRIPT_TIER]
+      row for row in curated_rows if is_speech_content_tier(row[2])]
   stats = {
       "original_num_utterances": len(original_rows),
       "curated_num_utterances": len(curated_rows),
@@ -277,7 +280,7 @@ def apply_speaker_map_and_redaction_masks(rows, realname_to_pseudonym):
   keypress_redaction_time_ranges = []
   for i, row in enumerate(rows):
     _, _, tier, content = row
-    if tier == tsv_data.SPEECH_TRANSCRIPT_TIER:
+    if is_speech_content_tier(tier):
       realname_tag, tag_type, realname = transcript_lib.extract_speaker_tag(
           content.strip())
       if realname.lower() not in realname_to_pseudonym:

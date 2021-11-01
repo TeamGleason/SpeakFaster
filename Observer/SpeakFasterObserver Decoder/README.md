@@ -117,6 +117,32 @@ python elan_format_raw.py \
     --dummy_video_frame_image_path="${HOME}/SpeakFaster/Observer/SpeakFasterObserver Decoder/testdata/generic_windows_desktop.jpg"
 ```
 
+#### Keypress-only data
+
+Occasionally, you may come across data sessions that contain only
+keypress data. Such data sessions may occur as a result of the user
+turning off audio and screenshot recording in the Observer.
+The keypress data are stored in files named in the pattern of
+`*-Keypresses.protobuf`. To preprocess this kind of data sessions, use
+the `--keypresses_only` flag with the elan_format_raw.py script. For example:
+
+```sh
+python elan_format_raw.py \
+    /home/cais/sf_observer_data/session_3_with_only_keypresses/ \
+    US/Eastern \
+    --keypresses_only
+```
+
+The script will process the keypress data from the `.protobuf` files and
+save the reconstructed phrases to a file named `keypresses_phrases.tsv`.
+This file contain rows of reconstructed phrases with the tier name
+`KeypressPhrase`. This file can be manually curated, either by loading
+it into ELAN or editing it directly in a text edit such as VSCode and
+Notepad++.
+
+See the data curation playbook for instructions on how to manually curate and
+post-processing keypress-only data sessions.
+
 ### Postprocessing curation result
 
 Based on the Data Curation Playbook, you should export a TSV file named

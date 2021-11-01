@@ -14,6 +14,18 @@ _SPEECH_TRANSCRIPT_CONTENT_REGEX = re.compile(
 _UTTERANCE_ID_REGEX = r"\[U[0-9]+\]"
 
 
+def get_utterance_id(index):
+  """Get a string utterance ID.
+
+  Args:
+    index: The index as an integer, 1-based.
+
+  Returns:
+    The utterance string.
+  """
+  return "[U%d]" % index
+
+
 def extract_speaker_tag(transcript):
   """Extract speaker tag, tag type, and tag_value."""
   match = re.match(_SPEECH_TRANSCRIPT_CONTENT_REGEX, transcript.strip())
@@ -48,7 +60,7 @@ def parse_utterance_id(transcript, expected_counter=None):
   match_begin, match_end = match.span()
   utterance_id_with_brackets = transcript[match_begin : match_end]
   if expected_counter is not None:
-    assert utterance_id_with_brackets == "[U%d]" % expected_counter
+    assert utterance_id_with_brackets == get_utterance_id(expected_counter)
   utterance_id = utterance_id_with_brackets[1:-1]
   return utterance_id_with_brackets, utterance_id
 

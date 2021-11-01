@@ -5,6 +5,12 @@ import tensorflow as tf
 import transcript_lib
 
 
+class GetUtteranceIdTest(tf.test.TestCase):
+
+  def testReturnsCorrect(self):
+    self.assertEqual(transcript_lib.get_utterance_id(42), "[U42]")
+
+
 class ExtractSpeakerTagTest(tf.test.TestCase):
 
   def testExtractsTagWithSpaceAndNumberWithoutColon(self):

@@ -17,12 +17,14 @@ HEADER = DELIMITER.join(COLUMN_HEADS)
 # Tier names. Must be unique.
 AUDIO_EVENTS_TIER = "AudioEvents1"
 KEYPRESS_TIER = "Keypress"
+# Phrase reconstructed from keypresses.
+KEYPRESS_PHRASE_TIER = "KeypressPhrase"
 SPEECH_TRANSCRIPT_TIER = "SpeechTranscript"
 TEXT_EDITOR_NAVIGATION_TIER = "TextEditorNavigation"
 VISUAL_OBJECTS_EVENTS_TIER = "VisualObjects1"
 
-ALL_TIERS = (AUDIO_EVENTS_TIER, KEYPRESS_TIER, SPEECH_TRANSCRIPT_TIER,
-             VISUAL_OBJECTS_EVENTS_TIER)
+ALL_TIERS = (AUDIO_EVENTS_TIER, KEYPRESS_TIER, KEYPRESS_PHRASE_TIER,
+             SPEECH_TRANSCRIPT_TIER, VISUAL_OBJECTS_EVENTS_TIER)
 
 
 def merge_tsv_files(tsv_paths, merged_path):

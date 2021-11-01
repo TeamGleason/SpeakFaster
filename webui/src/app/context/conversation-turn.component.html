@@ -52,11 +52,11 @@
 </style>
 
 <div class="conversation-turn" [ngClass]="{'focused-turn': isFocus}">
-  <div *ngIf="turn.speaker !== null" class="speaker-tag">
-    {{turn.speaker}}
+  <div *ngIf="turn.speakerId != null && turn.speakerId.length > 0" class="speaker-tag">
+    {{turn.speakerId}}
   </div>
   <div class="time-tag">
     {{agoString}}
   </div>
-  <div class="turn-content">{{turn.content}}</div>
+  <div class="turn-content">{{turn.speechContent}}</div>
 </div>

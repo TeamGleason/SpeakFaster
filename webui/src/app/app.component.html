@@ -42,6 +42,8 @@ app-context-component {
 
   <div *ngIf="hasAccessToken()">
     <app-context-component
+      [endpoint]="endpoint"
+      [accessToken]="accessToken"
       (contextTurnSelected)="onContextTurnSelected($event)"
     ></app-context-component>
     <app-abbreviation-component

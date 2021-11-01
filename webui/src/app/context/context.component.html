@@ -1,4 +1,14 @@
 <style>
+.context-container {
+  display: inline-block;
+}
+
+.context-retrieval-error {
+  display: inline-block;
+  font-size: 28px;
+  margin-left: 6px;
+  color: red;
+}
 
 .context-tag {
   display: inline-block;
@@ -11,18 +21,45 @@
   display: inline-block;
 }
 
+.no-context-found {
+  display: inline-block;
+  font-size: 28px;
+  margin-left: 6px;
+  color: #777;
+}
+
 </style>
 
 <div class="context-tag">
   Context:
 </div>
 
-<div
-    *ngFor="let conversationTurn of conversationTurns; let i = index"
-    class="conversation-turn">
-  <app-conversation-turn-component
-    [turn]="conversationTurn"
-    [isFocus]="i === focusIndex"
-    (click)="onTurnClicked($event, i)"
-  ></app-conversation-turn-component>
+<!-- TODO(cais): Add Ctrl+C instruction. -->
+<!-- TODO(cais): Add Alt+N instruction. -->
+<!-- TODO(cais): Add ellipses for long utterances. -->
+
+<div *ngIf="contextRetrievalError != null; else noError" class="context-container">
+  <div class="context-retrieval-error">
+    Fail to get context: {{contextRetrievalError}}
+  </div>
 </div>
+
+<ng-template #noError>
+  <div *ngIf="conversationTurns.length > 0" class="context-container">
+    <div
+        *ngFor="let conversationTurn of conversationTurns; let i = index"
+        class="conversation-turn">
+      <app-conversation-turn-component
+        [turn]="conversationTurn"
+        [isFocus]="i === focusIndex"
+        (click)="onTurnClicked($event, i)"
+      ></app-conversation-turn-component>
+    </div>
+  </div>
+
+  <div *ngIf="conversationTurns.length === 0" class="no-context-found">
+    <div>
+      No context found
+    </div>
+  </div>
+</ng-template>

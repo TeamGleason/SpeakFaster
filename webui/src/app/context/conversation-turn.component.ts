@@ -1,8 +1,7 @@
 import {Component, Input} from '@angular/core';
 
 import {getAgoString} from '../../utils/datetime-utils';
-
-import {ConversationTurn} from './context';
+import {ConversationTurn} from '../speakfaster-service';
 
 @Component({
   selector: 'app-conversation-turn-component',
@@ -17,6 +16,6 @@ export class ConversationTurnComponent {
   constructor() {}
 
   get agoString(): string {
-    return getAgoString(this.turn.startTime, this.now);
+    return getAgoString(new Date(this.turn.startTimestamp!), this.now);
   }
 }

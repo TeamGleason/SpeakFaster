@@ -1,9 +1,8 @@
 import {Component, HostListener, OnInit} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
-import { isPlainAlphanumericKey, isTextContentKey } from 'src/utils/keyboard-utils';
+import {isPlainAlphanumericKey, isTextContentKey} from 'src/utils/keyboard-utils';
 
-import {ConversationTurn} from './context/context';
-import {SpeakFasterService} from './speakfaster-service';
+import {ConversationTurn, SpeakFasterService} from './speakfaster-service';
 
 @Component({
   selector: 'app-root',
@@ -15,7 +14,7 @@ export class AppComponent implements OnInit {
 
   // Set this to `false` to skip using access token (e.g., developing with
   // an automatically authorized browser context.)
-  private static readonly USE_ACCESS_TOKEN = false;
+  private static readonly USE_ACCESS_TOKEN = true;
 
   private _endpoint: string = '';
   private _accessToken: string = '';
@@ -45,7 +44,8 @@ export class AppComponent implements OnInit {
       this.inputAbbreviation = '';
       event.preventDefault();
       event.stopPropagation();
-    } else if (event.altKey || event.metaKey || event.shiftKey || event.ctrlKey) {
+    } else if (
+        event.altKey || event.metaKey || event.shiftKey || event.ctrlKey) {
       return;
     } else if (event.key === 'Backspace') {
       if (this.inputAbbreviation.length > 0) {
@@ -60,9 +60,6 @@ export class AppComponent implements OnInit {
       event.stopPropagation();
     }
   }
-
-  // onAbbreviationInputFocus(event: Event) {
-  // }
 
   onNewAccessToken(accessToken: string) {
     this._accessToken = accessToken;
@@ -87,7 +84,10 @@ export class AppComponent implements OnInit {
   }
 
   onContextTurnSelected(contextTurn: ConversationTurn) {
-    this.speechContent = contextTurn.content;
+    if (contextTurn == null) {
+      return;
+    }
+    this.speechContent = contextTurn.speechContent;
   }
 
   onAbbreviationInput(event: Event) {

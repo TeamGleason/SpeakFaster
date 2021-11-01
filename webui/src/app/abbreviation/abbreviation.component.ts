@@ -1,4 +1,4 @@
-import {Component, HostListener, Input, OnInit} from '@angular/core';
+import {Component, HostListener, Input} from '@angular/core';
 
 import {SpeakFasterService} from '../speakfaster-service';
 

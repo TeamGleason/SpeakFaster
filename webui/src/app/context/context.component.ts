@@ -1,39 +1,38 @@
-import {Component, EventEmitter, HostListener, OnInit, Output} from '@angular/core';
+import {AfterViewInit, Component, EventEmitter, HostListener, Input, OnInit, Output} from '@angular/core';
 
-import {secondsBeforeNow} from '../../utils/datetime-utils';
-
-import {ConversationTurn} from './context';
+import {ConversationTurn, SpeakFasterService} from '../speakfaster-service';
 
 @Component({
   selector: 'app-context-component',
   templateUrl: './context.component.html',
   providers: [],
 })
-export class ContextComponent implements OnInit {
-  // TODO(cais): Do not hardcode this.
-  conversationTurns: ConversationTurn[] = [
-    {
-      startTime: secondsBeforeNow(10),
-      speaker: null,
-      content: 'Hi Sean',
-    },
-    {
-      startTime: secondsBeforeNow(5),
-      speaker: 'Tim',
-      content: 'Where is the dog'
-    }
-  ];
+export class ContextComponent implements OnInit, AfterViewInit {
+  // TODO(cais): Do not hardcode this user ID.
+  private userId = 'cais';
+
+  @Input() endpoint!: string;
+  @Input() accessToken!: string;
+
+  conversationTurns: ConversationTurn[] = [];
+  contextRetrievalError: string|null = null;
 
   @Output()
   contextTurnSelected: EventEmitter<ConversationTurn> = new EventEmitter();
 
   private focusTurnIndex: number = -1;
 
-  constructor() {}
+  constructor(private speakFasterService: SpeakFasterService) {}
 
   ngOnInit() {
     this.focusTurnIndex = this.conversationTurns.length - 1;
     this.contextTurnSelected.emit(this.conversationTurns[this.focusTurnIndex]);
+  }
+
+  ngAfterViewInit() {
+    setTimeout(() => this.retrieveContext(), 50);
+    // TODO(cais): Do not hardcode delay.
+    // TODO(cais): Poll for context on a regular basis.
   }
 
   get focusIndex(): number {
@@ -50,7 +49,12 @@ export class ContextComponent implements OnInit {
   @HostListener('document:keydown', ['$event'])
   onKeydown(event: KeyboardEvent) {
     // event.stopPropagation();
-    if (!event.altKey) {
+    if (event.ctrlKey && event.key.toLocaleLowerCase() == 'c') {
+      // Ctrl C for polling context.
+      this.retrieveContext();
+      event.preventDefault();
+      event.stopPropagation();
+    } else if (!event.altKey) {
       return;
     }
     if (event.ctrlKey || event.metaKey || event.shiftKey) {
@@ -60,6 +64,42 @@ export class ContextComponent implements OnInit {
     if (keyIndex >= 0 && keyIndex < this.conversationTurns.length) {
       this.focusTurnIndex = keyIndex;
       event.preventDefault();
+      event.stopPropagation();
     }
+  }
+
+  private retrieveContext() {
+    this.speakFasterService
+        .retrieveContext(this.endpoint, this.accessToken, this.userId)
+        .subscribe(
+            data => {
+              if (data.errorMessage != null) {
+                this.contextRetrievalError = data.errorMessage;
+                return;
+              }
+              if (data.contextSignals == null ||
+                  data.contextSignals.length === 0) {
+                return;
+              }
+              this.conversationTurns.splice(0);  // Empty the array first.
+              for (const contextSignal of data.contextSignals) {
+                if (contextSignal.conversationTurn != null) {
+                  const turn: ConversationTurn = {
+                    ...contextSignal.conversationTurn,
+                    startTimestamp: contextSignal.timestamp,
+                  };
+                  // TODO(cais): Deduplicate.
+                  this.conversationTurns.push(turn);
+                }
+              }
+              this.focusTurnIndex = this.conversationTurns.length - 1;
+              this.contextTurnSelected.emit(
+                  this.conversationTurns[this.conversationTurns.length - 1]);
+              this.contextRetrievalError = null;
+            },
+            error => {
+              this.conversationTurns.splice(0);  // Empty the array first.
+              this.contextRetrievalError = error;
+            });
   }
 }

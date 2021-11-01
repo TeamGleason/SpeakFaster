@@ -1,5 +1,6 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, HostListener, OnInit} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
+import { isTextContentKey } from 'src/utils/keyboard-utils';
 
 import {ConversationTurn} from './context/context';
 import {SpeakFasterService} from './speakfaster-service';
@@ -20,7 +21,7 @@ export class AppComponent implements OnInit {
   private _accessToken: string = '';
 
   speechContent: string|null = null;
-  inputAbbreviation: string = 'iwtnsh';
+  inputAbbreviation: string = '';
 
   constructor(
       private route: ActivatedRoute,
@@ -33,6 +34,29 @@ export class AppComponent implements OnInit {
       }
     });
   }
+
+  @HostListener('document:keydown', ['$event'])
+  onKeydown(event: KeyboardEvent) {
+    if (!this.hasAccessToken()) {
+      return;
+    }
+    if (event.altKey || event.metaKey || event.shiftKey || event.ctrlKey) {
+      return;
+    }
+    if (event.key === 'Backspace') {
+      if (this.inputAbbreviation.length > 0) {
+        this.inputAbbreviation = this.inputAbbreviation.substring(
+            0, this.inputAbbreviation.length - 1);
+      }
+    } else if (isTextContentKey(event)) {
+      this.inputAbbreviation += event.key;
+      event.preventDefault();
+      event.stopPropagation();
+    }
+  }
+
+  // onAbbreviationInputFocus(event: Event) {
+  // }
 
   onNewAccessToken(accessToken: string) {
     this._accessToken = accessToken;

@@ -26,14 +26,13 @@ export class AbbreviationComponent {
     if (event.altKey || event.metaKey) {
       return;
     }
+    const keyIndex = event.keyCode - 49;
     if (event.ctrlKey && event.key.toLocaleLowerCase() === 'e') {
       this.expandAbbreviation();
       event.preventDefault();
-    } else if (event.shiftKey) {
-      const keyIndex = event.keyCode - 49;
-      if (keyIndex >= 0 && keyIndex < this.abbreviationOptions.length) {
-        this._selectedAbbreviationIndex = keyIndex;
-      }
+    } else if (event.shiftKey &&
+               keyIndex >= 0 && keyIndex < this.abbreviationOptions.length) {
+      this._selectedAbbreviationIndex = keyIndex;
       event.preventDefault();
     }
   }

@@ -4,7 +4,7 @@ import {ActivatedRoute} from '@angular/router';
 
 import {isPlainAlphanumericKey} from '../../utils/keyboard-utils';
 
-import {DeviceCodeResponse, GoogleDeviceAuthService, GoogleDeviceAuthServiceStub, TokenResponse} from './google-device-auth-service';
+import {DeviceCodeResponse, GoogleDeviceAuthService, TokenResponse} from './google-device-auth-service';
 
 @Component({
   selector: 'app-auth-component',
@@ -70,6 +70,8 @@ export class AuthComponent implements OnInit {
   onKeydown(event: KeyboardEvent) {
     if (isPlainAlphanumericKey(event, 'a') && this.deviceCodeData === null) {
       this.authenticate();
+      event.preventDefault();
+      event.stopPropagation();
     }
   }
 

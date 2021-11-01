@@ -12,3 +12,16 @@ export function isPlainAlphanumericKey(
     return event.key.toLocaleLowerCase() === key.toLocaleLowerCase();
   }
 }
+
+const PUNCTUATION_KEYS: string[] = [
+    ',', '.', '!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '-',
+    '=', '_', '+'];
+
+export function isTextContentKey(event: KeyboardEvent) {
+  return (event.key.length === 1 && (
+      (event.key >= 'A' && event.key <= 'Z') ||
+      (event.key >= 'a' && event.key <= 'z') ||
+      (event.key >= '0' && event.key <= '9') ||
+      PUNCTUATION_KEYS.indexOf(event.key) !== -1 ||
+      (event.key === ' ')));
+}

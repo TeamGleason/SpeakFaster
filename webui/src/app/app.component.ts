@@ -1,6 +1,6 @@
 import {Component, HostListener, OnInit} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
-import { isTextContentKey } from 'src/utils/keyboard-utils';
+import { isPlainAlphanumericKey, isTextContentKey } from 'src/utils/keyboard-utils';
 
 import {ConversationTurn} from './context/context';
 import {SpeakFasterService} from './speakfaster-service';
@@ -40,13 +40,19 @@ export class AppComponent implements OnInit {
     if (!this.hasAccessToken()) {
       return;
     }
-    if (event.altKey || event.metaKey || event.shiftKey || event.ctrlKey) {
+    if (event.ctrlKey && event.key.toLocaleLowerCase() == 'x') {
+      // Ctrl X clears the input box.
+      this.inputAbbreviation = '';
+      event.preventDefault();
+      event.stopPropagation();
+    } else if (event.altKey || event.metaKey || event.shiftKey || event.ctrlKey) {
       return;
-    }
-    if (event.key === 'Backspace') {
+    } else if (event.key === 'Backspace') {
       if (this.inputAbbreviation.length > 0) {
         this.inputAbbreviation = this.inputAbbreviation.substring(
             0, this.inputAbbreviation.length - 1);
+        event.preventDefault();
+        event.stopPropagation();
       }
     } else if (isTextContentKey(event)) {
       this.inputAbbreviation += event.key;

@@ -34,6 +34,7 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
       params: {
         mode: 'ping',
       },
+      withCredentials: accessToken === '',
       headers,
     });
   }
@@ -52,6 +53,7 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
         acronym: abbreviation,
         speechContent,
       },
+      withCredentials: accessToken === '',
       headers,
     });
   }

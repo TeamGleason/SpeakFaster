@@ -26,13 +26,15 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
   constructor(private http: HttpClient) {}
 
   ping(endpoint: string, accessToken: string) {
+    const headers: any = {};
+    if (accessToken !== '') {
+      headers['Authorization'] = `Bearer ${accessToken}`;
+    }
     return this.http.get<PingResponse>(endpoint, {
       params: {
         mode: 'ping',
       },
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-      }
+      headers,
     });
   }
 
@@ -40,15 +42,17 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
   expandAbbreviation(
       endpoint: string, accessToken: string, speechContent: string,
       abbreviation: string) {
+    const headers: any = {};
+    if (accessToken !== '') {
+      headers['Authorization'] = `Bearer ${accessToken}`;
+    }
     return this.http.get<AbbreviationExpansionRespnose>(endpoint, {
       params: {
         mode: 'abbreviation_expansion',
         acronym: abbreviation,
         speechContent,
       },
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-      }
+      headers,
     });
   }
 }

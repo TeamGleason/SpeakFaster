@@ -47,10 +47,6 @@ export class AbbreviationComponent {
       this.responseError = 'Cannot expand abbreviation: endpoint is empty';
       return;
     }
-    if (!this.accessToken) {
-      this.responseError = 'Cannot expand abbreviation: access token is empty';
-      return;
-    }
     if (this.speechContent === null) {
       this.responseError =
           'Cannot expand abbreviation: no speech content as contex';

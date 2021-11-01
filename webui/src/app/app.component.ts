@@ -12,6 +12,10 @@ import {SpeakFasterService} from './speakfaster-service';
 export class AppComponent implements OnInit {
   title = 'SpeakFasterApp';
 
+  // Set this to `false` to skip using access token (e.g., developing with
+  // an automatically authorized browser context.)
+  private static readonly USE_ACCESS_TOKEN = false;
+
   private _endpoint: string = '';
   private _accessToken: string = '';
 
@@ -41,7 +45,7 @@ export class AppComponent implements OnInit {
   }
 
   hasAccessToken(): boolean {
-    return this._accessToken !== '';
+    return !AppComponent.USE_ACCESS_TOKEN || this._accessToken !== '';
   }
 
   get endpoint() {

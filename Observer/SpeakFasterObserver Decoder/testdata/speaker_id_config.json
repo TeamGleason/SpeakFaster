@@ -1,0 +1,20 @@
+{
+    "azure_subscription_key": "<REDACTED>",
+    "azure_endpoint": "https://westus.api.cognitive.microsoft.com",
+    "id_to_realname": {
+      "c15e9704-bedf-4cab-9425-7aeedf7f0f79": "Sean",
+      "86b5bca5-903b-4e1a-853e-1ec6e3d1aad0": "Sherry",
+      "356ab86c-344c-4b1f-96be-d1d1e3d7eba6": "Tim",
+      "2eb98ec9-73ee-443b-9130-42ac00f26568": "Jenny",
+      "453f18a2-7322-4b37-b5b3-9446e82c03d1": "Mike",
+      "3620fa2e-1c06-4155-9279-84c51d0d85b0": "Danielle"
+    },
+    "realname_to_pseudonym": {
+      "Sean": "User001",
+      "Sherry": "Partner001",
+      "Tim": "Partner002",
+      "Jenny": "Partner003",
+      "Mike": "Partner004",
+      "Danielle": "Partner005"
+    }
+  }

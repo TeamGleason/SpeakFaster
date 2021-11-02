@@ -1,6 +1,6 @@
 import {Component, HostListener, OnInit} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
-import {isPlainAlphanumericKey, isTextContentKey} from 'src/utils/keyboard-utils';
+import {isTextContentKey} from 'src/utils/keyboard-utils';
 
 import {ConversationTurn, SpeakFasterService} from './speakfaster-service';
 
@@ -14,7 +14,7 @@ export class AppComponent implements OnInit {
 
   // Set this to `false` to skip using access token (e.g., developing with
   // an automatically authorized browser context.)
-  private static readonly USE_ACCESS_TOKEN = true;
+  private useAccessToken = true;
 
   private _endpoint: string = '';
   private _accessToken: string = '';
@@ -30,6 +30,11 @@ export class AppComponent implements OnInit {
     this.route.queryParams.subscribe(params => {
       if (params['endpoint'] && this.endpoint === '') {
         this._endpoint = params['endpoint'];
+      }
+      const useOauth = params['use_oauth'];
+      if (typeof useOauth === 'string' &&
+          (useOauth.toLocaleLowerCase() === 'false' || useOauth === '0')) {
+        this.useAccessToken = false;
       }
     });
   }
@@ -72,7 +77,7 @@ export class AppComponent implements OnInit {
   }
 
   hasAccessToken(): boolean {
-    return !AppComponent.USE_ACCESS_TOKEN || this._accessToken !== '';
+    return !this.useAccessToken || this._accessToken !== '';
   }
 
   get endpoint() {

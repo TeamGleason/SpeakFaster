@@ -14,7 +14,7 @@ export class ContextComponent implements OnInit, AfterViewInit {
   @Input() endpoint!: string;
   @Input() accessToken!: string;
 
-  conversationTurns: ConversationTurn[] = [];
+  readonly conversationTurns: ConversationTurn[] = [];
   contextRetrievalError: string|null = null;
 
   @Output()
@@ -68,6 +68,21 @@ export class ContextComponent implements OnInit, AfterViewInit {
     }
   }
 
+  private populateConversationTurnWithDefault() {
+    this.conversationTurns.splice(0);
+    this.conversationTurns.push({
+      startTimestamp: new Date().toISOString(),
+      speechContent: "What's up",  // Default context.
+    });
+    this.conversationTurns.push({
+      startTimestamp: new Date().toISOString(),
+      speechContent: "What do you need",  // Default context.
+    });
+    this.focusTurnIndex = this.conversationTurns.length - 1;
+    this.contextTurnSelected.emit(
+      this.conversationTurns[this.conversationTurns.length - 1]);
+  }
+
   private retrieveContext() {
     this.speakFasterService
         .retrieveContext(this.endpoint, this.accessToken, this.userId)
@@ -79,6 +94,7 @@ export class ContextComponent implements OnInit, AfterViewInit {
               }
               if (data.contextSignals == null ||
                   data.contextSignals.length === 0) {
+                this.populateConversationTurnWithDefault();
                 return;
               }
               this.conversationTurns.splice(0);  // Empty the array first.
@@ -100,6 +116,7 @@ export class ContextComponent implements OnInit, AfterViewInit {
             error => {
               this.conversationTurns.splice(0);  // Empty the array first.
               this.contextRetrievalError = error;
+              this.populateConversationTurnWithDefault();
             });
   }
 }

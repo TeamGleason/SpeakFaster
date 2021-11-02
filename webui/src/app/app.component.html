@@ -41,22 +41,26 @@ app-context-component {
   </div>
 
   <div *ngIf="hasAccessToken()">
+
     <app-context-component
       [endpoint]="endpoint"
       [accessToken]="accessToken"
       (contextTurnSelected)="onContextTurnSelected($event)"
     ></app-context-component>
+
+    <input
+        class="abbreviation-input"
+        type="text"
+        value="{{inputAbbreviation}}"
+        (input)="onAbbreviationInput($event)" />
+
     <app-abbreviation-component
       [endpoint]="endpoint"
       [accessToken]="accessToken"
       [abbreviation]="inputAbbreviation"
       [speechContent]="speechContent"
     ></app-abbreviation-component>
-    <input
-        class="abbreviation-input"
-        type="text"
-        value="{{inputAbbreviation}}"
-        (input)="onAbbreviationInput($event)" />
+
   </div>
 </div>
 

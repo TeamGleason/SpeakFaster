@@ -131,6 +131,7 @@ export class AuthComponent implements OnInit {
           this.accessToken = tokenResponse.access_token;
           this.refreshToken = tokenResponse.refresh_token!;
           this.newAccessToken.emit(this.accessToken);
+          console.log(`New accessToken: ${this.accessToken}`);
           break;
         }
       } catch (error) {
@@ -160,6 +161,7 @@ export class AuthComponent implements OnInit {
           this.accessToken = tokenResponse.access_token;
           this.newAccessToken.emit(this.accessToken);
           console.log('Access token refreshed successfully');
+          console.log(`New accessToken: ${this.accessToken}`);
         } else {
           console.log(
               'Application of refresh token failed: No access_token found in response');

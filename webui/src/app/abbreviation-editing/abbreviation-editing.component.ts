@@ -1,20 +1,45 @@
-import {Component, EventEmitter, HostListener, Input, Output} from '@angular/core';
-import {isTextContentKey} from 'src/utils/keyboard-utils';
+import {Component, EventEmitter, HostListener, Output} from '@angular/core';
+
+import {isTextContentKey} from '../../utils/keyboard-utils';
+import {AbbreviationSpec, AbbreviationToken, InputAbbreviationChangedEvent} from '../types/abbreviations';
+
+enum AbbreviationEditingState {
+  ENTERING_ABBREVIATION = 'ENTERING_ABBREVIATION',
+  SPELLING = 'SPELLING',
+}
 
 @Component({
   selector: 'app-abbreviation-editing-component',
   templateUrl: './abbreviation-editing.component.html',
 })
 export class AbbreviationEditingComponent {
-  @Output() inputStringChanged: EventEmitter<string> = new EventEmitter();
+  @Output()
+  inputAbbreviationChanged: EventEmitter<InputAbbreviationChangedEvent> =
+      new EventEmitter();
+
+  state: AbbreviationEditingState =
+      AbbreviationEditingState.ENTERING_ABBREVIATION;
 
   inputAbbreviation: string = '';
 
+  abbreviatedTokens: string[] = [];
+
   @HostListener('document:keydown', ['$event'])
   onKeydown(event: KeyboardEvent) {
+    if (this.state !== AbbreviationEditingState.ENTERING_ABBREVIATION) {
+      return;
+    }
     if (event.ctrlKey && event.key.toLocaleLowerCase() == 'x') {
       // Ctrl X clears the input box.
       this.inputAbbreviation = '';
+      this.state = AbbreviationEditingState.ENTERING_ABBREVIATION;
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
+    if (event.ctrlKey && event.key.toLocaleLowerCase() == 's') {
+      // Ctrl S clears opens the spelling UI.
+      this.state = AbbreviationEditingState.SPELLING;
       event.preventDefault();
       event.stopPropagation();
       return;
@@ -25,20 +50,44 @@ export class AbbreviationEditingComponent {
       if (this.inputAbbreviation.length > 0) {
         this.inputAbbreviation = this.inputAbbreviation.substring(
             0, this.inputAbbreviation.length - 1);
-        this.inputStringChanged.emit(this.inputAbbreviation);
-        event.preventDefault();
-        event.stopPropagation();
+        this.setInputString(event);
       }
     } else if (isTextContentKey(event)) {
       this.inputAbbreviation += event.key;
-      this.inputStringChanged.emit(this.inputAbbreviation);
-      event.preventDefault();
-      event.stopPropagation();
+      this.setInputString(event);
     } else if (isTextContentKey(event)) {
       this.inputAbbreviation += event.key;
-      this.inputStringChanged.emit(this.inputAbbreviation);
-      event.preventDefault();
-      event.stopPropagation();
+      this.setInputString(event);
     }
+  }
+
+  onSpellButtonClicked(event: Event) {
+    if (this.state == AbbreviationEditingState.ENTERING_ABBREVIATION &&
+        this.inputAbbreviation.length > 0) {
+      this.state = AbbreviationEditingState.SPELLING;
+    }
+  }
+
+  onNewAbbreviationSpec(abbreviationSpec: AbbreviationSpec) {
+    this.inputAbbreviation = abbreviationSpec.readableString;
+    this.state = AbbreviationEditingState.ENTERING_ABBREVIATION;
+    this.inputAbbreviationChanged.emit(
+        {abbreviationSpec, triggerExpansion: true});
+  }
+
+  private setInputString(event: Event) {
+    const abbreviationToken: AbbreviationToken = {
+      value: this.inputAbbreviation.trim(),
+      isKeyword: false
+    };
+    const abbreviationSpec: AbbreviationSpec = {
+      tokens: [abbreviationToken],
+      readableString: abbreviationToken.value
+    };
+    this.abbreviatedTokens = this.inputAbbreviation.split('');
+    this.inputAbbreviationChanged.emit(
+        {abbreviationSpec, triggerExpansion: false});
+    event.preventDefault();
+    event.stopPropagation();
   }
 }

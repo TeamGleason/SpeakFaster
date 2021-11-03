@@ -4,6 +4,8 @@ import {HttpClient} from '@angular/common/http';
 import {Injectable} from '@angular/core';
 import {Observable} from 'rxjs';
 
+import {AbbreviationSpec} from './types/abbreviations';
+
 export interface PingResponse {
   ping_response: string;
 }
@@ -22,7 +24,7 @@ export interface ConversationTurn {
 }
 
 export interface PartnerProximityEvent {
-  eventType: 'UNKNOWN' | 'FOUND' | 'LOST';
+  eventType: 'UNKNOWN'|'FOUND'|'LOST';
   partnerId: string;
   distanceM: number;
 }
@@ -43,7 +45,7 @@ export interface ContextSignal {
 // }
 
 export interface RetrieveContextResponse {
-  result: 'UNKNOWN' | 'SUCCESS' | 'ERROR_INVALID_USER_ID' | 'ERROR_INVALID_TIMESPAN';
+  result: 'UNKNOWN'|'SUCCESS'|'ERROR_INVALID_USER_ID'|'ERROR_INVALID_TIMESPAN';
   errorMessage?: string;
   contextSignals?: ContextSignal[];
 }
@@ -53,11 +55,11 @@ export interface SpeakFasterServiceStub {
 
   expandAbbreviation(
       endpoint: string, accessToken: string, contextTurn: string,
-      abbreviation: string): Observable<AbbreviationExpansionRespnose>;
+      abbreviation: AbbreviationSpec):
+      Observable<AbbreviationExpansionRespnose>;
 
   // TODO(cais): Add other parameters.
-  retrieveContext(
-      endpoint: string, accessToken: string, userId: string):
+  retrieveContext(endpoint: string, accessToken: string, userId: string):
       Observable<RetrieveContextResponse>;
 }
 
@@ -80,13 +82,13 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
   // TODO(cais): Add other parameters.
   expandAbbreviation(
       endpoint: string, accessToken: string, speechContent: string,
-      abbreviation: string) {
+      abbreviation: AbbreviationSpec) {
     const {headers, withCredentials} =
         this.getHeadersAndWithCredentials(accessToken);
     return this.http.get<AbbreviationExpansionRespnose>(endpoint, {
       params: {
         mode: 'abbreviation_expansion',
-        acronym: abbreviation,
+        acronym: abbreviation.readableString,
         speechContent,
       },
       withCredentials,

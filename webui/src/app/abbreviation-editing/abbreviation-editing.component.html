@@ -17,9 +17,44 @@
   padding: 2px 4px;
 }
 
+.button-shortcut-key {
+  font-size: 18px;
+  color: #888;
+}
+
+.spell-button {
+  background: #333;
+  border: 2px solid #888;
+  border-radius: 5px;
+  color: #eee;
+  font-size: 20px;
+  height: 45px;
+  margin-left: 10px;
+  margin-bottom: 6px;
+  min-width: 150px;
+  padding: 5px;
+  vertical-align: middle;
+  width: fit-content;
+}
+
 </style>
 
 <input
     class="abbreviation-input"
     type="text"
     value="{{inputAbbreviation}}" />
+
+<button
+    *ngIf="inputAbbreviation.length > 0 && state === 'ENTERING_ABBREVIATION'"
+    class="spell-button"
+    (click)="onSpellButtonClicked($event)">
+  Spell
+  <span class="button-shortcut-key">(Ctrl+s)</span>
+</button>
+
+<app-spell-component
+  *ngIf="state === 'SPELLING'"
+  [abbreviatedTokens]="abbreviatedTokens"
+  [spellIndex]="null"
+  (newAbbreviationSpec)="onNewAbbreviationSpec($event)"
+></app-spell-component>

@@ -41,14 +41,14 @@ app-context-component {
     ></app-context-component>
 
     <app-abbreviation-editing-component
-      (inputStringChanged)="onAbbreviationInputStringChanged($event)"
+      (inputAbbreviationChanged)="onAbbreviationInputChanged($event)"
     ></app-abbreviation-editing-component>
 
     <app-abbreviation-component
       [endpoint]="endpoint"
       [accessToken]="accessToken"
-      [abbreviation]="inputAbbreviation"
       [speechContent]="speechContent"
+      [abbreviationExpansionTriggers]="abbreviationExpansionTriggers"
     ></app-abbreviation-component>
 
   </div>

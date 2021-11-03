@@ -1,7 +1,9 @@
 import {Component, HostListener, OnInit} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
+import {Subject} from 'rxjs';
 
 import {ConversationTurn, SpeakFasterService} from './speakfaster-service';
+import {InputAbbreviationChangedEvent} from './types/abbreviations';
 
 @Component({
   selector: 'app-root',
@@ -18,8 +20,10 @@ export class AppComponent implements OnInit {
   private _endpoint: string = '';
   private _accessToken: string = '';
 
+  abbreviationExpansionTriggers: Subject<InputAbbreviationChangedEvent> =
+      new Subject();
+
   speechContent: string|null = null;
-  inputAbbreviation: string = '';
 
   constructor(
       private route: ActivatedRoute,
@@ -74,7 +78,8 @@ export class AppComponent implements OnInit {
     this.speechContent = contextTurn.speechContent;
   }
 
-  onAbbreviationInputStringChanged(inputString: string) {
-    this.inputAbbreviation = inputString;
+  onAbbreviationInputChanged(abbreviationChangedEvent:
+                                 InputAbbreviationChangedEvent) {
+    this.abbreviationExpansionTriggers.next(abbreviationChangedEvent);
   }
 }

@@ -1,17 +1,22 @@
-import {Component, HostListener, Input} from '@angular/core';
+import {Component, HostListener, Input, OnInit} from '@angular/core';
+import {Subject} from 'rxjs';
 
 import {SpeakFasterService} from '../speakfaster-service';
+import {AbbreviationSpec, InputAbbreviationChangedEvent} from '../types/abbreviations';
 
 @Component({
   selector: 'app-abbreviation-component',
   templateUrl: './abbreviation.component.html',
   providers: [SpeakFasterService],
 })
-export class AbbreviationComponent {
+export class AbbreviationComponent implements OnInit {
   @Input() endpoint!: string;
   @Input() accessToken!: string;
-  @Input() abbreviation!: string;
+  // @Input() abbreviation: AbbreviationSpec|null = null;
   @Input() speechContent!: string|null;
+  @Input()
+  abbreviationExpansionTriggers!: Subject<InputAbbreviationChangedEvent>;
+  abbreviation: AbbreviationSpec|null = null;
 
   requestOngoing: boolean = false;
   responseError: string|null = null;
@@ -19,6 +24,16 @@ export class AbbreviationComponent {
   private _selectedAbbreviationIndex: number = -1;
 
   constructor(private speakFasterService: SpeakFasterService) {}
+
+  ngOnInit() {
+    this.abbreviationExpansionTriggers.subscribe(
+        (event: InputAbbreviationChangedEvent) => {
+          this.abbreviation = event.abbreviationSpec;
+          if (event.triggerExpansion) {
+            this.expandAbbreviation();
+          }
+        });
+  }
 
   @HostListener('document:keydown', ['$event'])
   onKeydown(event: KeyboardEvent) {
@@ -38,11 +53,12 @@ export class AbbreviationComponent {
         event.preventDefault();
         event.stopPropagation();
       }
-    } else if (event.shiftKey &&
-               keyIndex >= 0 && keyIndex < this.abbreviationOptions.length) {
+    } else if (
+        event.shiftKey && keyIndex >= 0 &&
+        keyIndex < this.abbreviationOptions.length) {
       this._selectedAbbreviationIndex = keyIndex;
       event.preventDefault();
-      event.stopPropagation();  
+      event.stopPropagation();
     }
   }
 
@@ -57,12 +73,17 @@ export class AbbreviationComponent {
     }
     if (this.speechContent === null) {
       this.responseError =
-          'Cannot expand abbreviation: no speech content as contex';
+          'Cannot expand abbreviation: no speech content as context';
+      return;
+    }
+    if (this.abbreviation === null) {
+      this.responseError = 'Cannot expand abbreviation: empty abbreviation';
       return;
     }
     this.abbreviationOptions = [];
     this.requestOngoing = true;
     this.responseError = null;
+    console.log('Calling expandAbbreviation():', this.abbreviation);
     this.speakFasterService
         .expandAbbreviation(
             this.endpoint, this.accessToken, this.speechContent,

@@ -1,0 +1,93 @@
+<style>
+
+:host {
+  box-sizing: border-box;
+  color: #EEE;
+  display: block;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  font-size: 24px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.abbreviated-token {
+  background: #333;
+  border: 2px solid #888;
+  border-radius: 5px;
+  color: #eee;
+  display: inline-block;
+  font-size: 24px;
+  line-height: 24px;
+  margin: 10px;
+  min-width: 75px;
+  padding: 15px;
+  vertical-align: middle;;
+  width: fit-content;
+}
+
+.button-shortcut-key {
+  font-size: 18px;
+  color: #888;
+}
+
+.control-button {
+  background: #333;
+  border: 2px solid #888;
+  border-radius: 5px;
+  color: #eee;
+  display: inline-block;
+  font-size: 24px;
+  line-height: 24px;
+  margin: 10px;
+  min-width: 75px;
+  padding: 15px;
+  vertical-align: middle;;
+  width: fit-content;
+}
+
+.spell-input {
+  border: 2px solid #888;
+  border-radius: 3px;
+  font-size: 32px;
+  margin: 6px 8px;
+  min-width: 100px;
+  padding: 2px 4px;
+  width: fit-content;
+}
+
+.spell-item-container {
+  display: inline-block;
+}
+
+.spell-label {
+  display: inline-block;
+  margin-left: 8px;
+}
+
+</style>
+
+<div class=spell-label>Spell:</div>
+
+<div
+    *ngFor="let abbreviatedToken of abbreviatedTokens; let i = index"
+    class="spell-item-container">
+
+  <button
+      class="abbreviated-token"
+      (click)="onTokenButtonClicked($event, i)">
+    <div class="abbreviated-token-text">{{abbreviatedToken}}</div>
+  </button>
+
+  <input
+      *ngIf="spellIndex !== null && i === spellIndex"
+      class="spell-input"
+      [value]="tokenSpellingInput" />
+
+</div>
+
+<button
+    class="control-button"
+    (click)="onDoneButtonClicked($event)">
+  Done
+  <span>(Ctrl+s)</span>
+</button>

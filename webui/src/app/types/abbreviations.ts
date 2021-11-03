@@ -14,3 +14,7 @@ export interface InputAbbreviationChangedEvent {
   abbreviationSpec: AbbreviationSpec;
   triggerExpansion: boolean;
 }
+
+export interface StartSpellingEvent {
+  originalAbbreviationChars: string[];
+}

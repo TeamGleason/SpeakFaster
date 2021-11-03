@@ -2,7 +2,7 @@ import {Component, EventEmitter, HostListener, Output} from '@angular/core';
 import { Subject } from 'rxjs';
 
 import {isTextContentKey} from '../../utils/keyboard-utils';
-import {AbbreviationSpec, AbbreviationToken, InputAbbreviationChangedEvent} from '../types/abbreviations';
+import {AbbreviationSpec, AbbreviationToken, InputAbbreviationChangedEvent, StartSpellingEvent} from '../types/abbreviations';
 
 enum AbbreviationEditingState {
   ENTERING_ABBREVIATION = 'ENTERING_ABBREVIATION',
@@ -23,8 +23,7 @@ export class AbbreviationEditingComponent {
 
   inputAbbreviation: string = '';
 
-  originalAbbreviationChars: string[] = [];
-  startSpellingSubject: Subject<boolean> = new Subject();
+  startSpellingSubject: Subject<StartSpellingEvent> = new Subject();
 
   @HostListener('document:keydown', ['$event'])
   onKeydown(event: KeyboardEvent) {
@@ -44,7 +43,9 @@ export class AbbreviationEditingComponent {
       event.preventDefault();
       event.stopPropagation();
       this.state = AbbreviationEditingState.SPELLING;
-      this.startSpellingSubject.next(true);
+      this.startSpellingSubject.next({
+        originalAbbreviationChars: this.inputAbbreviation.split(''),
+      });
       return;
     }
     if (event.altKey || event.metaKey || event.shiftKey || event.ctrlKey) {
@@ -87,7 +88,6 @@ export class AbbreviationEditingComponent {
       tokens: [abbreviationToken],
       readableString: abbreviationToken.value
     };
-    this.originalAbbreviationChars = this.inputAbbreviation.split('');
     this.inputAbbreviationChanged.emit(
         {abbreviationSpec, triggerExpansion: false});
     event.preventDefault();

@@ -2,7 +2,7 @@ import {Component, EventEmitter, HostListener, Input, OnInit, Output} from '@ang
 import {Subject} from 'rxjs';
 
 import {isTextContentKey} from '../../utils/keyboard-utils';
-import {AbbreviationSpec, AbbreviationToken} from '../types/abbreviations';
+import {AbbreviationSpec, AbbreviationToken, StartSpellingEvent} from '../types/abbreviations';
 
 enum SpellingState {
   NOT_STARTED = 'NOT_STARTED',
@@ -16,23 +16,26 @@ enum SpellingState {
   templateUrl: './spell.component.html',
 })
 export class SpellComponent implements OnInit {
-  @Input() originalAbbreviationChars: string[] = [];
   @Input() spellIndex: number|null = null;
-  @Input() startSpelling!: Subject<boolean>;
+  @Input() startSpelling!: Subject<StartSpellingEvent>;
   @Output()
   newAbbreviationSpec: EventEmitter<AbbreviationSpec> = new EventEmitter();
+
+  originalAbbreviationChars: string[] = [];
 
   // Words that have already been spelled out so far. This supports
   // incremental spelling out of multiple words in an abbreviation.
   readonly spelledWords: Array<string|null> = [];
 
   ngOnInit() {
-    this.startSpelling.subscribe((value: boolean) => {
-      if (value) {
-        this.state = SpellingState.CHOOSING_TOKEN;
-        // this.spellIndex = -1;
-        // this.spelledWords.splice(0);
-        // TODO(cais): Better handle resetting of the abbreviation.
+    this.startSpelling.subscribe((event: StartSpellingEvent) => {
+      this.state = SpellingState.CHOOSING_TOKEN;
+      if (this.originalAbbreviationChars.length > 0) {
+        return;
+      }
+      // TODO(cais): Support reset.
+      if (event) {
+        this.originalAbbreviationChars = event.originalAbbreviationChars;
       }
     });
   }

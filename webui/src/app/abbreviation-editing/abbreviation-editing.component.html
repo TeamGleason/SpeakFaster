@@ -58,8 +58,6 @@
 
 <app-spell-component
   [ngClass]="{'hidden': state !== 'SPELLING'}"
-  [originalAbbreviationChars]="originalAbbreviationChars"
-  [spellIndex]="null"
   [startSpelling]="startSpellingSubject"
   (newAbbreviationSpec)="onNewAbbreviationSpec($event)"
 ></app-spell-component>

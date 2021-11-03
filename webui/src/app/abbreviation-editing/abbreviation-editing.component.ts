@@ -1,4 +1,5 @@
 import {Component, EventEmitter, HostListener, Output} from '@angular/core';
+import { Subject } from 'rxjs';
 
 import {isTextContentKey} from '../../utils/keyboard-utils';
 import {AbbreviationSpec, AbbreviationToken, InputAbbreviationChangedEvent} from '../types/abbreviations';
@@ -22,7 +23,8 @@ export class AbbreviationEditingComponent {
 
   inputAbbreviation: string = '';
 
-  abbreviatedTokens: string[] = [];
+  originalAbbreviationChars: string[] = [];
+  startSpellingSubject: Subject<boolean> = new Subject();
 
   @HostListener('document:keydown', ['$event'])
   onKeydown(event: KeyboardEvent) {
@@ -39,9 +41,10 @@ export class AbbreviationEditingComponent {
     }
     if (event.ctrlKey && event.key.toLocaleLowerCase() == 's') {
       // Ctrl S clears opens the spelling UI.
-      this.state = AbbreviationEditingState.SPELLING;
       event.preventDefault();
       event.stopPropagation();
+      this.state = AbbreviationEditingState.SPELLING;
+      this.startSpellingSubject.next(true);
       return;
     }
     if (event.altKey || event.metaKey || event.shiftKey || event.ctrlKey) {
@@ -84,7 +87,7 @@ export class AbbreviationEditingComponent {
       tokens: [abbreviationToken],
       readableString: abbreviationToken.value
     };
-    this.abbreviatedTokens = this.inputAbbreviation.split('');
+    this.originalAbbreviationChars = this.inputAbbreviation.split('');
     this.inputAbbreviationChanged.emit(
         {abbreviationSpec, triggerExpansion: false});
     event.preventDefault();

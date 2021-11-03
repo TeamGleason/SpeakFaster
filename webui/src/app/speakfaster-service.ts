@@ -55,7 +55,7 @@ export interface SpeakFasterServiceStub {
 
   expandAbbreviation(
       endpoint: string, accessToken: string, contextTurn: string,
-      abbreviation: AbbreviationSpec):
+      abbreviationSpec: AbbreviationSpec):
       Observable<AbbreviationExpansionRespnose>;
 
   // TODO(cais): Add other parameters.
@@ -82,14 +82,21 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
   // TODO(cais): Add other parameters.
   expandAbbreviation(
       endpoint: string, accessToken: string, speechContent: string,
-      abbreviation: AbbreviationSpec) {
+      abbreviationSpec: AbbreviationSpec) {
     const {headers, withCredentials} =
         this.getHeadersAndWithCredentials(accessToken);
+    const keywordIndices: number[] = [];
+    for (let i = 0; i < abbreviationSpec.tokens.length; ++i) {
+      if (abbreviationSpec.tokens[i].isKeyword) {
+        keywordIndices.push(i);
+      }
+    }
     return this.http.get<AbbreviationExpansionRespnose>(endpoint, {
       params: {
         mode: 'abbreviation_expansion',
-        acronym: abbreviation.readableString,
+        acronym: abbreviationSpec.readableString,
         speechContent,
+        keywordIndices: keywordIndices.join(',')
       },
       withCredentials,
       headers,

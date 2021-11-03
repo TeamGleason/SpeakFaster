@@ -22,6 +22,10 @@
   color: #888;
 }
 
+.hidden {
+  display: none;
+}
+
 .spell-button {
   background: #333;
   border: 2px solid #888;
@@ -53,8 +57,9 @@
 </button>
 
 <app-spell-component
-  *ngIf="state === 'SPELLING'"
-  [abbreviatedTokens]="abbreviatedTokens"
+  [ngClass]="{'hidden': state !== 'SPELLING'}"
+  [originalAbbreviationChars]="originalAbbreviationChars"
   [spellIndex]="null"
+  [startSpelling]="startSpellingSubject"
   (newAbbreviationSpec)="onNewAbbreviationSpec($event)"
 ></app-spell-component>

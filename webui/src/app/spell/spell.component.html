@@ -50,9 +50,8 @@
   border-radius: 3px;
   font-size: 32px;
   margin: 6px 8px;
-  min-width: 100px;
   padding: 2px 4px;
-  width: fit-content;
+  width: 120px;  /* TODO(cais): Make width adaptive. */
 }
 
 .spell-item-container {
@@ -69,14 +68,19 @@
 <div class=spell-label>Spell:</div>
 
 <div
-    *ngFor="let abbreviatedToken of abbreviatedTokens; let i = index"
+    *ngFor="let abbreviationChar of originalAbbreviationChars; let i = index"
     class="spell-item-container">
 
   <button
       class="abbreviated-token"
       (click)="onTokenButtonClicked($event, i)">
-    <div class="abbreviated-token-text">{{abbreviatedToken}}</div>
+    <div class="abbreviated-token-text">{{abbreviationChar}}</div>
   </button>
+
+  <input
+      *ngIf="spelledWords.length > 0 && spelledWords[i] != null"
+      class="spell-input"
+      [value]="spelledWords[i]" />
 
   <input
       *ngIf="spellIndex !== null && i === spellIndex"

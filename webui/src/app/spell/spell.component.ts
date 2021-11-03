@@ -1,11 +1,13 @@
-import {Component, EventEmitter, HostListener, Input, Output} from '@angular/core';
+import {Component, EventEmitter, HostListener, Input, OnInit, Output} from '@angular/core';
+import {Subject} from 'rxjs';
 
 import {isTextContentKey} from '../../utils/keyboard-utils';
 import {AbbreviationSpec, AbbreviationToken} from '../types/abbreviations';
 
 enum SpellingState {
+  NOT_STARTED = 'NOT_STARTED',
   CHOOSING_TOKEN = 'CHOOSING_TOKEN',
-  SPELLILNG_TOKEN = 'SPELLING_TOKEN',
+  SPELLING_TOKEN = 'SPELLING_TOKEN',
   DONE = 'DONE',
 }
 
@@ -13,33 +15,52 @@ enum SpellingState {
   selector: 'app-spell-component',
   templateUrl: './spell.component.html',
 })
-export class SpellComponent {
-  @Input() abbreviatedTokens: string[] = [];
+export class SpellComponent implements OnInit {
+  @Input() originalAbbreviationChars: string[] = [];
   @Input() spellIndex: number|null = null;
+  @Input() startSpelling!: Subject<boolean>;
   @Output()
   newAbbreviationSpec: EventEmitter<AbbreviationSpec> = new EventEmitter();
 
-  state: SpellingState = SpellingState.CHOOSING_TOKEN;
+  // Words that have already been spelled out so far. This supports
+  // incremental spelling out of multiple words in an abbreviation.
+  readonly spelledWords: Array<string|null> = [];
+
+  ngOnInit() {
+    this.startSpelling.subscribe((value: boolean) => {
+      if (value) {
+        this.state = SpellingState.CHOOSING_TOKEN;
+        // this.spellIndex = -1;
+        // this.spelledWords.splice(0);
+        // TODO(cais): Better handle resetting of the abbreviation.
+      }
+    });
+  }
+
+  state: SpellingState = SpellingState.NOT_STARTED;
   tokenSpellingInput: string = '';
 
   @HostListener('document:keydown', ['$event'])
   onKeydown(event: KeyboardEvent) {
-    if (this.abbreviatedTokens.length === 0) {
+    if (this.state === SpellingState.NOT_STARTED) {
       return;
     }
-    if (this.state === SpellingState.CHOOSING_TOKEN) {
+    if (this.originalAbbreviationChars.length === 0) {
+      return;
+    }
+    if (this.state === SpellingState.CHOOSING_TOKEN &&
+        !(event.altKey || event.ctrlKey || event.metaKey)) {
       // TODO(cais): Support circular selection of duplicate characters.
-      // TODO(cais): Support spelling multiple words
       const key = event.key.toLocaleLowerCase();
-      const index = this.abbreviatedTokens.indexOf(key);
+      const index = this.originalAbbreviationChars.indexOf(key);
       if (index !== -1) {
         this.startSpellingToken(index);
       }
-    } else if (this.state === SpellingState.SPELLILNG_TOKEN) {
+    } else if (this.state === SpellingState.SPELLING_TOKEN) {
+      console.log('A200');
       if (event.ctrlKey &&
           (event.key.toLocaleLowerCase() === 's' ||
            event.key.toLocaleLowerCase() === 'e')) {
-        // Ctrl S or Ctrl E ends the spelling process.
         this.endSpelling();
         event.preventDefault();
         event.stopPropagation();
@@ -70,30 +91,38 @@ export class SpellComponent {
 
   private startSpellingToken(index: number) {
     this.spellIndex = index;
-    this.tokenSpellingInput = this.abbreviatedTokens[index];
-    this.state = SpellingState.SPELLILNG_TOKEN;
+    this.tokenSpellingInput = this.originalAbbreviationChars[index];
+    this.state = SpellingState.SPELLING_TOKEN;
+    if (this.spelledWords.length !== this.originalAbbreviationChars.length) {
+      this.spelledWords.splice(0);
+      for (let i = 0; i < this.originalAbbreviationChars.length; ++i) {
+        this.spelledWords.push(null);
+      }
+    }
   }
 
   private endSpelling() {
     this.state = SpellingState.DONE;
     this.newAbbreviationSpec.emit(this.reconstructAbbreviation());
+    this.spellIndex = null;
   }
 
   private reconstructAbbreviation(): AbbreviationSpec {
+    this.spelledWords[this.spellIndex!] = this.tokenSpellingInput.trim();
     const abbrevSpec: AbbreviationSpec = {tokens: [], readableString: ''};
     let currentToken: AbbreviationToken = {value: '', isKeyword: false};
-    for (let i = 0; i < this.abbreviatedTokens.length; ++i) {
-      if (i === this.spellIndex) {
+    for (let i = 0; i < this.originalAbbreviationChars.length; ++i) {
+      if (this.spelledWords[i] !== null) {
         if (currentToken.value.length > 0) {
           abbrevSpec.tokens.push(currentToken);
         }
         abbrevSpec.tokens.push({
-          value: this.tokenSpellingInput,
+          value: this.spelledWords[i] as string,
           isKeyword: true,
         });
         currentToken = {value: '', isKeyword: false};
       } else {
-        const char = this.abbreviatedTokens[i];
+        const char = this.originalAbbreviationChars[i];
         currentToken.value += char;
       }
     }

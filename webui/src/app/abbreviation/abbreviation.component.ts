@@ -22,18 +22,27 @@ export class AbbreviationComponent {
 
   @HostListener('document:keydown', ['$event'])
   onKeydown(event: KeyboardEvent) {
-    // Ctrl E activates AE.
     if (event.altKey || event.metaKey) {
       return;
     }
     const keyIndex = event.keyCode - 49;
-    if (event.ctrlKey && event.key.toLocaleLowerCase() === 'e') {
-      this.expandAbbreviation();
-      event.preventDefault();
+    // Ctrl E activates AE.
+    // Ctrl Q clears all the expansion options (if any).
+    if (event.ctrlKey) {
+      if (event.key.toLocaleLowerCase() === 'e') {
+        this.expandAbbreviation();
+        event.preventDefault();
+        event.stopPropagation();
+      } else if (event.key.toLocaleLowerCase() === 'q') {
+        this.abbreviationOptions.splice(0);
+        event.preventDefault();
+        event.stopPropagation();
+      }
     } else if (event.shiftKey &&
                keyIndex >= 0 && keyIndex < this.abbreviationOptions.length) {
       this._selectedAbbreviationIndex = keyIndex;
       event.preventDefault();
+      event.stopPropagation();  
     }
   }
 

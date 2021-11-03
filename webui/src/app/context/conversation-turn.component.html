@@ -13,9 +13,12 @@
   background: #333;
   border: 2px solid #888;
   border-radius: 5px;
+  color: #eee;
+  font-size: 28px;
   margin: 10px;
   min-width: 250px;
   padding: 15px;
+  text-align: left;
   width: fit-content;
 }
 
@@ -51,7 +54,7 @@
 
 </style>
 
-<div class="conversation-turn" [ngClass]="{'focused-turn': isFocus}">
+<button class="conversation-turn" [ngClass]="{'focused-turn': isFocus}">
   <div *ngIf="turn.speakerId != null && turn.speakerId.length > 0" class="speaker-tag">
     {{turn.speakerId}}
   </div>
@@ -59,4 +62,4 @@
     {{agoString}}
   </div>
   <div class="turn-content">{{turn.speechContent}}</div>
-</div>
+</button>

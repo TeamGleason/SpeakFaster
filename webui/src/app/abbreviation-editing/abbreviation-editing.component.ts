@@ -42,10 +42,7 @@ export class AbbreviationEditingComponent {
       // Ctrl S clears opens the spelling UI.
       event.preventDefault();
       event.stopPropagation();
-      this.state = AbbreviationEditingState.SPELLING;
-      this.startSpellingSubject.next({
-        originalAbbreviationChars: this.inputAbbreviation.split(''),
-      });
+      this.startSpelling();
       return;
     }
     if (event.altKey || event.metaKey || event.shiftKey || event.ctrlKey) {
@@ -65,11 +62,19 @@ export class AbbreviationEditingComponent {
     }
   }
 
-  onSpellButtonClicked(event: Event) {
-    if (this.state == AbbreviationEditingState.ENTERING_ABBREVIATION &&
-        this.inputAbbreviation.length > 0) {
-      this.state = AbbreviationEditingState.SPELLING;
+  private startSpelling() {
+    if (this.state != AbbreviationEditingState.ENTERING_ABBREVIATION ||
+      this.inputAbbreviation.length === 0) {
+      return;
     }
+    this.state = AbbreviationEditingState.SPELLING;
+    this.startSpellingSubject.next({
+      originalAbbreviationChars: this.inputAbbreviation.split(''),
+    });
+  }
+
+  onSpellButtonClicked(event: Event) {
+    this.startSpelling();
   }
 
   onNewAbbreviationSpec(abbreviationSpec: AbbreviationSpec) {

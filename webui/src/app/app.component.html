@@ -14,14 +14,6 @@ app-context-component {
   display: block;
 }
 
-.abbreviation-input {
-  border: 2px solid #888;
-  border-radius: 3px;
-  font-size: 32px;
-  margin: 6px 8px;
-  padding: 2px 4px;
-}
-
 .auth-area {
   border: 2px solid yellow;
   border-radius: 7px;
@@ -48,11 +40,9 @@ app-context-component {
       (contextTurnSelected)="onContextTurnSelected($event)"
     ></app-context-component>
 
-    <input
-        class="abbreviation-input"
-        type="text"
-        value="{{inputAbbreviation}}"
-        (input)="onAbbreviationInput($event)" />
+    <app-abbreviation-editing-component
+      (inputStringChanged)="onAbbreviationInputStringChanged($event)"
+    ></app-abbreviation-editing-component>
 
     <app-abbreviation-component
       [endpoint]="endpoint"

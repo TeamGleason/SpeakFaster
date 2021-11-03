@@ -1,6 +1,5 @@
 import {Component, HostListener, OnInit} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
-import {isTextContentKey} from 'src/utils/keyboard-utils';
 
 import {ConversationTurn, SpeakFasterService} from './speakfaster-service';
 
@@ -44,26 +43,6 @@ export class AppComponent implements OnInit {
     if (!this.hasAccessToken()) {
       return;
     }
-    if (event.ctrlKey && event.key.toLocaleLowerCase() == 'x') {
-      // Ctrl X clears the input box.
-      this.inputAbbreviation = '';
-      event.preventDefault();
-      event.stopPropagation();
-    } else if (
-        event.altKey || event.metaKey || event.shiftKey || event.ctrlKey) {
-      return;
-    } else if (event.key === 'Backspace') {
-      if (this.inputAbbreviation.length > 0) {
-        this.inputAbbreviation = this.inputAbbreviation.substring(
-            0, this.inputAbbreviation.length - 1);
-        event.preventDefault();
-        event.stopPropagation();
-      }
-    } else if (isTextContentKey(event)) {
-      this.inputAbbreviation += event.key;
-      event.preventDefault();
-      event.stopPropagation();
-    }
   }
 
   onNewAccessToken(accessToken: string) {
@@ -95,7 +74,7 @@ export class AppComponent implements OnInit {
     this.speechContent = contextTurn.speechContent;
   }
 
-  onAbbreviationInput(event: Event) {
-    this.inputAbbreviation = (event.target as HTMLInputElement).value;
+  onAbbreviationInputStringChanged(inputString: string) {
+    this.inputAbbreviation = inputString;
   }
 }

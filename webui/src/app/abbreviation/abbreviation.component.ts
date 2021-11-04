@@ -62,21 +62,29 @@ export class AbbreviationComponent implements OnInit {
     } else if (
         event.shiftKey && keyIndex >= 0 &&
         keyIndex < this.abbreviationOptions.length) {
-      if (this._selectedAbbreviationIndex !== keyIndex) {
-        this._selectedAbbreviationIndex = keyIndex;
-        this.abbreviationExpansionSelected.emit({
-          expansionText:
-              this.abbreviationOptions[this._selectedAbbreviationIndex]
-        });
-        setTimeout(() => this.resetState(), 1000);
-        event.preventDefault();
-        event.stopPropagation();
-      }
+      this.selectExpansionOption(keyIndex);
+      event.preventDefault();
+      event.stopPropagation();
     }
   }
 
   get selectedAbbreviationIndex() {
     return this._selectedAbbreviationIndex;
+  }
+
+  onExpansionOptionButtonClicked(event: Event, index: number) {
+    this.selectExpansionOption(index);
+  }
+
+  private selectExpansionOption(index: number) {
+    if (this._selectedAbbreviationIndex === index) {
+      return;
+    }
+    this._selectedAbbreviationIndex = index;
+    this.abbreviationExpansionSelected.emit({
+      expansionText: this.abbreviationOptions[this._selectedAbbreviationIndex]
+    });
+    setTimeout(() => this.resetState(), 1000);
   }
 
   private resetState() {

@@ -67,7 +67,8 @@
   <button
       *ngFor="let abbreviationOption of abbreviationOptions; let i = index"
       class="abbreviation-option"
-      [ngClass]="{'is-selected': i === selectedAbbreviationIndex}">
+      [ngClass]="{'is-selected': i === selectedAbbreviationIndex}"
+      (click)="onExpansionOptionButtonClicked($event, i)">
     <div class="shortcut-key">Shift-{{i + 1}}</div>
     <div class="abbreviation-expansion">{{abbreviationOption}}</div>
   </button>

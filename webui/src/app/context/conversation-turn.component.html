@@ -26,6 +26,17 @@
   border: 3px solid gold;
 }
 
+.hardcode-tag {
+  background-color: lightgrey;
+  border: 2px solid #888;
+  color: black;
+  border-radius: 5px;
+  display: inline-block;
+  font-size: 28px;
+  margin-right: 10px;
+  padding: 2px 5px;
+}
+
 .speaker-tag {
   background-color: green;
   border: 2px solid #888;
@@ -69,8 +80,11 @@
   <div *ngIf="turn.speakerId != null && turn.speakerId.length > 0" class="speaker-tag">
     {{turn.speakerId}}
   </div>
-  <div class="time-tag">
+  <div *ngIf="!turn.isHardcoded" class="time-tag">
     {{agoString}}
+  </div>
+  <div *ngIf="turn.isHardcoded" class="hardcode-tag">
+    📌
   </div>
   <div *ngIf="turn.isTts" class="tts-tag">
     ⌨

@@ -83,10 +83,12 @@ export class ContextComponent implements OnInit, AfterViewInit {
     this.conversationTurns.push({
       startTimestamp: new Date().toISOString(),
       speechContent: 'What\'s up',  // Default context.
+      isHardcoded: true,
     });
     this.conversationTurns.push({
       startTimestamp: new Date().toISOString(),
       speechContent: 'What do you need',  // Default context.
+      isHardcoded: true,
     });
     this.appendTextInjectionToContext();
     this.focusTurnIndex = this.conversationTurns.length - 1;
@@ -143,8 +145,15 @@ export class ContextComponent implements OnInit, AfterViewInit {
     }
     // Sort context turns in asecnding order of timestamp.
     this.conversationTurns.sort((turn0, turn1) => {
-      return new Date(turn0.startTimestamp!).getTime() -
-          new Date(turn1.startTimestamp!).getTime();
+      // Hardcoded ones always go to the first.
+      if (turn0.isHardcoded && !turn1.isHardcoded) {
+        return -1;
+      } else if (!turn0.isHardcoded && turn1.isHardcoded) {
+        return 1;
+      } else {
+        return new Date(turn0.startTimestamp!).getTime() -
+            new Date(turn1.startTimestamp!).getTime();
+      }
     });
   }
 }

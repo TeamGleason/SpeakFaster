@@ -1,7 +1,7 @@
 import {Component, EventEmitter, HostListener, Input, OnInit, Output} from '@angular/core';
 import {Subject} from 'rxjs';
 
-import {isTextContentKey} from '../../utils/keyboard-utils';
+import {isPlainAlphanumericKey, isTextContentKey} from '../../utils/keyboard-utils';
 import {AbbreviationSpec, AbbreviationToken, StartSpellingEvent} from '../types/abbreviations';
 
 enum SpellingState {
@@ -60,10 +60,11 @@ export class SpellComponent implements OnInit {
         this.startSpellingToken(index);
       }
     } else if (this.state === SpellingState.SPELLING_TOKEN) {
-      console.log('A200');
-      if (event.ctrlKey &&
-          (event.key.toLocaleLowerCase() === 's' ||
-           event.key.toLocaleLowerCase() === 'e')) {
+      // Ctrl S, Ctrl E or Enter ends the spelling.
+      if ((event.ctrlKey &&
+           (event.key.toLocaleLowerCase() === 's' ||
+            event.key.toLocaleLowerCase() === 'e')) ||
+          (isPlainAlphanumericKey(event, 'Enter', false))) {
         this.endSpelling();
         event.preventDefault();
         event.stopPropagation();

@@ -1,5 +1,5 @@
 import {Component, EventEmitter, HostListener, Output} from '@angular/core';
-import { Subject } from 'rxjs';
+import {Subject} from 'rxjs';
 
 import {isTextContentKey} from '../../utils/keyboard-utils';
 import {AbbreviationSpec, AbbreviationToken, InputAbbreviationChangedEvent, StartSpellingEvent} from '../types/abbreviations';
@@ -17,6 +17,8 @@ export class AbbreviationEditingComponent {
   @Output()
   inputAbbreviationChanged: EventEmitter<InputAbbreviationChangedEvent> =
       new EventEmitter();
+  @Output()
+  spellingStateChanged: EventEmitter<'START'|'END'> = new EventEmitter();
 
   state: AbbreviationEditingState =
       AbbreviationEditingState.ENTERING_ABBREVIATION;
@@ -39,7 +41,7 @@ export class AbbreviationEditingComponent {
       return;
     }
     if (event.ctrlKey && event.key.toLocaleLowerCase() == 's') {
-      // Ctrl S clears opens the spelling UI.
+      // Ctrl S opens the spelling UI.
       event.preventDefault();
       event.stopPropagation();
       this.startSpelling();
@@ -64,10 +66,11 @@ export class AbbreviationEditingComponent {
 
   private startSpelling() {
     if (this.state != AbbreviationEditingState.ENTERING_ABBREVIATION ||
-      this.inputAbbreviation.length === 0) {
+        this.inputAbbreviation.length === 0) {
       return;
     }
     this.state = AbbreviationEditingState.SPELLING;
+    this.spellingStateChanged.emit('START');
     this.startSpellingSubject.next({
       originalAbbreviationChars: this.inputAbbreviation.split(''),
     });
@@ -80,6 +83,7 @@ export class AbbreviationEditingComponent {
   onNewAbbreviationSpec(abbreviationSpec: AbbreviationSpec) {
     this.inputAbbreviation = abbreviationSpec.readableString;
     this.state = AbbreviationEditingState.ENTERING_ABBREVIATION;
+    this.spellingStateChanged.emit('END');
     this.inputAbbreviationChanged.emit(
         {abbreviationSpec, triggerExpansion: true});
   }

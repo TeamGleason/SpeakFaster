@@ -42,6 +42,7 @@ app-context-component {
 
     <app-abbreviation-editing-component
       (inputAbbreviationChanged)="onAbbreviationInputChanged($event)"
+      (spellingStateChanged)="onSpellingStateChanged($event)"
     ></app-abbreviation-editing-component>
 
     <app-abbreviation-component
@@ -49,6 +50,7 @@ app-context-component {
       [accessToken]="accessToken"
       [speechContent]="speechContent"
       [abbreviationExpansionTriggers]="abbreviationExpansionTriggers"
+      [isKeyboardEventBlocked]="isSpelling"
     ></app-abbreviation-component>
 
   </div>

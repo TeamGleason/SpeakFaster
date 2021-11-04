@@ -19,6 +19,7 @@ export class AppComponent implements OnInit {
 
   private _endpoint: string = '';
   private _accessToken: string = '';
+  isSpelling = false;
 
   abbreviationExpansionTriggers: Subject<InputAbbreviationChangedEvent> =
       new Subject();
@@ -81,5 +82,9 @@ export class AppComponent implements OnInit {
   onAbbreviationInputChanged(abbreviationChangedEvent:
                                  InputAbbreviationChangedEvent) {
     this.abbreviationExpansionTriggers.next(abbreviationChangedEvent);
+  }
+
+  onSpellingStateChanged(state: 'START'|'END') {
+    this.isSpelling = state === 'START';
   }
 }

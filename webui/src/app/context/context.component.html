@@ -38,7 +38,7 @@
 <!-- TODO(cais): Add Alt+N instruction. -->
 <!-- TODO(cais): Add ellipses for long utterances. -->
 
-<div *ngIf="contextRetrievalError != null; else noError" class="context-container">
+<div *ngIf="contextRetrievalError !== null; else noError" class="context-container">
   <div class="context-retrieval-error">
     Fail to get context: {{contextRetrievalError}}
   </div>

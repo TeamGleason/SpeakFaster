@@ -1,6 +1,7 @@
 import {Component, HostListener, Input, OnInit} from '@angular/core';
 import {Subject} from 'rxjs';
 
+import {isPlainAlphanumericKey} from '../../utils/keyboard-utils';
 import {SpeakFasterService} from '../speakfaster-service';
 import {AbbreviationSpec, InputAbbreviationChangedEvent} from '../types/abbreviations';
 
@@ -12,12 +13,12 @@ import {AbbreviationSpec, InputAbbreviationChangedEvent} from '../types/abbrevia
 export class AbbreviationComponent implements OnInit {
   @Input() endpoint!: string;
   @Input() accessToken!: string;
-  // @Input() abbreviation: AbbreviationSpec|null = null;
   @Input() speechContent!: string|null;
   @Input()
   abbreviationExpansionTriggers!: Subject<InputAbbreviationChangedEvent>;
-  abbreviation: AbbreviationSpec|null = null;
+  @Input() isKeyboardEventBlocked: boolean = false;
 
+  abbreviation: AbbreviationSpec|null = null;
   requestOngoing: boolean = false;
   responseError: string|null = null;
   abbreviationOptions: string[] = [];
@@ -37,22 +38,24 @@ export class AbbreviationComponent implements OnInit {
 
   @HostListener('document:keydown', ['$event'])
   onKeydown(event: KeyboardEvent) {
+    if (this.isKeyboardEventBlocked) {
+      return;
+    }
     if (event.altKey || event.metaKey) {
       return;
     }
     const keyIndex = event.keyCode - 49;
-    // Ctrl E activates AE.
+    // Ctrl E or Enter activates AE.
     // Ctrl Q clears all the expansion options (if any).
-    if (event.ctrlKey) {
-      if (event.key.toLocaleLowerCase() === 'e') {
-        this.expandAbbreviation();
-        event.preventDefault();
-        event.stopPropagation();
-      } else if (event.key.toLocaleLowerCase() === 'q') {
-        this.abbreviationOptions.splice(0);
-        event.preventDefault();
-        event.stopPropagation();
-      }
+    if ((event.ctrlKey && event.key.toLocaleLowerCase() === 'e') ||
+        (isPlainAlphanumericKey(event, 'Enter', false))) {
+      this.expandAbbreviation();
+      event.preventDefault();
+      event.stopPropagation();
+    } else if (event.ctrlKey && event.key.toLocaleLowerCase() === 'q') {
+      this.abbreviationOptions.splice(0);
+      event.preventDefault();
+      event.stopPropagation();
     } else if (
         event.shiftKey && keyIndex >= 0 &&
         keyIndex < this.abbreviationOptions.length) {

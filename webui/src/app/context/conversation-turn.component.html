@@ -48,6 +48,17 @@
   padding: 2px 5px;
 }
 
+.tts-tag {
+  background-color: lightgreen;
+  border: 2px solid #888;
+  color: black;
+  border-radius: 5px;
+  display: inline-block;
+  font-size: 28px;
+  margin-right: 10px;
+  padding: 2px 5px;
+}
+
 .turn-content {
   display: inline-block;
 }
@@ -60,6 +71,9 @@
   </div>
   <div class="time-tag">
     {{agoString}}
+  </div>
+  <div *ngIf="turn.isTts" class="tts-tag">
+    ⌨
   </div>
   <div class="turn-content">{{turn.speechContent}}</div>
 </button>

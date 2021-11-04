@@ -21,6 +21,7 @@ export interface ConversationTurn {
   startTimestamp?: string;
   endTimestamp?: string;
   timezone?: string;
+  isTts?: boolean;
 }
 
 export interface PartnerProximityEvent {

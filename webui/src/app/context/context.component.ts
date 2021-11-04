@@ -137,8 +137,14 @@ export class ContextComponent implements OnInit, AfterViewInit {
     for (const textInjection of this.textInjections) {
       this.conversationTurns.push({
         speechContent: textInjection.text,
-        startTimestamp: new Date(textInjection.timestampMillis).toString(),
+        startTimestamp: new Date(textInjection.timestampMillis).toISOString(),
+        isTts: true,
       });
     }
+    // Sort context turns in asecnding order of timestamp.
+    this.conversationTurns.sort((turn0, turn1) => {
+      return new Date(turn0.startTimestamp!).getTime() -
+          new Date(turn1.startTimestamp!).getTime();
+    });
   }
 }

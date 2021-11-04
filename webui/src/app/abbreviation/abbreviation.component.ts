@@ -1,9 +1,9 @@
-import {Component, HostListener, Input, OnInit} from '@angular/core';
+import {Component, EventEmitter, HostListener, Input, OnInit, Output} from '@angular/core';
 import {Subject} from 'rxjs';
 
 import {isPlainAlphanumericKey} from '../../utils/keyboard-utils';
 import {SpeakFasterService} from '../speakfaster-service';
-import {AbbreviationSpec, InputAbbreviationChangedEvent} from '../types/abbreviations';
+import {AbbreviationExpansionSelectionEvent, AbbreviationSpec, InputAbbreviationChangedEvent} from '../types/abbreviations';
 
 @Component({
   selector: 'app-abbreviation-component',
@@ -17,6 +17,9 @@ export class AbbreviationComponent implements OnInit {
   @Input()
   abbreviationExpansionTriggers!: Subject<InputAbbreviationChangedEvent>;
   @Input() isKeyboardEventBlocked: boolean = false;
+  @Output()
+  abbreviationExpansionSelected:
+      EventEmitter<AbbreviationExpansionSelectionEvent> = new EventEmitter();
 
   abbreviation: AbbreviationSpec|null = null;
   requestOngoing: boolean = false;
@@ -59,14 +62,31 @@ export class AbbreviationComponent implements OnInit {
     } else if (
         event.shiftKey && keyIndex >= 0 &&
         keyIndex < this.abbreviationOptions.length) {
-      this._selectedAbbreviationIndex = keyIndex;
-      event.preventDefault();
-      event.stopPropagation();
+      if (this._selectedAbbreviationIndex !== keyIndex) {
+        this._selectedAbbreviationIndex = keyIndex;
+        this.abbreviationExpansionSelected.emit({
+          expansionText:
+              this.abbreviationOptions[this._selectedAbbreviationIndex]
+        });
+        setTimeout(() => this.resetState(), 1000);
+        event.preventDefault();
+        event.stopPropagation();
+      }
     }
   }
 
   get selectedAbbreviationIndex() {
     return this._selectedAbbreviationIndex;
+  }
+
+  private resetState() {
+    this.abbreviation = null;
+    this.requestOngoing = false;
+    this.responseError = null;
+    if (this.abbreviationOptions.length > 0) {
+      this.abbreviationOptions.splice(0);
+    }
+    this._selectedAbbreviationIndex = -1;
   }
 
   private expandAbbreviation() {

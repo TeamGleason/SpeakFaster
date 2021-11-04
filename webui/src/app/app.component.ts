@@ -3,7 +3,8 @@ import {ActivatedRoute} from '@angular/router';
 import {Subject} from 'rxjs';
 
 import {ConversationTurn, SpeakFasterService} from './speakfaster-service';
-import {InputAbbreviationChangedEvent} from './types/abbreviations';
+import {AbbreviationExpansionSelectionEvent, InputAbbreviationChangedEvent} from './types/abbreviations';
+import {TextInjection} from './types/text-injection';
 
 @Component({
   selector: 'app-root',
@@ -23,6 +24,7 @@ export class AppComponent implements OnInit {
 
   abbreviationExpansionTriggers: Subject<InputAbbreviationChangedEvent> =
       new Subject();
+  textInjectionSubject: Subject<TextInjection> = new Subject();
 
   speechContent: string|null = null;
 
@@ -86,5 +88,12 @@ export class AppComponent implements OnInit {
 
   onSpellingStateChanged(state: 'START'|'END') {
     this.isSpelling = state === 'START';
+  }
+
+  onAbbreviationExpansionSelected(event: AbbreviationExpansionSelectionEvent) {
+    this.textInjectionSubject.next({
+      text: event.expansionText,
+      timestampMillis: Date.now(),
+    });
   }
 }

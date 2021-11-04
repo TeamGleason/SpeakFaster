@@ -1,8 +1,9 @@
-import {Component, EventEmitter, HostListener, Output} from '@angular/core';
+import {Component, EventEmitter, HostListener, Input, OnInit, Output} from '@angular/core';
 import {Subject} from 'rxjs';
 
 import {isTextContentKey} from '../../utils/keyboard-utils';
 import {AbbreviationSpec, AbbreviationToken, InputAbbreviationChangedEvent, StartSpellingEvent} from '../types/abbreviations';
+import {TextInjection} from '../types/text-injection';
 
 enum AbbreviationEditingState {
   ENTERING_ABBREVIATION = 'ENTERING_ABBREVIATION',
@@ -13,7 +14,8 @@ enum AbbreviationEditingState {
   selector: 'app-abbreviation-editing-component',
   templateUrl: './abbreviation-editing.component.html',
 })
-export class AbbreviationEditingComponent {
+export class AbbreviationEditingComponent implements OnInit {
+  @Input() textInjectionSubject!: Subject<TextInjection>;
   @Output()
   inputAbbreviationChanged: EventEmitter<InputAbbreviationChangedEvent> =
       new EventEmitter();
@@ -26,6 +28,13 @@ export class AbbreviationEditingComponent {
   inputAbbreviation: string = '';
 
   startSpellingSubject: Subject<StartSpellingEvent> = new Subject();
+
+  ngOnInit() {
+    this.textInjectionSubject.subscribe((textInjection: TextInjection) => {
+      this.state = AbbreviationEditingState.ENTERING_ABBREVIATION;
+      this.inputAbbreviation = '';
+    });
+  }
 
   @HostListener('document:keydown', ['$event'])
   onKeydown(event: KeyboardEvent) {

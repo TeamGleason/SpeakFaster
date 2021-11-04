@@ -18,3 +18,8 @@ export interface InputAbbreviationChangedEvent {
 export interface StartSpellingEvent {
   originalAbbreviationChars: string[];
 }
+
+export interface AbbreviationExpansionSelectionEvent {
+  // The expansion option selected.
+  expansionText: string;
+}

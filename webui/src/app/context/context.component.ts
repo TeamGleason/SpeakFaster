@@ -1,6 +1,8 @@
 import {AfterViewInit, Component, EventEmitter, HostListener, Input, OnInit, Output} from '@angular/core';
+import {Subject} from 'rxjs';
 
 import {ConversationTurn, SpeakFasterService} from '../speakfaster-service';
+import {TextInjection} from '../types/text-injection';
 
 @Component({
   selector: 'app-context-component',
@@ -13,8 +15,11 @@ export class ContextComponent implements OnInit, AfterViewInit {
 
   @Input() endpoint!: string;
   @Input() accessToken!: string;
+  @Input()
+  textInjectionSubject!: Subject<TextInjection>
 
-  readonly conversationTurns: ConversationTurn[] = [];
+      readonly conversationTurns: ConversationTurn[] = [];
+  private readonly textInjections: TextInjection[] = [];
   contextRetrievalError: string|null = null;
 
   @Output()
@@ -27,6 +32,11 @@ export class ContextComponent implements OnInit, AfterViewInit {
   ngOnInit() {
     this.focusTurnIndex = this.conversationTurns.length - 1;
     this.contextTurnSelected.emit(this.conversationTurns[this.focusTurnIndex]);
+    this.textInjectionSubject.subscribe((textInjection: TextInjection) => {
+      this.textInjections.push(textInjection);
+      // TODO(cais): Limit length of textInjections?
+      this.retrieveContext();
+    });
   }
 
   ngAfterViewInit() {
@@ -72,15 +82,16 @@ export class ContextComponent implements OnInit, AfterViewInit {
     this.conversationTurns.splice(0);
     this.conversationTurns.push({
       startTimestamp: new Date().toISOString(),
-      speechContent: "What's up",  // Default context.
+      speechContent: 'What\'s up',  // Default context.
     });
     this.conversationTurns.push({
       startTimestamp: new Date().toISOString(),
-      speechContent: "What do you need",  // Default context.
+      speechContent: 'What do you need',  // Default context.
     });
+    this.appendTextInjectionToContext();
     this.focusTurnIndex = this.conversationTurns.length - 1;
     this.contextTurnSelected.emit(
-      this.conversationTurns[this.conversationTurns.length - 1]);
+        this.conversationTurns[this.conversationTurns.length - 1]);
   }
 
   private retrieveContext() {
@@ -108,6 +119,7 @@ export class ContextComponent implements OnInit, AfterViewInit {
                   this.conversationTurns.push(turn);
                 }
               }
+              this.appendTextInjectionToContext();
               this.focusTurnIndex = this.conversationTurns.length - 1;
               this.contextTurnSelected.emit(
                   this.conversationTurns[this.conversationTurns.length - 1]);
@@ -118,5 +130,15 @@ export class ContextComponent implements OnInit, AfterViewInit {
               this.contextRetrievalError = error;
               this.populateConversationTurnWithDefault();
             });
+  }
+
+  private appendTextInjectionToContext() {
+    // Also add the latest user entered text.
+    for (const textInjection of this.textInjections) {
+      this.conversationTurns.push({
+        speechContent: textInjection.text,
+        startTimestamp: new Date(textInjection.timestampMillis).toString(),
+      });
+    }
   }
 }

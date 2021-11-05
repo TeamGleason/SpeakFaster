@@ -1,4 +1,4 @@
-import {Component, Input} from '@angular/core';
+import {Component, ElementRef, Input, ViewChild} from '@angular/core';
 
 import {getAgoString} from '../../utils/datetime-utils';
 import {ConversationTurn} from '../speakfaster-service';
@@ -9,13 +9,24 @@ import {ConversationTurn} from '../speakfaster-service';
   providers: [],
 })
 export class ConversationTurnComponent {
+  private static readonly _NAME = "ConversationTurnComponent";
+
   @Input() turn!: ConversationTurn;
   @Input() isFocus: boolean = false;
+  @ViewChild("button") viewButton!: ElementRef;
+
   private now = new Date();
 
   constructor() {}
 
   get agoString(): string {
     return getAgoString(new Date(this.turn.startTimestamp!), this.now);
+  }
+
+  // Returns left, top, right, bottom.
+  getBox(): [number, number, number, number] {
+    // console.log('button viewButton:', this.viewButton)
+    const rect = this.viewButton.nativeElement.getBoundingClientRect();
+    return [rect.left, rect.top, rect.right, rect.bottom];
   }
 }

@@ -1,16 +1,20 @@
-import {Component, EventEmitter, HostListener, Input, OnInit, Output} from '@angular/core';
+import {AfterViewInit, Component, ElementRef, EventEmitter, HostListener, Input, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
 import {Subject} from 'rxjs';
 
+import {updateButtonBoxes} from '../../utils/cefsharp';
 import {isPlainAlphanumericKey} from '../../utils/keyboard-utils';
 import {SpeakFasterService} from '../speakfaster-service';
 import {AbbreviationExpansionSelectionEvent, AbbreviationSpec, InputAbbreviationChangedEvent} from '../types/abbreviations';
+
 
 @Component({
   selector: 'app-abbreviation-component',
   templateUrl: './abbreviation.component.html',
   providers: [SpeakFasterService],
 })
-export class AbbreviationComponent implements OnInit {
+export class AbbreviationComponent implements OnInit, AfterViewInit {
+  private static readonly _NAME = 'AbbreviationComponent';
+
   @Input() endpoint!: string;
   @Input() accessToken!: string;
   @Input() contextStrings!: string[];
@@ -20,6 +24,8 @@ export class AbbreviationComponent implements OnInit {
   @Output()
   abbreviationExpansionSelected:
       EventEmitter<AbbreviationExpansionSelectionEvent> = new EventEmitter();
+
+  @ViewChildren('abbreviationOption') viewButtons!: QueryList<ElementRef>;
 
   abbreviation: AbbreviationSpec|null = null;
   requestOngoing: boolean = false;
@@ -37,6 +43,21 @@ export class AbbreviationComponent implements OnInit {
             this.expandAbbreviation();
           }
         });
+  }
+
+  ngAfterViewInit() {
+    this.viewButtons.changes.subscribe((r: QueryList<ElementRef>) => {
+      setTimeout(() => {
+        const boxes: Array<[number, number, number, number]> = [];
+        r.forEach(elementRef => {
+          const box = elementRef.nativeElement.getBoundingClientRect();
+          boxes.push([box.left, box.top, box.right, box.bottom]);
+        });
+        updateButtonBoxes(AbbreviationComponent._NAME, boxes);
+      }, 20);
+      // TODO(cais): Can we get rid of this ugly hack? The position of the
+      // elements change during layout.
+    });
   }
 
   @HostListener('document:keydown', ['$event'])
@@ -120,11 +141,11 @@ export class AbbreviationComponent implements OnInit {
       usedContextStrings.splice(0, usedContextStrings.length - LIMIT_TURNS);
     }
     // TODO(cais): Limit by token length?
-    console.log('Calling expandAbbreviation():', usedContextStrings, this.abbreviation);
+    console.log(
+        'Calling expandAbbreviation():', usedContextStrings, this.abbreviation);
     this.speakFasterService
         .expandAbbreviation(
-            this.endpoint, this.accessToken,
-            usedContextStrings.join('|'),
+            this.endpoint, this.accessToken, usedContextStrings.join('|'),
             this.abbreviation)
         .subscribe(
             data => {

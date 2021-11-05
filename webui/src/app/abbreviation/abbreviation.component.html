@@ -66,6 +66,7 @@
   </div>
   <button
       *ngFor="let abbreviationOption of abbreviationOptions; let i = index"
+      #abbreviationOption
       class="abbreviation-option"
       [ngClass]="{'is-selected': i === selectedAbbreviationIndex}"
       (click)="onExpansionOptionButtonClicked($event, i)">

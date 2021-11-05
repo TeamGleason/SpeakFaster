@@ -1,8 +1,7 @@
-import {Component, EventEmitter, HostListener, OnInit, Output} from '@angular/core';
+import {Component, EventEmitter, HostListener, OnDestroy, OnInit, Output} from '@angular/core';
 import {MatSnackBar, MatSnackBarConfig} from '@angular/material/snack-bar';
 import {ActivatedRoute} from '@angular/router';
 
-import {callOnDomChange} from '../../utils/cefsharp';
 import {isPlainAlphanumericKey} from '../../utils/keyboard-utils';
 
 import {DeviceCodeResponse, GoogleDeviceAuthService, TokenResponse} from './google-device-auth-service';
@@ -12,7 +11,7 @@ import {DeviceCodeResponse, GoogleDeviceAuthService, TokenResponse} from './goog
   templateUrl: './auth.component.html',
   providers: [GoogleDeviceAuthService],
 })
-export class AuthComponent implements OnInit {
+export class AuthComponent implements OnInit, OnDestroy {
   clientId = '';
   clientSecret = '';
   accessToken = '';
@@ -39,6 +38,10 @@ export class AuthComponent implements OnInit {
     });
   }
 
+  ngOnDestroy() {
+    // TODO(cais): Update the buttons to empty.
+  }
+
   // Info related to limited-input device authentication.
   public deviceCodeData: DeviceCodeResponse|null = null;
 
@@ -56,11 +59,9 @@ export class AuthComponent implements OnInit {
             async data => {
               this.deviceCodeData = data;
               this.copyTextToClipboard(data.user_code);
-              callOnDomChange();
               await this.pollForAccessTokenUntilSuccess();
               this.applyRefreshTokenIndefinitely();
               this.snackBar.dismiss();
-              callOnDomChange();
             },
             error => {
               this.showSnackBar(

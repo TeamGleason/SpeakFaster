@@ -50,6 +50,7 @@
         *ngFor="let contextSignal of contextSignals; let i = index"
         class="conversation-turn">
       <app-conversation-turn-component
+        #contextItem
         [turn]="contextSignal.conversationTurn!"
         [isFocus]="isContextInFocus(contextSignal.contextId!)"
         (click)="onTurnClicked($event, contextSignal.contextId!)"

@@ -27,3 +27,15 @@ export function callOnDomChange() {
   ((window as any)[BOUND_LISTENER_NAME] as any).onDomChange();
   console.log('Called onDomChange()');
 }
+
+export function updateButtonBoxes(
+    componentName: string, boxes: Array<[number, number, number, number]>) {
+  if ((window as any)[BOUND_LISTENER_NAME] == null) {
+    console.warn(`Cannot call onDomChange(), because object ${
+        BOUND_LISTENER_NAME} is not found`)
+    return;
+  }
+  console.log(`updateButtonBoxes(): ${componentName}:`, boxes);
+  ((window as any)[BOUND_LISTENER_NAME] as any)
+      .updateButtonBoxes(componentName, boxes);
+}

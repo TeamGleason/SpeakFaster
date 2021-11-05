@@ -1,10 +1,12 @@
-import {AfterViewInit, Component, EventEmitter, HostListener, Input, OnInit, Output} from '@angular/core';
+import {AfterViewInit, Component, ElementRef, EventEmitter, HostListener, Input, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
 import {Subject, timer} from 'rxjs';
-import {createUuid} from 'src/utils/uuid';
 
+import {createUuid} from '../..//utils/uuid';
+import {updateButtonBoxes} from '../../utils/cefsharp';
 import {ContextSignal, SpeakFasterService} from '../speakfaster-service';
 import {TextInjection} from '../types/text-injection';
 
+import {ConversationTurnComponent} from './conversation-turn.component';
 import {DEFAULT_CONTEXT_SIGNALS} from './default-context';
 
 @Component({
@@ -13,6 +15,7 @@ import {DEFAULT_CONTEXT_SIGNALS} from './default-context';
   providers: [],
 })
 export class ContextComponent implements OnInit, AfterViewInit {
+  private static readonly _NAME = 'ContextComponent';
   // TODO(cais): Do not hardcode this user ID.
   private userId = 'cais';
   private static readonly MAX_FOCUS_CONTEXT_SIGNALS = 2;
@@ -27,6 +30,9 @@ export class ContextComponent implements OnInit, AfterViewInit {
   contextRetrievalError: string|null = null;
 
   @Output() contextStringsSelected: EventEmitter<string[]> = new EventEmitter();
+
+  @ViewChildren('contextItem')
+  viewButtons!: QueryList<ConversationTurnComponent>;
 
   private readonly focusContextIds: string[] = [];
 
@@ -52,6 +58,16 @@ export class ContextComponent implements OnInit, AfterViewInit {
   }
 
   ngAfterViewInit() {
+    this.viewButtons.changes.subscribe(
+        (r: QueryList<ConversationTurnComponent>) => {
+          setTimeout(() => {
+            const boxes: Array<[number, number, number, number]> = [];
+            r.forEach((element) => {
+              boxes.push(element.getBox());
+            })
+            updateButtonBoxes(ContextComponent._NAME, boxes);
+          }, 20);
+        });
     timer(50, ContextComponent.CONTEXT_POLLING_INTERVAL_MILLIS)
         .subscribe(() => {
           this.retrieveContext();

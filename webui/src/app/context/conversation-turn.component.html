@@ -76,7 +76,7 @@
 
 </style>
 
-<button class="conversation-turn" [ngClass]="{'focused-turn': isFocus}">
+<button #button class="conversation-turn" [ngClass]="{'focused-turn': isFocus}">
   <div *ngIf="turn.speakerId != null && turn.speakerId.length > 0" class="speaker-tag">
     {{turn.speakerId}}
   </div>

@@ -1,5 +1,5 @@
 import {AfterViewInit, Component, EventEmitter, HostListener, Input, OnInit, Output} from '@angular/core';
-import {Subject} from 'rxjs';
+import {interval, Observable, Subject, timer} from 'rxjs';
 
 import {ConversationTurn, SpeakFasterService} from '../speakfaster-service';
 import {TextInjection} from '../types/text-injection';
@@ -15,10 +15,10 @@ export class ContextComponent implements OnInit, AfterViewInit {
 
   @Input() endpoint!: string;
   @Input() accessToken!: string;
-  @Input()
-  textInjectionSubject!: Subject<TextInjection>
+  @Input() textInjectionSubject!: Subject<TextInjection>;
 
-      readonly conversationTurns: ConversationTurn[] = [];
+  private static readonly CONTEXT_POLLING_INTERVAL_MILLIS = 2 * 1000;
+  readonly conversationTurns: ConversationTurn[] = [];
   private readonly textInjections: TextInjection[] = [];
   contextRetrievalError: string|null = null;
 
@@ -40,9 +40,11 @@ export class ContextComponent implements OnInit, AfterViewInit {
   }
 
   ngAfterViewInit() {
-    setTimeout(() => this.retrieveContext(), 50);
+    timer(0, ContextComponent.CONTEXT_POLLING_INTERVAL_MILLIS).subscribe(() => {
+      setTimeout(() => this.retrieveContext(), 50);
+    });
+
     // TODO(cais): Do not hardcode delay.
-    // TODO(cais): Poll for context on a regular basis.
   }
 
   get focusIndex(): number {

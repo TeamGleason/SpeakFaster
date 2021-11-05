@@ -45,19 +45,19 @@
 </div>
 
 <ng-template #noError>
-  <div *ngIf="conversationTurns.length > 0" class="context-container">
+  <div *ngIf="contextSignals.length > 0" class="context-container">
     <div
-        *ngFor="let conversationTurn of conversationTurns; let i = index"
+        *ngFor="let contextSignal of contextSignals; let i = index"
         class="conversation-turn">
       <app-conversation-turn-component
-        [turn]="conversationTurn"
-        [isFocus]="i === focusIndex"
-        (click)="onTurnClicked($event, i)"
+        [turn]="contextSignal.conversationTurn!"
+        [isFocus]="isContextInFocus(contextSignal.contextId!)"
+        (click)="onTurnClicked($event, contextSignal.contextId!)"
       ></app-conversation-turn-component>
     </div>
   </div>
 
-  <div *ngIf="conversationTurns.length === 0" class="no-context-found">
+  <div *ngIf="contextSignals.length === 0" class="no-context-found">
     <div>
       No context found
     </div>

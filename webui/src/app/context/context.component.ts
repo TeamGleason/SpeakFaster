@@ -1,8 +1,11 @@
 import {AfterViewInit, Component, EventEmitter, HostListener, Input, OnInit, Output} from '@angular/core';
-import {interval, Observable, Subject, timer} from 'rxjs';
+import {Subject, timer} from 'rxjs';
+import {createUuid} from 'src/utils/uuid';
 
-import {ConversationTurn, SpeakFasterService} from '../speakfaster-service';
+import {ContextSignal, ConversationTurn, SpeakFasterService} from '../speakfaster-service';
 import {TextInjection} from '../types/text-injection';
+
+import {DEFAULT_CONTEXT_SIGNALS} from './default-context';
 
 @Component({
   selector: 'app-context-component',
@@ -18,22 +21,31 @@ export class ContextComponent implements OnInit, AfterViewInit {
   @Input() textInjectionSubject!: Subject<TextInjection>;
 
   private static readonly CONTEXT_POLLING_INTERVAL_MILLIS = 2 * 1000;
-  readonly conversationTurns: ConversationTurn[] = [];
-  private readonly textInjections: TextInjection[] = [];
+  readonly contextSignals: ContextSignal[] = [];
+  private readonly textInjectionContextSignals: ContextSignal[] = [];
   contextRetrievalError: string|null = null;
 
   @Output()
   contextTurnSelected: EventEmitter<ConversationTurn> = new EventEmitter();
 
-  private focusTurnIndex: number = -1;
+  private readonly focusContextIds: string[] = [];
 
   constructor(private speakFasterService: SpeakFasterService) {}
 
   ngOnInit() {
-    this.focusTurnIndex = this.conversationTurns.length - 1;
-    this.contextTurnSelected.emit(this.conversationTurns[this.focusTurnIndex]);
+    this.focusContextIds.splice(0);
     this.textInjectionSubject.subscribe((textInjection: TextInjection) => {
-      this.textInjections.push(textInjection);
+      const timestamp = new Date(textInjection.timestampMillis).toISOString();
+      this.textInjectionContextSignals.push({
+        userId: '',  // TODO(cais): Populate proper user ID.
+        conversationTurn: {
+          speechContent: textInjection.text,
+          startTimestamp: timestamp,
+          isTts: true,
+        },
+        timestamp,
+        contextId: createUuid(),
+      });
       // TODO(cais): Limit length of textInjections?
       this.retrieveContext();
     });
@@ -47,13 +59,25 @@ export class ContextComponent implements OnInit, AfterViewInit {
     // TODO(cais): Do not hardcode delay.
   }
 
-  get focusIndex(): number {
-    return this.focusTurnIndex;
+  isContextInFocus(contextId: string): boolean {
+    return this.focusContextIds.indexOf(contextId) !== -1;
   }
 
-  onTurnClicked(event: Event, index: number) {
-    this.focusTurnIndex = index;
-    this.contextTurnSelected.emit(this.conversationTurns[index]);
+  onTurnClicked(event: Event, contextId: string) {
+    const i = this.focusContextIds.indexOf(contextId);
+    if (i === -1) {
+      this.focusContextIds.push(contextId);
+      this.cleanUpAndSortFocusContextIds();
+      for (let i = 0; i < this.contextSignals.length; ++i) {
+        if (this.contextSignals[i].contextId === contextId) {
+          this.contextTurnSelected.emit(this.contextSignals[i].conversationTurn!
+          );
+          break;
+        }
+      }
+    } else {
+      this.focusContextIds.splice(i, 1);
+    }
   }
 
   // NOTE: document:keydown can prevent the default tab-switching
@@ -73,29 +97,32 @@ export class ContextComponent implements OnInit, AfterViewInit {
       return;
     }
     const keyIndex = Number.parseInt(event.key) - 1;
-    if (keyIndex >= 0 && keyIndex < this.conversationTurns.length) {
-      this.focusTurnIndex = keyIndex;
+    if (keyIndex >= 0 && keyIndex < this.contextSignals.length) {
+      const contextId = this.contextSignals[keyIndex].contextId!;
+      if (this.focusContextIds.indexOf(contextId) === -1) {
+        this.focusContextIds.push(contextId);
+        this.cleanUpAndSortFocusContextIds();
+      } else if (
+          this.focusContextIds.indexOf(contextId) !== -1 &&
+          this.focusContextIds.length > 1) {
+        this.focusContextIds.splice(this.focusContextIds.indexOf(contextId), 1);
+      }
       event.preventDefault();
       event.stopPropagation();
     }
   }
 
   private populateConversationTurnWithDefault() {
-    this.conversationTurns.splice(0);
-    this.conversationTurns.push({
-      startTimestamp: new Date().toISOString(),
-      speechContent: 'What\'s up',  // Default context.
-      isHardcoded: true,
-    });
-    this.conversationTurns.push({
-      startTimestamp: new Date().toISOString(),
-      speechContent: 'What do you need',  // Default context.
-      isHardcoded: true,
-    });
+    this.contextSignals.splice(0);
+    this.contextSignals.push(...DEFAULT_CONTEXT_SIGNALS);
     this.appendTextInjectionToContext();
-    this.focusTurnIndex = this.conversationTurns.length - 1;
+    if (this.contextSignals.length > 0 && this.focusContextIds.length === 0) {
+      this.focusContextIds.push(
+          this.contextSignals[this.contextSignals.length - 1].contextId!);
+      this.cleanUpAndSortFocusContextIds();
+    }
     this.contextTurnSelected.emit(
-        this.conversationTurns[this.conversationTurns.length - 1]);
+        this.contextSignals[this.contextSignals.length - 1].conversationTurn!);
   }
 
   private retrieveContext() {
@@ -112,25 +139,36 @@ export class ContextComponent implements OnInit, AfterViewInit {
                 this.populateConversationTurnWithDefault();
                 return;
               }
-              this.conversationTurns.splice(0);  // Empty the array first.
+              this.contextSignals.splice(0);  // Empty the array first.
               for (const contextSignal of data.contextSignals) {
+                if (contextSignal.timestamp != null &&
+                    contextSignal.conversationTurn != null &&
+                    contextSignal.conversationTurn.startTimestamp == null) {
+                  contextSignal.conversationTurn.startTimestamp =
+                      contextSignal.timestamp;
+                }
                 if (contextSignal.conversationTurn != null) {
-                  const turn: ConversationTurn = {
-                    ...contextSignal.conversationTurn,
-                    startTimestamp: contextSignal.timestamp,
-                  };
                   // TODO(cais): Deduplicate.
-                  this.conversationTurns.push(turn);
+                  this.contextSignals.push(contextSignal);
                 }
               }
               this.appendTextInjectionToContext();
-              this.focusTurnIndex = this.conversationTurns.length - 1;
+              this.cleanUpAndSortFocusContextIds();
+              // TODO(cais): Discard obsolete context IDs.
+              if (this.focusContextIds.length === 0 &&
+                  this.contextSignals.length > 0) {
+                this.focusContextIds.push(
+                    this.contextSignals[this.contextSignals.length - 1]
+                        .contextId!);
+                this.cleanUpAndSortFocusContextIds();
+              }
               this.contextTurnSelected.emit(
-                  this.conversationTurns[this.conversationTurns.length - 1]);
+                  this.contextSignals[this.contextSignals.length - 1]
+                      .conversationTurn!);
               this.contextRetrievalError = null;
             },
             error => {
-              this.conversationTurns.splice(0);  // Empty the array first.
+              this.contextSignals.splice(0);  // Empty the array first.
               this.contextRetrievalError = error;
               this.populateConversationTurnWithDefault();
             });
@@ -138,24 +176,41 @@ export class ContextComponent implements OnInit, AfterViewInit {
 
   private appendTextInjectionToContext() {
     // Also add the latest user entered text.
-    for (const textInjection of this.textInjections) {
-      this.conversationTurns.push({
-        speechContent: textInjection.text,
-        startTimestamp: new Date(textInjection.timestampMillis).toISOString(),
-        isTts: true,
-      });
-    }
+    this.contextSignals.push(...this.textInjectionContextSignals);
     // Sort context turns in asecnding order of timestamp.
-    this.conversationTurns.sort((turn0, turn1) => {
+    this.contextSignals.sort((turn0, turn1) => {
       // Hardcoded ones always go to the first.
-      if (turn0.isHardcoded && !turn1.isHardcoded) {
+      if (turn0.conversationTurn!.isHardcoded &&
+          !turn1.conversationTurn!.isHardcoded) {
         return -1;
-      } else if (!turn0.isHardcoded && turn1.isHardcoded) {
+      } else if (
+          !turn0.conversationTurn!.isHardcoded &&
+          turn1.conversationTurn!.isHardcoded) {
         return 1;
       } else {
-        return new Date(turn0.startTimestamp!).getTime() -
-            new Date(turn1.startTimestamp!).getTime();
+        return new Date(turn0.conversationTurn!.startTimestamp!).getTime() -
+            new Date(turn1.conversationTurn!.startTimestamp!).getTime();
       }
     });
+  }
+
+  private cleanUpAndSortFocusContextIds() {
+    const existingContextIds =
+        this.contextSignals.map(signal => signal.contextId!);
+    for (let i = this.focusContextIds.length - 1; i >= 0; --i) {
+      if (existingContextIds.indexOf(this.focusContextIds[i]) === -1) {
+        this.focusContextIds.splice(i, 1);
+      }
+    }
+    const contextIdsAndIndices: Array<[string, number]> = [];
+    for (const contextId of this.focusContextIds) {
+      contextIdsAndIndices.push(
+          [contextId, existingContextIds.indexOf(contextId)]);
+    }
+    contextIdsAndIndices.sort((item0, item1) => {
+      return item0[1] - item1[1];
+    });
+    this.focusContextIds.splice(0);
+    this.focusContextIds.push(...contextIdsAndIndices.map(item => item[0]));
   }
 }

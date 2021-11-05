@@ -26,7 +26,8 @@ export class AppComponent implements OnInit {
       new Subject();
   textInjectionSubject: Subject<TextInjection> = new Subject();
 
-  speechContent: string|null = null;
+  // Context speech content used for AE and other text predictions.
+  contextStrings: string[] = [];
 
   constructor(
       private route: ActivatedRoute,
@@ -74,11 +75,8 @@ export class AppComponent implements OnInit {
     return this._accessToken;
   }
 
-  onContextTurnSelected(contextTurn: ConversationTurn) {
-    if (contextTurn == null) {
-      return;
-    }
-    this.speechContent = contextTurn.speechContent;
+  onContextStringsSelected(contextStrings: string[]) {
+    this.contextStrings = contextStrings;
   }
 
   onAbbreviationInputChanged(abbreviationChangedEvent:

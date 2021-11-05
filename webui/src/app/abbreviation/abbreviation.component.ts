@@ -13,7 +13,7 @@ import {AbbreviationExpansionSelectionEvent, AbbreviationSpec, InputAbbreviation
 export class AbbreviationComponent implements OnInit {
   @Input() endpoint!: string;
   @Input() accessToken!: string;
-  @Input() speechContent!: string|null;
+  @Input() contextStrings!: string[];
   @Input()
   abbreviationExpansionTriggers!: Subject<InputAbbreviationChangedEvent>;
   @Input() isKeyboardEventBlocked: boolean = false;
@@ -102,7 +102,7 @@ export class AbbreviationComponent implements OnInit {
       this.responseError = 'Cannot expand abbreviation: endpoint is empty';
       return;
     }
-    if (this.speechContent === null) {
+    if (this.contextStrings.length === 0) {
       this.responseError =
           'Cannot expand abbreviation: no speech content as context';
       return;
@@ -114,10 +114,17 @@ export class AbbreviationComponent implements OnInit {
     this.abbreviationOptions = [];
     this.requestOngoing = true;
     this.responseError = null;
-    console.log('Calling expandAbbreviation():', this.abbreviation);
+    const LIMIT_TURNS = 2;
+    const usedContextStrings = [...this.contextStrings];
+    if (usedContextStrings.length > LIMIT_TURNS) {
+      usedContextStrings.splice(0, usedContextStrings.length - LIMIT_TURNS);
+    }
+    // TODO(cais): Limit by token length?
+    console.log('Calling expandAbbreviation():', usedContextStrings, this.abbreviation);
     this.speakFasterService
         .expandAbbreviation(
-            this.endpoint, this.accessToken, this.speechContent,
+            this.endpoint, this.accessToken,
+            usedContextStrings.join('|'),
             this.abbreviation)
         .subscribe(
             data => {

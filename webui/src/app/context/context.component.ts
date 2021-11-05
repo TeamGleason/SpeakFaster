@@ -2,7 +2,7 @@ import {AfterViewInit, Component, EventEmitter, HostListener, Input, OnInit, Out
 import {Subject, timer} from 'rxjs';
 import {createUuid} from 'src/utils/uuid';
 
-import {ContextSignal, ConversationTurn, SpeakFasterService} from '../speakfaster-service';
+import {ContextSignal, SpeakFasterService} from '../speakfaster-service';
 import {TextInjection} from '../types/text-injection';
 
 import {DEFAULT_CONTEXT_SIGNALS} from './default-context';
@@ -15,6 +15,7 @@ import {DEFAULT_CONTEXT_SIGNALS} from './default-context';
 export class ContextComponent implements OnInit, AfterViewInit {
   // TODO(cais): Do not hardcode this user ID.
   private userId = 'cais';
+  private static readonly MAX_FOCUS_CONTEXT_SIGNALS = 2;
 
   @Input() endpoint!: string;
   @Input() accessToken!: string;
@@ -25,8 +26,7 @@ export class ContextComponent implements OnInit, AfterViewInit {
   private readonly textInjectionContextSignals: ContextSignal[] = [];
   contextRetrievalError: string|null = null;
 
-  @Output()
-  contextTurnSelected: EventEmitter<ConversationTurn> = new EventEmitter();
+  @Output() contextStringsSelected: EventEmitter<string[]> = new EventEmitter();
 
   private readonly focusContextIds: string[] = [];
 
@@ -52,10 +52,10 @@ export class ContextComponent implements OnInit, AfterViewInit {
   }
 
   ngAfterViewInit() {
-    timer(0, ContextComponent.CONTEXT_POLLING_INTERVAL_MILLIS).subscribe(() => {
-      setTimeout(() => this.retrieveContext(), 50);
-    });
-
+    timer(50, ContextComponent.CONTEXT_POLLING_INTERVAL_MILLIS)
+        .subscribe(() => {
+          this.retrieveContext();
+        });
     // TODO(cais): Do not hardcode delay.
   }
 
@@ -70,14 +70,13 @@ export class ContextComponent implements OnInit, AfterViewInit {
       this.cleanUpAndSortFocusContextIds();
       for (let i = 0; i < this.contextSignals.length; ++i) {
         if (this.contextSignals[i].contextId === contextId) {
-          this.contextTurnSelected.emit(this.contextSignals[i].conversationTurn!
-          );
           break;
         }
       }
     } else {
       this.focusContextIds.splice(i, 1);
     }
+    this.emitContextStringsSelected();
   }
 
   // NOTE: document:keydown can prevent the default tab-switching
@@ -121,8 +120,7 @@ export class ContextComponent implements OnInit, AfterViewInit {
           this.contextSignals[this.contextSignals.length - 1].contextId!);
       this.cleanUpAndSortFocusContextIds();
     }
-    this.contextTurnSelected.emit(
-        this.contextSignals[this.contextSignals.length - 1].conversationTurn!);
+    this.emitContextStringsSelected();
   }
 
   private retrieveContext() {
@@ -162,9 +160,7 @@ export class ContextComponent implements OnInit, AfterViewInit {
                         .contextId!);
                 this.cleanUpAndSortFocusContextIds();
               }
-              this.contextTurnSelected.emit(
-                  this.contextSignals[this.contextSignals.length - 1]
-                      .conversationTurn!);
+              this.emitContextStringsSelected();
               this.contextRetrievalError = null;
             },
             error => {
@@ -192,6 +188,7 @@ export class ContextComponent implements OnInit, AfterViewInit {
             new Date(turn1.conversationTurn!.startTimestamp!).getTime();
       }
     });
+    this.cleanUpAndSortFocusContextIds()
   }
 
   private cleanUpAndSortFocusContextIds() {
@@ -212,5 +209,30 @@ export class ContextComponent implements OnInit, AfterViewInit {
     });
     this.focusContextIds.splice(0);
     this.focusContextIds.push(...contextIdsAndIndices.map(item => item[0]));
+    // If still has room, add latest turn.
+    if (this.contextSignals.length > 1) {
+      const latestContextId =
+          this.contextSignals[this.contextSignals.length - 1].contextId!;
+      if (this.focusContextIds.indexOf(latestContextId) === -1) {
+        this.focusContextIds.push(latestContextId);
+      }
+      if (this.focusContextIds.length >
+          ContextComponent.MAX_FOCUS_CONTEXT_SIGNALS) {
+        this.focusContextIds.splice(
+            0,
+            this.focusContextIds.length -
+                ContextComponent.MAX_FOCUS_CONTEXT_SIGNALS);
+      }
+    }
+  }
+
+
+  private emitContextStringsSelected() {
+    this.contextStringsSelected.emit(
+        this.contextSignals
+            .filter(
+                signal =>
+                    this.focusContextIds.indexOf(signal.contextId!) !== -1)
+            .map(signal => signal.conversationTurn!.speechContent));
   }
 }

@@ -38,7 +38,7 @@ app-context-component {
       [endpoint]="endpoint"
       [accessToken]="accessToken"
       [textInjectionSubject]="textInjectionSubject"
-      (contextTurnSelected)="onContextTurnSelected($event)"
+      (contextStringsSelected)="onContextStringsSelected($event)"
     ></app-context-component>
 
     <app-abbreviation-editing-component
@@ -50,7 +50,7 @@ app-context-component {
     <app-abbreviation-component
       [endpoint]="endpoint"
       [accessToken]="accessToken"
-      [speechContent]="speechContent"
+      [contextStrings]="contextStrings"
       [abbreviationExpansionTriggers]="abbreviationExpansionTriggers"
       [isKeyboardEventBlocked]="isSpelling"
       (abbreviationExpansionSelected)="onAbbreviationExpansionSelected($event)"

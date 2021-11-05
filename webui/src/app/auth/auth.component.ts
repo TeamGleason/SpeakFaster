@@ -2,6 +2,7 @@ import {Component, EventEmitter, HostListener, OnInit, Output} from '@angular/co
 import {MatSnackBar, MatSnackBarConfig} from '@angular/material/snack-bar';
 import {ActivatedRoute} from '@angular/router';
 
+import {callOnDomChange} from '../../utils/cefsharp';
 import {isPlainAlphanumericKey} from '../../utils/keyboard-utils';
 
 import {DeviceCodeResponse, GoogleDeviceAuthService, TokenResponse} from './google-device-auth-service';
@@ -55,9 +56,11 @@ export class AuthComponent implements OnInit {
             async data => {
               this.deviceCodeData = data;
               this.copyTextToClipboard(data.user_code);
+              callOnDomChange();
               await this.pollForAccessTokenUntilSuccess();
               this.applyRefreshTokenIndefinitely();
               this.snackBar.dismiss();
+              callOnDomChange();
             },
             error => {
               this.showSnackBar(

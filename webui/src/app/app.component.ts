@@ -2,7 +2,9 @@ import {Component, HostListener, OnInit} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
 import {Subject} from 'rxjs';
 
-import {ConversationTurn, SpeakFasterService} from './speakfaster-service';
+import {bindCefSharpListener} from '../utils/cefsharp';
+
+import {SpeakFasterService} from './speakfaster-service';
 import {AbbreviationExpansionSelectionEvent, InputAbbreviationChangedEvent} from './types/abbreviations';
 import {TextInjection} from './types/text-injection';
 
@@ -34,6 +36,7 @@ export class AppComponent implements OnInit {
       public speakFasterService: SpeakFasterService) {}
 
   ngOnInit() {
+    bindCefSharpListener();
     this.route.queryParams.subscribe(params => {
       if (params['endpoint'] && this.endpoint === '') {
         this._endpoint = params['endpoint'];

@@ -18,7 +18,7 @@
   display: inline-block;
   font-size: 24px;
   line-height: 24px;
-  margin: 10px;
+  margin: 10px 0 10px 10px;
   min-width: 75px;
   padding: 15px;
   vertical-align: middle;;
@@ -49,8 +49,10 @@
   border: 2px solid #888;
   border-radius: 3px;
   font-size: 32px;
+  height: 46px;
   margin: 6px 8px;
-  padding: 2px 4px;
+  padding: 0 4px 8px 4px;
+  text-overflow: fade;
   width: 120px;  /* TODO(cais): Make width adaptive. */
 }
 
@@ -72,6 +74,7 @@
     class="spell-item-container">
 
   <button
+      *ngIf="!(spellIndex !== null && i === spellIndex)"
       class="abbreviated-token"
       (click)="onTokenButtonClicked($event, i)">
     <div class="abbreviated-token-text">{{abbreviationChar}}</div>

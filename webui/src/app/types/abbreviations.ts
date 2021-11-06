@@ -17,6 +17,7 @@ export interface InputAbbreviationChangedEvent {
 
 export interface StartSpellingEvent {
   originalAbbreviationChars: string[];
+  isNewSpellingTask: boolean;
 }
 
 export interface AbbreviationExpansionSelectionEvent {

@@ -1,4 +1,4 @@
-import {Component, EventEmitter, HostListener, Input, OnInit, Output} from '@angular/core';
+import {Component, EventEmitter, HostListener, Input, OnDestroy, OnInit, Output} from '@angular/core';
 import {Subject} from 'rxjs';
 
 import {isPlainAlphanumericKey, isTextContentKey} from '../../utils/keyboard-utils';
@@ -15,9 +15,9 @@ enum SpellingState {
   selector: 'app-spell-component',
   templateUrl: './spell.component.html',
 })
-export class SpellComponent implements OnInit {
+export class SpellComponent implements OnInit, OnDestroy {
   @Input() spellIndex: number|null = null;
-  @Input() startSpelling!: Subject<StartSpellingEvent>;
+  @Input() startSpellingSubject!: Subject<StartSpellingEvent>;
   @Output()
   newAbbreviationSpec: EventEmitter<AbbreviationSpec> = new EventEmitter();
 
@@ -28,16 +28,21 @@ export class SpellComponent implements OnInit {
   readonly spelledWords: Array<string|null> = [];
 
   ngOnInit() {
-    this.startSpelling.subscribe((event: StartSpellingEvent) => {
+    this.startSpellingSubject.subscribe((event: StartSpellingEvent) => {
       this.state = SpellingState.CHOOSING_TOKEN;
-      if (this.originalAbbreviationChars.length > 0) {
+      if (this.originalAbbreviationChars.length > 0 && !event.isNewSpellingTask) {
         return;
       }
-      // TODO(cais): Support reset.
-      if (event) {
+      if (event.isNewSpellingTask) {
+        this.spelledWords.splice(0);
         this.originalAbbreviationChars = event.originalAbbreviationChars;
       }
     });
+  }
+
+  ngOnDestroy() {
+    // NOTE: Hide doesn't really call onDestroy().
+    console.log('SpellComponent.onDestroy():');  // DEBUG
   }
 
   state: SpellingState = SpellingState.NOT_STARTED;

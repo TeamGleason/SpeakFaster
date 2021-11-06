@@ -28,11 +28,13 @@ export class AbbreviationEditingComponent implements OnInit {
   inputAbbreviation: string = '';
 
   startSpellingSubject: Subject<StartSpellingEvent> = new Subject();
+  private isSpellingTaskIsNew = true;
 
   ngOnInit() {
     this.textInjectionSubject.subscribe((textInjection: TextInjection) => {
       this.state = AbbreviationEditingState.ENTERING_ABBREVIATION;
       this.inputAbbreviation = '';
+      this.isSpellingTaskIsNew = true;
     });
   }
 
@@ -82,7 +84,9 @@ export class AbbreviationEditingComponent implements OnInit {
     this.spellingStateChanged.emit('START');
     this.startSpellingSubject.next({
       originalAbbreviationChars: this.inputAbbreviation.split(''),
+      isNewSpellingTask: this.isSpellingTaskIsNew,
     });
+    this.isSpellingTaskIsNew = false;
   }
 
   onSpellButtonClicked(event: Event) {

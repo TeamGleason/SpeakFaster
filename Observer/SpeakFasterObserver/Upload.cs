@@ -1,7 +1,7 @@
 ﻿using Amazon.Runtime.CredentialManagement;
 using Amazon.S3;
 using Amazon.S3.Model;
-using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
@@ -78,19 +78,25 @@ namespace SpeakFasterObserver
                     return;
             }
 
-            var dataDirectory = new DirectoryInfo(_dataDirectory);
-            foreach (var fileInfo in dataDirectory.GetFiles())
+            foreach (string filePath in Directory.EnumerateFiles(_dataDirectory, "*", SearchOption.AllDirectories))
             {
+                FileInfo fileInfo = new(filePath);
                 if (FileNaming.IsInProgress(fileInfo.FullName))
                 {
                     // Skip uploading in-progress file.
                     continue;
                 }
+                if (FileNaming.IsNonSessionBufferFile(fileInfo.FullName))
+                {
+                    // Skip non-session buffer files.
+                    continue;
+                }
 
+                string[] relativePathParts = Path.GetRelativePath(_dataDirectory, filePath).Split(Path.DirectorySeparatorChar);
                 var putRequest = new PutObjectRequest
                 {
                     BucketName = BUCKET_NAME,
-                    Key = $"observer_data/{SCHEMA_VERSION}/{FileNaming.CloudStoragePath(fileInfo, _gazeDevice, _salt)}"
+                    Key = $"observer_data/{SCHEMA_VERSION}/{FileNaming.CloudStoragePath(relativePathParts, _gazeDevice, _salt)}"
                 };
 
                 PutObjectResponse putResponse;
@@ -103,10 +109,29 @@ namespace SpeakFasterObserver
                 if (putResponse.HttpStatusCode == HttpStatusCode.OK)
                 {
                     fileInfo.Delete();
+                    // If the file that was just uploaded successfully is a session-end token, remove the session directory.
+                    if (FileNaming.IsSessionEndToken(filePath))
+                    {
+                        string sessionDir = Path.GetDirectoryName(filePath);
+                        if (IsDirectoryEmpty(sessionDir))
+                        {
+                            Directory.Delete(sessionDir);
+                        }
+                        Debug.WriteLine($"Deleted directory of ended session: {sessionDir}");
+                    }
                 }
             }
 
             _uploading = false;
+        }
+
+        private static bool IsDirectoryEmpty(string dirPath)
+        {
+            IEnumerable<string> items = Directory.EnumerateFileSystemEntries(dirPath);
+            using (var enumerator = items.GetEnumerator())
+            {
+                return !enumerator.MoveNext();
+            }
         }
     }
 }

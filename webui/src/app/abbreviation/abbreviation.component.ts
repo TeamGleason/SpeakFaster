@@ -1,7 +1,7 @@
 import {AfterViewInit, Component, ElementRef, EventEmitter, HostListener, Input, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
 import {Subject} from 'rxjs';
 
-import {updateButtonBoxes} from '../../utils/cefsharp';
+import {updateButtonBoxForHtmlElements} from '../../utils/cefsharp';
 import {isPlainAlphanumericKey} from '../../utils/keyboard-utils';
 import {SpeakFasterService} from '../speakfaster-service';
 import {AbbreviationExpansionSelectionEvent, AbbreviationSpec, InputAbbreviationChangedEvent} from '../types/abbreviations';
@@ -47,14 +47,9 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
   }
 
   ngAfterViewInit() {
-    this.viewButtons.changes.subscribe((r: QueryList<ElementRef>) => {
+    this.viewButtons.changes.subscribe((queryList: QueryList<ElementRef>) => {
       setTimeout(() => {
-        const boxes: Array<[number, number, number, number]> = [];
-        r.forEach(elementRef => {
-          const box = elementRef.nativeElement.getBoundingClientRect();
-          boxes.push([box.left, box.top, box.right, box.bottom]);
-        });
-        updateButtonBoxes(AbbreviationComponent._NAME, boxes);
+        updateButtonBoxForHtmlElements(AbbreviationComponent._NAME, queryList);
       }, 20);
       // TODO(cais): Can we get rid of this ugly hack? The position of the
       // elements change during layout.

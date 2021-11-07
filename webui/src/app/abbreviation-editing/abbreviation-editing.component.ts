@@ -1,5 +1,6 @@
-import {Component, EventEmitter, HostListener, Input, OnInit, Output} from '@angular/core';
+import {AfterViewInit, Component, ElementRef, EventEmitter, HostListener, Input, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
 import {Subject} from 'rxjs';
+import {updateButtonBoxForHtmlElements} from 'src/utils/cefsharp';
 
 import {isTextContentKey} from '../../utils/keyboard-utils';
 import {AbbreviationSpec, AbbreviationToken, InputAbbreviationChangedEvent, StartSpellingEvent} from '../types/abbreviations';
@@ -14,13 +15,19 @@ enum AbbreviationEditingState {
   selector: 'app-abbreviation-editing-component',
   templateUrl: './abbreviation-editing.component.html',
 })
-export class AbbreviationEditingComponent implements OnInit {
+export class AbbreviationEditingComponent implements OnInit, AfterViewInit {
+  private static readonly _NAME = 'AbbreviationEditingComponent';
+
   @Input() textInjectionSubject!: Subject<TextInjection>;
   @Output()
   inputAbbreviationChanged: EventEmitter<InputAbbreviationChangedEvent> =
       new EventEmitter();
   @Output()
   spellingStateChanged: EventEmitter<'START'|'END'> = new EventEmitter();
+
+  @ViewChildren('clickableButton')
+  buttons!: QueryList<ElementRef<HTMLButtonElement>>;
+
 
   state: AbbreviationEditingState =
       AbbreviationEditingState.ENTERING_ABBREVIATION;
@@ -36,6 +43,16 @@ export class AbbreviationEditingComponent implements OnInit {
       this.inputAbbreviation = '';
       this.isSpellingTaskIsNew = true;
     });
+  }
+
+  ngAfterViewInit() {
+    this.buttons.changes.subscribe(
+        (queryList: QueryList<ElementRef<HTMLButtonElement>>) => {
+          setTimeout(
+              () => updateButtonBoxForHtmlElements(
+                  AbbreviationEditingComponent._NAME, queryList),
+              20);
+        });
   }
 
   @HostListener('document:keydown', ['$event'])

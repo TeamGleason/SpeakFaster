@@ -1,6 +1,7 @@
-import {Component, EventEmitter, HostListener, OnDestroy, OnInit, Output} from '@angular/core';
+import {AfterViewInit, Component, ElementRef, EventEmitter, HostListener, OnDestroy, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
 import {MatSnackBar, MatSnackBarConfig} from '@angular/material/snack-bar';
 import {ActivatedRoute} from '@angular/router';
+import {updateButtonBoxes, updateButtonBoxesToEmpty, updateButtonBoxForHtmlElements} from 'src/utils/cefsharp';
 
 import {isPlainAlphanumericKey} from '../../utils/keyboard-utils';
 
@@ -11,16 +12,22 @@ import {DeviceCodeResponse, GoogleDeviceAuthService, TokenResponse} from './goog
   templateUrl: './auth.component.html',
   providers: [GoogleDeviceAuthService],
 })
-export class AuthComponent implements OnInit, OnDestroy {
+export class AuthComponent implements OnInit, AfterViewInit, OnDestroy {
+  private static readonly _NAME = 'AuthComponent';
+
   clientId = '';
   clientSecret = '';
   accessToken = '';
   refreshToken = '';
+  showAuthButton = false;
 
   private refreshTokenIntervalSeconds = 60 * 5;
   private shouldStopRefreshToken = false;
 
   @Output() newAccessToken: EventEmitter<string> = new EventEmitter();
+
+  @ViewChildren('clickableButton')
+  clickableButtons!: QueryList<ElementRef<HTMLElement>>;
 
   constructor(
       private route: ActivatedRoute,
@@ -38,8 +45,21 @@ export class AuthComponent implements OnInit, OnDestroy {
     });
   }
 
+  ngAfterViewInit() {
+    setTimeout(() => {
+      this.showAuthButton = true;
+    }, 10);
+    this.clickableButtons.changes.subscribe(
+        (queryList: QueryList<ElementRef<HTMLElement>>) => {
+          setTimeout(
+              () => updateButtonBoxForHtmlElements(
+                  AuthComponent._NAME, queryList),
+              20);
+        });
+  }
+
   ngOnDestroy() {
-    // TODO(cais): Update the buttons to empty.
+    updateButtonBoxesToEmpty(AuthComponent._NAME);
   }
 
   // Info related to limited-input device authentication.

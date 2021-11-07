@@ -1,5 +1,7 @@
 /** Utilites for communication with CefSharp host (if exists.) */
 
+import {ElementRef, QueryList} from '@angular/core';
+
 const CEFSHARP_OBJECT_NAME = 'CefSharp';
 const BOUND_LISTENER_NAME = 'boundListener';
 
@@ -38,4 +40,18 @@ export function updateButtonBoxes(
   }
   ((window as any)[BOUND_LISTENER_NAME] as any)
       .updateButtonBoxes(componentName, boxes);
+}
+
+export function updateButtonBoxesToEmpty(componentName: string) {
+  updateButtonBoxes(componentName, []);
+}
+
+export function updateButtonBoxForHtmlElements(
+    componentName: string, queryList: QueryList<ElementRef<HTMLElement>>) {
+  const boxes: Array<[number, number, number, number]> = [];
+  queryList.forEach(elementRef => {
+    const box = elementRef.nativeElement.getBoundingClientRect();
+    boxes.push([box.left, box.top, box.right, box.bottom]);
+  });
+  updateButtonBoxes(componentName, boxes);
 }

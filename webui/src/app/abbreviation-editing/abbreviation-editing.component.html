@@ -49,6 +49,7 @@
     value="{{inputAbbreviation}}" />
 
 <button
+    #clickableButton
     *ngIf="inputAbbreviation.length > 0 && state === 'ENTERING_ABBREVIATION'"
     class="spell-button"
     (click)="onSpellButtonClicked($event)">

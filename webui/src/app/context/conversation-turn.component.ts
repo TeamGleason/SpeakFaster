@@ -15,12 +15,10 @@ export class ConversationTurnComponent {
   @Input() isFocus: boolean = false;
   @ViewChild("button") viewButton!: ElementRef;
 
-  private now = new Date();
-
   constructor() {}
 
   get agoString(): string {
-    return getAgoString(new Date(this.turn.startTimestamp!), this.now);
+    return getAgoString(new Date(this.turn.startTimestamp!), new Date());
   }
 
   // Returns left, top, right, bottom.

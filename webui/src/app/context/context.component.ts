@@ -18,6 +18,7 @@ export class ContextComponent implements OnInit, AfterViewInit {
   private static readonly _NAME = 'ContextComponent';
   // TODO(cais): Do not hardcode this user ID.
   private userId = 'cais';
+  private static readonly MAX_DISPLAYED_CONTEXT_COUNT = 4;
   private static readonly MAX_FOCUS_CONTEXT_SIGNALS = 2;
 
   @Input() endpoint!: string;
@@ -167,6 +168,7 @@ export class ContextComponent implements OnInit, AfterViewInit {
                 }
               }
               this.appendTextInjectionToContext();
+              this.limitContextItemsCount();
               this.cleanUpAndSortFocusContextIds();
               // TODO(cais): Discard obsolete context IDs.
               if (this.focusContextIds.length === 0 &&
@@ -204,7 +206,18 @@ export class ContextComponent implements OnInit, AfterViewInit {
             new Date(turn1.conversationTurn!.startTimestamp!).getTime();
       }
     });
+    this.limitContextItemsCount();
     this.cleanUpAndSortFocusContextIds()
+  }
+
+  private limitContextItemsCount() {
+    if (this.contextSignals.length >
+        ContextComponent.MAX_DISPLAYED_CONTEXT_COUNT) {
+      this.contextSignals.splice(
+          0,
+          this.contextSignals.length -
+              ContextComponent.MAX_DISPLAYED_CONTEXT_COUNT);
+    }
   }
 
   private cleanUpAndSortFocusContextIds() {

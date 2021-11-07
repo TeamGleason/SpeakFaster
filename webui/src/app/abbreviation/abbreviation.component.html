@@ -57,7 +57,7 @@
 
 </style>
 
-<div>
+<div *ngIf="!isKeyboardEventBlocked">
   <div *ngIf="requestOngoing" class="info request-ongoing">
     Getting abbrevaition expansions...
   </div>

@@ -25,7 +25,8 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
   abbreviationExpansionSelected:
       EventEmitter<AbbreviationExpansionSelectionEvent> = new EventEmitter();
 
-  @ViewChildren('abbreviationOption') viewButtons!: QueryList<ElementRef>;
+  @ViewChildren('abbreviationOption')
+  viewButtons!: QueryList<ElementRef<HTMLButtonElement>>;
 
   abbreviation: AbbreviationSpec|null = null;
   requestOngoing: boolean = false;

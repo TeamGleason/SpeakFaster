@@ -75,6 +75,7 @@
 
   <button
       *ngIf="!(spellIndex !== null && i === spellIndex)"
+      #clickableButton
       class="abbreviated-token"
       (click)="onTokenButtonClicked($event, i)">
     <div class="abbreviated-token-text">{{abbreviationChar}}</div>
@@ -93,6 +94,8 @@
 </div>
 
 <button
+    *ngIf="spellIndex !== null"
+    #clickableButton
     class="control-button"
     (click)="onDoneButtonClicked($event)">
   Done

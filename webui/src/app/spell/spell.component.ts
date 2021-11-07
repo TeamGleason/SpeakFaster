@@ -1,5 +1,6 @@
-import {Component, EventEmitter, HostListener, Input, OnDestroy, OnInit, Output} from '@angular/core';
+import {AfterViewInit, Component, ElementRef, EventEmitter, HostListener, Input, OnDestroy, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
 import {Subject} from 'rxjs';
+import {updateButtonBoxes} from 'src/utils/cefsharp';
 
 import {isPlainAlphanumericKey, isTextContentKey} from '../../utils/keyboard-utils';
 import {AbbreviationSpec, AbbreviationToken, StartSpellingEvent} from '../types/abbreviations';
@@ -15,11 +16,16 @@ enum SpellingState {
   selector: 'app-spell-component',
   templateUrl: './spell.component.html',
 })
-export class SpellComponent implements OnInit, OnDestroy {
+export class SpellComponent implements OnInit, AfterViewInit, OnDestroy {
+  private static readonly _NAME = 'SpellComponent';
+
   @Input() spellIndex: number|null = null;
   @Input() startSpellingSubject!: Subject<StartSpellingEvent>;
   @Output()
   newAbbreviationSpec: EventEmitter<AbbreviationSpec> = new EventEmitter();
+
+  @ViewChildren('clickableButton')
+  clickableButtons!: QueryList<ElementRef<HTMLButtonElement>>;
 
   originalAbbreviationChars: string[] = [];
 
@@ -30,7 +36,8 @@ export class SpellComponent implements OnInit, OnDestroy {
   ngOnInit() {
     this.startSpellingSubject.subscribe((event: StartSpellingEvent) => {
       this.state = SpellingState.CHOOSING_TOKEN;
-      if (this.originalAbbreviationChars.length > 0 && !event.isNewSpellingTask) {
+      if (this.originalAbbreviationChars.length > 0 &&
+          !event.isNewSpellingTask) {
         return;
       }
       if (event.isNewSpellingTask) {
@@ -40,9 +47,22 @@ export class SpellComponent implements OnInit, OnDestroy {
     });
   }
 
+  ngAfterViewInit() {
+    this.clickableButtons.changes.subscribe(
+        (r: QueryList<ElementRef<HTMLButtonElement>>) => {
+          setTimeout(() => {
+            const boxes: Array<[number, number, number, number]> = [];
+            r.forEach(elementRef => {
+              const box = elementRef.nativeElement.getBoundingClientRect();
+              boxes.push([box.left, box.top, box.right, box.bottom]);
+            });
+            updateButtonBoxes(SpellComponent._NAME, boxes);
+          }, 20);
+        });
+  }
+
   ngOnDestroy() {
     // NOTE: Hide doesn't really call onDestroy().
-    console.log('SpellComponent.onDestroy():');  // DEBUG
   }
 
   state: SpellingState = SpellingState.NOT_STARTED;
@@ -114,6 +134,7 @@ export class SpellComponent implements OnInit, OnDestroy {
     this.state = SpellingState.DONE;
     this.newAbbreviationSpec.emit(this.reconstructAbbreviation());
     this.spellIndex = null;
+    updateButtonBoxes(SpellComponent._NAME, []);
   }
 
   private reconstructAbbreviation(): AbbreviationSpec {

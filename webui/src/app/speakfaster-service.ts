@@ -52,6 +52,10 @@ export interface RetrieveContextResponse {
   contextSignals?: ContextSignal[];
 }
 
+export interface FillMaskResponse {
+  results: string[];
+}
+
 export interface SpeakFasterServiceStub {
   ping(endpoint: string, accessToken: string): Observable<PingResponse>;
 
@@ -59,6 +63,11 @@ export interface SpeakFasterServiceStub {
       endpoint: string, accessToken: string, contextTurn: string,
       abbreviationSpec: AbbreviationSpec):
       Observable<AbbreviationExpansionRespnose>;
+
+  fillMask(
+      endpoint: string, accessToken: string, speechContent: string,
+      phraseWithMask: string,
+      maskInitial: string): Observable<FillMaskResponse>;
 
   // TODO(cais): Add other parameters.
   retrieveContext(endpoint: string, accessToken: string, userId: string):
@@ -99,6 +108,25 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
         acronym: abbreviationSpec.readableString,
         speechContent,
         keywordIndices: keywordIndices.join(',')
+      },
+      withCredentials,
+      headers,
+    });
+  }
+
+  fillMask(
+      endpoint: string, accessToken: string, speechContent: string,
+      phraseWithMask: string,
+      maskInitial: string): Observable<FillMaskResponse> {
+    const {headers, withCredentials} =
+        this.getHeadersAndWithCredentials(accessToken);
+    console.log('withCredentials:', withCredentials);  // DEBUG
+    return this.http.get<FillMaskResponse>(endpoint, {
+      params: {
+        mode: 'fill_mask',
+        speechContent,
+        phraseWithMask,
+        maskInitial,
       },
       withCredentials,
       headers,

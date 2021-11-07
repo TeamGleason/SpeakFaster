@@ -28,12 +28,75 @@
   width: fit-content;
 }
 
+.candidate-for-edit {
+  border: 2px solid #eee;
+}
+
+.edit-token {
+  background: #333;
+  border: 2px solid #888;
+  border-radius: 5px;
+  color: #eee;
+  display: inline-block;
+  font-size: 28px;
+  line-height: 32px;
+  margin: 10px;
+  min-width: 120px;
+  padding: 15px;
+  vertical-align: middle;;
+  width: fit-content;
+}
+
+.edit-token-text {
+
+}
+
+.expansions {
+  display: inline-block;
+}
+
 .info {
   margin-left: 10px;
 }
 
 .is-selected {
   border: 3px solid cyan;
+}
+
+.is-token-selected {
+  background-color: lightblue;
+  color: #111;
+}
+
+.option-button {
+  background: darkgreen;
+  border: 2px solid #888;
+  border-radius: 5px;
+  color: #eee;
+  display: inline-block;
+  font-size: 28px;
+  height: 72px;
+  line-height: 32px;
+  margin: 10px;
+  min-width: 72px;
+  padding: 15px;
+  vertical-align: middle;;
+  width: fit-content;
+}
+
+.replacement-token {
+  background-color: lightblue;
+  border: 2px solid #888;
+  border-radius: 5px;
+  color: #111;
+  display: inline-block;
+  font-size: 28px;
+  line-height: 32px;
+  margin: 10px;
+  min-width: 120px;
+  padding: 15px;
+  vertical-align: middle;;
+  width: fit-content;
 }
 
 .request-ongoing {
@@ -64,13 +127,47 @@
   <div *ngIf="responseError !== null" class="info response-error">
     Error: {{responseError}}
   </div>
-  <button
-      *ngFor="let abbreviationOption of abbreviationOptions; let i = index"
-      #abbreviationOption
-      class="abbreviation-option"
-      [ngClass]="{'is-selected': i === selectedAbbreviationIndex}"
-      (click)="onExpansionOptionButtonClicked($event, i)">
-    <div class="shortcut-key">Shift-{{i + 1}}</div>
-    <div class="abbreviation-expansion">{{abbreviationOption}}</div>
-  </button>
+  <div
+      *ngIf="state === 'CHOOSING_EXPANSION' || state == 'CHOOSING_EDIT_TARGET'"
+      class="expansions">
+    <button
+        #clickableButton
+        *ngIf="abbreviationOptions.length > 0"
+        class="option-button"
+        (click)="onEditButtonClicked($event)">
+      ✏️
+    </button>
+    <button
+        *ngFor="let abbreviationOption of abbreviationOptions; let i = index"
+        #clickableButton
+        class="abbreviation-option"
+        [ngClass]="{'is-selected': i === selectedAbbreviationIndex, 'candidate-for-edit': state === 'CHOOSING_EDIT_TARGET'}"
+        (click)="onExpansionOptionButtonClicked($event, i)">
+      <div class="shortcut-key">Shift-{{i + 1}}</div>
+      <div class="abbreviation-expansion">{{abbreviationOption}}</div>
+    </button>
+  </div>
+
+  <div
+      *ngIf="state === 'CHOOSING_TOKEN' || state === 'CHOOSING_TOKEN_REPLACEMENT'">
+    <button
+        *ngFor="let editToken of editTokens; let i = index"
+        #clickableButton
+        class="edit-token"
+        [ngClass]="{'is-token-selected': i === selectedTokenIndex}"
+        (click)="onEditTokenButtonClicked($event, i)">
+      <div class="edit-token-text">{{editToken}}</div>
+    </button>
+  </div>
+
+  <div
+      *ngIf="state === 'CHOOSING_TOKEN_REPLACEMENT'">
+    <button
+        *ngFor="let replacementToken of replacementTokens; let i = index"
+        #clickableButton
+        class="replacement-token"
+        (click)="onReplacementTokenButtonClicked($event, i)">
+      <div class="replacement-token-text">{{replacementToken}}</div>
+    </button>
+  </div>
 </div>

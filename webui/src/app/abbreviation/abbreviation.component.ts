@@ -3,9 +3,15 @@ import {Subject} from 'rxjs';
 
 import {updateButtonBoxForHtmlElements} from '../../utils/cefsharp';
 import {isPlainAlphanumericKey} from '../../utils/keyboard-utils';
-import {SpeakFasterService} from '../speakfaster-service';
+import {FillMaskResponse, SpeakFasterService} from '../speakfaster-service';
 import {AbbreviationExpansionSelectionEvent, AbbreviationSpec, InputAbbreviationChangedEvent} from '../types/abbreviations';
 
+enum State {
+  CHOOSING_EXPANSION = 'CHOOSING_EXPANSION',
+  CHOOSING_EDIT_TARGET = 'CHOOSING_EDIT_TARGET',
+  CHOOSING_TOKEN = 'CHOOSING_TOKEN',
+  CHOOSING_TOKEN_REPLACEMENT = 'CHOOSING_TOKEN_REPLACEMENT',
+}
 
 @Component({
   selector: 'app-abbreviation-component',
@@ -25,9 +31,13 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
   abbreviationExpansionSelected:
       EventEmitter<AbbreviationExpansionSelectionEvent> = new EventEmitter();
 
-  @ViewChildren('abbreviationOption')
-  viewButtons!: QueryList<ElementRef<HTMLButtonElement>>;
+  @ViewChildren('clickableButton')
+  clickableButtons!: QueryList<ElementRef<HTMLElement>>;
 
+  state = State.CHOOSING_EXPANSION;
+  readonly editTokens: string[] = [];
+  readonly replacementTokens: string[] = [];
+  selectedTokenIndex: number|null = null;
   abbreviation: AbbreviationSpec|null = null;
   requestOngoing: boolean = false;
   responseError: string|null = null;
@@ -47,13 +57,15 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
   }
 
   ngAfterViewInit() {
-    this.viewButtons.changes.subscribe((queryList: QueryList<ElementRef>) => {
-      setTimeout(() => {
-        updateButtonBoxForHtmlElements(AbbreviationComponent._NAME, queryList);
-      }, 20);
-      // TODO(cais): Can we get rid of this ugly hack? The position of the
-      // elements change during layout.
-    });
+    this.clickableButtons.changes.subscribe(
+        (queryList: QueryList<ElementRef>) => {
+          setTimeout(() => {
+            updateButtonBoxForHtmlElements(
+                AbbreviationComponent._NAME, queryList);
+          }, 20);
+          // TODO(cais): Can we get rid of this ugly hack? The position of the
+          // elements change during layout.
+        });
   }
 
   @HostListener('document:keydown', ['$event'])
@@ -89,8 +101,58 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
     return this._selectedAbbreviationIndex;
   }
 
+  onEditButtonClicked(event: Event) {
+    this.state = State.CHOOSING_EDIT_TARGET;
+  }
+
   onExpansionOptionButtonClicked(event: Event, index: number) {
-    this.selectExpansionOption(index);
+    if (this.state === 'CHOOSING_EXPANSION') {
+      this.selectExpansionOption(index);
+    } else if (this.state === 'CHOOSING_EDIT_TARGET') {
+      this.editTokens.splice(0);
+      this.editTokens.push(...this.abbreviationOptions[index].split(' '));
+      this.selectedTokenIndex = null;
+      this.state = State.CHOOSING_TOKEN;
+    }
+  }
+
+  onEditTokenButtonClicked(event: Event, index: number) {
+    const tokensIncludingMask: string[] = this.editTokens.slice();
+    tokensIncludingMask[index] = '_';
+    const phraseWithMask = tokensIncludingMask.join(' ');
+    const maskInitial = this.editTokens[index][0];
+    const speechContent = this.contextStrings[this.contextStrings.length - 1];
+    this.selectedTokenIndex = index;
+    this.speakFasterService
+        .fillMask(
+            this.endpoint, this.accessToken, speechContent, phraseWithMask,
+            maskInitial)
+        .subscribe(
+            data => {
+              this.replacementTokens.splice(0);
+              const replacements = data.results.slice();
+              const originalToken = this.editTokens[this.selectedTokenIndex!];
+              if (replacements.indexOf(originalToken) !== -1) {
+                replacements.splice(replacements.indexOf(originalToken), 1);
+              }
+              this.replacementTokens.push(...replacements);
+              this.state = State.CHOOSING_TOKEN_REPLACEMENT;
+            },
+            error => {
+                // TODO(cais): Handle fill mask error.
+                // TODO(cais): Provide exit.
+            });
+  }
+
+  onReplacementTokenButtonClicked(event: Event, index: number) {
+    // Reconstruct the phrase with the replacement.
+    const tokens: string[] = this.editTokens.slice();
+    tokens[this.selectedTokenIndex!] = this.replacementTokens[index];
+    this.abbreviationExpansionSelected.emit({
+      expansionText: tokens.join(' '),
+    });
+    // TODO(cais): Prevent selection in gap state.
+    setTimeout(() => this.resetState(), 1000);
   }
 
   private selectExpansionOption(index: number) {
@@ -101,6 +163,7 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
     this.abbreviationExpansionSelected.emit({
       expansionText: this.abbreviationOptions[this._selectedAbbreviationIndex]
     });
+    // TODO(cais): Prevent selection in gap state.
     setTimeout(() => this.resetState(), 1000);
   }
 
@@ -112,6 +175,9 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
       this.abbreviationOptions.splice(0);
     }
     this._selectedAbbreviationIndex = -1;
+    this.editTokens.splice(0);
+    this.replacementTokens.splice(0);
+    this.state = State.CHOOSING_EXPANSION;
   }
 
   private expandAbbreviation() {

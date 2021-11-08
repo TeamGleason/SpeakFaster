@@ -49,13 +49,6 @@ export class AppComponent implements OnInit {
     });
   }
 
-  @HostListener('document:keydown', ['$event'])
-  onKeydown(event: KeyboardEvent) {
-    if (!this.hasAccessToken()) {
-      return;
-    }
-  }
-
   onNewAccessToken(accessToken: string) {
     this._accessToken = accessToken;
     if (this.endpoint) {

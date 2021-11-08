@@ -120,7 +120,6 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
       maskInitial: string): Observable<FillMaskResponse> {
     const {headers, withCredentials} =
         this.getHeadersAndWithCredentials(accessToken);
-    console.log('withCredentials:', withCredentials);  // DEBUG
     return this.http.get<FillMaskResponse>(endpoint, {
       params: {
         mode: 'fill_mask',

@@ -2,7 +2,8 @@ import {AfterViewInit, Component, ElementRef, EventEmitter, HostListener, Input,
 import {Subject} from 'rxjs';
 
 import {updateButtonBoxForHtmlElements} from '../../utils/cefsharp';
-import {isPlainAlphanumericKey} from '../../utils/keyboard-utils';
+import {isPlainAlphanumericKey, isTextContentKey} from '../../utils/keyboard-utils';
+import {KeyboardComponent} from '../keyboard/keyboard.component';
 import {FillMaskResponse, SpeakFasterService} from '../speakfaster-service';
 import {AbbreviationExpansionSelectionEvent, AbbreviationSpec, InputAbbreviationChangedEvent} from '../types/abbreviations';
 
@@ -26,7 +27,10 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
   @Input() contextStrings!: string[];
   @Input()
   abbreviationExpansionTriggers!: Subject<InputAbbreviationChangedEvent>;
+  @Input() abbreviationExpansionEditingTrigger!: Subject<boolean>;
   @Input() isKeyboardEventBlocked: boolean = false;
+  // TODO(cais): Get rid of this hack.
+
   @Output()
   abbreviationExpansionSelected:
       EventEmitter<AbbreviationExpansionSelectionEvent> = new EventEmitter();
@@ -38,6 +42,8 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
   readonly editTokens: string[] = [];
   readonly replacementTokens: string[] = [];
   selectedTokenIndex: number|null = null;
+  manualTokenString: string = '';
+
   abbreviation: AbbreviationSpec|null = null;
   requestOngoing: boolean = false;
   responseError: string|null = null;
@@ -70,6 +76,18 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
 
   @HostListener('document:keydown', ['$event'])
   onKeydown(event: KeyboardEvent) {
+    if (this.state === State.CHOOSING_TOKEN_REPLACEMENT &&
+        isPlainAlphanumericKey(event, 'Enter')) {
+      if (this.manualTokenString.trim().length > 0) {
+        this.emitExpansionWithTokenReplacement(this.manualTokenString.trim());
+      } else if (this.selectedTokenIndex !== null) {
+        // Use the original.
+        this.emitExpansionWithTokenReplacement(
+            this.editTokens[this.selectedTokenIndex]);
+      }
+      return;
+    }
+
     if (this.isKeyboardEventBlocked) {
       return;
     }
@@ -117,6 +135,9 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
   }
 
   onEditTokenButtonClicked(event: Event, index: number) {
+    if (this.state !== State.CHOOSING_TOKEN) {
+      return;
+    }
     const tokensIncludingMask: string[] = this.editTokens.slice();
     tokensIncludingMask[index] = '_';
     const phraseWithMask = tokensIncludingMask.join(' ');
@@ -137,6 +158,9 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
               }
               this.replacementTokens.push(...replacements);
               this.state = State.CHOOSING_TOKEN_REPLACEMENT;
+              KeyboardComponent.registerCallback(
+                  AbbreviationComponent._NAME,
+                  this.handleKeyboardEvent.bind(this));
             },
             error => {
                 // TODO(cais): Handle fill mask error.
@@ -144,13 +168,30 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
             });
   }
 
+  private handleKeyboardEvent(event: KeyboardEvent) {
+    if (isTextContentKey(event)) {
+      this.manualTokenString += event.key.toLocaleLowerCase();
+    } else if (isPlainAlphanumericKey(event, 'Backspace')) {
+      if (this.manualTokenString.length > 0) {
+        this.manualTokenString =
+            this.manualTokenString.slice(0, this.manualTokenString.length - 1);
+      }
+    }
+  }
+
   onReplacementTokenButtonClicked(event: Event, index: number) {
     // Reconstruct the phrase with the replacement.
+    this.emitExpansionWithTokenReplacement(this.replacementTokens[index]);
+  }
+
+  private emitExpansionWithTokenReplacement(replacementToken: string) {
+    // Reconstruct the phrase with the replacement.
     const tokens: string[] = this.editTokens.slice();
-    tokens[this.selectedTokenIndex!] = this.replacementTokens[index];
+    tokens[this.selectedTokenIndex!] = replacementToken;
     this.abbreviationExpansionSelected.emit({
       expansionText: tokens.join(' '),
     });
+    KeyboardComponent.unregisterCallback(AbbreviationComponent._NAME);
     // TODO(cais): Prevent selection in gap state.
     setTimeout(() => this.resetState(), 1000);
   }
@@ -177,6 +218,7 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
     this._selectedAbbreviationIndex = -1;
     this.editTokens.splice(0);
     this.replacementTokens.splice(0);
+    this.manualTokenString = '';
     this.state = State.CHOOSING_EXPANSION;
   }
 

@@ -118,6 +118,15 @@
   padding: 2px 5px;
 }
 
+.token-input {
+  border: 2px solid #888;
+  border-radius: 3px;
+  font-size: 32px;
+  margin: 6px 8px;
+  padding: 2px 4px;
+  width: 150px;
+}
+
 </style>
 
 <div *ngIf="!isKeyboardEventBlocked">
@@ -169,5 +178,10 @@
         (click)="onReplacementTokenButtonClicked($event, i)">
       <div class="replacement-token-text">{{replacementToken}}</div>
     </button>
+
+    <input
+        class="token-input"
+        value="{{manualTokenString}}" />
+
   </div>
 </div>

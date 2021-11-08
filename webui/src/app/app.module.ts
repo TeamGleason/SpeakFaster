@@ -7,6 +7,7 @@ import {AppRoutingModule} from './app-routing.module';
 import {AppComponent} from './app.component';
 import {AuthModule} from './auth/auth.module';
 import {ContextModule} from './context/context.module';
+import {KeyboardModule} from './keyboard/keyboard.module';
 
 @NgModule({
   declarations: [AppComponent],
@@ -15,8 +16,9 @@ import {ContextModule} from './context/context.module';
     AbbreviationModule,
     AppRoutingModule,
     AuthModule,
-    ContextModule,
     BrowserModule,
+    ContextModule,
+    KeyboardModule,
   ],
   providers: [],
   bootstrap: [AppComponent]

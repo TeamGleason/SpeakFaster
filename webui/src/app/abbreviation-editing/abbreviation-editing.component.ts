@@ -3,12 +3,14 @@ import {Subject} from 'rxjs';
 import {updateButtonBoxForHtmlElements} from 'src/utils/cefsharp';
 
 import {isTextContentKey} from '../../utils/keyboard-utils';
+import {KeyboardComponent} from '../keyboard/keyboard.component';
 import {AbbreviationSpec, AbbreviationToken, InputAbbreviationChangedEvent, StartSpellingEvent} from '../types/abbreviations';
 import {TextInjection} from '../types/text-injection';
 
 enum AbbreviationEditingState {
   ENTERING_ABBREVIATION = 'ENTERING_ABBREVIATION',
   SPELLING = 'SPELLING',
+  EDITING_TOKEN = 'EDITING_TOKEN',  // TODO(cais): Clean up.
 }
 
 @Component({
@@ -33,6 +35,7 @@ export class AbbreviationEditingComponent implements OnInit, AfterViewInit {
       AbbreviationEditingState.ENTERING_ABBREVIATION;
 
   inputAbbreviation: string = '';
+  hasAbbreviationExpansionOptions = true;  // TODO(cais): Fix logic.
 
   startSpellingSubject: Subject<StartSpellingEvent> = new Subject();
   private isSpellingTaskIsNew = true;
@@ -43,6 +46,9 @@ export class AbbreviationEditingComponent implements OnInit, AfterViewInit {
       this.inputAbbreviation = '';
       this.isSpellingTaskIsNew = true;
     });
+    KeyboardComponent.registerCallback(
+        AbbreviationEditingComponent._NAME,
+        this.handleKeyboardEvent.bind(this));
   }
 
   ngAfterViewInit() {
@@ -55,8 +61,7 @@ export class AbbreviationEditingComponent implements OnInit, AfterViewInit {
         });
   }
 
-  @HostListener('document:keydown', ['$event'])
-  onKeydown(event: KeyboardEvent) {
+  handleKeyboardEvent(event: KeyboardEvent) {
     if (this.state !== AbbreviationEditingState.ENTERING_ABBREVIATION) {
       return;
     }
@@ -106,8 +111,16 @@ export class AbbreviationEditingComponent implements OnInit, AfterViewInit {
     this.isSpellingTaskIsNew = false;
   }
 
+  private startAbbreviationExpansionEditing() {
+    this.state = AbbreviationEditingState.EDITING_TOKEN;
+  }
+
   onSpellButtonClicked(event: Event) {
     this.startSpelling();
+  }
+
+  onEditButtonClicked(event: Event) {
+    this.startAbbreviationExpansionEditing();
   }
 
   onNewAbbreviationSpec(abbreviationSpec: AbbreviationSpec) {

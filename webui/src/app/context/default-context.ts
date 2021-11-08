@@ -22,5 +22,14 @@ export const DEFAULT_CONTEXT_SIGNALS: ContextSignal[] = [
       isHardcoded: true,
     },
     contextId: createUuid(),
+  },
+  {
+    userId: '',
+    conversationTurn: {
+      startTimestamp: new Date().toISOString(),
+      speechContent: 'Good to see you, Sean. Nice day today. How are you feeling right now.',  // Default context.
+      isHardcoded: true,
+    },
+    contextId: createUuid(),
   }
 ];

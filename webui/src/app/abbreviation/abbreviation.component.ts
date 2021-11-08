@@ -1,5 +1,6 @@
 import {AfterViewInit, Component, ElementRef, EventEmitter, Input, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
 import {Subject} from 'rxjs';
+import {limitStringLength} from 'src/utils/text-utils';
 
 import {updateButtonBoxForHtmlElements} from '../../utils/cefsharp';
 import {isPlainAlphanumericKey, isTextContentKey} from '../../utils/keyboard-utils';
@@ -245,7 +246,10 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
     this.requestOngoing = true;
     this.responseError = null;
     const LIMIT_TURNS = 2;
-    const usedContextStrings = [...this.contextStrings];
+    const LIMIT_CONTECT_TURN_LENGTH = 60
+    const usedContextStrings = [...this.contextStrings.map(
+        contextString =>
+            limitStringLength(contextString, LIMIT_CONTECT_TURN_LENGTH))];
     if (usedContextStrings.length > LIMIT_TURNS) {
       usedContextStrings.splice(0, usedContextStrings.length - LIMIT_TURNS);
     }

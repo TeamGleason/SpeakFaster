@@ -14,11 +14,13 @@
   border: 2px solid #888;
   border-radius: 5px;
   color: #eee;
-  font-size: 28px;
-  margin: 10px;
+  font-size: 26px;
+  margin: 5px;
   min-width: 250px;
-  padding: 15px;
+  max-width: 420px;
+  padding: 12px 5px;
   text-align: left;
+  white-space: nowrap;
   width: fit-content;
 }
 
@@ -32,7 +34,7 @@
   color: black;
   border-radius: 5px;
   display: inline-block;
-  font-size: 28px;
+  font-size: 24px;
   margin-right: 10px;
   padding: 2px 5px;
 }
@@ -43,7 +45,7 @@
   color: gold;
   border-radius: 5px;
   display: inline-block;
-  font-size: 28px;
+  font-size: 24px;
   margin-right: 10px;
   padding: 2px 5px;
 }
@@ -54,9 +56,11 @@
   color: black;
   border-radius: 5px;
   display: inline-block;
-  font-size: 28px;
+  font-size: 24px;
   margin-right: 10px;
   padding: 2px 5px;
+  text-align: center;
+  width: 48px;
 }
 
 .tts-tag {
@@ -65,13 +69,16 @@
   color: black;
   border-radius: 5px;
   display: inline-block;
-  font-size: 28px;
+  font-size: 24px;
   margin-right: 10px;
   padding: 2px 5px;
 }
 
 .turn-content {
   display: inline-block;
+  /* TODO(cais): avoid hardcoding this. */
+  max-width: 320px;
+  white-space: pre-wrap;
 }
 
 </style>
@@ -89,5 +96,5 @@
   <div *ngIf="turn.isTts" class="tts-tag">
     ⌨️
   </div>
-  <div class="turn-content">{{turn.speechContent}}</div>
+  <div class="turn-content">{{contentString}}</div>
 </button>

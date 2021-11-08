@@ -28,15 +28,16 @@ app-context-component {
 </style>
 
 <div class="content" role="main">
+
+  <!-- This is a "virtual" component without any UI. It is purely for
+       handling keyboard events. -->
+  <app-keyboard-component></app-keyboard-component>
+
   <div *ngIf="!hasAccessToken()" class="auth-area">
     <app-auth-component (newAccessToken)="onNewAccessToken($event)"></app-auth-component>
   </div>
 
   <div *ngIf="hasAccessToken()">
-
-    <!-- This is a "virtual" component without any UI. It is purely for
-         handling keyboard events. -->
-    <app-keyboard-component></app-keyboard-component>
 
     <app-context-component
       [endpoint]="endpoint"
@@ -56,7 +57,7 @@ app-context-component {
       [accessToken]="accessToken"
       [contextStrings]="contextStrings"
       [abbreviationExpansionTriggers]="abbreviationExpansionTriggers"
-      [isKeyboardEventBlocked]="isSpelling"
+      [isSpelling]="isSpelling"
       (abbreviationExpansionSelected)="onAbbreviationExpansionSelected($event)"
     ></app-abbreviation-component>
 

@@ -26,21 +26,6 @@
   display: none;
 }
 
-.option-button {
-  background: darkgreen;
-  border: 2px solid #888;
-  border-radius: 5px;
-  color: #eee;
-  display: inline-block;
-  font-size: 20px;
-  height: 48px;
-  line-height: 20px;
-  margin: 10px;
-  min-width: 72px;
-  vertical-align: middle;
-  width: fit-content;
-}
-
 .spell-button {
   background: #333;
   border: 2px solid #888;
@@ -70,14 +55,6 @@
     (click)="onSpellButtonClicked($event)">
   Spell
   <span class="button-shortcut-key">(Ctrl+s)</span>
-</button>
-
-<button
-    #clickableButton
-    *ngIf="hasAbbreviationExpansionOptions"
-    class="option-button"
-    (click)="onEditButtonClicked($event)">
-  ✏️
 </button>
 
 <app-spell-component

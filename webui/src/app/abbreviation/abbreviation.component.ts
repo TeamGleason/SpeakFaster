@@ -1,10 +1,10 @@
-import {AfterViewInit, Component, ElementRef, EventEmitter, HostListener, Input, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
+import {AfterViewInit, Component, ElementRef, EventEmitter, Input, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
 import {Subject} from 'rxjs';
 
 import {updateButtonBoxForHtmlElements} from '../../utils/cefsharp';
 import {isPlainAlphanumericKey, isTextContentKey} from '../../utils/keyboard-utils';
 import {KeyboardComponent} from '../keyboard/keyboard.component';
-import {FillMaskResponse, SpeakFasterService} from '../speakfaster-service';
+import {SpeakFasterService} from '../speakfaster-service';
 import {AbbreviationExpansionSelectionEvent, AbbreviationSpec, InputAbbreviationChangedEvent} from '../types/abbreviations';
 
 enum State {
@@ -21,6 +21,9 @@ enum State {
 })
 export class AbbreviationComponent implements OnInit, AfterViewInit {
   private static readonly _NAME = 'AbbreviationComponent';
+  private static readonly _TOKEN_REPLACEMENT_KEYBOARD_CALLBACK_NAME =
+      'AbbreviationComponent_TokenReplacementKeyboardCallbackName';
+
 
   @Input() endpoint!: string;
   @Input() accessToken!: string;
@@ -28,8 +31,7 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
   @Input()
   abbreviationExpansionTriggers!: Subject<InputAbbreviationChangedEvent>;
   @Input() abbreviationExpansionEditingTrigger!: Subject<boolean>;
-  @Input() isKeyboardEventBlocked: boolean = false;
-  // TODO(cais): Get rid of this hack.
+  @Input() isSpelling: boolean = false;
 
   @Output()
   abbreviationExpansionSelected:
@@ -53,6 +55,8 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
   constructor(private speakFasterService: SpeakFasterService) {}
 
   ngOnInit() {
+    KeyboardComponent.registerCallback(
+        AbbreviationComponent._NAME, this.baseKeyboardHandler.bind(this));
     this.abbreviationExpansionTriggers.subscribe(
         (event: InputAbbreviationChangedEvent) => {
           this.abbreviation = event.abbreviationSpec;
@@ -74,25 +78,9 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
         });
   }
 
-  @HostListener('document:keydown', ['$event'])
-  onKeydown(event: KeyboardEvent) {
-    if (this.state === State.CHOOSING_TOKEN_REPLACEMENT &&
-        isPlainAlphanumericKey(event, 'Enter')) {
-      if (this.manualTokenString.trim().length > 0) {
-        this.emitExpansionWithTokenReplacement(this.manualTokenString.trim());
-      } else if (this.selectedTokenIndex !== null) {
-        // Use the original.
-        this.emitExpansionWithTokenReplacement(
-            this.editTokens[this.selectedTokenIndex]);
-      }
-      return;
-    }
-
-    if (this.isKeyboardEventBlocked) {
-      return;
-    }
+  baseKeyboardHandler(event: KeyboardEvent): boolean {
     if (event.altKey || event.metaKey) {
-      return;
+      return false;
     }
     const keyIndex = event.keyCode - 49;
     // Ctrl E or Enter activates AE.
@@ -100,19 +88,17 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
     if ((event.ctrlKey && event.key.toLocaleLowerCase() === 'e') ||
         (isPlainAlphanumericKey(event, 'Enter', false))) {
       this.expandAbbreviation();
-      event.preventDefault();
-      event.stopPropagation();
+      return true;
     } else if (event.ctrlKey && event.key.toLocaleLowerCase() === 'q') {
       this.abbreviationOptions.splice(0);
-      event.preventDefault();
-      event.stopPropagation();
+      return true;
     } else if (
         event.shiftKey && keyIndex >= 0 &&
         keyIndex < this.abbreviationOptions.length) {
       this.selectExpansionOption(keyIndex);
-      event.preventDefault();
-      event.stopPropagation();
+      return true;
     }
+    return false;
   }
 
   get selectedAbbreviationIndex() {
@@ -159,8 +145,9 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
               this.replacementTokens.push(...replacements);
               this.state = State.CHOOSING_TOKEN_REPLACEMENT;
               KeyboardComponent.registerCallback(
-                  AbbreviationComponent._NAME,
-                  this.handleKeyboardEvent.bind(this));
+                  AbbreviationComponent
+                      ._TOKEN_REPLACEMENT_KEYBOARD_CALLBACK_NAME,
+                  this.handleKeyboardEventForReplacemenToken.bind(this));
             },
             error => {
                 // TODO(cais): Handle fill mask error.
@@ -168,15 +155,28 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
             });
   }
 
-  private handleKeyboardEvent(event: KeyboardEvent) {
-    if (isTextContentKey(event)) {
+  private handleKeyboardEventForReplacemenToken(event: KeyboardEvent): boolean {
+    if (isPlainAlphanumericKey(event, 'Enter')) {
+      if (this.manualTokenString.trim().length > 0) {
+        this.emitExpansionWithTokenReplacement(this.manualTokenString.trim());
+        return true;
+      } else if (this.selectedTokenIndex !== null) {
+        // Use the original.
+        this.emitExpansionWithTokenReplacement(
+            this.editTokens[this.selectedTokenIndex]);
+        return true;
+      }
+    } else if (isTextContentKey(event)) {
       this.manualTokenString += event.key.toLocaleLowerCase();
+      return true;
     } else if (isPlainAlphanumericKey(event, 'Backspace')) {
       if (this.manualTokenString.length > 0) {
         this.manualTokenString =
             this.manualTokenString.slice(0, this.manualTokenString.length - 1);
+        return true;
       }
     }
+    return false;
   }
 
   onReplacementTokenButtonClicked(event: Event, index: number) {
@@ -191,7 +191,8 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
     this.abbreviationExpansionSelected.emit({
       expansionText: tokens.join(' '),
     });
-    KeyboardComponent.unregisterCallback(AbbreviationComponent._NAME);
+    KeyboardComponent.unregisterCallback(
+        AbbreviationComponent._TOKEN_REPLACEMENT_KEYBOARD_CALLBACK_NAME);
     // TODO(cais): Prevent selection in gap state.
     setTimeout(() => this.resetState(), 1000);
   }

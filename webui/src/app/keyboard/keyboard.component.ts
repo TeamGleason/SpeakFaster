@@ -1,6 +1,7 @@
 import {Component, HostListener} from '@angular/core';
 
-export type KeyboardCallback = (event: KeyboardEvent) => any;
+// The return value indicates whether the event has been handled.
+export type KeyboardCallback = (event: KeyboardEvent) => boolean;
 
 const callbackStack: Array<{callbackName: string, callback: KeyboardCallback}> =
     [];
@@ -32,6 +33,7 @@ export class KeyboardComponent {
       return;
     }
     callbackStack.push({callbackName: callbackName, callback});
+    console.log(`Registered keyboard callback: ${callbackName}`);
   }
 
   static unregisterCallback(callbackName: string) {
@@ -44,12 +46,17 @@ export class KeyboardComponent {
 
   @HostListener('document:keydown', ['$event'])
   onKeydown(event: KeyboardEvent) {
-    // TODO(cais): Call all in reverse order.
     const length = callbackStack.length;
     if (length === 0) {
       return;
     }
-    const callback = callbackStack[length - 1].callback;
-    callback(event);
+    for (let i = length - 1; i >= 0; --i) {
+      const callback = callbackStack[i].callback;
+      if (callback(event)) {
+        event.preventDefault();
+        event.stopPropagation();
+        break;
+      }
+    }
   }
 }

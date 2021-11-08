@@ -1,8 +1,9 @@
-import {AfterViewInit, Component, ElementRef, EventEmitter, HostListener, Input, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
+import {AfterViewInit, Component, EventEmitter, Input, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
 import {Subject, timer} from 'rxjs';
 
 import {createUuid} from '../..//utils/uuid';
 import {updateButtonBoxes} from '../../utils/cefsharp';
+import {KeyboardComponent} from '../keyboard/keyboard.component';
 import {ContextSignal, SpeakFasterService} from '../speakfaster-service';
 import {TextInjection} from '../types/text-injection';
 
@@ -40,6 +41,8 @@ export class ContextComponent implements OnInit, AfterViewInit {
   constructor(private speakFasterService: SpeakFasterService) {}
 
   ngOnInit() {
+    KeyboardComponent.registerCallback(
+        ContextComponent._NAME, this.handleKeyboardEvent.bind(this));
     this.focusContextIds.splice(0);
     this.textInjectionSubject.subscribe((textInjection: TextInjection) => {
       const timestamp = new Date(textInjection.timestampMillis).toISOString();
@@ -98,19 +101,16 @@ export class ContextComponent implements OnInit, AfterViewInit {
 
   // NOTE: document:keydown can prevent the default tab-switching
   // action of Alt + number keys.
-  @HostListener('document:keydown', ['$event'])
-  onKeydown(event: KeyboardEvent) {
-    // event.stopPropagation();
+  handleKeyboardEvent(event: KeyboardEvent): boolean {
     if (event.ctrlKey && event.key.toLocaleLowerCase() == 'c') {
       // Ctrl C for polling context.
       this.retrieveContext();
-      event.preventDefault();
-      event.stopPropagation();
+      return true;
     } else if (!event.altKey) {
-      return;
+      return false;
     }
     if (event.ctrlKey || event.metaKey || event.shiftKey) {
-      return;
+      return false;
     }
     const keyIndex = Number.parseInt(event.key) - 1;
     if (keyIndex >= 0 && keyIndex < this.contextSignals.length) {
@@ -123,9 +123,9 @@ export class ContextComponent implements OnInit, AfterViewInit {
           this.focusContextIds.length > 1) {
         this.focusContextIds.splice(this.focusContextIds.indexOf(contextId), 1);
       }
-      event.preventDefault();
-      event.stopPropagation();
+      return true;
     }
+    return false;
   }
 
   private populateConversationTurnWithDefault() {

@@ -1,9 +1,10 @@
-import {AfterViewInit, Component, ElementRef, EventEmitter, HostListener, OnDestroy, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
+import {AfterViewInit, Component, ElementRef, EventEmitter, OnDestroy, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
 import {MatSnackBar, MatSnackBarConfig} from '@angular/material/snack-bar';
 import {ActivatedRoute} from '@angular/router';
-import {updateButtonBoxes, updateButtonBoxesToEmpty, updateButtonBoxForHtmlElements} from 'src/utils/cefsharp';
+import {updateButtonBoxesToEmpty, updateButtonBoxForHtmlElements} from 'src/utils/cefsharp';
 
 import {isPlainAlphanumericKey} from '../../utils/keyboard-utils';
+import {KeyboardComponent} from '../keyboard/keyboard.component';
 
 import {DeviceCodeResponse, GoogleDeviceAuthService, TokenResponse} from './google-device-auth-service';
 
@@ -43,6 +44,8 @@ export class AuthComponent implements OnInit, AfterViewInit, OnDestroy {
         this.clientId = params['client_id'];
       }
     });
+    KeyboardComponent.registerCallback(
+        AuthComponent._NAME, this.handleKeyboardEvent.bind(this));
   }
 
   ngAfterViewInit() {
@@ -59,6 +62,7 @@ export class AuthComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy() {
+    KeyboardComponent.unregisterCallback(AuthComponent._NAME);
     updateButtonBoxesToEmpty(AuthComponent._NAME);
   }
 
@@ -90,13 +94,12 @@ export class AuthComponent implements OnInit, AfterViewInit, OnDestroy {
             });
   }
 
-  @HostListener('document:keydown', ['$event'])
-  onKeydown(event: KeyboardEvent) {
+  handleKeyboardEvent(event: KeyboardEvent): boolean {
     if (isPlainAlphanumericKey(event, 'a') && this.deviceCodeData === null) {
       this.authenticate();
-      event.preventDefault();
-      event.stopPropagation();
+      return true;
     }
+    return false;
   }
 
   private async sleepForSeconds(seconds: number) {

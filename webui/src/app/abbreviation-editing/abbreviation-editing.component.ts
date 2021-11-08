@@ -1,4 +1,4 @@
-import {AfterViewInit, Component, ElementRef, EventEmitter, HostListener, Input, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
+import {AfterViewInit, Component, ElementRef, EventEmitter, Input, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
 import {Subject} from 'rxjs';
 import {updateButtonBoxForHtmlElements} from 'src/utils/cefsharp';
 
@@ -10,7 +10,7 @@ import {TextInjection} from '../types/text-injection';
 enum AbbreviationEditingState {
   ENTERING_ABBREVIATION = 'ENTERING_ABBREVIATION',
   SPELLING = 'SPELLING',
-  EDITING_TOKEN = 'EDITING_TOKEN',  // TODO(cais): Clean up.
+  EDITING_TOKEN = 'EDITING_TOKEN',
 }
 
 @Component({
@@ -35,7 +35,6 @@ export class AbbreviationEditingComponent implements OnInit, AfterViewInit {
       AbbreviationEditingState.ENTERING_ABBREVIATION;
 
   inputAbbreviation: string = '';
-  hasAbbreviationExpansionOptions = true;  // TODO(cais): Fix logic.
 
   startSpellingSubject: Subject<StartSpellingEvent> = new Subject();
   private isSpellingTaskIsNew = true;
@@ -61,40 +60,40 @@ export class AbbreviationEditingComponent implements OnInit, AfterViewInit {
         });
   }
 
-  handleKeyboardEvent(event: KeyboardEvent) {
+  handleKeyboardEvent(event: KeyboardEvent): boolean {
     if (this.state !== AbbreviationEditingState.ENTERING_ABBREVIATION) {
-      return;
+      return false;
     }
     if (event.ctrlKey && event.key.toLocaleLowerCase() == 'x') {
       // Ctrl X clears the input box.
       this.inputAbbreviation = '';
       this.state = AbbreviationEditingState.ENTERING_ABBREVIATION;
-      event.preventDefault();
-      event.stopPropagation();
-      return;
+      return true;
     }
     if (event.ctrlKey && event.key.toLocaleLowerCase() == 's') {
       // Ctrl S opens the spelling UI.
-      event.preventDefault();
-      event.stopPropagation();
       this.startSpelling();
-      return;
+      return true;
     }
     if (event.altKey || event.metaKey || event.shiftKey || event.ctrlKey) {
-      return;
+      return false;
     } else if (event.key === 'Backspace') {
       if (this.inputAbbreviation.length > 0) {
         this.inputAbbreviation = this.inputAbbreviation.substring(
             0, this.inputAbbreviation.length - 1);
         this.setInputString(event);
       }
+      return true;
     } else if (isTextContentKey(event)) {
       this.inputAbbreviation += event.key;
       this.setInputString(event);
+      return true;
     } else if (isTextContentKey(event)) {
       this.inputAbbreviation += event.key;
       this.setInputString(event);
+      return true;
     }
+    return false;
   }
 
   private startSpelling() {

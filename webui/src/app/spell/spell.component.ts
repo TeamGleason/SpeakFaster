@@ -1,8 +1,9 @@
-import {AfterViewInit, Component, ElementRef, EventEmitter, HostListener, Input, OnDestroy, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
+import {AfterViewInit, Component, ElementRef, EventEmitter, Input, OnDestroy, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
 import {Subject} from 'rxjs';
 import {updateButtonBoxes, updateButtonBoxForHtmlElements} from 'src/utils/cefsharp';
 
 import {isPlainAlphanumericKey, isTextContentKey} from '../../utils/keyboard-utils';
+import {KeyboardComponent} from '../keyboard/keyboard.component';
 import {AbbreviationSpec, AbbreviationToken, StartSpellingEvent} from '../types/abbreviations';
 
 enum SpellingState {
@@ -36,6 +37,8 @@ export class SpellComponent implements OnInit, AfterViewInit, OnDestroy {
   ngOnInit() {
     this.startSpellingSubject.subscribe((event: StartSpellingEvent) => {
       this.state = SpellingState.CHOOSING_TOKEN;
+      KeyboardComponent.registerCallback(
+          SpellComponent._NAME, this.handleKeyboardEvent.bind(this));
       if (this.originalAbbreviationChars.length > 0 &&
           !event.isNewSpellingTask) {
         return;
@@ -63,13 +66,9 @@ export class SpellComponent implements OnInit, AfterViewInit, OnDestroy {
   state: SpellingState = SpellingState.NOT_STARTED;
   tokenSpellingInput: string = '';
 
-  @HostListener('document:keydown', ['$event'])
-  onKeydown(event: KeyboardEvent) {
-    if (this.state === SpellingState.NOT_STARTED) {
-      return;
-    }
+  handleKeyboardEvent(event: KeyboardEvent): boolean {
     if (this.originalAbbreviationChars.length === 0) {
-      return;
+      return false;
     }
     if (this.state === SpellingState.CHOOSING_TOKEN &&
         !(event.altKey || event.ctrlKey || event.metaKey)) {
@@ -78,6 +77,7 @@ export class SpellComponent implements OnInit, AfterViewInit, OnDestroy {
       const index = this.originalAbbreviationChars.indexOf(key);
       if (index !== -1) {
         this.startSpellingToken(index);
+        return true;
       }
     } else if (this.state === SpellingState.SPELLING_TOKEN) {
       // Ctrl S, Ctrl E or Enter ends the spelling.
@@ -88,21 +88,26 @@ export class SpellComponent implements OnInit, AfterViewInit, OnDestroy {
         this.endSpelling();
         event.preventDefault();
         event.stopPropagation();
+        return true;
       }
       if (event.ctrlKey || event.metaKey || event.shiftKey) {
-        return;
+        return false;
       }
       if (event.key === 'Backspace' && this.tokenSpellingInput.length > 0) {
         this.tokenSpellingInput = this.tokenSpellingInput.substring(
             0, this.tokenSpellingInput.length - 1);
         event.preventDefault();
         event.stopPropagation();
+        return true;
       } else if (isTextContentKey(event)) {
         this.tokenSpellingInput += event.key.toLocaleLowerCase();
         event.preventDefault();
         event.stopPropagation();
+        return true;
       }
+      return false;
     }
+    return false;
   }
 
   onDoneButtonClicked(event: Event) {
@@ -127,6 +132,7 @@ export class SpellComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private endSpelling() {
     this.state = SpellingState.DONE;
+    KeyboardComponent.unregisterCallback(SpellComponent._NAME);
     this.newAbbreviationSpec.emit(this.reconstructAbbreviation());
     this.spellIndex = null;
     updateButtonBoxes(SpellComponent._NAME, []);

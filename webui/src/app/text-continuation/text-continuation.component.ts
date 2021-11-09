@@ -46,13 +46,13 @@ export class TextContinuationComponent implements AfterViewInit, OnChanges {
     if (textPrefix[textPrefix.length - 1] !== ' ') {
       return;
     }
-    this.continuationOptions.splice(0);
     this.speakFasterService
         .textContinuation(
             this.endpoint, this.accessToken, this.contextStrings,
             textPrefix.trim())
         .subscribe(
             data => {
+              this.continuationOptions.splice(0);
               this.continuationOptions.push(...data.outputs);
             },
             error => {

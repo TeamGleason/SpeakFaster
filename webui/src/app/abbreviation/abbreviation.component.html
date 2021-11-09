@@ -155,8 +155,7 @@
     <div
         *ngFor="let abbreviationOption of abbreviationOptions; let i = index"
         class="abbreviation-option"
-        [ngClass]="{'candidate-for-edit': state === 'CHOOSING_EDIT_TARGET'}"
-        (click)="onExpansionOptionButtonSelectedForEditing($event, i)">
+        [ngClass]="{'candidate-for-edit': state === 'CHOOSING_EDIT_TARGET'}">
       <button
           #clickableButton
           class="shortcut-key"

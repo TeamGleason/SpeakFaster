@@ -110,18 +110,14 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
     this.state = State.CHOOSING_EDIT_TARGET;
   }
 
-  onExpansionOptionButtonSelectedForEditing(event: Event, index: number) {
-    if (this.state === 'CHOOSING_EDIT_TARGET') {
+  onExpansionOptionButtonClicked(event: Event, index: number) {
+    if (this.state === 'CHOOSING_EXPANSION') {
+      this.selectExpansionOption(index);
+    } else if (this.state === 'CHOOSING_EDIT_TARGET') {
       this.editTokens.splice(0);
       this.editTokens.push(...this.abbreviationOptions[index].split(' '));
       this.selectedTokenIndex = null;
       this.state = State.CHOOSING_TOKEN;
-    }
-  }
-
-  onExpansionOptionButtonClicked(event: Event, index: number) {
-    if (this.state === 'CHOOSING_EXPANSION') {
-      this.selectExpansionOption(index);
     }
   }
 

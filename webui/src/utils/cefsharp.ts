@@ -20,6 +20,17 @@ export async function bindCefSharpListener() {
       (window as any)[BOUND_LISTENER_NAME])
 }
 
+export function registerNewAccessToken(accessToken: string) {
+  if ((window as any)[BOUND_LISTENER_NAME] == null) {
+    console.warn(`Cannot call registerNewAccessToken(), because object ${
+        BOUND_LISTENER_NAME} is not found`)
+    return;
+  }
+  ((window as any)[BOUND_LISTENER_NAME] as any)
+      .registerNewAccessToken(accessToken);
+  console.log('Called registerNewAccessToken()');
+}
+
 export function callOnDomChange() {
   if ((window as any)[BOUND_LISTENER_NAME] == null) {
     console.warn(`Cannot call onDomChange(), because object ${

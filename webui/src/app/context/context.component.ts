@@ -238,11 +238,13 @@ export class ContextComponent implements OnInit, AfterViewInit {
     });
     this.focusContextIds.splice(0);
     this.focusContextIds.push(...contextIdsAndIndices.map(item => item[0]));
-    // If still has room, add latest turn.
+    // If still has room, add latest turn, if and only if it is self TTS.
     if (this.contextSignals.length > 1) {
-      const latestContextId =
-          this.contextSignals[this.contextSignals.length - 1].contextId!;
-      if (this.focusContextIds.indexOf(latestContextId) === -1) {
+      const latestSignal = this.contextSignals[this.contextSignals.length - 1];
+      const latestContextId = latestSignal.contextId!;
+      if (this.focusContextIds.indexOf(latestContextId) === -1 &&
+          latestSignal.conversationTurn != null &&
+          latestSignal.conversationTurn.isTts) {
         this.focusContextIds.push(latestContextId);
       }
       if (this.focusContextIds.length >

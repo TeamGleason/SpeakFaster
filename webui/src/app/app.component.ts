@@ -29,6 +29,7 @@ export class AppComponent implements OnInit {
   textInjectionSubject: Subject<TextInjection> = new Subject();
 
   // Context speech content used for AE and other text predictions.
+  inputAbbreviation: string = '';
   contextStrings: string[] = [];
 
   constructor(
@@ -77,6 +78,8 @@ export class AppComponent implements OnInit {
 
   onAbbreviationInputChanged(abbreviationChangedEvent:
                                  InputAbbreviationChangedEvent) {
+    this.inputAbbreviation =
+        abbreviationChangedEvent.abbreviationSpec.readableString;
     this.abbreviationExpansionTriggers.next(abbreviationChangedEvent);
   }
 

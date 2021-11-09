@@ -8,6 +8,7 @@ import {AppComponent} from './app.component';
 import {AuthModule} from './auth/auth.module';
 import {ContextModule} from './context/context.module';
 import {KeyboardModule} from './keyboard/keyboard.module';
+import {TextContinuationModule} from './text-continuation/text-continuation.module';
 
 @NgModule({
   declarations: [AppComponent],
@@ -19,6 +20,7 @@ import {KeyboardModule} from './keyboard/keyboard.module';
     BrowserModule,
     ContextModule,
     KeyboardModule,
+    TextContinuationModule,
   ],
   providers: [],
   bootstrap: [AppComponent]

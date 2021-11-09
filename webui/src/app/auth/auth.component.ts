@@ -158,7 +158,6 @@ export class AuthComponent implements OnInit, AfterViewInit, OnDestroy {
           this.accessToken = tokenResponse.access_token;
           this.refreshToken = tokenResponse.refresh_token!;
           this.newAccessToken.emit(this.accessToken);
-          console.log('Calling registerNewAccessToken()');  // DEBUG
           registerNewAccessToken(this.accessToken);
           console.log(`New accessToken: ${this.accessToken}`);
           break;

@@ -52,6 +52,10 @@ export interface RetrieveContextResponse {
   contextSignals?: ContextSignal[];
 }
 
+export interface TextContinuationResponse {
+  outputs: string[],
+}
+
 export interface FillMaskResponse {
   results: string[];
 }
@@ -63,6 +67,10 @@ export interface SpeakFasterServiceStub {
       endpoint: string, accessToken: string, contextTurn: string,
       abbreviationSpec: AbbreviationSpec):
       Observable<AbbreviationExpansionRespnose>;
+
+  textContinuation(
+      endpoint: string, accessToken: string, contextTurns: string[],
+      textPrefix: string): Observable<TextContinuationResponse>;
 
   fillMask(
       endpoint: string, accessToken: string, speechContent: string,
@@ -108,6 +116,22 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
         acronym: abbreviationSpec.readableString,
         speechContent,
         keywordIndices: keywordIndices.join(',')
+      },
+      withCredentials,
+      headers,
+    });
+  }
+
+  textContinuation(
+      endpoint: string, accessToken: string, contextTurns: string[],
+      textPrefix: string): Observable<TextContinuationResponse> {
+    const {headers, withCredentials} =
+        this.getHeadersAndWithCredentials(accessToken);
+    return this.http.get<TextContinuationResponse>(endpoint, {
+      params: {
+        mode: 'text_continuation',
+        speechContent: contextTurns.join('|'),
+        textPrefix,
       },
       withCredentials,
       headers,

@@ -30,7 +30,6 @@ export class AbbreviationEditingComponent implements OnInit, AfterViewInit {
   @ViewChildren('clickableButton')
   buttons!: QueryList<ElementRef<HTMLButtonElement>>;
 
-
   state: AbbreviationEditingState =
       AbbreviationEditingState.ENTERING_ABBREVIATION;
 
@@ -118,6 +117,7 @@ export class AbbreviationEditingComponent implements OnInit, AfterViewInit {
     this.startSpelling();
   }
 
+
   onEditButtonClicked(event: Event) {
     this.startAbbreviationExpansionEditing();
   }
@@ -132,7 +132,7 @@ export class AbbreviationEditingComponent implements OnInit, AfterViewInit {
 
   private setInputString(event: Event) {
     const abbreviationToken: AbbreviationToken = {
-      value: this.inputAbbreviation.trim(),
+      value: this.inputAbbreviation,
       isKeyword: false
     };
     const abbreviationSpec: AbbreviationSpec = {

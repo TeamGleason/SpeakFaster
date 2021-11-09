@@ -1,8 +1,8 @@
 import {AfterViewInit, Component, ElementRef, EventEmitter, OnDestroy, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
 import {MatSnackBar, MatSnackBarConfig} from '@angular/material/snack-bar';
 import {ActivatedRoute} from '@angular/router';
-import {updateButtonBoxesToEmpty, updateButtonBoxForHtmlElements} from 'src/utils/cefsharp';
 
+import {registerNewAccessToken, updateButtonBoxesToEmpty, updateButtonBoxForHtmlElements} from '../../utils/cefsharp';
 import {isPlainAlphanumericKey} from '../../utils/keyboard-utils';
 import {KeyboardComponent} from '../keyboard/keyboard.component';
 
@@ -158,6 +158,8 @@ export class AuthComponent implements OnInit, AfterViewInit, OnDestroy {
           this.accessToken = tokenResponse.access_token;
           this.refreshToken = tokenResponse.refresh_token!;
           this.newAccessToken.emit(this.accessToken);
+          console.log('Calling registerNewAccessToken()');  // DEBUG
+          registerNewAccessToken(this.accessToken);
           console.log(`New accessToken: ${this.accessToken}`);
           break;
         }
@@ -187,6 +189,7 @@ export class AuthComponent implements OnInit, AfterViewInit, OnDestroy {
         if (tokenResponse.access_token != null) {
           this.accessToken = tokenResponse.access_token;
           this.newAccessToken.emit(this.accessToken);
+          registerNewAccessToken(this.accessToken);
           console.log('Access token refreshed successfully');
           console.log(`New accessToken: ${this.accessToken}`);
         } else {

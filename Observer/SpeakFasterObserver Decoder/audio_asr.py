@@ -19,8 +19,12 @@ from google.cloud import storage
 from scipy.io import wavfile
 
 import file_naming
+import gcloud_utils
 import transcript_lib
 import tsv_data
+
+GCLOUD_SPEECH_STREAMING_LENGTH_LIMIT_SEC = 240
+AUDIO_UPLOAD_BUCKET_NAME_PREFIX = "speakfaster_audio_uploads"
 
 
 def concatenate_audio_files(input_paths,
@@ -120,7 +124,6 @@ def create_all_zeros_wav_file(file_path,
       np.zeros([int(sample_rate_hz * duration_sec)], dtype=np.int16))
 
 
-GCLOUD_SPEECH_STREAMING_LENGTH_LIMIT_SEC = 240
 
 
 def get_consecutive_audio_file_paths(
@@ -501,6 +504,7 @@ def async_transcribe(audio_file_paths,
     audio_file_paths: Paths to the audio files as a list of strings in the
       correct order.
     bucket_name: Name of GCS bucket used for holding objects temporarily.
+      If empty or None, will create a temporary bucket.
     output_tsv_path: Path to the output TSV file.
     sample_rate: Audio sample rate.
     language_code: Language code for recognition.
@@ -512,6 +516,12 @@ def async_transcribe(audio_file_paths,
   print("Temporary audio file: %s" % tmp_audio_file)
   audio_duration_s = concatenate_audio_files(
       audio_file_paths, tmp_audio_file, fill_gaps=fill_gaps)
+
+  to_delete_bucket = False
+  if not bucket_name:
+    bucket_name = gcloud_utils.create_temp_gcs_bucket(
+        AUDIO_UPLOAD_BUCKET_NAME_PREFIX)
+    to_delete_bucket = True
 
   storage_client = storage.Client()
   bucket = storage_client.bucket(bucket_name)
@@ -541,6 +551,8 @@ def async_transcribe(audio_file_paths,
   response = operation.result(timeout=timeout_s)
   blob.delete()
   os.remove(tmp_audio_file)
+  if to_delete_bucket:
+    gcloud_utils.delete_gcs_bucket(bucket_name)
 
   utterances = []
   for result in response.results:

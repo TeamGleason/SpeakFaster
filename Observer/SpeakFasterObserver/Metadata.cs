@@ -25,13 +25,16 @@ namespace SpeakFasterObserver {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
             "Cg5tZXRhZGF0YS5wcm90bxITU3BlYWtGYXN0ZXJPYnNlcnZlchofZ29vZ2xl",
-            "L3Byb3RvYnVmL3RpbWVzdGFtcC5wcm90byJeCg9TZXNzaW9uTWV0YWRhdGES",
-            "OQoVc2Vzc2lvbl9lbmRfdGltZXN0YW1wGAEgASgLMhouZ29vZ2xlLnByb3Rv",
-            "YnVmLlRpbWVzdGFtcBIQCgh0aW1lem9uZRgCIAEoCWIGcHJvdG8z"));
+            "L3Byb3RvYnVmL3RpbWVzdGFtcC5wcm90byK/AQoPU2Vzc2lvbk1ldGFkYXRh",
+            "EjkKFXNlc3Npb25fZW5kX3RpbWVzdGFtcBgBIAEoCzIaLmdvb2dsZS5wcm90",
+            "b2J1Zi5UaW1lc3RhbXASEAoIdGltZXpvbmUYAiABKAkSJAocY29tcHV0ZXJf",
+            "bWFudWZhY3R1cmVyX2ZhbWlseRgDIAEoCRITCgtnYXplX2RldmljZRgEIAEo",
+            "CRIQCghwbGF0Zm9ybRgFIAEoCRISCgpvc192ZXJzaW9uGAYgASgJYgZwcm90",
+            "bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Google.Protobuf.WellKnownTypes.TimestampReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::SpeakFasterObserver.SessionMetadata), global::SpeakFasterObserver.SessionMetadata.Parser, new[]{ "SessionEndTimestamp", "Timezone" }, null, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::SpeakFasterObserver.SessionMetadata), global::SpeakFasterObserver.SessionMetadata.Parser, new[]{ "SessionEndTimestamp", "Timezone", "ComputerManufacturerFamily", "GazeDevice", "Platform", "OsVersion" }, null, null, null, null)
           }));
     }
     #endregion
@@ -69,6 +72,10 @@ namespace SpeakFasterObserver {
     public SessionMetadata(SessionMetadata other) : this() {
       sessionEndTimestamp_ = other.sessionEndTimestamp_ != null ? other.sessionEndTimestamp_.Clone() : null;
       timezone_ = other.timezone_;
+      computerManufacturerFamily_ = other.computerManufacturerFamily_;
+      gazeDevice_ = other.gazeDevice_;
+      platform_ = other.platform_;
+      osVersion_ = other.osVersion_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -105,6 +112,53 @@ namespace SpeakFasterObserver {
       }
     }
 
+    /// <summary>Field number for the "computer_manufacturer_family" field.</summary>
+    public const int ComputerManufacturerFamilyFieldNumber = 3;
+    private string computerManufacturerFamily_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public string ComputerManufacturerFamily {
+      get { return computerManufacturerFamily_; }
+      set {
+        computerManufacturerFamily_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "gaze_device" field.</summary>
+    public const int GazeDeviceFieldNumber = 4;
+    private string gazeDevice_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public string GazeDevice {
+      get { return gazeDevice_; }
+      set {
+        gazeDevice_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "platform" field.</summary>
+    public const int PlatformFieldNumber = 5;
+    private string platform_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public string Platform {
+      get { return platform_; }
+      set {
+        platform_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "os_version" field.</summary>
+    public const int OsVersionFieldNumber = 6;
+    private string osVersion_ = "";
+    /// <summary>
+    /// Operating system version.
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public string OsVersion {
+      get { return osVersion_; }
+      set {
+        osVersion_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as SessionMetadata);
@@ -120,6 +174,10 @@ namespace SpeakFasterObserver {
       }
       if (!object.Equals(SessionEndTimestamp, other.SessionEndTimestamp)) return false;
       if (Timezone != other.Timezone) return false;
+      if (ComputerManufacturerFamily != other.ComputerManufacturerFamily) return false;
+      if (GazeDevice != other.GazeDevice) return false;
+      if (Platform != other.Platform) return false;
+      if (OsVersion != other.OsVersion) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -128,6 +186,10 @@ namespace SpeakFasterObserver {
       int hash = 1;
       if (sessionEndTimestamp_ != null) hash ^= SessionEndTimestamp.GetHashCode();
       if (Timezone.Length != 0) hash ^= Timezone.GetHashCode();
+      if (ComputerManufacturerFamily.Length != 0) hash ^= ComputerManufacturerFamily.GetHashCode();
+      if (GazeDevice.Length != 0) hash ^= GazeDevice.GetHashCode();
+      if (Platform.Length != 0) hash ^= Platform.GetHashCode();
+      if (OsVersion.Length != 0) hash ^= OsVersion.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -152,6 +214,22 @@ namespace SpeakFasterObserver {
         output.WriteRawTag(18);
         output.WriteString(Timezone);
       }
+      if (ComputerManufacturerFamily.Length != 0) {
+        output.WriteRawTag(26);
+        output.WriteString(ComputerManufacturerFamily);
+      }
+      if (GazeDevice.Length != 0) {
+        output.WriteRawTag(34);
+        output.WriteString(GazeDevice);
+      }
+      if (Platform.Length != 0) {
+        output.WriteRawTag(42);
+        output.WriteString(Platform);
+      }
+      if (OsVersion.Length != 0) {
+        output.WriteRawTag(50);
+        output.WriteString(OsVersion);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -169,6 +247,22 @@ namespace SpeakFasterObserver {
         output.WriteRawTag(18);
         output.WriteString(Timezone);
       }
+      if (ComputerManufacturerFamily.Length != 0) {
+        output.WriteRawTag(26);
+        output.WriteString(ComputerManufacturerFamily);
+      }
+      if (GazeDevice.Length != 0) {
+        output.WriteRawTag(34);
+        output.WriteString(GazeDevice);
+      }
+      if (Platform.Length != 0) {
+        output.WriteRawTag(42);
+        output.WriteString(Platform);
+      }
+      if (OsVersion.Length != 0) {
+        output.WriteRawTag(50);
+        output.WriteString(OsVersion);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
       }
@@ -183,6 +277,18 @@ namespace SpeakFasterObserver {
       }
       if (Timezone.Length != 0) {
         size += 1 + pb::CodedOutputStream.ComputeStringSize(Timezone);
+      }
+      if (ComputerManufacturerFamily.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(ComputerManufacturerFamily);
+      }
+      if (GazeDevice.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(GazeDevice);
+      }
+      if (Platform.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(Platform);
+      }
+      if (OsVersion.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(OsVersion);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -203,6 +309,18 @@ namespace SpeakFasterObserver {
       }
       if (other.Timezone.Length != 0) {
         Timezone = other.Timezone;
+      }
+      if (other.ComputerManufacturerFamily.Length != 0) {
+        ComputerManufacturerFamily = other.ComputerManufacturerFamily;
+      }
+      if (other.GazeDevice.Length != 0) {
+        GazeDevice = other.GazeDevice;
+      }
+      if (other.Platform.Length != 0) {
+        Platform = other.Platform;
+      }
+      if (other.OsVersion.Length != 0) {
+        OsVersion = other.OsVersion;
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -229,6 +347,22 @@ namespace SpeakFasterObserver {
             Timezone = input.ReadString();
             break;
           }
+          case 26: {
+            ComputerManufacturerFamily = input.ReadString();
+            break;
+          }
+          case 34: {
+            GazeDevice = input.ReadString();
+            break;
+          }
+          case 42: {
+            Platform = input.ReadString();
+            break;
+          }
+          case 50: {
+            OsVersion = input.ReadString();
+            break;
+          }
         }
       }
     #endif
@@ -252,6 +386,22 @@ namespace SpeakFasterObserver {
           }
           case 18: {
             Timezone = input.ReadString();
+            break;
+          }
+          case 26: {
+            ComputerManufacturerFamily = input.ReadString();
+            break;
+          }
+          case 34: {
+            GazeDevice = input.ReadString();
+            break;
+          }
+          case 42: {
+            Platform = input.ReadString();
+            break;
+          }
+          case 50: {
+            OsVersion = input.ReadString();
             break;
           }
         }

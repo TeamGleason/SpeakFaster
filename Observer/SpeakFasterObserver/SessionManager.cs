@@ -152,9 +152,13 @@ namespace SpeakFasterObserver
         private void WriteSessionEndTokenFile(string sessionEndTokenPath)
         {
             SessionMetadata metadata = new();
-            metadata.Timezone = System.TimeZoneInfo.Local.ToString();
+            metadata.Timezone = TimeZoneInfo.Local.ToString();
             metadata.SessionEndTimestamp =
                 Google.Protobuf.WellKnownTypes.Timestamp.FromDateTime(DateTime.Now.ToUniversalTime());
+            metadata.ComputerManufacturerFamily = FileNaming.ComputerManufacturerFamily;
+            metadata.GazeDevice = Upload._gazeDevice;
+            metadata.Platform = Environment.OSVersion.Platform.ToString();
+            metadata.OsVersion = Environment.OSVersion.Version.ToString();
             using (var fs = File.Create(sessionEndTokenPath))
             {
                 metadata.WriteTo(fs);

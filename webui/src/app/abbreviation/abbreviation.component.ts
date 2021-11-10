@@ -255,12 +255,14 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
       usedContextStrings.splice(0, usedContextStrings.length - LIMIT_TURNS);
     }
     // TODO(cais): Limit by token length?
+    const numSamples = this.getNumSamples(this.abbreviation);
     console.log(
-        'Calling expandAbbreviation():', usedContextStrings, this.abbreviation);
+        `Calling expandAbbreviation() (numSamples=${numSamples}):`,
+        usedContextStrings, this.abbreviation);
     this.speakFasterService
         .expandAbbreviation(
             this.endpoint, this.accessToken, usedContextStrings.join('|'),
-            this.abbreviation)
+            this.abbreviation, numSamples)
         .subscribe(
             data => {
               this.requestOngoing = false;
@@ -272,5 +274,18 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
               this.requestOngoing = false;
               this.responseError = error.message;
             });
+  }
+
+  private getNumSamples(abbreviationSpec: AbbreviationSpec|null) {
+    if (abbreviationSpec === null) {
+      return 128;
+    }
+    let maxAbbrevLength = 0;
+    for (const token of abbreviationSpec.tokens) {
+      if (!token.isKeyword && token.value.length > maxAbbrevLength) {
+        maxAbbrevLength = token.value.length;
+      }
+    }
+    return maxAbbrevLength > 5 ? 256 : 128;
   }
 }

@@ -65,7 +65,7 @@ export interface SpeakFasterServiceStub {
 
   expandAbbreviation(
       endpoint: string, accessToken: string, contextTurn: string,
-      abbreviationSpec: AbbreviationSpec):
+      abbreviationSpec: AbbreviationSpec, numSamples: number):
       Observable<AbbreviationExpansionRespnose>;
 
   textContinuation(
@@ -101,7 +101,7 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
   // TODO(cais): Add other parameters.
   expandAbbreviation(
       endpoint: string, accessToken: string, speechContent: string,
-      abbreviationSpec: AbbreviationSpec) {
+      abbreviationSpec: AbbreviationSpec, numSamples: number) {
     const {headers, withCredentials} =
         this.getHeadersAndWithCredentials(accessToken);
     const keywordIndices: number[] = [];
@@ -115,7 +115,8 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
         mode: 'abbreviation_expansion',
         acronym: abbreviationSpec.readableString,
         speechContent,
-        keywordIndices: keywordIndices.join(',')
+        keywordIndices: keywordIndices.join(','),
+        numSamples,
       },
       withCredentials,
       headers,

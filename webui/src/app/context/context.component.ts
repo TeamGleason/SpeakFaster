@@ -45,6 +45,9 @@ export class ContextComponent implements OnInit, AfterViewInit {
         ContextComponent._NAME, this.handleKeyboardEvent.bind(this));
     this.focusContextIds.splice(0);
     this.textInjectionSubject.subscribe((textInjection: TextInjection) => {
+      if (!textInjection.isFinal) {
+        return;
+      }
       const timestamp = new Date(textInjection.timestampMillis).toISOString();
       this.textInjectionContextSignals.push({
         userId: '',  // TODO(cais): Populate proper user ID.

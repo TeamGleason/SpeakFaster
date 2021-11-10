@@ -7,7 +7,7 @@ import {KeyboardComponent} from '../keyboard/keyboard.component';
 import {AbbreviationSpec, AbbreviationToken, InputAbbreviationChangedEvent, StartSpellingEvent} from '../types/abbreviations';
 import {TextInjection} from '../types/text-injection';
 
-enum AbbreviationEditingState {
+enum State {
   ENTERING_ABBREVIATION = 'ENTERING_ABBREVIATION',
   SPELLING = 'SPELLING',
   EDITING_TOKEN = 'EDITING_TOKEN',
@@ -30,8 +30,7 @@ export class AbbreviationEditingComponent implements OnInit, AfterViewInit {
   @ViewChildren('clickableButton')
   buttons!: QueryList<ElementRef<HTMLButtonElement>>;
 
-  state: AbbreviationEditingState =
-      AbbreviationEditingState.ENTERING_ABBREVIATION;
+  state: State = State.ENTERING_ABBREVIATION;
 
   inputAbbreviation: string = '';
 
@@ -40,9 +39,11 @@ export class AbbreviationEditingComponent implements OnInit, AfterViewInit {
 
   ngOnInit() {
     this.textInjectionSubject.subscribe((textInjection: TextInjection) => {
-      this.state = AbbreviationEditingState.ENTERING_ABBREVIATION;
-      this.inputAbbreviation = '';
-      this.isSpellingTaskIsNew = true;
+      if (textInjection.isFinal) {
+        this.resetState();
+      } else {
+        this.inputAbbreviation = textInjection.text;
+      }
     });
     KeyboardComponent.registerCallback(
         AbbreviationEditingComponent._NAME,
@@ -60,13 +61,12 @@ export class AbbreviationEditingComponent implements OnInit, AfterViewInit {
   }
 
   handleKeyboardEvent(event: KeyboardEvent): boolean {
-    if (this.state !== AbbreviationEditingState.ENTERING_ABBREVIATION) {
+    if (this.state !== State.ENTERING_ABBREVIATION) {
       return false;
     }
     if (event.ctrlKey && event.key.toLocaleLowerCase() == 'x') {
       // Ctrl X clears the input box.
-      this.inputAbbreviation = '';
-      this.state = AbbreviationEditingState.ENTERING_ABBREVIATION;
+      this.resetState();
       return true;
     }
     if (event.ctrlKey && event.key.toLocaleLowerCase() == 's') {
@@ -96,11 +96,11 @@ export class AbbreviationEditingComponent implements OnInit, AfterViewInit {
   }
 
   private startSpelling() {
-    if (this.state != AbbreviationEditingState.ENTERING_ABBREVIATION ||
+    if (this.state != State.ENTERING_ABBREVIATION ||
         this.inputAbbreviation.length === 0) {
       return;
     }
-    this.state = AbbreviationEditingState.SPELLING;
+    this.state = State.SPELLING;
     this.spellingStateChanged.emit('START');
     this.startSpellingSubject.next({
       originalAbbreviationChars: this.inputAbbreviation.split(''),
@@ -110,13 +110,20 @@ export class AbbreviationEditingComponent implements OnInit, AfterViewInit {
   }
 
   private startAbbreviationExpansionEditing() {
-    this.state = AbbreviationEditingState.EDITING_TOKEN;
+    this.state = State.EDITING_TOKEN;
   }
 
   onSpellButtonClicked(event: Event) {
     this.startSpelling();
   }
 
+  onEnterAsIsButtonClicked(event: Event) {
+    this.textInjectionSubject.next({
+      text: this.inputAbbreviation.trim(),
+      timestampMillis: Date.now(),
+      isFinal: true,
+    });
+  }
 
   onEditButtonClicked(event: Event) {
     this.startAbbreviationExpansionEditing();
@@ -124,17 +131,21 @@ export class AbbreviationEditingComponent implements OnInit, AfterViewInit {
 
   onNewAbbreviationSpec(abbreviationSpec: AbbreviationSpec) {
     this.inputAbbreviation = abbreviationSpec.readableString;
-    this.state = AbbreviationEditingState.ENTERING_ABBREVIATION;
+    this.state = State.ENTERING_ABBREVIATION;
     this.spellingStateChanged.emit('END');
     this.inputAbbreviationChanged.emit(
         {abbreviationSpec, triggerExpansion: true});
   }
 
+  private resetState() {
+    this.inputAbbreviation = '';
+    this.isSpellingTaskIsNew = true;
+    this.state = State.ENTERING_ABBREVIATION;
+  }
+
   private setInputString(event: Event) {
-    const abbreviationToken: AbbreviationToken = {
-      value: this.inputAbbreviation,
-      isKeyword: false
-    };
+    const abbreviationToken:
+        AbbreviationToken = {value: this.inputAbbreviation, isKeyword: false};
     const abbreviationSpec: AbbreviationSpec = {
       tokens: [abbreviationToken],
       readableString: abbreviationToken.value

@@ -91,6 +91,7 @@ export class AppComponent implements OnInit {
     this.textInjectionSubject.next({
       text: event.expansionText,
       timestampMillis: Date.now(),
+      isFinal: true,
     });
   }
 }

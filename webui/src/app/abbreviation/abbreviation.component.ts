@@ -24,7 +24,7 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
   private static readonly _NAME = 'AbbreviationComponent';
   private static readonly _TOKEN_REPLACEMENT_KEYBOARD_CALLBACK_NAME =
       'AbbreviationComponent_TokenReplacementKeyboardCallbackName';
-
+  private static readonly _MAX_NUM_REPLACEMENT_TOKENS = 6;
 
   @Input() endpoint!: string;
   @Input() accessToken!: string;
@@ -144,6 +144,11 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
                 replacements.splice(replacements.indexOf(originalToken), 1);
               }
               this.replacementTokens.push(...replacements);
+              if (this.replacementTokens.length >
+                  AbbreviationComponent._MAX_NUM_REPLACEMENT_TOKENS) {
+                this.replacementTokens.splice(
+                    AbbreviationComponent._MAX_NUM_REPLACEMENT_TOKENS);
+              }
               this.state = State.CHOOSING_TOKEN_REPLACEMENT;
               KeyboardComponent.registerCallback(
                   AbbreviationComponent

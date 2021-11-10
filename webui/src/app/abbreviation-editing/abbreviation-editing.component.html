@@ -57,8 +57,17 @@
   <span class="button-shortcut-key">(Ctrl+s)</span>
 </button>
 
+<button
+    #clickableButton
+    *ngIf="inputAbbreviation.length > 0 && state === 'ENTERING_ABBREVIATION'"
+    class="action-button"
+    (click)="onEnterAsIsButtonClicked($event)">
+  Enter as is
+  <span class="button-shortcut-key">(Ctrl+s)</span>
+</button>
+
 <app-spell-component
-  [ngClass]="{'hidden': state !== 'SPELLING'}"
-  [startSpellingSubject]="startSpellingSubject"
-  (newAbbreviationSpec)="onNewAbbreviationSpec($event)"
+    [ngClass]="{'hidden': state !== 'SPELLING'}"
+    [startSpellingSubject]="startSpellingSubject"
+    (newAbbreviationSpec)="onNewAbbreviationSpec($event)"
 ></app-spell-component>

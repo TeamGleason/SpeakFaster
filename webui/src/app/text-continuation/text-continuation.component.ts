@@ -67,6 +67,7 @@ export class TextContinuationComponent implements AfterViewInit, OnChanges {
     this.textInjectionSubject.next({
       text,
       timestampMillis: Date.now(),
+      isFinal: false,
     });
     this.continuationOptions.splice(0);
   }

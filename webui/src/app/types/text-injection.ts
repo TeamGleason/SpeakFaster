@@ -7,6 +7,9 @@ export interface TextInjection {
   // Timestamp for the injection, in milliseconds since the epoch.
   timestampMillis: number;
 
+  // Whether the injection is final.
+  isFinal: boolean;
+
   // Sequence of injected keys;
   injectedKeys?: string[];
 }

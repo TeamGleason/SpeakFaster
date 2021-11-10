@@ -1,0 +1,22 @@
+<style>
+
+:host {
+    white-space: pre-wrap
+}
+
+.wpm-tag {
+  display: inline-block;
+  color: #999;
+  font-size: 21px;
+  margin-left: 6px;
+}
+
+</style>
+
+<div class="wpm-tag">
+  WPM:
+  <span
+      *ngIf="overallWordsPerMinute !== null">
+      {{overallWordsPerMinute.toFixed(1)}}
+  </span>
+</div>

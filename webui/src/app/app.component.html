@@ -39,6 +39,11 @@ app-context-component {
 
   <div *ngIf="hasAccessToken()">
 
+    <app-metrics-component
+      [textEntryBeginSubject]="textEntryBeginSubject"
+      [textInjectionSubject]="textInjectionSubject"
+    ></app-metrics-component>
+
     <app-context-component
       [endpoint]="endpoint"
       [accessToken]="accessToken"
@@ -48,6 +53,7 @@ app-context-component {
 
     <app-abbreviation-editing-component
       [textInjectionSubject]="textInjectionSubject"
+      [textEntryBeginSubject]="textEntryBeginSubject"
       (inputAbbreviationChanged)="onAbbreviationInputChanged($event)"
       (spellingStateChanged)="onSpellingStateChanged($event)"
     ></app-abbreviation-editing-component>

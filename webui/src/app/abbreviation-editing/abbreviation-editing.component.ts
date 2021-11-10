@@ -5,7 +5,7 @@ import {updateButtonBoxForHtmlElements} from 'src/utils/cefsharp';
 import {isTextContentKey} from '../../utils/keyboard-utils';
 import {KeyboardComponent} from '../keyboard/keyboard.component';
 import {AbbreviationSpec, AbbreviationToken, InputAbbreviationChangedEvent, StartSpellingEvent} from '../types/abbreviations';
-import {TextInjection} from '../types/text-injection';
+import {TextEntryBeginEvent, TextInjection} from '../types/text-injection';
 
 enum State {
   ENTERING_ABBREVIATION = 'ENTERING_ABBREVIATION',
@@ -21,6 +21,7 @@ export class AbbreviationEditingComponent implements OnInit, AfterViewInit {
   private static readonly _NAME = 'AbbreviationEditingComponent';
 
   @Input() textInjectionSubject!: Subject<TextInjection>;
+  @Input() textEntryBeginSubject!: Subject<TextEntryBeginEvent>;
   @Output()
   inputAbbreviationChanged: EventEmitter<InputAbbreviationChangedEvent> =
       new EventEmitter();
@@ -84,10 +85,11 @@ export class AbbreviationEditingComponent implements OnInit, AfterViewInit {
       }
       return true;
     } else if (isTextContentKey(event)) {
-      this.inputAbbreviation += event.key;
-      this.setInputString(event);
-      return true;
-    } else if (isTextContentKey(event)) {
+      if (this.inputAbbreviation === '') {
+        this.textEntryBeginSubject.next({
+          timestampMillis: Date.now(),
+        });
+      }
       this.inputAbbreviation += event.key;
       this.setInputString(event);
       return true;
@@ -118,8 +120,9 @@ export class AbbreviationEditingComponent implements OnInit, AfterViewInit {
   }
 
   onEnterAsIsButtonClicked(event: Event) {
+    const text = this.inputAbbreviation.trim();
     this.textInjectionSubject.next({
-      text: this.inputAbbreviation.trim(),
+      text,
       timestampMillis: Date.now(),
       isFinal: true,
     });
@@ -141,6 +144,13 @@ export class AbbreviationEditingComponent implements OnInit, AfterViewInit {
     this.inputAbbreviation = '';
     this.isSpellingTaskIsNew = true;
     this.state = State.ENTERING_ABBREVIATION;
+    this.inputAbbreviationChanged.emit({
+      abbreviationSpec: {
+        tokens: [],
+        readableString: '',
+      },
+      triggerExpansion: false,
+    });
   }
 
   private setInputString(event: Event) {

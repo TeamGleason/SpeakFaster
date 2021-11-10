@@ -8,6 +8,7 @@ import {AppComponent} from './app.component';
 import {AuthModule} from './auth/auth.module';
 import {ContextModule} from './context/context.module';
 import {KeyboardModule} from './keyboard/keyboard.module';
+import {MetricsModule} from './metrics/metrics.module';
 import {TextContinuationModule} from './text-continuation/text-continuation.module';
 
 @NgModule({
@@ -20,6 +21,7 @@ import {TextContinuationModule} from './text-continuation/text-continuation.modu
     BrowserModule,
     ContextModule,
     KeyboardModule,
+    MetricsModule,
     TextContinuationModule,
   ],
   providers: [],

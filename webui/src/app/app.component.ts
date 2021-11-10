@@ -6,7 +6,7 @@ import {bindCefSharpListener} from '../utils/cefsharp';
 
 import {SpeakFasterService} from './speakfaster-service';
 import {AbbreviationExpansionSelectionEvent, InputAbbreviationChangedEvent} from './types/abbreviations';
-import {TextInjection} from './types/text-injection';
+import {TextEntryBeginEvent, TextInjection} from './types/text-injection';
 
 @Component({
   selector: 'app-root',
@@ -27,7 +27,8 @@ export class AppComponent implements OnInit {
   abbreviationExpansionTriggers: Subject<InputAbbreviationChangedEvent> =
       new Subject();
   textInjectionSubject: Subject<TextInjection> = new Subject();
-
+  textEntryBeginSubject: Subject<TextEntryBeginEvent> =
+      new Subject<TextEntryBeginEvent>();
   // Context speech content used for AE and other text predictions.
   inputAbbreviation: string = '';
   contextStrings: string[] = [];

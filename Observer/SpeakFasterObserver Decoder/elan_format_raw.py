@@ -283,8 +283,10 @@ def parse_args():
   parser.add_argument(
       "--gcs_bucket_name",
       type=str,
-      default="sf_test_audio_uploads",
-      help="GCS bucket used for holding objects for async ASR transcription.")
+      default="",
+      help="GCS bucket used for holding objects for async ASR transcription."
+      "If not provided (i.e., empty), a temporary GCS bucket will be created "
+      "and deleted afterwards.")
   parser.add_argument(
       "--dummy_video_frame_image_path",
       type=str,

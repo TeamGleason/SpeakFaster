@@ -5,8 +5,13 @@ import android.bluetooth.le.BluetoothLeScanner;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanResult;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
@@ -14,14 +19,35 @@ import androidx.core.content.ContextCompat;
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "BleScanner";
 
-    private static final int ACCESS_FINE_LOCATION_REQUEST_CODE = 2021;
+    private static final int PERMISSION_REQUEST_CODE = 2021;
+    private static final float IGNORE_DISTANCE_THRESHOLD_M = 5.0f;
     private final BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
+//    private final BtStateChangeReceiver btStateChangeReceiver = new BtStateChangeReceiver();
+    private BluetoothLeScanner scanner = null;
+    private Handler handler = new Handler();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+//        IntentFilter filter = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
+//        this.getApplicationContext().registerReceiver(
+//                btStateChangeReceiver, filter, /* broadcastPermission */ null, null);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
         this.checkPermissionsAndStartScanning();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (scanner != null) {
+            scanner.stopScan(bleScanCallback);
+            Log.i(TAG, "Stopped BLE scanning");
+        }
     }
 
     private void checkPermissionsAndStartScanning() {
@@ -31,7 +57,12 @@ public class MainActivity extends AppCompatActivity {
         if (isBluetoothPermissionGranted) {
             scanForBleDevices();
         } else {
-            requestPermissions(new String[] {permission.ACCESS_FINE_LOCATION}, ACCESS_FINE_LOCATION_REQUEST_CODE);
+            requestPermissions(new String[] {
+                    permission.BLUETOOTH,
+                    permission.BLUETOOTH_ADMIN,
+                    permission.BLUETOOTH_SCAN,
+                    permission.ACCESS_COARSE_LOCATION,
+                    permission.ACCESS_FINE_LOCATION}, PERMISSION_REQUEST_CODE);
         }
     }
 
@@ -39,7 +70,7 @@ public class MainActivity extends AppCompatActivity {
     public void onRequestPermissionsResult(
             int requestCode, String[] permissions, int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == ACCESS_FINE_LOCATION_REQUEST_CODE) {
+        if (requestCode == PERMISSION_REQUEST_CODE) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 scanForBleDevices();
             } else {
@@ -49,7 +80,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void scanForBleDevices() {
-        BluetoothLeScanner scanner = adapter.getBluetoothLeScanner();
+        if (!adapter.isEnabled()) {
+            // TODO(cais): Display error message.
+        }
+        if (scanner == null) {
+            scanner = adapter.getBluetoothLeScanner();
+        }
         scanner.startScan(bleScanCallback);
     }
 
@@ -62,13 +98,47 @@ public class MainActivity extends AppCompatActivity {
                     // Received signal strength indicator (in dBm).
                     int rssi = result.getRssi();
                     float distance = rssi2Distance(rssi);
-                    if (distance < 1.0) {
+                    if (distance < IGNORE_DISTANCE_THRESHOLD_M) {
                         Log.i(TAG, String.format(
                             "BleScanner onScanResult: callbackType=%d, address=%s, rssi=%d dBm, distance=%.3f, details=%s",
                             callbackType, address, rssi, distance, result));
                     }
                 }
+
+                @Override
+                public void onScanFailed(int errorCode) {
+                    super.onScanFailed(errorCode);
+                    Log.i(TAG, "BLE scan failed: code = " + errorCode);
+//                    BluetoothAdapter.getDefaultAdapter().disable();
+//                    scanner.stopScan(bleScanCallback);
+//                    handler.postDelayed(() -> {
+//                        scanner.startScan(bleScanCallback);
+//                        Log.i(TAG, "Restarted BLE scanning after error code " + errorCode);
+//                    }, 1000);
+                }
             };
+
+    class BtStateChangeReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.STATE_OFF);
+            Log.d(TAG, "Bluetooth adapter state changed to: " + state);
+            switch (state) {
+                case BluetoothAdapter.STATE_ON:
+                    Log.d(TAG, "Bluetooth adapter state changed to STATE_ON");
+                    checkPermissionsAndStartScanning();
+                    break;
+                case BluetoothAdapter.STATE_OFF:
+//                    handler.postDelayed(() -> {
+//                        adapter.enable();
+//                    }, 500);
+                    Log.d(TAG, "Bluetooth adapter state changed to STATE_OFF");
+                    break;
+                default:
+                    // Do nothing
+            }
+        }
+    }
 
     /**
      * Translate RSSI (Received signal strength indicator in dBm) to estimated distance.
@@ -79,7 +149,7 @@ public class MainActivity extends AppCompatActivity {
      */
     private static float rssi2Distance(int rssi) {
         float n = 2.0f;
-        float m = -67f;  // Hardcoded for BlueCharm iBeacon devices. May not work for others.
+        float m = -65f;  // Hardcoded for BlueCharm iBeacon devices. May not work for others.
         return (float) Math.pow(10.0f, (m - rssi) / 10f / n);
     }
 }

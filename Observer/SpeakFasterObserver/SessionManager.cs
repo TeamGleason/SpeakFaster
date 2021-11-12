@@ -4,6 +4,8 @@ using System.IO;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
+using Google.Protobuf;
+
 namespace SpeakFasterObserver
 {
     /** A class that manageds the start and end of data sessions. */
@@ -141,9 +143,25 @@ namespace SpeakFasterObserver
                 string sessionEndToken = FileNaming.GetSessionEndTokenFilePath(sessionDirName);
                 if (!File.Exists(sessionEndToken))
                 {
-                    File.Create(sessionEndToken).Dispose();
+                    WriteSessionEndTokenFile(sessionEndToken);
                 }
                 sessionDirName = null;
+            }
+        }
+
+        private void WriteSessionEndTokenFile(string sessionEndTokenPath)
+        {
+            SessionMetadata metadata = new();
+            metadata.Timezone = TimeZoneInfo.Local.ToString();
+            metadata.SessionEndTimestamp =
+                Google.Protobuf.WellKnownTypes.Timestamp.FromDateTime(DateTime.Now.ToUniversalTime());
+            metadata.ComputerManufacturerFamily = FileNaming.ComputerManufacturerFamily;
+            metadata.GazeDevice = Upload._gazeDevice;
+            metadata.Platform = Environment.OSVersion.Platform.ToString();
+            metadata.OsVersion = Environment.OSVersion.Version.ToString();
+            using (var fs = File.Create(sessionEndTokenPath))
+            {
+                metadata.WriteTo(fs);
             }
         }
 

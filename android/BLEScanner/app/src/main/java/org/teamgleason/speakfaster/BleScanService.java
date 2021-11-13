@@ -5,20 +5,30 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.Service;
 import android.app.PendingIntent;
+import android.bluetooth.le.ScanFilter;
+import android.bluetooth.le.ScanSettings;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.PowerManager;
 import android.util.Log;
 import android.widget.Toast;
 
 
-public class BleScanService extends Service {
+public class BleScanService extends Service implements BleScanner.BleScanCallbacks {
     private static final String TAG = "BleScanService";
     private static final int NOTIFICATION_ID = 1;
+    private static final long SEND_BEACON_STATUS_DELAY_MILLIS = 5000;
     private final LocalBinder binder = new LocalBinder();
+    private BleScanner bleScanner = new BleScanner(this);
+    private PowerManager powerManager;
+    private PowerManager.WakeLock wakeLock;
     private NotificationManager notificationManager;
     private Handler handler;
+
+    private boolean isRunning = false;
 
     public class LocalBinder extends Binder {
         public BleScanService getService() {
@@ -35,13 +45,35 @@ public class BleScanService extends Service {
     public void onCreate() {
         super.onCreate();
         notificationManager = this.getSystemService(NotificationManager.class);
-        Log.i(TAG, "service onCreate()");  // DEBUG
+        acquirePartialWakeLock();
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
-        Log.i(TAG, "service onDestroy()");  // DEBUG
+        if (wakeLock != null) {
+            wakeLock.release();
+            Log.i(TAG, "WakeLock released.");
+        }
+        if (bleScanner != null) {
+            bleScanner.stopScan();
+        }
+    }
+
+    private void acquirePartialWakeLock() {
+        powerManager = (PowerManager) getSystemService(Context.POWER_SERVICE);
+        wakeLock = powerManager.newWakeLock(
+                PowerManager.PARTIAL_WAKE_LOCK,
+                "SpeakFasterCompanion:PartialWakeLock");
+        wakeLock.acquire();
+        Log.i(TAG, "WakeLock acquired.");
+    }
+
+    private void sendBeaconStatus() {
+        Log.i(TAG, "Sending beacon status");
+        handler.postDelayed(() -> {
+            sendBeaconStatus();
+        }, SEND_BEACON_STATUS_DELAY_MILLIS);
     }
 
     private NotificationChannel createNotificationChannel() {
@@ -63,14 +95,15 @@ public class BleScanService extends Service {
                 .setContentTitle("SpeakFaster Companion")
                 .setContentText("Scanning for BLE beacons")
                 .setSmallIcon(R.drawable.ic_launcher_background)
-//                .setContentIntent(pendingIntent)
-//                .setOngoing(true)
-//                .setChannelId("SpeakFaster")
                 .build();
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        if (isRunning) {
+            return Service.START_STICKY;
+        }
+
         super.onStartCommand(intent, flags, startId);
         Notification notification = createNotification();
         notificationManager.notify(NOTIFICATION_ID, notification);  // TODO(cais): Is this needed?
@@ -82,10 +115,20 @@ public class BleScanService extends Service {
             @Override
             public void run() {
                 Log.i(TAG, "service run()"); // DEBUG
+                bleScanner.startScan();
+                handler.postDelayed(() -> {
+                    sendBeaconStatus();
+                }, SEND_BEACON_STATUS_DELAY_MILLIS);
+                isRunning = true;
             }
         });
         return Service.START_STICKY;
     }
 
-
+    @Override
+    public void onBeaconDetected(String address, float rssi, float estimatedDistanceM) {
+        Log.i(TAG, String.format(
+                "BleScanner address=%s, rssi=%.1f dBm, distance=%.3f m",
+                address, rssi, estimatedDistanceM));
+    }
 }

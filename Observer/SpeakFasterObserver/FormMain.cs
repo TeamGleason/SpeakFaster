@@ -28,6 +28,7 @@ namespace SpeakFasterObserver
         static ScreenCapture screenCapture;
         private static string lastKeypressString = String.Empty;
         Keylogger keylogger;
+        private HttpServer httpServer = new();
         static IBlink1 blink1;
 
         System.Threading.Timer uploadTimer = new(Timer_Tick);
@@ -44,6 +45,9 @@ namespace SpeakFasterObserver
             gazeDevice = new ToltTech.GazeInput.TobiiStreamEngine();
             sessionManager = new(dataPath);
             audioInput = new();
+
+            httpServer.Listen();
+            httpServer.StartServiceDiscoveryAdvertisement();
 
             if (!gazeDevice.IsAvailable)
             {

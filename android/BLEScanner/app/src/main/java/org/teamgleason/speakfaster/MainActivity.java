@@ -12,7 +12,9 @@ import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
+import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
@@ -25,11 +27,14 @@ public class MainActivity extends AppCompatActivity {
 //    private final BtStateChangeReceiver btStateChangeReceiver = new BtStateChangeReceiver();
     private BluetoothLeScanner scanner = null;
     private Handler handler = new Handler();
+    private Handler mainHandler = new Handler(Looper.getMainLooper());
+    private TextView mainTextView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        mainTextView = findViewById(R.id.mainText);
 //        IntentFilter filter = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
 //        this.getApplicationContext().registerReceiver(
 //                btStateChangeReceiver, filter, /* broadcastPermission */ null, null);
@@ -102,6 +107,13 @@ public class MainActivity extends AppCompatActivity {
                         Log.i(TAG, String.format(
                             "BleScanner onScanResult: callbackType=%d, address=%s, rssi=%d dBm, distance=%.3f, details=%s",
                             callbackType, address, rssi, distance, result));
+                        mainHandler.post(() -> {
+                            String currentText = mainTextView.getText().toString();
+                            if (currentText.indexOf(address) == -1) {
+                                mainTextView.setText(
+                                        currentText + String.format("\n%s - %.3fm", address, distance));
+                            }
+                        });
                     }
                 }
 

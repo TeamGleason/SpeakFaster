@@ -1,6 +1,10 @@
 package org.teamgleason.speakfaster;
 
 import android.Manifest.permission;
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.bluetooth.le.BluetoothLeScanner;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.le.ScanCallback;
@@ -44,6 +48,10 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         this.checkPermissionsAndStartScanning();
+
+        Intent bleScanServiceIntent = new Intent(this, BleScanService.class);
+//        startService(bleScanServiceIntent);
+        startForegroundService(bleScanServiceIntent);
     }
 
     @Override
@@ -151,6 +159,30 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     }
+
+//    private NotificationChannel createNotificationChannel() {
+//        NotificationManager notificationManager = this.getSystemService(NotificationManager.class);
+//        int importance = NotificationManager.IMPORTANCE_LOW;
+//        String notificationName = "SpeakFaster Companion";  // TODO(cais): Do not hardcode.
+//        NotificationChannel channel =
+//                new NotificationChannel(notificationName, notificationName, importance);
+//        notificationManager.createNotificationChannel(channel);
+//        return channel;
+//    }
+//
+//    private Notification createNotification() {
+//        Intent notificationIntent = new Intent(this, BleScanService.class);
+//        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
+//        NotificationChannel channel = createNotificationChannel();
+//        return new Notification.Builder(this, channel.getId())
+//                .setContentTitle("SpeakFaster Companion")
+//                .setContentText("Scanning for BLE beacons")
+//                .setSmallIcon(R.drawable.ic_launcher_background)
+//                .setContentIntent(pendingIntent)
+//                .setOngoing(true)
+//                .setChannelId("SpeakFaster")
+//                .build();
+//    }
 
     /**
      * Translate RSSI (Received signal strength indicator in dBm) to estimated distance.

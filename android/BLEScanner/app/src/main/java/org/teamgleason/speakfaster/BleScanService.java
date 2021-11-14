@@ -6,14 +6,22 @@ import android.app.NotificationManager;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.net.nsd.NsdManager;
+import android.net.nsd.NsdServiceInfo;
 import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.PowerManager;
 import android.util.Log;
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.ProtocolException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
-
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class BleScanService extends Service implements BleScanner.BleScanCallbacks {
     private static final String TAG = "BleScanService";
@@ -26,8 +34,10 @@ public class BleScanService extends Service implements BleScanner.BleScanCallbac
     private PowerManager powerManager;
     private PowerManager.WakeLock wakeLock;
     private NotificationManager notificationManager;
-    private NotificationChannel channel;
+    private NotificationChannel notificationChannel;
     private Handler handler;
+    private ExecutorService executorService = Executors.newSingleThreadExecutor();
+    private NsdManager nsdManager;
     // Addresses of the beacon that are detected in the current
     private final List<String> activeBeaconAddresses = new ArrayList<>();
 
@@ -48,6 +58,7 @@ public class BleScanService extends Service implements BleScanner.BleScanCallbac
     public void onCreate() {
         super.onCreate();
         notificationManager = this.getSystemService(NotificationManager.class);
+        nsdManager = (NsdManager) getSystemService(Context.NSD_SERVICE);
         acquirePartialWakeLock();
     }
 
@@ -74,6 +85,7 @@ public class BleScanService extends Service implements BleScanner.BleScanCallbac
 
     private void sendBeaconStatus() {
         Log.i(TAG, "Sending beacon status");
+        sendBeaconStatusViaHttp();
         notificationManager.notify(NOTIFICATION_ID, createStatusNotification());
         activeBeaconAddresses.clear();
         handler.postDelayed(() -> {
@@ -81,8 +93,36 @@ public class BleScanService extends Service implements BleScanner.BleScanCallbac
         }, SEND_BEACON_STATUS_PERIOD_MILLIS);
     }
 
+    private void sendBeaconStatusViaHttp() {
+        executorService.submit(() -> {
+            try {
+                // TODO(cais): DO NOT HARDCODE IP address and port number. Use NSD.
+                URL url = new URL("http://192.168.1.3:53737/");
+                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                connection.setConnectTimeout(10000);
+                connection.setReadTimeout(10000);
+                connection.setRequestMethod("GET");
+                connection.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
+                Log.i(TAG, "http 500");
+                int responseCode = connection.getResponseCode();
+                String responseMessage = connection.getResponseMessage();
+                Log.i(TAG, "http 1000: response code = " + responseCode
+                        + ": " + responseMessage);
+            } catch (MalformedURLException e) {
+                // TODO(cais): Show notification.
+                Log.e(TAG, "MalformedURLException: " + e.getMessage());
+            } catch (ProtocolException e) {
+                // TODO(cais): Show notification.
+                Log.e(TAG, "ProtocolException: " + e.getMessage());
+            } catch (IOException e) {
+                // TODO(cais): Show notification.
+                Log.e(TAG, "IOException: " + e.getMessage());
+            }
+        });
+    }
+
     private NotificationChannel createNotificationChannel() {
-        int importance = NotificationManager.IMPORTANCE_DEFAULT;
+        int importance = NotificationManager.IMPORTANCE_LOW;
         String notificationName = "SpeakFasterCompanion";  // TODO(cais): Do not hardcode.
         NotificationChannel channel =
                 new NotificationChannel(notificationName, notificationName, importance);
@@ -91,10 +131,10 @@ public class BleScanService extends Service implements BleScanner.BleScanCallbac
     }
 
     private Notification createInitialNotification() {
-        if (channel == null) {
-            channel = createNotificationChannel();
+        if (notificationChannel == null) {
+            notificationChannel = createNotificationChannel();
         }
-        return new Notification.Builder(this, channel.getId())
+        return new Notification.Builder(this, notificationChannel.getId())
                 .setContentTitle(NOTIFICATION_TITLE)
                 .setContentText("Scanning for BLE beacons")
                 .setSmallIcon(R.drawable.ic_launcher_background)
@@ -102,16 +142,15 @@ public class BleScanService extends Service implements BleScanner.BleScanCallbac
     }
 
     private Notification createStatusNotification() {
-        if (channel == null) {
-            channel = createNotificationChannel();
+        if (notificationChannel == null) {
+            notificationChannel = createNotificationChannel();
         }
-        String status = String.format(
-                "%d BLE icon(s) are in the vicinity", activeBeaconAddresses.size());
+        String status = String.format("%d BLE beacons(s):", activeBeaconAddresses.size());
         int numAddressesToShow = Math.min(activeBeaconAddresses.size(), 3);
         for (int i = 0; i < numAddressesToShow; ++i) {
             status += "\n" + activeBeaconAddresses.get(i);
         }
-        return new Notification.Builder(this, channel.getId())
+        return new Notification.Builder(this, notificationChannel.getId())
                 .setContentTitle(NOTIFICATION_TITLE)
                 .setContentText(status)
                 .setSmallIcon(R.drawable.ic_launcher_background)
@@ -135,6 +174,7 @@ public class BleScanService extends Service implements BleScanner.BleScanCallbac
             @Override
             public void run() {
                 Log.i(TAG, "service run()"); // DEBUG
+                discoverSpeakFasterObserverService();
                 bleScanner.startScan();
                 handler.postDelayed(() -> {
                     sendBeaconStatus();
@@ -153,5 +193,57 @@ public class BleScanService extends Service implements BleScanner.BleScanCallbac
         if (activeBeaconAddresses.indexOf(address) == -1) {
             activeBeaconAddresses.add(address);
         }
+    }
+
+    public void discoverSpeakFasterObserverService() {
+        if (nsdManager == null) {
+            Log.w(TAG, "Not scanning for SpeakFaster Observer service because NsdManger is uninitialized.");
+            return;
+        }
+
+        // Instantiate a new DiscoveryListener
+        NsdManager.DiscoveryListener discoveryListener =
+                new NsdManager.DiscoveryListener() {
+                    // Called as soon as service discovery begins.
+                    @Override
+                    public void onDiscoveryStarted(String regType) {
+                        Log.i(TAG, "onDiscoveryStarted()");  // DEBUG
+                    }
+
+                    @Override
+                    public void onServiceFound(NsdServiceInfo service) {
+                        // A service is found.
+                        Log.i(TAG, "onServiceFound()" + service);  // DEBUG
+//                        nsdManager.resolveService(service, resolveListener);
+                    }
+
+                    @Override
+                    public void onServiceLost(NsdServiceInfo service) {
+                        // NOTE: we scan for all PUNT37 servers anew each time. So there is no need
+                        // to keep track of the previously discovered hosts.
+                    }
+
+                    @Override
+                    public void onDiscoveryStopped(String serviceType) {
+//                        handler.onDiscoveryStopped();
+                    }
+
+                    @Override
+                    public void onStartDiscoveryFailed(String serviceType, int errorCode) {
+                        Log.i(TAG, "onStartDiscoveryFailed():" + serviceType + "; code=" + errorCode);  // DEBUG
+//                        log.e(this, "Discovery failed: Error code:" + errorCode);
+//                        nsdManager.stopServiceDiscovery(this);
+//                        handler.onStartDiscoveryFailed();
+                    }
+
+                    @Override
+                    public void onStopDiscoveryFailed(String serviceType, int errorCode) {
+//                        log.e(this, "Discovery failed: Error code:" + errorCode);
+//                        nsdManager.stopServiceDiscovery(this);
+                    }
+
+                };
+        nsdManager.discoverServices(
+                "_spo._tcp", NsdManager.PROTOCOL_DNS_SD, discoveryListener);
     }
 }

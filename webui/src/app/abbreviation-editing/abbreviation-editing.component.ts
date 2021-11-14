@@ -115,6 +115,21 @@ export class AbbreviationEditingComponent implements OnInit, AfterViewInit {
     this.state = State.EDITING_TOKEN;
   }
 
+  onExpandAbbreviationButtonClicked(event: Event) {
+    if (this.state != State.ENTERING_ABBREVIATION || this.inputAbbreviation.indexOf(' ') !== -1) {
+      return;
+    }
+    const abbreviationSpec: AbbreviationSpec = {
+      tokens: [{
+        value: this.inputAbbreviation,
+        isKeyword: false,
+      }],
+      readableString: this.inputAbbreviation,
+    };
+    this.inputAbbreviationChanged.emit(
+      {abbreviationSpec, triggerExpansion: true});
+  }
+
   onSpellButtonClicked(event: Event) {
     this.startSpelling();
   }

@@ -22,6 +22,10 @@ import android.util.Log;
 import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
@@ -37,8 +41,19 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         mainTextView = findViewById(R.id.mainText);
+        LocalBroadcastManager.getInstance(this).registerReceiver(
+                broadcastReceiver, new IntentFilter(BleScanService.BROADCAST_STATUS_INTENT_NAME));
         this.checkPermissionsAndStartScanning();
     }
+
+    public BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String statusJsonString = intent.getStringExtra("status");  // TODO(cais): DO NOT HARDCODE.
+            JsonObject statusObject = new JsonParser().parse(statusJsonString).getAsJsonObject();
+            Log.i(TAG, "Received broadcast status:" + statusObject.toString());
+        }
+    };
 
     private void startBleScanInService() {
         Intent bleScanServiceIntent = new Intent(this, BleScanService.class);

@@ -13,6 +13,12 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.PowerManager;
 import android.util.Log;
+
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
@@ -28,6 +34,8 @@ public class BleScanService extends Service implements BleScanner.BleScanCallbac
     private static final int NOTIFICATION_ID = 1;
     private static final String NOTIFICATION_TITLE = "SpeakFaster Observer Companion";
     private static final long SEND_BEACON_STATUS_PERIOD_MILLIS = 5000;
+
+    public static final String BROADCAST_STATUS_INTENT_NAME = "SPEAKFASTER_BROADCAST_STATUS";
 
     private final LocalBinder binder = new LocalBinder();
     private BleScanner bleScanner = new BleScanner(this);
@@ -85,12 +93,29 @@ public class BleScanService extends Service implements BleScanner.BleScanCallbac
 
     private void sendBeaconStatus() {
         Log.i(TAG, "Sending beacon status");
+        sendBeaconStatusViaBroadcast();
         sendBeaconStatusViaHttp();
         notificationManager.notify(NOTIFICATION_ID, createStatusNotification());
         activeBeaconAddresses.clear();
         handler.postDelayed(() -> {
             sendBeaconStatus();
         }, SEND_BEACON_STATUS_PERIOD_MILLIS);
+    }
+
+    private String makeStatusJsonString() {
+        JsonArray deviceAddresses = new JsonArray();
+        for (int i = 0; i < activeBeaconAddresses.size(); ++i) {
+            deviceAddresses.add(activeBeaconAddresses.get(i));
+        }
+        JsonObject object = new JsonObject();
+        object.add("deviceAddresses", deviceAddresses);
+        return object.toString();
+    }
+
+    private void sendBeaconStatusViaBroadcast() {
+        Intent intent = new Intent(BROADCAST_STATUS_INTENT_NAME);
+        intent.putExtra("status", makeStatusJsonString());
+        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
     }
 
     private void sendBeaconStatusViaHttp() {

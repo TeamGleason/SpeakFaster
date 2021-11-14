@@ -4,9 +4,6 @@ import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.Service;
-import android.app.PendingIntent;
-import android.bluetooth.le.ScanFilter;
-import android.bluetooth.le.ScanSettings;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Binder;
@@ -14,19 +11,25 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.PowerManager;
 import android.util.Log;
-import android.widget.Toast;
+import java.util.ArrayList;
+import java.util.List;
 
 
 public class BleScanService extends Service implements BleScanner.BleScanCallbacks {
     private static final String TAG = "BleScanService";
     private static final int NOTIFICATION_ID = 1;
-    private static final long SEND_BEACON_STATUS_DELAY_MILLIS = 5000;
+    private static final String NOTIFICATION_TITLE = "SpeakFaster Observer Companion";
+    private static final long SEND_BEACON_STATUS_PERIOD_MILLIS = 5000;
+
     private final LocalBinder binder = new LocalBinder();
     private BleScanner bleScanner = new BleScanner(this);
     private PowerManager powerManager;
     private PowerManager.WakeLock wakeLock;
     private NotificationManager notificationManager;
+    private NotificationChannel channel;
     private Handler handler;
+    // Addresses of the beacon that are detected in the current
+    private final List<String> activeBeaconAddresses = new ArrayList<>();
 
     private boolean isRunning = false;
 
@@ -71,9 +74,11 @@ public class BleScanService extends Service implements BleScanner.BleScanCallbac
 
     private void sendBeaconStatus() {
         Log.i(TAG, "Sending beacon status");
+        notificationManager.notify(NOTIFICATION_ID, createStatusNotification());
+        activeBeaconAddresses.clear();
         handler.postDelayed(() -> {
             sendBeaconStatus();
-        }, SEND_BEACON_STATUS_DELAY_MILLIS);
+        }, SEND_BEACON_STATUS_PERIOD_MILLIS);
     }
 
     private NotificationChannel createNotificationChannel() {
@@ -85,15 +90,30 @@ public class BleScanService extends Service implements BleScanner.BleScanCallbac
         return channel;
     }
 
-    private Notification createNotification() {
-        Intent notificationIntent = new Intent(this, BleScanService.class);
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
-        NotificationChannel channel = createNotificationChannel();
-        String channelId = channel.getId();
-        Log.i(TAG, "BleScanService: channelId = " + channelId);  // DEBUG
-        return new Notification.Builder(this, channelId)
-                .setContentTitle("SpeakFaster Companion")
+    private Notification createInitialNotification() {
+        if (channel == null) {
+            channel = createNotificationChannel();
+        }
+        return new Notification.Builder(this, channel.getId())
+                .setContentTitle(NOTIFICATION_TITLE)
                 .setContentText("Scanning for BLE beacons")
+                .setSmallIcon(R.drawable.ic_launcher_background)
+                .build();
+    }
+
+    private Notification createStatusNotification() {
+        if (channel == null) {
+            channel = createNotificationChannel();
+        }
+        String status = String.format(
+                "%d BLE icon(s) are in the vicinity", activeBeaconAddresses.size());
+        int numAddressesToShow = Math.min(activeBeaconAddresses.size(), 3);
+        for (int i = 0; i < numAddressesToShow; ++i) {
+            status += "\n" + activeBeaconAddresses.get(i);
+        }
+        return new Notification.Builder(this, channel.getId())
+                .setContentTitle(NOTIFICATION_TITLE)
+                .setContentText(status)
                 .setSmallIcon(R.drawable.ic_launcher_background)
                 .build();
     }
@@ -105,7 +125,7 @@ public class BleScanService extends Service implements BleScanner.BleScanCallbac
         }
 
         super.onStartCommand(intent, flags, startId);
-        Notification notification = createNotification();
+        Notification notification = createInitialNotification();
         notificationManager.notify(NOTIFICATION_ID, notification);  // TODO(cais): Is this needed?
         startForeground(NOTIFICATION_ID, notification);
 
@@ -118,7 +138,7 @@ public class BleScanService extends Service implements BleScanner.BleScanCallbac
                 bleScanner.startScan();
                 handler.postDelayed(() -> {
                     sendBeaconStatus();
-                }, SEND_BEACON_STATUS_DELAY_MILLIS);
+                }, SEND_BEACON_STATUS_PERIOD_MILLIS);
                 isRunning = true;
             }
         });
@@ -130,5 +150,8 @@ public class BleScanService extends Service implements BleScanner.BleScanCallbac
         Log.i(TAG, String.format(
                 "BleScanner address=%s, rssi=%.1f dBm, distance=%.3f m",
                 address, rssi, estimatedDistanceM));
+        if (activeBeaconAddresses.indexOf(address) == -1) {
+            activeBeaconAddresses.add(address);
+        }
     }
 }

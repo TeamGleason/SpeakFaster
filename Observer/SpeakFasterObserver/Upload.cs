@@ -12,7 +12,7 @@ namespace SpeakFasterObserver
     internal class Upload
     {
         private const string SCHEMA_VERSION = "SPO-2111";
-        private const string BUCKET_NAME = "speak-faster-cais-test";
+        private const string BUCKET_NAME = "speak-faster";
 
         private static readonly AmazonS3Client _client;
 

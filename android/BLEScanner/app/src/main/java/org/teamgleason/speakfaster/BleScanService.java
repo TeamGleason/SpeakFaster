@@ -4,8 +4,10 @@ import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.Service;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.net.nsd.NsdManager;
 import android.net.nsd.NsdServiceInfo;
 import android.os.Binder;
@@ -19,6 +21,8 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
@@ -48,6 +52,8 @@ public class BleScanService extends Service implements BleScanner.BleScanCallbac
     private NsdManager nsdManager;
     // Addresses of the beacon that are detected in the current
     private final List<String> activeBeaconAddresses = new ArrayList<>();
+    private String serverIpAddress = "192.168.1.3";
+    private int serverPort = 53737;
 
     private boolean isRunning = false;
 
@@ -68,7 +74,18 @@ public class BleScanService extends Service implements BleScanner.BleScanCallbac
         notificationManager = this.getSystemService(NotificationManager.class);
         nsdManager = (NsdManager) getSystemService(Context.NSD_SERVICE);
         acquirePartialWakeLock();
+        LocalBroadcastManager.getInstance(this).registerReceiver(
+                broadcastReceiver, new IntentFilter(MainActivity.BROADCAST_OBSERVER_ADDRESS_INTENT_NAME));
     }
+
+    public BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            serverIpAddress = intent.getStringExtra("ip_address");
+            serverPort = intent.getIntExtra("port", 53737);
+            Log.i(TAG, String.format("Received new server address: %s:%d", serverIpAddress, serverPort));
+        }
+    };
 
     @Override
     public void onDestroy() {
@@ -122,7 +139,7 @@ public class BleScanService extends Service implements BleScanner.BleScanCallbac
         executorService.submit(() -> {
             try {
                 // TODO(cais): DO NOT HARDCODE IP address and port number. Use NSD.
-                URL url = new URL("http://192.168.1.3:53737/");
+                URL url = new URL(String.format("http://%s:%d", serverIpAddress, serverPort));
                 HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                 connection.setConnectTimeout(10000);
                 connection.setReadTimeout(10000);
@@ -194,11 +211,9 @@ public class BleScanService extends Service implements BleScanner.BleScanCallbac
         startForeground(NOTIFICATION_ID, notification);
 
         handler = new Handler();
-        Log.i(TAG, "service onStartCommand()"); // DEBUG
         handler.post(new Runnable() {
             @Override
             public void run() {
-                Log.i(TAG, "service run()"); // DEBUG
                 discoverSpeakFasterObserverService();
                 bleScanner.startScan();
                 handler.postDelayed(() -> {

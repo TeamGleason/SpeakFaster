@@ -1,6 +1,7 @@
 package org.teamgleason.speakfaster;
 
 import android.Manifest.permission;
+import android.app.AlertDialog;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -11,6 +12,7 @@ import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanResult;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
@@ -19,8 +21,15 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.PowerManager;
 import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.AutoCompleteTextView;
 import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 import androidx.core.content.ContextCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
@@ -30,11 +39,16 @@ import com.google.gson.JsonParser;
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
 
+    public static final String BROADCAST_OBSERVER_ADDRESS_INTENT_NAME =
+            "SPEAKFASTER_BROADCAST_OBSERVER_ADDRESS";
     private static final int PERMISSION_REQUEST_CODE = 2021;
+    private static final String DEFAULT_OBSERVER_IP_ADDRESS = "192.168.1.3";
+    private static final int DEFAULT_OBSERVER_PORT = 53737;
 
-//    private final BtStateChangeReceiver btStateChangeReceiver = new BtStateChangeReceiver();
     private Handler mainHandler = new Handler(Looper.getMainLooper());
     private TextView mainTextView;
+    private String observerIpAddress = DEFAULT_OBSERVER_IP_ADDRESS;
+    private int observerPort = DEFAULT_OBSERVER_PORT;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,6 +58,45 @@ public class MainActivity extends AppCompatActivity {
         LocalBroadcastManager.getInstance(this).registerReceiver(
                 broadcastReceiver, new IntentFilter(BleScanService.BROADCAST_STATUS_INTENT_NAME));
         this.checkPermissionsAndStartScanning();
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.main_options_menu, menu);
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.set_observer_address:
+                AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(this);
+                dialogBuilder.setTitle("Set Observer address\n(e.g., 192.168.1.3:53737)");
+                View inflated = LayoutInflater.from(this).inflate(
+                        R.layout.server_address_dialog, findViewById(R.id.content), false);
+                dialogBuilder.setView(inflated);
+                AutoCompleteTextView textView = inflated.findViewById(R.id.observer_address_input);
+                textView.setText(observerIpAddress + ":" + observerPort);
+                Context activity = this;
+                dialogBuilder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        String newAddress = textView.getText().toString();
+                        // TODO(cais): Check for error.
+                        observerIpAddress = newAddress.split(":")[0];
+                        observerPort = Integer.parseInt(newAddress.split(":")[1]);
+                        Intent intent = new Intent(BROADCAST_OBSERVER_ADDRESS_INTENT_NAME);
+                        intent.putExtra("ip_address", observerIpAddress);
+                        intent.putExtra("port", observerPort);
+                        LocalBroadcastManager.getInstance(activity).sendBroadcast(intent);
+                        dialog.dismiss();
+                    }
+                });
+                dialogBuilder.show();
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
     }
 
     public BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {

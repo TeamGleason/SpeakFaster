@@ -102,6 +102,26 @@ export class ContextComponent implements OnInit, AfterViewInit {
     this.emitContextStringsSelected();
   }
 
+  onContextAddButtonClicked(event: Event) {
+    const text = prompt('Enter manual context:');
+    if (text === null) {
+      return;
+    }
+    const addedContextSignal: ContextSignal = {
+      userId: '',  // TODO(cais): Enter proper context.
+      contextId: createUuid(),
+      conversationTurn: {
+        speechContent: text,
+        startTimestamp: new Date().toString(),
+        isTts: false,
+      },
+      isManuallyAdded: true,
+    };
+    this.contextSignals.push(addedContextSignal);
+    this.focusContextIds.splice(0);
+    this.focusContextIds.push(addedContextSignal.contextId!);
+  }
+
   // NOTE: document:keydown can prevent the default tab-switching
   // action of Alt + number keys.
   handleKeyboardEvent(event: KeyboardEvent): boolean {
@@ -132,7 +152,7 @@ export class ContextComponent implements OnInit, AfterViewInit {
   }
 
   private populateConversationTurnWithDefault() {
-    this.contextSignals.splice(0);
+    this.cleanUpContextSignals();
     this.contextSignals.push(...DEFAULT_CONTEXT_SIGNALS);
     this.appendTextInjectionToContext();
     if (this.contextSignals.length > 0 && this.focusContextIds.length === 0) {
@@ -141,6 +161,17 @@ export class ContextComponent implements OnInit, AfterViewInit {
       this.cleanUpAndSortFocusContextIds();
     }
     this.emitContextStringsSelected();
+  }
+
+  /**
+   * Clean ups all the context signals that are not manually entered.
+   */
+  private cleanUpContextSignals() {
+    for (let i = this.contextSignals.length - 1; i >= 0; --i) {
+      if (!this.contextSignals[i].isManuallyAdded) {
+        this.contextSignals.splice(i, 1);
+      }
+    }
   }
 
   private retrieveContext() {
@@ -157,7 +188,7 @@ export class ContextComponent implements OnInit, AfterViewInit {
                 this.populateConversationTurnWithDefault();
                 return;
               }
-              this.contextSignals.splice(0);  // Empty the array first.
+              this.cleanUpContextSignals();
               for (const contextSignal of data.contextSignals) {
                 if (contextSignal.timestamp != null &&
                     contextSignal.conversationTurn != null &&
@@ -185,8 +216,8 @@ export class ContextComponent implements OnInit, AfterViewInit {
               this.contextRetrievalError = null;
             },
             error => {
-              this.contextSignals.splice(0);  // Empty the array first.
-              this.contextRetrievalError = error;
+              this.cleanUpContextSignals();
+              this.contextRetrievalError = JSON.stringify(error);
               this.populateConversationTurnWithDefault();
             });
   }

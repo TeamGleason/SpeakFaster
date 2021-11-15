@@ -4,7 +4,26 @@
   white-space: pre-wrap
 }
 
+.context-add-button {
+  background: #333;
+  border: 2px solid #888;
+  border-radius: 5px;
+  color: #eee;
+  font-size: 20px;
+  height: 45px;
+  margin-left: 10px;
+  margin-bottom: 6px;
+  min-width: 50px;
+  padding: 5px;
+  vertical-align: middle;
+  width: fit-content;
+}
+
 .context-container {
+  display: inline-block;
+}
+
+.context-header-section {
   display: inline-block;
 }
 
@@ -35,8 +54,17 @@
 
 </style>
 
-<div class="context-tag">
-  Context:
+<div class="context-header-section">
+  <div class="context-tag">
+    Context:
+  </div>
+
+  <button
+      class="context-add-button"
+      (click)="onContextAddButtonClicked($event)">
+    +
+  </button>
+
 </div>
 
 <!-- TODO(cais): Add Ctrl+C instruction. -->
@@ -45,7 +73,7 @@
 
 <div *ngIf="contextRetrievalError !== null; else noError" class="context-container">
   <div class="context-retrieval-error">
-    Fail to get context: {{contextRetrievalError}}
+    Failed to get context: {{contextRetrievalError)}
   </div>
 </div>
 

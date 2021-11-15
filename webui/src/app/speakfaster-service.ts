@@ -38,6 +38,7 @@ export interface ContextSignal {
   partnerProximityEvent?: PartnerProximityEvent;
   timestamp?: string;
   timezone?: string;
+  isManuallyAdded?: boolean;
 }
 
 // export interface RetrieveContextRequest {

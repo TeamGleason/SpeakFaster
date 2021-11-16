@@ -6,7 +6,6 @@ using System.Drawing;
 using System.IO;
 using System.Text;
 using System.Windows.Forms;
-using Sleddog.Blink1;
 
 namespace SpeakFasterObserver
 {
@@ -28,7 +27,6 @@ namespace SpeakFasterObserver
         static ScreenCapture screenCapture;
         private static string lastKeypressString = String.Empty;
         Keylogger keylogger;
-        static IBlink1 blink1;
 
         System.Threading.Timer uploadTimer = new(Timer_Tick);
         static System.Threading.Timer keyloggerTimer = new((state) => { SaveKeypresses(); });
@@ -84,11 +82,6 @@ namespace SpeakFasterObserver
         private void FormMain_Load(object sender, EventArgs e)
         {
             Hide();
-
-            foreach (var blink in Blink1Connector.Scan())
-            {
-                blink1 = blink;
-            }
 
             SetRecordingState(isRecording, isRecordingScreenshots, isRecordingMicWaveIn);
         }
@@ -271,10 +264,6 @@ namespace SpeakFasterObserver
                 notifyIcon.Icon = new Icon("Assets\\RecordingOn.ico");
                 notifyIcon.Text = "Observer - Recording On";
                 toggleButtonOnOff.Text = "Recording On";
-                if (blink1 != null)
-                {
-                    blink1.Blink(Color.Red, new TimeSpan(0, 0, 5), 10);
-                }
                 UpdateSessionManagerState();
             }
             else
@@ -284,10 +273,6 @@ namespace SpeakFasterObserver
                 notifyIcon.Icon = new Icon("Assets\\RecordingOff.ico");
                 notifyIcon.Text = "Observer - Recording Off";
                 toggleButtonOnOff.Text = "Recording Off";
-                if (blink1 != null)
-                {
-                    blink1.TurnOff();
-                }
             }
 
             screenshotTimer.Enabled = isRecording;
@@ -403,10 +388,7 @@ namespace SpeakFasterObserver
             keylogger.Dispose();
             keylogger = null;
 
-            if (blink1 != null)
-            {
-                blink1.TurnOff();
-            }
+            Blinker.stopNotification();
 
             this.Close();
         }

@@ -388,7 +388,7 @@ namespace SpeakFasterObserver
             keylogger.Dispose();
             keylogger = null;
 
-            Blinker.stopBlinking();
+            Blinker.stopNotification();
 
             this.Close();
         }

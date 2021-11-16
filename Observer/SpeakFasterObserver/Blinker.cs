@@ -10,7 +10,7 @@ namespace SpeakFasterObserver
     {
         static IBlink1 blink1;
 
-        public static void startBlinking()
+        public static void startNotification()
         {
             if (blink1 == null)
             {
@@ -23,10 +23,10 @@ namespace SpeakFasterObserver
             {
                 return;
             }
-            blink1.Blink(Color.Red, new TimeSpan(0, 0, 5), 10);
+            blink1.Show(Color.Red, new TimeSpan(24, 0, 0));
         }
 
-        public static void stopBlinking()
+        public static void stopNotification()
         {
             if (blink1 == null)
             {

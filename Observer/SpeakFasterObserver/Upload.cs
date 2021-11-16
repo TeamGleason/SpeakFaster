@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
+using System.Net.Http;
 using System.Threading.Tasks;
 
 namespace SpeakFasterObserver
@@ -100,25 +101,32 @@ namespace SpeakFasterObserver
                 };
 
                 PutObjectResponse putResponse;
-                using (var inputStream = fileInfo.OpenRead())
+                try
                 {
-                    putRequest.InputStream = inputStream;
-                    putResponse = await _client.PutObjectAsync(putRequest);
-                }
-
-                if (putResponse.HttpStatusCode == HttpStatusCode.OK)
-                {
-                    fileInfo.Delete();
-                    // If the file that was just uploaded successfully is a session-end token, remove the session directory.
-                    if (FileNaming.IsSessionEndToken(filePath))
+                    using (var inputStream = fileInfo.OpenRead())
                     {
-                        string sessionDir = Path.GetDirectoryName(filePath);
-                        if (IsDirectoryEmpty(sessionDir))
-                        {
-                            Directory.Delete(sessionDir);
-                        }
-                        Debug.WriteLine($"Deleted directory of ended session: {sessionDir}");
+                        putRequest.InputStream = inputStream;
+                        putResponse = await _client.PutObjectAsync(putRequest);
                     }
+
+                    if (putResponse.HttpStatusCode == HttpStatusCode.OK)
+                    {
+                        fileInfo.Delete();
+                        // If the file that was just uploaded successfully is a session-end token, remove the session directory.
+                        if (FileNaming.IsSessionEndToken(filePath))
+                        {
+                            string sessionDir = Path.GetDirectoryName(filePath);
+                            if (IsDirectoryEmpty(sessionDir))
+                            {
+                                Directory.Delete(sessionDir);
+                            }
+                            Debug.WriteLine($"Deleted directory of ended session: {sessionDir}");
+                        }
+                    }
+                }
+                catch (HttpRequestException e)
+                {
+                    Debug.WriteLine($"AWS S3 PUT request experienced HttpRequestException: {e.Message}");
                 }
             }
 

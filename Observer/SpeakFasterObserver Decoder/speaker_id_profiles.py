@@ -11,6 +11,7 @@ from scipy.io import wavfile
 
 MIN_WAV_LENGTH_SECONDS = 20
 REQUIRED_SAMPLE_RATE_HZ = 16000
+ENROLL_MAX_WAV_LENGTH_SECONDS = 120
 
 
 def parse_args():
@@ -83,6 +84,9 @@ def _check_and_load_wav_file_length(wav_path):
              (wav_path, fs, REQUIRED_SAMPLE_RATE_HZ))
       xs_hat = librosa.resample(
           xs.astype(np.float32), fs, REQUIRED_SAMPLE_RATE_HZ).astype(np.int16)
+      max_length = int(ENROLL_MAX_WAV_LENGTH_SECONDS * REQUIRED_SAMPLE_RATE_HZ)
+      if len(xs_hat) > max_length:
+        xs_hat = xs_hat[:max_length]
       wav_path = tempfile.mktemp(suffix=".wav")
       to_delete_wav = True
       wavfile.write(wav_path, REQUIRED_SAMPLE_RATE_HZ, xs_hat)

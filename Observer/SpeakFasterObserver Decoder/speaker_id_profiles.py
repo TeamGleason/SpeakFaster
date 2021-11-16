@@ -1,11 +1,16 @@
 """Enroll speaker for speaker ID with Azure Cognitive Speech Service."""
 import argparse
 import json
+import os
 import requests
+import tempfile
 
+import librosa
+import numpy as np
 from scipy.io import wavfile
 
 MIN_WAV_LENGTH_SECONDS = 20
+REQUIRED_SAMPLE_RATE_HZ = 16000
 
 
 def parse_args():
@@ -70,10 +75,25 @@ def _check_and_load_wav_file_length(wav_path):
     raise ValueError(
         "Requires WAV file to be at least %f seconds long; "
         "Got %f seconds." % (MIN_WAV_LENGTH_SECONDS, duration_sec))
-  if fs != 16000:
-    raise ValueError("We support only 16000 Hz sample rate currently.")
+  to_delete_wav = False
+  if fs != REQUIRED_SAMPLE_RATE_HZ:
+    if fs > REQUIRED_SAMPLE_RATE_HZ:
+      # Resample the audio to 16000 Hz.
+      print("Resampling audio file %s from %d to %d Hz" %
+             (wav_path, fs, REQUIRED_SAMPLE_RATE_HZ))
+      xs_hat = librosa.resample(
+          xs.astype(np.float32), fs, REQUIRED_SAMPLE_RATE_HZ).astype(np.int16)
+      wav_path = tempfile.mktemp(suffix=".wav")
+      to_delete_wav = True
+      wavfile.write(wav_path, REQUIRED_SAMPLE_RATE_HZ, xs_hat)
+    else:
+      raise ValueError(
+          "Sampling rate mismatch (%d != %d); upsampling is not supported" %
+          (fs, REQUIRED_SAMPLE_RATE_HZ))
   with open(wav_path, "rb") as f:
     audio_data = f.read()
+  if to_delete_wav:
+    os.remove(wav_path)
   return fs, audio_data
 
 

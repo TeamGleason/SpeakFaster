@@ -127,6 +127,7 @@ namespace SpeakFasterObserver
                 FlushBufferDir();
                 Debug.WriteLine($"Created new session directory: {sessionDirName}");
             }
+            Blinker.startBlinking();
         }
 
         public void EndCurrentSession()
@@ -147,6 +148,7 @@ namespace SpeakFasterObserver
                 }
                 sessionDirName = null;
             }
+            Blinker.stopBlinking();
         }
 
         private void WriteSessionEndTokenFile(string sessionEndTokenPath)

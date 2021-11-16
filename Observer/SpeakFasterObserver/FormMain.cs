@@ -27,7 +27,6 @@ namespace SpeakFasterObserver
         static ScreenCapture screenCapture;
         private static string lastKeypressString = String.Empty;
         Keylogger keylogger;
-        private static Blinker blinker = new();
 
         System.Threading.Timer uploadTimer = new(Timer_Tick);
         static System.Threading.Timer keyloggerTimer = new((state) => { SaveKeypresses(); });
@@ -265,7 +264,6 @@ namespace SpeakFasterObserver
                 notifyIcon.Icon = new Icon("Assets\\RecordingOn.ico");
                 notifyIcon.Text = "Observer - Recording On";
                 toggleButtonOnOff.Text = "Recording On";
-                blinker.startBlinking();
                 UpdateSessionManagerState();
             }
             else
@@ -275,7 +273,6 @@ namespace SpeakFasterObserver
                 notifyIcon.Icon = new Icon("Assets\\RecordingOff.ico");
                 notifyIcon.Text = "Observer - Recording Off";
                 toggleButtonOnOff.Text = "Recording Off";
-                blinker.stopBlinking();
             }
 
             screenshotTimer.Enabled = isRecording;
@@ -391,7 +388,7 @@ namespace SpeakFasterObserver
             keylogger.Dispose();
             keylogger = null;
 
-            blinker.stopBlinking();
+            Blinker.stopBlinking();
 
             this.Close();
         }

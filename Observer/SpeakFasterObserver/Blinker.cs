@@ -8,17 +8,17 @@ namespace SpeakFasterObserver
     // of notifying the user when an active recording session is happening.
     class Blinker
     {
-        IBlink1 blink1;
-        public Blinker() {
-            foreach (var blink in Blink1Connector.Scan())
-            {
-                blink1 = blink;
-            }
-        }
+        static IBlink1 blink1;
 
-        public void startBlinking()
+        public static void startBlinking()
         {
-
+            if (blink1 == null)
+            {
+                foreach (var blink in Blink1Connector.Scan())
+                {
+                    blink1 = blink;
+                }
+            }
             if (blink1 == null)
             {
                 return;
@@ -26,7 +26,7 @@ namespace SpeakFasterObserver
             blink1.Blink(Color.Red, new TimeSpan(0, 0, 5), 10);
         }
 
-        public void stopBlinking()
+        public static void stopBlinking()
         {
             if (blink1 == null)
             {

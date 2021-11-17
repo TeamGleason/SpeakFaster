@@ -82,9 +82,17 @@ namespace SpeakFasterObserver
             // To use the CaptureRegion plus the internal jpeg encoder
 
             var bitmap = new Bitmap(desktop.Width, desktop.Height, PixelFormat.Format32bppArgb);
-            using (var graphics = Graphics.FromImage(bitmap))
+            try
             {
-                graphics.CopyFromScreen(0, 0, 0, 0, bitmap.Size, CopyPixelOperation.SourceCopy);
+                using (var graphics = Graphics.FromImage(bitmap))
+                {
+                    graphics.CopyFromScreen(0, 0, 0, 0, bitmap.Size, CopyPixelOperation.SourceCopy);
+                }
+            }
+            catch (Win32Exception e)
+            {
+                // Screen capture occasionally fails shortly before and after system suspend and resume.
+                // In this case bitmap will be black (all zero values).
             }
 
             return bitmap;

@@ -60,6 +60,9 @@ namespace SpeakFasterObserver
                     sessionStartAction.Invoke();
                     lastFocus = DateTime.UtcNow;
                 }
+                // This is necessary because when the machine resumes from suspension (sleep),
+                // the state of the LED often becomes obsolete and require updating.
+                Blinker.stopNotification();
             }
             else
             {
@@ -76,6 +79,9 @@ namespace SpeakFasterObserver
                         EndCurrentSession();
                     }
                 }
+                // This is necessary because when the machine resumes from suspension (sleep),
+                // the state of the LED often becomes obsolete and require updating.
+                Blinker.startNotification();
             }
         }
 
@@ -158,7 +164,10 @@ namespace SpeakFasterObserver
             metadata.SessionEndTimestamp =
                 Google.Protobuf.WellKnownTypes.Timestamp.FromDateTime(DateTime.Now.ToUniversalTime());
             metadata.ComputerManufacturerFamily = FileNaming.ComputerManufacturerFamily;
-            metadata.GazeDevice = Upload._gazeDevice;
+            if (Upload._gazeDevice != null)
+            {
+                metadata.GazeDevice = Upload._gazeDevice;
+            }
             metadata.Platform = Environment.OSVersion.Platform.ToString();
             metadata.OsVersion = Environment.OSVersion.Version.ToString();
             using (var fs = File.Create(sessionEndTokenPath))

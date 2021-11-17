@@ -69,7 +69,12 @@ namespace SpeakFasterObserver
 
             Debug.Assert(_client != null);
             Debug.Assert(_dataDirectory != null);
-            Debug.Assert(_gazeDevice != null);
+            if (_gazeDevice == null)
+            {
+                // _gazeDevice can sometimes be null when the machine wakes up from sleep.
+                return;
+            }
+            //Debug.Assert(_gazeDevice != null);   // TODO(cais): Clean up.
 
             if (_salt == null)
             {

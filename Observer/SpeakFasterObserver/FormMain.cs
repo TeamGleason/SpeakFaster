@@ -273,6 +273,7 @@ namespace SpeakFasterObserver
                 notifyIcon.Icon = new Icon("Assets\\RecordingOff.ico");
                 notifyIcon.Text = "Observer - Recording Off";
                 toggleButtonOnOff.Text = "Recording Off";
+                Blinker.stopNotification();
             }
 
             screenshotTimer.Enabled = isRecording;

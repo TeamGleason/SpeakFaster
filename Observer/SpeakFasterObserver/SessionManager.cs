@@ -60,6 +60,9 @@ namespace SpeakFasterObserver
                     sessionStartAction.Invoke();
                     lastFocus = DateTime.UtcNow;
                 }
+                // This is necessary because when the machine resumes from suspension (sleep),
+                // the state of the LED often becomes obsolete and require updating.
+                Blinker.stopNotification();
             }
             else
             {
@@ -76,6 +79,9 @@ namespace SpeakFasterObserver
                         EndCurrentSession();
                     }
                 }
+                // This is necessary because when the machine resumes from suspension (sleep),
+                // the state of the LED often becomes obsolete and require updating.
+                Blinker.startNotification();
             }
         }
 

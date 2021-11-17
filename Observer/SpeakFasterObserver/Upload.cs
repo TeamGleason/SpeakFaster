@@ -74,7 +74,6 @@ namespace SpeakFasterObserver
                 // _gazeDevice can sometimes be null when the machine wakes up from sleep.
                 return;
             }
-            //Debug.Assert(_gazeDevice != null);   // TODO(cais): Clean up.
 
             if (_salt == null)
             {

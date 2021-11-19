@@ -108,7 +108,6 @@ class DataManager(object):
     utc_timezone = pytz.timezone("UTC")
     response = self._s3_client.list_objects_v2(
         Bucket=self._s3_bucket_name, Prefix=session_prefix)
-    print(response.keys())
     print("get_session_details(): is_truncated = %s" % response["IsTruncated"])
     objects = response["Contents"]
     time_zone = None
@@ -252,7 +251,6 @@ def main():
       session_prefix = container_prefix + session_prefixes[selection[0]]
       (time_zone, start_time, duration_s, num_keypresses, num_audio_files,
        num_screenshots) = data_manager.get_session_details(session_prefix)
-      print(dir(window.Element("TIME_ZONE")))
       window.Element("IS_SESSION_COMPLETE").Update("Yes" if time_zone else "No")
       if not time_zone:
         window.Element("TIME_ZONE").Update("")

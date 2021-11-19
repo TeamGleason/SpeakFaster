@@ -1,12 +1,39 @@
+"""SpeakFaster data manager GUI.
+
+Command line exapmle:
+
+```sh
+python data_manager.py
+```
+
+Or, to use a non-default bucket name:
+
+```sh
+python data_manager.py --s3_bucket_name=my-bucket-name
+```
+"""
+
+import argparse
+
 import boto3
 import PySimpleGUI as sg
 
-S3_BUCKET_NAME = "speak-faster-cais-test"
+
+DEFAULT_S3_BUCKET_NAME = "speak-faster"
 OBSERVER_DATA_PREFIX = "observer_data"
 DATA_SCHEMA_NAME = "SPO-2111"
 
 
-def get_session_container_prefixes():
+def parse_args():
+  parser = argparse.ArgumentParser("Data Manager")
+  parser.add_argument(
+      "--s3_bucket_name",
+      type=str,
+      default=DEFAULT_S3_BUCKET_NAME)
+  return parser.parse_args()
+
+
+def get_session_container_prefixes(s3_bucket_name):
   """Find the prefixes that hold the session folders as children.
 
   Returns:
@@ -22,7 +49,7 @@ def get_session_container_prefixes():
     for current_prefix in current_prefixes:
       paginator = s3_client.get_paginator("list_objects")
       results = list(paginator.paginate(
-          Bucket=S3_BUCKET_NAME,
+          Bucket=s3_bucket_name,
           Delimiter="/",
           Prefix=current_prefix))
       if not results:
@@ -37,12 +64,12 @@ def get_session_container_prefixes():
   return current_prefixes
 
 
-def get_session_prefixes(session_container_prefix):
+def get_session_prefixes(s3_bucket_name, session_container_prefix):
   """Get the prefixes that correspond to the sessions."""
   s3_client = boto3.client("s3")
   paginator = s3_client.get_paginator("list_objects")
   results = list(paginator.paginate(
-      Bucket=S3_BUCKET_NAME,
+      Bucket=s3_bucket_name,
       Delimiter="/",
       Prefix=session_container_prefix))
   session_prefixes = []
@@ -59,7 +86,9 @@ def get_session_prefixes(session_container_prefix):
 
 
 def main():
-  session_container_prefixes = get_session_container_prefixes()
+  args = parse_args()
+  session_container_prefixes = get_session_container_prefixes(
+      args.s3_bucket_name)
   session_container_listbox = sg.Listbox(
       session_container_prefixes,
       size=(120, 3),
@@ -95,15 +124,12 @@ def main():
         continue
       selection = selection[0]
       session_prefixes = get_session_prefixes(
+          args.s3_bucket_name,
           session_container_prefixes[selection])
       window.Element("SESSION_LIST").Update(session_prefixes)
       window.Element("SESSION_TITLE").Update(
           "Sessions:\n%d sessions" % len(session_prefixes))
 
 
-
-
-
 if __name__ == "__main__":
   main()
-

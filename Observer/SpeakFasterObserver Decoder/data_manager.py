@@ -18,7 +18,7 @@ import argparse
 import boto3
 import PySimpleGUI as sg
 
-
+DEFAULT_PROFILE_NAME = "spo"
 DEFAULT_S3_BUCKET_NAME = "speak-faster"
 OBSERVER_DATA_PREFIX = "observer_data"
 DATA_SCHEMA_NAME = "SPO-2111"
@@ -27,20 +27,25 @@ DATA_SCHEMA_NAME = "SPO-2111"
 def parse_args():
   parser = argparse.ArgumentParser("Data Manager")
   parser.add_argument(
+      "--aws_profile_name",
+      type=str,
+      default=DEFAULT_PROFILE_NAME,
+      help="AWS profile name")
+  parser.add_argument(
       "--s3_bucket_name",
       type=str,
       default=DEFAULT_S3_BUCKET_NAME)
   return parser.parse_args()
 
 
-def get_session_container_prefixes(s3_bucket_name):
+def get_session_container_prefixes(aws_profile_name, s3_bucket_name):
   """Find the prefixes that hold the session folders as children.
 
   Returns:
     A list of prefixes, each of which ends with '/'. The bucket name
      itself is not included.
   """
-  s3_client = boto3.client("s3")
+  s3_client = boto3.Session(profile_name=aws_profile_name).client("s3")
   prefixes = []
   current_prefixes = [
       OBSERVER_DATA_PREFIX + "/" + DATA_SCHEMA_NAME + "/"]
@@ -64,9 +69,11 @@ def get_session_container_prefixes(s3_bucket_name):
   return current_prefixes
 
 
-def get_session_prefixes(s3_bucket_name, session_container_prefix):
+def get_session_prefixes(aws_profile_name,
+                         s3_bucket_name,
+                         session_container_prefix):
   """Get the prefixes that correspond to the sessions."""
-  s3_client = boto3.client("s3")
+  s3_client = boto3.Session(profile_name=aws_profile_name).client("s3")
   paginator = s3_client.get_paginator("list_objects")
   results = list(paginator.paginate(
       Bucket=s3_bucket_name,
@@ -85,10 +92,11 @@ def get_session_prefixes(s3_bucket_name, session_container_prefix):
 
 
 
+
 def main():
   args = parse_args()
   session_container_prefixes = get_session_container_prefixes(
-      args.s3_bucket_name)
+      args.aws_profile_name, args.s3_bucket_name)
   session_container_listbox = sg.Listbox(
       session_container_prefixes,
       size=(120, 3),
@@ -124,6 +132,7 @@ def main():
         continue
       selection = selection[0]
       session_prefixes = get_session_prefixes(
+          args.aws_profile_name,
           args.s3_bucket_name,
           session_container_prefixes[selection])
       window.Element("SESSION_LIST").Update(session_prefixes)

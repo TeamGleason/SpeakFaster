@@ -8,6 +8,10 @@ import os
 
 import pytz
 
+MERGED_TSV_FILENAME = "merged.tsv"
+CONCATENATED_AUDIO_FILENAME = "concatenated_audio.wav"
+SCREENSHOTS_MP4_FILENAME = "screenshots.mp4"
+
 
 def parse_timestamp(timestamp):
   """Parse timestamp into a Python datetime.datetime object.

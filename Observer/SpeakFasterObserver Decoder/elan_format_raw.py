@@ -45,7 +45,7 @@ def format_raw_data(input_dir,
   if not os.path.isdir(input_dir):
     raise ValueError("%s is not an existing directory" % input_dir)
 
-  merged_tsv_path = os.path.join(input_dir, "merged.tsv")
+  merged_tsv_path = os.path.join(input_dir, file_naming.MERGED_TSV_FILENAME)
 
   if keypresses_only:
     # Keypresses-only: The start timestamp will be from the first keypress.
@@ -91,7 +91,8 @@ def format_raw_data(input_dir,
     screenshot_paths = sorted(
         glob.glob(os.path.join(input_dir, "*-Screenshot.jpg")))
     if screenshot_paths:
-      screenshots_video_path = os.path.join(input_dir, "screenshots.mp4")
+      screenshots_video_path = os.path.join(
+          input_dir, file_naming.SCREENSHOTS_MP4_FILENAME)
       print("Writing screenshots video...")
       video.stitch_images_into_mp4(
           screenshot_paths,
@@ -100,7 +101,8 @@ def format_raw_data(input_dir,
           screenshots_video_path)
       print("Saved screenshots video to %s\n" % screenshots_video_path)
     elif dummy_video_frame_image_path:
-      dummy_video_path = os.path.join(input_dir, "screenshots.mp4")
+      dummy_video_path = os.path.join(
+          input_dir, file_naming.SCREENSHOTS_MP4_FILENAME)
       print("Generating dummy video (duration: %.3f s) based on %s..." %
           (audio_duration_s, dummy_video_frame_image_path))
       video.make_dummy_video_file(
@@ -146,7 +148,8 @@ def read_and_concatenate_audio_files(input_dir, timezone):
       first_audio_path, timezone)
   print("Audio data start time: %s (%s)" %
         (audio_start_time, audio_start_time_epoch))
-  concatenated_audio_path = os.path.join(input_dir, "concatenated_audio.flac")
+  concatenated_audio_path = os.path.join(
+      input_dir, file_naming.CONCATENATED_AUDIO_FILENAME)
   audio_duration_s = audio_asr.concatenate_audio_files(
       all_audio_paths, concatenated_audio_path, fill_gaps=True)
   return (first_audio_path,

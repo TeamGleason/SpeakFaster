@@ -132,6 +132,9 @@ def format_raw_data(input_dir,
   tsv_data.merge_tsv_files(
       [keypresses_tsv_path, text_editor_navigation_tsv_path,
        audio_events_tsv_path, asr_tsv_path], merged_tsv_path)
+  print("Concatenated audio file is at: %s" % concatenated_audio_path)
+  if not skip_screenshots and screenshot_paths:
+    print("Screenshot video file is at: %s" % screenshots_video_path)
   print("Merged TSV file is at: %s" % merged_tsv_path)
 
 

@@ -152,6 +152,8 @@ class DataManager(object):
     for obj in objects:
       obj_key = obj["Key"]
       object_keys.append(obj_key[len(session_prefix):])
+      if os.path.basename(obj_key).endswith((".tsv", ".wav", ".mp4", ".json")):
+        continue
       data_stream_name = file_naming.get_data_stream_name(obj_key)
       if data_stream_name == "MicWaveIn":
         num_audio_files += 1
@@ -205,17 +207,17 @@ class DataManager(object):
       print("Created session directory: %s" % local_dest_dir)
     print("Sync'ing session to local: %s --> %s" %
           (session_prefix, local_dest_dir))
-    command_line = [
+    command_args = [
         "aws", "s3", "sync", "--profile=%s" % self._aws_profile_name,
         "s3://" + self._s3_bucket_name + "/" + session_prefix, local_dest_dir]
-    print("Calling %s" % (" ".join(command_line)))
-    subprocess.check_call(command_line)
+    self._run_command_line(command_args)
     print("Download complete.")
 
   def get_local_session_folder_status(self, session_prefix):
+    # TODO(cais): Add CURATED and POSTPROCESSED states.
     local_dest_dir = self._get_local_session_dir(session_prefix)
     if not os.path.isdir(local_dest_dir):
-      return "NOT DOWNLOADED"
+      return "NOT_DOWNLOADED"
     else:
       session_end_bin_path = glob.glob(os.path.join(
           local_dest_dir, "*-SessionEnd.bin"))
@@ -227,19 +229,41 @@ class DataManager(object):
               os.path.join(local_dest_dir, file_naming.SCREENSHOTS_MP4_FILENAME))):
         return "PREPROCESSED"
       elif glob.glob(os.path.join(local_dest_dir, "*-SessionEnd.bin")):
-          return "DOWNLOADED"
+        return "DOWNLOADED"
       else:
-            return "NOT DOWNLOADED"
+        return "NOT_DOWNLOADED"
 
-  def run_preprocessing(self, session_prefix):
+  def get_remote_session_folder_status(self, session_prefix):
+    merged_tsv_key = session_prefix + file_naming.MERGED_TSV_FILENAME
+    response = self._s3_client.list_objects_v2(
+        Bucket=self._s3_bucket_name, Prefix=merged_tsv_key)
+    if response["KeyCount"] == 1:
+      return "PREPROCESSED"
+    else:
+      return "NOT_PREPROCESSED"
+
+  def preprocess_session(self, session_prefix):
     local_dest_dir = self._get_local_session_dir(session_prefix)
     (readable_timezone_name,
      _, _, _, _, _, _) = self.get_session_details(session_prefix)
     timezone = _get_timezone(readable_timezone_name)
-    command_line = ["python", "elan_format_raw.py", local_dest_dir, timezone]
-    print("Calling %s" % (" ".join(command_line)))
-    subprocess.check_call(command_line)
+    command_args = ["python", "elan_format_raw.py", local_dest_dir, timezone]
+    self._run_command_line(command_args)
     print("Preprocessing complete.")
+
+  def upload_sesssion_preproc_results(self, session_prefix):
+    local_dest_dir = self._get_local_session_dir(session_prefix)
+    command_args = [
+        "aws", "s3", "sync", "--profile=%s" % self._aws_profile_name,
+        local_dest_dir, "s3://" + self._s3_bucket_name + "/" + session_prefix,
+        "--exclude=*", "--include=*.tsv",
+        "--include=%s" % file_naming.CONCATENATED_AUDIO_FILENAME,
+        "--include=%s" % file_naming.SCREENSHOTS_MP4_FILENAME]
+    self._run_command_line(command_args)
+
+  def _run_command_line(self, command_args):
+    print("Calling: %s" % (" ".join(command_args)))
+    subprocess.check_call(command_args)
 
 
 def _get_container_prefix(window, session_container_prefixes):
@@ -265,9 +289,10 @@ def _get_session_prefix(window, session_container_prefixes, session_prefixes):
 
 def _disable_all_buttons(window):
   window.Element("LIST_SESSIONS").Update(disabled=True)
-  window.Element("SHOW_SESSION").Update(disabled=True)
+  window.Element("SHOW_SESSION_INFO").Update(disabled=True)
   window.Element("DOWNLOAD_SESSION_TO_LOCAL").Update(disabled=True)
-  window.Element("UPLOAD_SESSION").Update(disabled=True)
+  window.Element("PREPROCESS_SESSION").Update(disabled=True)
+  window.Element("UPLOAD_PREPROC").Update(disabled=True)
   window.Element("SESSION_CONTAINER_LIST").Update(disabled=True)
   window.Element("SESSION_LIST").Update(disabled=True)
   window.Element("OBJECT_LIST").Update(disabled=True)
@@ -275,15 +300,20 @@ def _disable_all_buttons(window):
 
 def _enable_all_buttons(window):
   window.Element("LIST_SESSIONS").Update(disabled=False)
-  window.Element("SHOW_SESSION").Update(disabled=False)
+  window.Element("SHOW_SESSION_INFO").Update(disabled=False)
   window.Element("DOWNLOAD_SESSION_TO_LOCAL").Update(disabled=False)
-  window.Element("UPLOAD_SESSION").Update(disabled=False)
+  window.Element("PREPROCESS_SESSION").Update(disabled=False)
+  window.Element("UPLOAD_PREPROC").Update(disabled=False)
   window.Element("SESSION_CONTAINER_LIST").Update(disabled=False)
   window.Element("SESSION_LIST").Update(disabled=False)
   window.Element("OBJECT_LIST").Update(disabled=False)
 
 
 def _list_sessions(window, data_manager, session_container_prefixes):
+  window.Element("STATUS_MESSAGE").Update("Listing sessions. Please wait...")
+  window.Element("STATUS_MESSAGE").Update(text_color="yellow")
+  window.Element("SESSION_LIST").Update(disabled=True)
+  window.refresh()
   container_prefix = _get_container_prefix(window, session_container_prefixes)
   if not container_prefix:
     return
@@ -291,14 +321,49 @@ def _list_sessions(window, data_manager, session_container_prefixes):
   session_prefixes_with_status = []
   for session_prefix in session_prefixes:
     session_prefixes_with_status.append(
-        "%s (%s)" %
+        "%s (Remote: %s) (Local: %s)" %
         (session_prefix,
+        data_manager.get_remote_session_folder_status(
+            container_prefix + session_prefix),
         data_manager.get_local_session_folder_status(
             container_prefix + session_prefix)))
+  window.Element("SESSION_LIST").Update(disabled=False)
   window.Element("SESSION_LIST").Update(session_prefixes_with_status)
   window.Element("SESSION_TITLE").Update(
       "Sessions:\n%d sessions" % len(session_prefixes))
+  window.Element("STATUS_MESSAGE").Update("")
+  window.Element("STATUS_MESSAGE").Update(text_color="white")
   return session_prefixes
+
+
+def _show_session_info(window,
+                       data_manager,
+                       session_container_prefixes,
+                       session_prefixes):
+  session_prefix = _get_session_prefix(
+      window, session_container_prefixes, session_prefixes)
+  if not session_prefix:
+    return
+  (time_zone, start_time, duration_s, num_keypresses, num_audio_files,
+    num_screenshots,
+    object_keys) = data_manager.get_session_details(session_prefix)
+  window.Element("IS_SESSION_COMPLETE").Update("Yes" if time_zone else "No")
+  if time_zone:
+    window.Element("TIME_ZONE").Update(time_zone)
+    window.Element("START_TIME").Update("%s" % start_time)
+    window.Element("DURATION_MIN").Update("%.2f" % (duration_s / 60))
+    window.Element("NUM_KEYPRESSES").Update("%d" % num_keypresses)
+    window.Element("NUM_AUDIO_FILES").Update("%d" % num_audio_files)
+    window.Element("NUM_SCREENSHOTS").Update("%d" % num_screenshots)
+    window.Element("OBJECT_LIST").Update(object_keys)
+  else:
+    window.Element("TIME_ZONE").Update("")
+    window.Element("START_TIME").Update("")
+    window.Element("DURATION_MIN").Update("")
+    window.Element("NUM_KEYPRESSES").Update("")
+    window.Element("NUM_AUDIO_FILES").Update("")
+    window.Element("NUM_SCREENSHOTS").Update("")
+    window.Element("OBJECT_LIST").Update([])
 
 
 def main():
@@ -341,7 +406,7 @@ def main():
       [
           sg.Text("Sessions:", size=(15, 2), key="SESSION_TITLE"),
           session_listbox,
-          sg.Button("Show session", key="SHOW_SESSION"),
+          sg.Button("Show session", key="SHOW_SESSION_INFO"),
       ],
       [
           [
@@ -374,14 +439,14 @@ def main():
           ],
       ],
       [
-          sg.Text("Objects:", size=(15, 2), key="OBBJECTS_TITLE"),
+          sg.Text("Remote objects:", size=(15, 2), key="OBBJECTS_TITLE"),
           object_listbox,
       ],
       [
           sg.Text("", size=(15, 2)),
-          sg.Button("Download to local", key="DOWNLOAD_SESSION_TO_LOCAL"),
-          sg.Button("Run proprocessing", key="PREPROCESS_SESSION"),
-          sg.Button("Sync to remote", key="UPLOAD_SESSION"),
+          sg.Button("Download session", key="DOWNLOAD_SESSION_TO_LOCAL"),
+          sg.Button("Proprocess session", key="PREPROCESS_SESSION"),
+          sg.Button("Upload preprocessing data", key="UPLOAD_PREPROC"),
       ]
   ]
   session_prefixes = None
@@ -394,32 +459,10 @@ def main():
     elif event == "LIST_SESSIONS":
       session_prefixes = _list_sessions(
           window, data_manager, session_container_prefixes)
-    elif event == "SHOW_SESSION":
-      session_prefix = _get_session_prefix(
-          window, session_container_prefixes, session_prefixes)
-      if not session_prefix:
-        continue
-      (time_zone, start_time, duration_s, num_keypresses, num_audio_files,
-       num_screenshots,
-       object_keys) = data_manager.get_session_details(session_prefix)
-      window.Element("IS_SESSION_COMPLETE").Update("Yes" if time_zone else "No")
-      if time_zone:
-        window.Element("TIME_ZONE").Update(time_zone)
-        window.Element("START_TIME").Update("%s" % start_time)
-        window.Element("DURATION_MIN").Update("%.2f" % (duration_s / 60))
-        window.Element("NUM_KEYPRESSES").Update("%d" % num_keypresses)
-        window.Element("NUM_AUDIO_FILES").Update("%d" % num_audio_files)
-        window.Element("NUM_SCREENSHOTS").Update("%d" % num_screenshots)
-        window.Element("OBJECT_LIST").Update(object_keys)
-      else:
-        window.Element("TIME_ZONE").Update("")
-        window.Element("START_TIME").Update("")
-        window.Element("DURATION_MIN").Update("")
-        window.Element("NUM_KEYPRESSES").Update("")
-        window.Element("NUM_AUDIO_FILES").Update("")
-        window.Element("NUM_SCREENSHOTS").Update("")
-        window.Element("OBJECT_LIST").Update([])
-    elif event == "DOWNLOAD_SESSION_TO_LOCAL":
+    elif event in ("SHOW_SESSION_INFO",
+                   "DOWNLOAD_SESSION_TO_LOCAL",
+                   "PREPROCESS_SESSION",
+                   "UPLOAD_PREPROC"):
       if not session_prefixes:
         sg.Popup("Please list sessions first", modal=True)
         continue
@@ -428,33 +471,66 @@ def main():
       if not session_prefix:
         sg.Popup("Please select exactly 1 session first", modal=True)
         continue
-      window.Element("STATUS_MESSAGE").Update("Downloading session. Please wait...")
+      _show_session_info(
+          window, data_manager, session_container_prefixes, session_prefixes)
+      if event == "SHOW_SESSION_INFO":
+        continue
+      if event == "DOWNLOAD_SESSION_TO_LOCAL":
+        status_message = "Downloading session. Please wait..."
+      elif event == "PREPROCESS_SESSION":
+        status_message = "Preprocessing session. Please wait..."
+      else:
+        status_message = "Uploading session preprocessing results. Please wait..."
+      window.Element("STATUS_MESSAGE").Update(status_message)
       window.Element("STATUS_MESSAGE").Update(text_color="yellow")
       _disable_all_buttons(window)
       window.refresh()
-      data_manager.sync_to_local(session_prefix)
-      window.Element("STATUS_MESSAGE").Update("Session download complete.")
+      if event == "DOWNLOAD_SESSION_TO_LOCAL":
+        data_manager.sync_to_local(session_prefix)
+        status_message = "Session downloading complete."
+      elif event == "PREPROCESS_SESSION":
+        to_run_preproc = True
+        if data_manager.get_local_session_folder_status(
+            session_prefix) == "PREPROCESSED":
+          answer = sg.popup_yes_no(
+              "Session %s has already been preprocessed locally. "
+              "Do you want to run preprocessing again?" % session_prefix)
+          to_run_preproc = answer == "Yes"
+        if to_run_preproc:
+          data_manager.preprocess_session(session_prefix)
+          status_message = "Session preprocessing complete."
+        else:
+          status_message = "Preprocessing was not run."
+      else:
+        if data_manager.get_local_session_folder_status(
+            session_prefix) != "PREPROCESSED":
+          # TODO(cais): Accommodate CURATED and POSTPROCESSED states.
+          sg.Popup(
+              "Cannot upload the preprocessing results of session %s, "
+              "because no preprocessing results are found" % session_prefix,
+              modal=True)
+          status_message = "Not uploading preprocessing results"
+        else:
+          to_upload = True
+          if data_manager.get_remote_session_folder_status(
+              session_prefix) != "NOT_PREPROCESSED":
+            answer = sg.popup_yes_no(
+                "Session %s already contains preprocessing results remotely. "
+                "Do you want to upload preprocessing results again?" % session_prefix)
+            to_upload = answer == "Yes"
+          if to_upload:
+            data_manager.upload_sesssion_preproc_results(session_prefix)
+            status_message = "Uploading of precessing results complete."
+          else:
+            status_message = "Uploading of precessing results canceled."
+      window.Element("STATUS_MESSAGE").Update(status_message)
       window.Element("STATUS_MESSAGE").Update(text_color="white")
-      # Refresh all sessions after the selected session has finished downloading.
-      session_prefixes = _list_sessions(
-          window, data_manager, session_container_prefixes)
       _enable_all_buttons(window)
-    elif event == "PREPROCESS_SESSION":
-      if not session_prefixes:
-        sg.Popup("Please list sessions first", modal=True)
-        continue
-      session_prefix = _get_session_prefix(
-          window, session_container_prefixes, session_prefixes)
-      if not session_prefix:
-        sg.Popup("Please select exactly 1 session first", modal=True)
-        continue
-      data_manager.run_preprocessing(session_prefix)
       # Refresh all sessions after the selected session has finished downloading.
       session_prefixes = _list_sessions(
           window, data_manager, session_container_prefixes)
-    elif event == "UPLOAD_SESSION":
-      raise NotImplementedError()  # TODO(cais):
-
+    else:
+      raise ValueError("Invalid event: %s" % event)
 
 
 if __name__ == "__main__":

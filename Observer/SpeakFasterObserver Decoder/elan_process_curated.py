@@ -20,6 +20,7 @@ import re
 
 import numpy as np
 
+import file_naming
 import metadata_pb2
 import nlp
 import transcript_lib
@@ -417,7 +418,8 @@ def main():
   nlp.init()
 
   realname_to_pseudonym = load_speaker_map(args.speaker_map_tsv_path)
-  merged_tsv_path = os.path.join(args.input_dir, "merged.tsv")
+  merged_tsv_path = os.path.join(args.input_dir,
+                                 file_naming.MERGED_TSV_FILENAME)
   curated_tsv_path = os.path.join(args.input_dir, "curated.tsv")
   column_order, has_header = infer_columns(curated_tsv_path)
   rows = load_rows(curated_tsv_path, column_order, has_header=has_header)

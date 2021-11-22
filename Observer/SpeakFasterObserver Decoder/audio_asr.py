@@ -563,13 +563,16 @@ def async_transcribe(audio_file_paths,
     diarized_words = [(
         word.word, word.speaker_tag, word.start_time.total_seconds(),
         word.end_time.total_seconds()) for word in alt.words]
-    # print("Confidence: {}".format(result.alternatives[0].confidence))
 
-  regrouped_utterances = regroup_utterances(utterances, diarized_words)
   with open(output_tsv_path, "w" if not begin_sec else "a") as f:
     if not begin_sec:
       # Write the TSV header.
       f.write(tsv_data.HEADER + "\n")
+    if not utterances:
+      print("ASR produced no recognized speech utterances. "
+            "Generated empty asr.tsv file.")
+      return
+    regrouped_utterances = regroup_utterances(utterances, diarized_words)
     utterance_counter = 0
     for (regrouped_utterance,
         speaker_index, start_time_sec, end_time_sec) in regrouped_utterances:

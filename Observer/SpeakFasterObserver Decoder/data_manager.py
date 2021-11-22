@@ -19,6 +19,7 @@ import os
 import pathlib
 import pytz
 import subprocess
+import sys
 import tempfile
 import time
 
@@ -191,7 +192,7 @@ class DataManager(object):
     path_items = session_prefix.split("/")
     return path_items[-1] if path_items[-1] else path_items[-2]
 
-  def _get_local_session_dir(self, session_prefix):
+  def get_local_session_dir(self, session_prefix):
     session_basename = self.get_session_basename(session_prefix)
     return os.path.join(self._local_data_root, session_basename)
 
@@ -201,7 +202,7 @@ class DataManager(object):
     return os.path.getsize(file_path) > 0
 
   def sync_to_local(self, session_prefix):
-    local_dest_dir = self._get_local_session_dir(session_prefix)
+    local_dest_dir = self.get_local_session_dir(session_prefix)
     if not os.path.isdir(local_dest_dir):
       os.makedirs(local_dest_dir)
       print("Created session directory: %s" % local_dest_dir)
@@ -215,7 +216,7 @@ class DataManager(object):
 
   def get_local_session_folder_status(self, session_prefix):
     # TODO(cais): Add CURATED and POSTPROCESSED states.
-    local_dest_dir = self._get_local_session_dir(session_prefix)
+    local_dest_dir = self.get_local_session_dir(session_prefix)
     if not os.path.isdir(local_dest_dir):
       return "NOT_DOWNLOADED"
     else:
@@ -243,7 +244,7 @@ class DataManager(object):
       return "NOT_PREPROCESSED"
 
   def preprocess_session(self, session_prefix):
-    local_dest_dir = self._get_local_session_dir(session_prefix)
+    local_dest_dir = self.get_local_session_dir(session_prefix)
     (readable_timezone_name,
      _, _, _, _, _, _) = self.get_session_details(session_prefix)
     timezone = _get_timezone(readable_timezone_name)
@@ -252,7 +253,7 @@ class DataManager(object):
     print("Preprocessing complete.")
 
   def upload_sesssion_preproc_results(self, session_prefix):
-    local_dest_dir = self._get_local_session_dir(session_prefix)
+    local_dest_dir = self.get_local_session_dir(session_prefix)
     command_args = [
         "aws", "s3", "sync", "--profile=%s" % self._aws_profile_name,
         local_dest_dir, "s3://" + self._s3_bucket_name + "/" + session_prefix,
@@ -290,6 +291,7 @@ def _get_session_prefix(window, session_container_prefixes, session_prefixes):
 def _disable_all_buttons(window):
   window.Element("LIST_SESSIONS").Update(disabled=True)
   window.Element("SHOW_SESSION_INFO").Update(disabled=True)
+  window.Element("OPEN_SESSION_FOLDER").Update(disabled=True)
   window.Element("DOWNLOAD_SESSION_TO_LOCAL").Update(disabled=True)
   window.Element("PREPROCESS_SESSION").Update(disabled=True)
   window.Element("UPLOAD_PREPROC").Update(disabled=True)
@@ -301,6 +303,7 @@ def _disable_all_buttons(window):
 def _enable_all_buttons(window):
   window.Element("LIST_SESSIONS").Update(disabled=False)
   window.Element("SHOW_SESSION_INFO").Update(disabled=False)
+  window.Element("OPEN_SESSION_FOLDER").Update(disabled=False)
   window.Element("DOWNLOAD_SESSION_TO_LOCAL").Update(disabled=False)
   window.Element("PREPROCESS_SESSION").Update(disabled=False)
   window.Element("UPLOAD_PREPROC").Update(disabled=False)
@@ -368,6 +371,16 @@ def _show_session_info(window,
     window.Element("OBJECT_LIST").Update([])
 
 
+def _open_folder(dir_path):
+  """Open a folder using operating system-specific affordance."""
+  if sys.platform == "win32":
+    subprocess.Popen(["start", dir_path], shell=True)
+  elif sys.platform == "darwin":
+    subprocess.Popen(["open", dir_path])
+  else:  # Linux-like platforms.
+    subprocess.Popen(["xdg-open", dir_path])
+
+
 def main():
   args = parse_args()
   local_data_root = infer_local_data_root()
@@ -394,7 +407,7 @@ def main():
   layout = [
       [
           sg.Text("", size=(15, 1)),
-          sg.Text(key="STATUS_MESSAGE"),
+          sg.Text(key="STATUS_MESSAGE", font=("Arial", 16)),
       ],
       [
           sg.Text("Local data root:", size=(15, 1)),
@@ -409,6 +422,7 @@ def main():
           sg.Text("Sessions:", size=(15, 2), key="SESSION_TITLE"),
           session_listbox,
           sg.Button("Show session", key="SHOW_SESSION_INFO"),
+          sg.Button("Open session folder", key="OPEN_SESSION_FOLDER"),
       ],
       [
           [
@@ -451,7 +465,7 @@ def main():
       [
           sg.Text("", size=(15, 2)),
           sg.Button("Download session", key="DOWNLOAD_SESSION_TO_LOCAL"),
-          sg.Button("Proprocess session", key="PREPROCESS_SESSION"),
+          sg.Button("Preprocess session", key="PREPROCESS_SESSION"),
           sg.Button("Upload preprocessing data", key="UPLOAD_PREPROC"),
       ]
   ]
@@ -466,6 +480,7 @@ def main():
       session_prefixes = _list_sessions(
           window, data_manager, session_container_prefixes)
     elif event in ("SHOW_SESSION_INFO",
+                   "OPEN_SESSION_FOLDER",
                    "DOWNLOAD_SESSION_TO_LOCAL",
                    "PREPROCESS_SESSION",
                    "UPLOAD_PREPROC"):
@@ -479,7 +494,16 @@ def main():
         continue
       _show_session_info(
           window, data_manager, session_container_prefixes, session_prefixes)
-      if event == "SHOW_SESSION_INFO":
+      if event == "OPEN_SESSION_FOLDER":
+        session_dir_path = data_manager.get_local_session_dir(session_prefix)
+        if os.path.isdir(session_dir_path):
+          _open_folder(session_dir_path)
+        else:
+          sg.Popup(
+              "Local session directory not found. Download the session first",
+              modal=True)
+        continue
+      elif event == "SHOW_SESSION_INFO":
         continue
       if event == "DOWNLOAD_SESSION_TO_LOCAL":
         status_message = "Downloading session. Please wait..."

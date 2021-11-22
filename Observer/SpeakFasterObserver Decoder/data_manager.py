@@ -187,12 +187,12 @@ class DataManager(object):
     return (time_zone, start_time, duration_s, num_keypresses, num_audio_files,
             num_screenshots, object_keys)
 
-  def _get_session_basename(self, session_prefix):
+  def get_session_basename(self, session_prefix):
     path_items = session_prefix.split("/")
     return path_items[-1] if path_items[-1] else path_items[-2]
 
   def _get_local_session_dir(self, session_prefix):
-    session_basename = self._get_session_basename(session_prefix)
+    session_basename = self.get_session_basename(session_prefix)
     return os.path.join(self._local_data_root, session_basename)
 
   def _nonempty_file_exists(self, file_path):
@@ -345,8 +345,10 @@ def _show_session_info(window,
   if not session_prefix:
     return
   (time_zone, start_time, duration_s, num_keypresses, num_audio_files,
-    num_screenshots,
-    object_keys) = data_manager.get_session_details(session_prefix)
+   num_screenshots,
+   object_keys) = data_manager.get_session_details(session_prefix)
+  window.Element("SESSION_NAME").Update(
+      data_manager.get_session_basename(session_prefix))
   window.Element("IS_SESSION_COMPLETE").Update("Yes" if time_zone else "No")
   if time_zone:
     window.Element("TIME_ZONE").Update(time_zone)
@@ -409,6 +411,10 @@ def main():
           sg.Button("Show session", key="SHOW_SESSION_INFO"),
       ],
       [
+          [
+              sg.Text("Session name", size=(15, 1)),
+              sg.InputText("", key="SESSION_NAME", readonly=True),
+          ],
           [
               sg.Text("Is complete?", size=(15, 1)),
               sg.InputText("", key="IS_SESSION_COMPLETE", readonly=True),

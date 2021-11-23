@@ -39,6 +39,7 @@ POSSIBLE_DATA_ROOT_DIRS = (
     os.path.join(pathlib.Path.home(), "SpeakFasterObs", "data"),
     os.path.join(pathlib.Path.home(), "sf_observer_data"),
 )
+DEFAULT_TIMEZONE_NAME = "US/Central"
 
 
 def parse_args():
@@ -64,11 +65,12 @@ def infer_local_data_root():
       "Create one first." % (POSSIBLE_DATA_ROOT_DIRS,))
 
 
-
 def _get_timezone(readable_timezone_name):
-  if "Eastern Time (US & Canada)" in readable_timezone_name:
+  if ("Eastern Time (US & Canada)" in readable_timezone_name or
+      readable_timezone_name == "US/Eastern"):
     return "US/Eastern"
-  elif "Central Time (US & Canada)" in readable_timezone_name:
+  elif ("Central Time (US & Canada)" in readable_timezone_name or
+        readable_timezone_name == "US/Central"):
     return "US/Central"
   else:
     raise ValueError("Unimplemented time zone: %s" % time_zone)
@@ -81,6 +83,7 @@ class DataManager(object):
     self._aws_profile_name = aws_profile_name
     self._s3_bucket_name = s3_bucket_name
     self._local_data_root = local_data_root
+    self._manual_timezone_name = None
 
   def get_session_container_prefixes(self):
     """Find the prefixes that hold the session folders as children.
@@ -90,8 +93,7 @@ class DataManager(object):
       itself is not included.
     """
     prefixes = []
-    current_prefixes = [
-        OBSERVER_DATA_PREFIX + "/" + DATA_SCHEMA_NAME + "/"]
+    current_prefixes = [OBSERVER_DATA_PREFIX + "/" + DATA_SCHEMA_NAME + "/"]
     for i in range(3):
       new_prefixes = []
       for current_prefix in current_prefixes:
@@ -134,16 +136,25 @@ class DataManager(object):
     self._s3_client.download_file(self._s3_bucket_name, object_key, tmp_filepath)
     return tmp_filepath
 
+  def _list_session_objects(self, session_prefix):
+    """List all objects under a session prefix, taking care of pagination."""
+    paginator = self._s3_client.get_paginator("list_objects_v2")
+    pages = paginator.paginate(Bucket=self._s3_bucket_name,
+                               Prefix=session_prefix)
+    objects = []
+    for page in pages:
+      objects.extend(page["Contents"])
+    return objects
+
   def get_session_details(self, session_prefix):
     """Get the details about a session."""
     utc_timezone = pytz.timezone("UTC")
-    response = self._s3_client.list_objects_v2(
-        Bucket=self._s3_bucket_name, Prefix=session_prefix)
-    print("get_session_details(): is_truncated = %s" % response["IsTruncated"])
-    objects = response["Contents"]
+    objects = self._list_session_objects(session_prefix)
+    # This is determined by whether the SessionEnd.bin file exists.
+    is_session_complete = False
     object_keys = []
     time_zone = None
-    first_timestamp = datetime.datetime.now().timestamp()
+    first_timestamp = -1
     last_timestamp = 0
     start_time = None
     duration_s = None
@@ -165,7 +176,7 @@ class DataManager(object):
       if not is_utc:
         raise NotImplemented("Support for non-UTC timezone is not implemented")
       timestamp = timestamp.timestamp()
-      if timestamp < first_timestamp:
+      if first_timestamp < 0 or timestamp < first_timestamp:
         first_timestamp = timestamp
       if timestamp > last_timestamp:
         last_timestamp = timestamp
@@ -175,17 +186,29 @@ class DataManager(object):
         with open(tmp_filepath, "rb") as f:
           session_metadata.ParseFromString(f.read())
         time_zone = session_metadata.timezone
+        is_session_complete = True
         os.remove(tmp_filepath)
       elif obj_key.endswith("-Keypresses.protobuf"):
         tmp_filepath = self._download_to_temp_file(obj_key)
         keypresses = process_keypresses.load_keypresses_from_file(tmp_filepath)
         num_keypresses += len(keypresses.keyPresses)
-    if time_zone:
+        os.remove(tmp_filepath)
+    if not time_zone:
+      # Time zone is not found. Ask for it with a PySimpleGUI get-text dialog.
+      if not self._manual_timezone_name:
+        self._manual_timezone_name = sg.popup_get_text(
+            "Time zone is not available in the session's data files. "
+            "Please enter (will use default US/Central if empty): ")
+        if not self._manual_timezone_name:
+          self._manual_timezone_name = DEFAULT_TIMEZONE_NAME
+      tz = pytz.timezone(self._manual_timezone_name)
+    else:
       tz = pytz.timezone(_get_timezone(time_zone))
-      start_time = utc_timezone.localize(
-          datetime.datetime.fromtimestamp(first_timestamp)).astimezone(tz)
-      duration_s = last_timestamp - first_timestamp
-    return (time_zone, start_time, duration_s, num_keypresses, num_audio_files,
+    start_time = utc_timezone.localize(
+        datetime.datetime.fromtimestamp(first_timestamp)).astimezone(tz)
+    duration_s = last_timestamp - first_timestamp
+    return (is_session_complete,
+            str(tz), start_time, duration_s, num_keypresses, num_audio_files,
             num_screenshots, object_keys)
 
   def get_session_basename(self, session_prefix):
@@ -245,7 +268,7 @@ class DataManager(object):
 
   def preprocess_session(self, session_prefix):
     local_dest_dir = self.get_local_session_dir(session_prefix)
-    (readable_timezone_name,
+    (_, readable_timezone_name,
      _, _, _, _, _, _) = self.get_session_details(session_prefix)
     timezone = _get_timezone(readable_timezone_name)
     command_args = ["python", "elan_format_raw.py", local_dest_dir, timezone]
@@ -288,9 +311,15 @@ def _get_session_prefix(window, session_container_prefixes, session_prefixes):
   return container_prefix + session_prefixes[selection[0]]
 
 
+# UI state remembered between operations.
+_UI_STATE = {
+    "session_select_index": None,
+}
+
 def _disable_all_buttons(window):
+  _UI_STATE["session_select_index"] = window.Element(
+      "SESSION_LIST").Widget.curselection()[0]
   window.Element("LIST_SESSIONS").Update(disabled=True)
-  window.Element("SHOW_SESSION_INFO").Update(disabled=True)
   window.Element("OPEN_SESSION_FOLDER").Update(disabled=True)
   window.Element("DOWNLOAD_SESSION_TO_LOCAL").Update(disabled=True)
   window.Element("PREPROCESS_SESSION").Update(disabled=True)
@@ -302,7 +331,6 @@ def _disable_all_buttons(window):
 
 def _enable_all_buttons(window):
   window.Element("LIST_SESSIONS").Update(disabled=False)
-  window.Element("SHOW_SESSION_INFO").Update(disabled=False)
   window.Element("OPEN_SESSION_FOLDER").Update(disabled=False)
   window.Element("DOWNLOAD_SESSION_TO_LOCAL").Update(disabled=False)
   window.Element("PREPROCESS_SESSION").Update(disabled=False)
@@ -312,7 +340,10 @@ def _enable_all_buttons(window):
   window.Element("OBJECT_LIST").Update(disabled=False)
 
 
-def _list_sessions(window, data_manager, session_container_prefixes):
+def _list_sessions(window,
+                   data_manager,
+                   session_container_prefixes,
+                   restore_session_selection=False):
   window.Element("STATUS_MESSAGE").Update("Listing sessions. Please wait...")
   window.Element("STATUS_MESSAGE").Update(text_color="yellow")
   window.Element("SESSION_LIST").Update(disabled=True)
@@ -322,20 +353,35 @@ def _list_sessions(window, data_manager, session_container_prefixes):
     return
   session_prefixes = data_manager.get_session_prefixes(container_prefix)
   session_prefixes_with_status = []
+  session_colors = []
   for session_prefix in session_prefixes:
+    remote_status = data_manager.get_remote_session_folder_status(
+        container_prefix + session_prefix)
+    local_status = data_manager.get_local_session_folder_status(
+        container_prefix + session_prefix)
     session_prefixes_with_status.append(
         "%s (Remote: %s) (Local: %s)" %
-        (session_prefix,
-        data_manager.get_remote_session_folder_status(
-            container_prefix + session_prefix),
-        data_manager.get_local_session_folder_status(
-            container_prefix + session_prefix)))
-  window.Element("SESSION_LIST").Update(disabled=False)
-  window.Element("SESSION_LIST").Update(session_prefixes_with_status)
+        (session_prefix, remote_status, local_status))
+    session_color = "black"
+    if remote_status != "NOT_PREPROCESSED":
+      session_color = "blue"
+    session_colors.append(session_color)
+  session_list = window.Element("SESSION_LIST")
+  session_list.Update(disabled=False)
+  session_list.Update(session_prefixes_with_status)
+  session_widget = session_list.Widget
+  for i, session_color in enumerate(session_colors):
+    session_widget.itemconfigure(i, {"fg": session_color})
   window.Element("SESSION_TITLE").Update(
       "Sessions:\n%d sessions" % len(session_prefixes))
   window.Element("STATUS_MESSAGE").Update("")
   window.Element("STATUS_MESSAGE").Update(text_color="white")
+  if (restore_session_selection and
+      _UI_STATE["session_select_index"] is not None):
+    selection_index = _UI_STATE["session_select_index"]
+    window.Element("SESSION_LIST").update(
+        set_to_index=[selection_index],
+        scroll_to_index=selection_index)
   return session_prefixes
 
 
@@ -347,28 +393,23 @@ def _show_session_info(window,
       window, session_container_prefixes, session_prefixes)
   if not session_prefix:
     return
-  (time_zone, start_time, duration_s, num_keypresses, num_audio_files,
-   num_screenshots,
+  (is_session_complete, time_zone, start_time, duration_s, num_keypresses,
+   num_audio_files, num_screenshots,
    object_keys) = data_manager.get_session_details(session_prefix)
   window.Element("SESSION_NAME").Update(
       data_manager.get_session_basename(session_prefix))
-  window.Element("IS_SESSION_COMPLETE").Update("Yes" if time_zone else "No")
-  if time_zone:
-    window.Element("TIME_ZONE").Update(time_zone)
-    window.Element("START_TIME").Update("%s" % start_time)
+  window.Element("IS_SESSION_COMPLETE").Update(
+      "Yes" if is_session_complete else "No")
+  window.Element("TIME_ZONE").Update(time_zone)
+  window.Element("START_TIME").Update("%s" % start_time)
+  if duration_s is not None:
     window.Element("DURATION_MIN").Update("%.2f" % (duration_s / 60))
-    window.Element("NUM_KEYPRESSES").Update("%d" % num_keypresses)
-    window.Element("NUM_AUDIO_FILES").Update("%d" % num_audio_files)
-    window.Element("NUM_SCREENSHOTS").Update("%d" % num_screenshots)
-    window.Element("OBJECT_LIST").Update(object_keys)
-  else:
-    window.Element("TIME_ZONE").Update("")
-    window.Element("START_TIME").Update("")
-    window.Element("DURATION_MIN").Update("")
-    window.Element("NUM_KEYPRESSES").Update("")
-    window.Element("NUM_AUDIO_FILES").Update("")
-    window.Element("NUM_SCREENSHOTS").Update("")
-    window.Element("OBJECT_LIST").Update([])
+  window.Element("NUM_KEYPRESSES").Update("%d" % num_keypresses)
+  window.Element("NUM_AUDIO_FILES").Update("%d" % num_audio_files)
+  window.Element("NUM_SCREENSHOTS").Update("%d" % num_screenshots)
+  window.Element("OBJECT_LIST").Update(object_keys)
+  window.Element("OBJECTS_TITLE").Update(
+      "Remote objects:\n%d objects" % len(object_keys))
 
 
 def _open_folder(dir_path):
@@ -381,6 +422,9 @@ def _open_folder(dir_path):
     subprocess.Popen(["xdg-open", dir_path])
 
 
+LIST_BOX_WIDTH = 100
+
+
 def main():
   args = parse_args()
   local_data_root = infer_local_data_root()
@@ -391,17 +435,17 @@ def main():
   session_container_prefixes = data_manager.get_session_container_prefixes()
   session_container_listbox = sg.Listbox(
       session_container_prefixes,
-      size=(120, 3),
+      size=(LIST_BOX_WIDTH, 3),
       enable_events=False,
       key="SESSION_CONTAINER_LIST")
   session_listbox = sg.Listbox(
       [],
-      size=(120, 15),
-      enable_events=False,
+      size=(LIST_BOX_WIDTH, 12),
+      enable_events=True,
       key="SESSION_LIST")
   object_listbox = sg.Listbox(
       [],
-      size=(120, 10),
+      size=(LIST_BOX_WIDTH, 10),
       enable_events=False,
       key="OBJECT_LIST")
   layout = [
@@ -421,45 +465,36 @@ def main():
       [
           sg.Text("Sessions:", size=(15, 2), key="SESSION_TITLE"),
           session_listbox,
-          sg.Button("Show session", key="SHOW_SESSION_INFO"),
           sg.Button("Open session folder", key="OPEN_SESSION_FOLDER"),
       ],
       [
           [
               sg.Text("Session name", size=(15, 1)),
               sg.InputText("", key="SESSION_NAME", readonly=True),
-          ],
-          [
               sg.Text("Is complete?", size=(15, 1)),
               sg.InputText("", key="IS_SESSION_COMPLETE", readonly=True),
           ],
           [
               sg.Text("Time zone", size=(15, 1)),
               sg.InputText("", key="TIME_ZONE", readonly=True),
-          ],
-          [
               sg.Text("Start time", size=(15, 1)),
               sg.InputText("", key="START_TIME", readonly=True),
           ],
           [
               sg.Text("Duration (min)", size=(15, 1)),
               sg.InputText("", key="DURATION_MIN", readonly=True),
-          ],
-          [
               sg.Text("# of keypresses", size=(15, 1)),
               sg.InputText("", key="NUM_KEYPRESSES", readonly=True),
           ],
           [
               sg.Text("# of audio files", size=(15, 1)),
               sg.InputText("", key="NUM_AUDIO_FILES", readonly=True),
-          ],
-          [
               sg.Text("# of screenshots", size=(15, 1)),
               sg.InputText("", key="NUM_SCREENSHOTS", readonly=True),
           ],
       ],
       [
-          sg.Text("Remote objects:", size=(15, 2), key="OBBJECTS_TITLE"),
+          sg.Text("Remote objects:", size=(15, 2), key="OBJECTS_TITLE"),
           object_listbox,
       ],
       [
@@ -479,7 +514,7 @@ def main():
     elif event == "LIST_SESSIONS":
       session_prefixes = _list_sessions(
           window, data_manager, session_container_prefixes)
-    elif event in ("SHOW_SESSION_INFO",
+    elif event in ("SESSION_LIST",
                    "OPEN_SESSION_FOLDER",
                    "DOWNLOAD_SESSION_TO_LOCAL",
                    "PREPROCESS_SESSION",
@@ -503,7 +538,7 @@ def main():
               "Local session directory not found. Download the session first",
               modal=True)
         continue
-      elif event == "SHOW_SESSION_INFO":
+      elif event == "SESSION_LIST":
         continue
       if event == "DOWNLOAD_SESSION_TO_LOCAL":
         status_message = "Downloading session. Please wait..."
@@ -558,7 +593,10 @@ def main():
       _enable_all_buttons(window)
       # Refresh all sessions after the selected session has finished downloading.
       session_prefixes = _list_sessions(
-          window, data_manager, session_container_prefixes)
+          window,
+          data_manager,
+          session_container_prefixes,
+          restore_session_selection=True)
     else:
       raise ValueError("Invalid event: %s" % event)
 

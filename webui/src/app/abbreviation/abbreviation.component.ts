@@ -1,4 +1,4 @@
-import {AfterViewInit, Component, ElementRef, EventEmitter, Input, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
+import {AfterViewInit, Component, ElementRef, EventEmitter, Input, OnChanges, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
 import {Subject} from 'rxjs';
 import {limitStringLength} from 'src/utils/text-utils';
 
@@ -40,6 +40,9 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
 
   @ViewChildren('clickableButton')
   clickableButtons!: QueryList<ElementRef<HTMLElement>>;
+
+  @ViewChildren('abbreviationOption')
+  abbreviationOptionElements!: QueryList<ElementRef<HTMLElement>>;
 
   state = State.CHOOSING_EXPANSION;
   readonly editTokens: string[] = [];
@@ -119,6 +122,10 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
       this.selectedTokenIndex = null;
       this.state = State.CHOOSING_TOKEN;
     }
+  }
+
+  onSpeakOptionButtonClicked(event: Event, index: number) {
+    // TODO(cais): Ipmlement.
   }
 
   onEditTokenButtonClicked(event: Event, index: number) {

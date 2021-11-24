@@ -10,29 +10,66 @@
 }
 
 .abbreviation-expansion {
-  display: inline-block;
-  /* TODO(cais): Avoid hardcoding this. */
-  max-width: 340px;
-  vertical-align: middle;
+  align-self: center;
+  display: inline;
+  flex: 5;
   white-space: pre-wrap;
+  vertical-align: middle;
 }
 
 .abbreviation-option {
   background: #333;
-  border: 2px solid #888;
   border-radius: 5px;
   color: #eee;
-  display: inline-block;
+  display: flex;
   font-size: 22px;
   height: 65px;
   line-height: 32px;
   margin: 5px;
-  min-width: 250px;
-  max-width: 420px;
-  padding: 0;
-  vertical-align: middle;
+  min-width: 300px;
+  padding-left: 5px;
   white-space: nowrap;
-  width: fit-content
+}
+
+.abbreviation-options-container {
+  display: inline-block;
+}
+
+.abbreviation-options-grid {
+  align-items: start;
+  display: grid;
+  gap: 5px;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+  grid-template-areas:
+    "a a a a c c c c e e e e"
+    "a a a a c c c c e e e e"
+    "b b b b d d d d f f f f"
+    "b b b b d d d d f f f f";
+}
+
+.item1 {
+  grid-area: a;
+}
+
+.item2 {
+  grid-area: b;
+}
+
+.item3 {
+  grid-area: c;
+}
+
+.item4 {
+  grid-area: d;
+}
+
+.item5 {
+  grid-area: e;
+}
+
+.item6 {
+  grid-area: f;
 }
 
 .candidate-for-edit {
@@ -56,6 +93,7 @@
 
 .expansions {
   display: inline-block;
+  white-space: nowrap;
 }
 
 .info {
@@ -83,7 +121,7 @@
   margin: 10px;
   min-width: 72px;
   padding: 15px;
-  vertical-align: middle;;
+  vertical-align: top;
   width: fit-content;
 }
 
@@ -110,16 +148,21 @@
   color: orange;
 }
 
-.shortcut-key {
+.action-button {
   background-color: grey;
   border-radius: 5px;
   color: #111;
-  display: inline-block;
+  display: inline;
+  float: right;
   height: 67px;
   font-size: 20px;
-  margin-right: 5px;
-  min-width: 80px;
+  margin-left: 5px;
+  width: 80px;
   padding: 2px 5px;
+}
+
+.speak-button {
+  width: 70px;
 }
 
 .token-input {
@@ -150,18 +193,29 @@
         (click)="onEditButtonClicked($event)">
       ✏️
     </button>
-    <div
-        *ngFor="let abbreviationOption of abbreviationOptions; let i = index"
-        class="abbreviation-option"
-        [ngClass]="{'candidate-for-edit': state === 'CHOOSING_EDIT_TARGET'}">
-      <button
-          #clickableButton
-          class="shortcut-key"
-          [ngClass]="{'is-selected': i === selectedAbbreviationIndex}"
-          (click)="onExpansionOptionButtonClicked($event, i)">
-        Shift-{{i + 1}}
-      </button>
-      <div class="abbreviation-expansion">{{abbreviationOption}}</div>
+    <div class="abbreviation-options-container">
+      <div class="abbreviation-options-grid">
+        <div
+            *ngFor="let abbreviationOption of abbreviationOptions; let i = index"
+            #abbreviationOption
+            class="abbreviation-option item{{i + 1}}"
+            [ngClass]="{'candidate-for-edit': state === 'CHOOSING_EDIT_TARGET'}">
+          <div class="abbreviation-expansion">{{abbreviationOption}}</div>
+          <button
+              #clickableButton
+              class="action-button"
+              [ngClass]="{'is-selected': i === selectedAbbreviationIndex}"
+              (click)="onExpansionOptionButtonClicked($event, i)">
+            Shift-{{i + 1}}
+          </button>
+          <button
+              #clickableButton
+              class="action-button speak-button"
+              (click)="onSpeakOptionButtonClicked($event, i)">
+            🔊
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 

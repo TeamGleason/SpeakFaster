@@ -72,6 +72,12 @@ def _get_timezone(readable_timezone_name):
   elif ("Central Time (US & Canada)" in readable_timezone_name or
         readable_timezone_name == "US/Central"):
     return "US/Central"
+  elif ("Mountain Time (US & Canada)" in readable_timezone_name or
+        readable_timezone_name == "US/Mountain"):
+    return "US/Mountain"
+  elif ("Pacific Time (US & Canada)" in readable_timezone_Name or
+        readable_timezone_name == "US/Pacific"):
+    return "US/Pacific"
   else:
     raise ValueError("Unimplemented time zone: %s" % time_zone)
 

@@ -1,17 +1,18 @@
 ﻿using Amazon.Runtime.CredentialManagement;
 using Amazon.S3;
 using Amazon.S3.Model;
-using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
+using System.Net.Http;
 using System.Threading.Tasks;
 
 namespace SpeakFasterObserver
 {
     internal class Upload
     {
-        private const string SCHEMA_VERSION = "SPO-2105";
+        private const string SCHEMA_VERSION = "SPO-2111";
         private const string BUCKET_NAME = "speak-faster";
 
         private static readonly AmazonS3Client _client;
@@ -68,7 +69,11 @@ namespace SpeakFasterObserver
 
             Debug.Assert(_client != null);
             Debug.Assert(_dataDirectory != null);
-            Debug.Assert(_gazeDevice != null);
+            if (_gazeDevice == null)
+            {
+                // _gazeDevice can sometimes be null when the machine wakes up from sleep.
+                return;
+            }
 
             if (_salt == null)
             {
@@ -78,35 +83,67 @@ namespace SpeakFasterObserver
                     return;
             }
 
-            var dataDirectory = new DirectoryInfo(_dataDirectory);
-            foreach (var fileInfo in dataDirectory.GetFiles())
+            foreach (string filePath in Directory.EnumerateFiles(_dataDirectory, "*", SearchOption.AllDirectories))
             {
+                FileInfo fileInfo = new(filePath);
                 if (FileNaming.IsInProgress(fileInfo.FullName))
                 {
                     // Skip uploading in-progress file.
                     continue;
                 }
+                if (FileNaming.IsNonSessionBufferFile(fileInfo.FullName))
+                {
+                    // Skip non-session buffer files.
+                    continue;
+                }
 
+                string[] relativePathParts = Path.GetRelativePath(_dataDirectory, filePath).Split(Path.DirectorySeparatorChar);
                 var putRequest = new PutObjectRequest
                 {
                     BucketName = BUCKET_NAME,
-                    Key = $"observer_data/{SCHEMA_VERSION}/{FileNaming.CloudStoragePath(fileInfo, _gazeDevice, _salt)}"
+                    Key = $"observer_data/{SCHEMA_VERSION}/{FileNaming.CloudStoragePath(relativePathParts, _gazeDevice, _salt)}"
                 };
 
                 PutObjectResponse putResponse;
-                using (var inputStream = fileInfo.OpenRead())
+                try
                 {
-                    putRequest.InputStream = inputStream;
-                    putResponse = await _client.PutObjectAsync(putRequest);
-                }
+                    using (var inputStream = fileInfo.OpenRead())
+                    {
+                        putRequest.InputStream = inputStream;
+                        putResponse = await _client.PutObjectAsync(putRequest);
+                    }
 
-                if (putResponse.HttpStatusCode == HttpStatusCode.OK)
+                    if (putResponse.HttpStatusCode == HttpStatusCode.OK)
+                    {
+                        fileInfo.Delete();
+                        // If the file that was just uploaded successfully is a session-end token, remove the session directory.
+                        if (FileNaming.IsSessionEndToken(filePath))
+                        {
+                            string sessionDir = Path.GetDirectoryName(filePath);
+                            if (IsDirectoryEmpty(sessionDir))
+                            {
+                                Directory.Delete(sessionDir);
+                            }
+                            Debug.WriteLine($"Deleted directory of ended session: {sessionDir}");
+                        }
+                    }
+                }
+                catch (HttpRequestException e)
                 {
-                    fileInfo.Delete();
+                    Debug.WriteLine($"AWS S3 PUT request experienced HttpRequestException: {e.Message}");
                 }
             }
 
             _uploading = false;
+        }
+
+        private static bool IsDirectoryEmpty(string dirPath)
+        {
+            IEnumerable<string> items = Directory.EnumerateFileSystemEntries(dirPath);
+            using (var enumerator = items.GetEnumerator())
+            {
+                return !enumerator.MoveNext();
+            }
         }
     }
 }

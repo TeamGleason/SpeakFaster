@@ -13,12 +13,15 @@ file:
 import argparse
 import csv
 from datetime import datetime
+import glob
 import json
 import os
 import re
 
 import numpy as np
 
+import file_naming
+import metadata_pb2
 import nlp
 import transcript_lib
 import tsv_data
@@ -36,7 +39,7 @@ def load_speaker_map(speaker_map_json_path):
   See README.md for a definition of the expected schema of the JSON file.
 
   Args:
-    speaker_map_tsv_path: Path to the tsv file that contains the columns
+    speaker_map_json_path: Path to the tsv file that contains the columns
       RealName and Pseudonym.
 
   Returns:
@@ -72,6 +75,11 @@ def is_number(string):
     return True
   except ValueError:
     return
+
+
+def is_speech_content_tier(tier):
+  return tier in (tsv_data.KEYPRESS_PHRASE_TIER,
+                  tsv_data.SPEECH_TRANSCRIPT_TIER)
 
 
 def infer_columns(tsv_path):
@@ -186,11 +194,9 @@ def calculate_speech_curation_stats(merged_tsv_path,
   original_rows = load_rows(
       merged_tsv_path, column_order, has_header=has_header)
   original_rows = [
-      row for row in original_rows
-      if row[2] == tsv_data.SPEECH_TRANSCRIPT_TIER]
+      row for row in original_rows if is_speech_content_tier(row[2])]
   curated_rows = [
-      row for row in curated_rows
-      if row[2] == tsv_data.SPEECH_TRANSCRIPT_TIER]
+      row for row in curated_rows if is_speech_content_tier(row[2])]
   stats = {
       "original_num_utterances": len(original_rows),
       "curated_num_utterances": len(curated_rows),
@@ -238,6 +244,11 @@ def calculate_speech_curation_stats(merged_tsv_path,
                   curated_transcript,
                   hypothesis_transcript=original_transcript),
       })
+      if curated_speaker_id.lower() not in realname_to_pseudonym:
+        raise ValueError(
+            "Cannot find speaker ID %s. Make sure you have entered "
+            "the correct real name for the speaker in utterance: %s" %
+            (curated_speaker_id, curated_transcript))
       stats["curated_speaker_id_to_original_speaker_id"].append({
           "utterance_id": utterance_id,
           "original_speaker_id":
@@ -277,7 +288,7 @@ def apply_speaker_map_and_redaction_masks(rows, realname_to_pseudonym):
   keypress_redaction_time_ranges = []
   for i, row in enumerate(rows):
     _, _, tier, content = row
-    if tier == tsv_data.SPEECH_TRANSCRIPT_TIER:
+    if is_speech_content_tier(tier):
       realname_tag, tag_type, realname = transcript_lib.extract_speaker_tag(
           content.strip())
       if realname.lower() not in realname_to_pseudonym:
@@ -344,11 +355,15 @@ def redact_keypresses(rows, time_ranges):
         (len(unused_ranges), unused_ranges))
 
 
-def write_rows_to_tsv(rows, out_tsv_path):
+def write_rows_to_tsv(rows,
+                      out_tsv_path,
+                      speech_transcript_only=False):
   with open(out_tsv_path, "w") as f:
     f.write(tsv_data.HEADER + "\n")
     for row in rows:
       tbegin, tend, tier, content = row
+      if speech_transcript_only and tier != tsv_data.SPEECH_TRANSCRIPT_TIER:
+        continue
       str_items = ["%.3f" % tbegin, "%.3f" % tend, tier, content]
       f.write(tsv_data.DELIMITER.join(str_items) + "\n")
 
@@ -368,12 +383,43 @@ def parse_args():
   return parser.parse_args()
 
 
+def maybe_read_session_end_metadata(input_dir):
+  """If a SessionEnd.bin file exists in input dir, reads and returns it.
+
+  As a JSON-serializable dictionary.
+
+  Else returns an empty dict.
+  """
+  session_end_bin_paths = glob.glob(
+      os.path.join(input_dir, "*-SessionEnd.bin"))
+  if not session_end_bin_paths:
+    return dict()
+  if len(session_end_bin_paths) > 1:
+    raise ValueError(
+        "Unexpectedly found more than one (%d) SessionEnd.bin files "
+        "in the directory %s: %s" %
+        (len(session_end_bin_paths), input_dir, session_end_bin_paths))
+  session_end_bin_path = session_end_bin_paths[0]
+  session_metadata = metadata_pb2.SessionMetadata()
+  with open(session_end_bin_path, "rb") as f:
+    session_metadata.ParseFromString(f.read())
+  return {
+      "timezone": session_metadata.timezone,
+      "computer_manufacturer_family":
+          session_metadata.computer_manufacturer_family,
+      "gaze_device": session_metadata.gaze_device,
+      "platform": session_metadata.platform,
+      "os_version": session_metadata.os_version,
+  }
+
+
 def main():
   args = parse_args()
   nlp.init()
 
   realname_to_pseudonym = load_speaker_map(args.speaker_map_tsv_path)
-  merged_tsv_path = os.path.join(args.input_dir, "merged.tsv")
+  merged_tsv_path = os.path.join(args.input_dir,
+                                 file_naming.MERGED_TSV_FILENAME)
   curated_tsv_path = os.path.join(args.input_dir, "curated.tsv")
   column_order, has_header = infer_columns(curated_tsv_path)
   rows = load_rows(curated_tsv_path, column_order, has_header=has_header)
@@ -387,15 +433,19 @@ def main():
   write_rows_to_tsv(rows, out_tsv_path)
   print("\nSuccess: Converted postprocessed tsv file and saved result to: %s" %
         out_tsv_path)
+  speech_only_out_tsv_path = os.path.join(args.input_dir,
+                                          "curated_processed_speech_only.tsv")
+  write_rows_to_tsv(rows, speech_only_out_tsv_path, speech_transcript_only=True)
+  print("\nSuccess: Wrote speech-transcript only tsv file to: %s" %
+        speech_only_out_tsv_path)
 
+  out_json = maybe_read_session_end_metadata(args.input_dir)
   with open(out_json_path, "wt") as f:
-    out_json = {
-        "proprocessing_timestamp":
-            str(datetime.utcnow().strftime("%Y%m%dT%H%M%S.%fZ")),
-        "speech_curation_stats": speech_curation_stats,
-    }
+    out_json["proprocessing_timestamp"] = (
+        str(datetime.utcnow().strftime("%Y%m%dT%H%M%S.%fZ")))
+    out_json["speech_curation_stats"] = speech_curation_stats
     json.dump(out_json, f, indent=2)
-    print("Wrote additional info to JSON file: %s" % out_json_path)
+    print("\nWrote additional info to JSON file: %s" % out_json_path)
 
 
 if __name__ == "__main__":

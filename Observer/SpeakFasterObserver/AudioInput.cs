@@ -11,7 +11,6 @@ namespace SpeakFasterObserver
         private static readonly int AUDIO_BITS_PER_SAMPLE = 16;
         private static readonly int AUDIO_SAMPLE_RATE_HZ = 16000;
 
-        private readonly string dataDir;
         private WaveIn waveIn = null;
         private string flacFilePath = null;
         private FileStream flacStream = null; 
@@ -28,21 +27,20 @@ namespace SpeakFasterObserver
         private AudioAsr audioAsr;
         private readonly bool useAudioAsr = false;
 
-        public AudioInput(string dataDir) {
-            this.dataDir = dataDir;
-        }
+        public AudioInput() {}
 
         /**
          * Start recording audio waveform from the built-in microphone.
          * 
          * Creates a new InProgress .flac file to save the data to.
          */
-        public void StartRecordingFromMicrophone()
+        public void StartRecordingFromMicrophone(string flacPath)
         {
             if (isRecording)
             {
                 return;
             }
+            SetNewFlacPath(flacPath);
             WaveFormat waveFormat = new(AUDIO_SAMPLE_RATE_HZ, AUDIO_NUM_CHANNELS);
             waveIn = new WaveIn
             {
@@ -94,7 +92,10 @@ namespace SpeakFasterObserver
                     buffer[i / 2] = BitConverter.ToInt16(e.Buffer, i);
                 }
                 MaybeCreateFlacWriter();
-                flacWriter.WriteSamples(buffer);
+                if (flacWriter != null)
+                {
+                    flacWriter.WriteSamples(buffer);
+                }
             }
             if (audioAsr != null)
             {
@@ -109,6 +110,15 @@ namespace SpeakFasterObserver
         public void RotateFlacWriter()
         {
             MaybeEndCurrentFlacWriter();
+        }
+
+        /** Sets the path to a new flac file. */
+        public void SetNewFlacPath(string flacPath)
+        {
+            lock (flacLock)
+            {
+                flacFilePath = flacPath;
+            }
         }
 
         /**
@@ -137,12 +147,15 @@ namespace SpeakFasterObserver
         /** Creates a FlacWriter object if none currently exists. */
         private void MaybeCreateFlacWriter()
         {
+            if (flacFilePath == null)
+            {
+                return;
+            }
             if (flacWriter != null)
             {
                 return;
             }
-            flacFilePath = flacFilePath = FileNaming.AddInProgressSuffix(
-                    FileNaming.GetMicWavInFilePath(dataDir));
+            flacFilePath = FileNaming.AddInProgressSuffix(flacFilePath);
             flacStream = File.Create(flacFilePath);
             flacWriter = new FlacWriter(flacStream);
             FlacStreaminfo streamInfo = new()

@@ -1,0 +1,28 @@
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+// If this file changes, you MUST update the generated CS and python file!
+//
+// protoc.exe -I="." --csharp_out="." .\metadata.proto
+// protoc.exe -I="." --python_out="." .\metadata.proto
+//
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+syntax = "proto3";
+package SpeakFasterObserver;
+
+import "google/protobuf/timestamp.proto";
+
+message SessionMetadata {
+	// Timestamp for the session's end.
+	google.protobuf.Timestamp session_end_timestamp = 1;
+	// Timezone in which the session happened.
+	string timezone = 2;
+	
+	string computer_manufacturer_family = 3;
+
+	string gaze_device = 4;
+
+	string platform = 5;
+
+	// Operating system version.
+	string os_version = 6;
+}

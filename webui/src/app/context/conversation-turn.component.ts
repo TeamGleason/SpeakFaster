@@ -1,4 +1,4 @@
-import {Component, ElementRef, Input, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, ElementRef, Input, ViewChild} from '@angular/core';
 
 import {getAgoString} from '../../utils/datetime-utils';
 import {limitStringLength} from '../../utils/text-utils';
@@ -9,14 +9,17 @@ import {ConversationTurn} from '../speakfaster-service';
   templateUrl: './conversation-turn.component.html',
   providers: [],
 })
-export class ConversationTurnComponent {
+export class ConversationTurnComponent implements AfterViewInit {
   private static readonly _NAME = 'ConversationTurnComponent';
 
   private static readonly CONTENT_STRING_MAX_LENGTH = 50;
+  private static readonly BASE_FONT_SIZE_PX = 24;
+  private static readonly FONT_SCALING_LENGTH_THRESHOLD = 45;
 
   @Input() turn!: ConversationTurn;
   @Input() isFocus: boolean = false;
   @ViewChild('button') viewButton!: ElementRef;
+  @ViewChild('turnContent') turnContentElement!: ElementRef;
 
   constructor() {}
 
@@ -34,6 +37,19 @@ export class ConversationTurnComponent {
                  this.turn.speechContent,
                  ConversationTurnComponent.CONTENT_STRING_MAX_LENGTH);
     }
+  }
+
+  ngAfterViewInit() {
+    const contentElement: HTMLDivElement =
+        this.turnContentElement.nativeElement;
+    let fontSizePx = ConversationTurnComponent.BASE_FONT_SIZE_PX;
+    if (this.turn.speechContent.length >
+        ConversationTurnComponent.FONT_SCALING_LENGTH_THRESHOLD) {
+      fontSizePx /= Math.pow(
+          (this.turn.speechContent.length /
+           ConversationTurnComponent.FONT_SCALING_LENGTH_THRESHOLD), 0.45);
+    }
+    contentElement.style.fontSize = `${fontSizePx.toFixed(1)}px`;
   }
 
   // Returns left, top, right, bottom.

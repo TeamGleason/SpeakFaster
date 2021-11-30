@@ -15,6 +15,7 @@ python data_manager.py --s3_bucket_name=my-bucket-name
 import argparse
 import datetime
 import glob
+import json
 import os
 import pathlib
 import pytz
@@ -217,6 +218,32 @@ class DataManager(object):
             str(tz), start_time, duration_s, num_keypresses, num_audio_files,
             num_screenshots, object_keys)
 
+  def get_sessions_stats(self, container_prefix, session_prefixes):
+    """Get the summary statistics of the given sessions."""
+    num_sessions = 0
+    num_complete_sessions = 0
+    total_duration_s = 0
+    total_keypresses = 0
+    total_audio_files = 0
+    total_screenshots = 0
+    total_objects = 0
+    for session_prefix in session_prefixes:
+      (is_session_complete,
+       _, _, duration_s, num_keypresses, num_audio_files,
+       num_screenshots, object_keys) = self.get_session_details(
+          container_prefix + session_prefix)
+      num_sessions += 1
+      if is_session_complete:
+        num_complete_sessions += 1
+      total_duration_s += duration_s
+      total_keypresses += num_keypresses
+      total_audio_files += num_audio_files
+      total_screenshots += num_screenshots
+      total_objects += len(object_keys)
+    return (num_sessions, num_complete_sessions, total_duration_s,
+            total_keypresses, total_audio_files, total_screenshots,
+            total_objects)
+
   def get_session_basename(self, session_prefix):
     path_items = session_prefix.split("/")
     return path_items[-1] if path_items[-1] else path_items[-2]
@@ -297,7 +324,16 @@ class DataManager(object):
 
 
 def _get_container_prefix(window, session_container_prefixes):
-  selection = window.Element("SESSION_CONTAINER_LIST").Widget.curselection()
+  if not session_container_prefixes:
+    raise ValueError("Found no session container prefixes")
+  container_list = window.Element("SESSION_CONTAINER_LIST")
+  selection = container_list.Widget.curselection()
+  if len(session_container_prefixes) == 1:
+    if not selection:
+      # Automatically set the selecton if there is only one container and none
+      # is selected.
+      container_list.update(set_to_index=[0])
+    return session_container_prefixes[0]
   if not selection or len(selection) != 1:
     sg.Popup("Please select exactly 1 container first", modal=True)
     return
@@ -323,9 +359,11 @@ _UI_STATE = {
 }
 
 def _disable_all_buttons(window):
-  _UI_STATE["session_select_index"] = window.Element(
-      "SESSION_LIST").Widget.curselection()[0]
+  session_selection = window.Element("SESSION_LIST").Widget.curselection()
+  if session_selection:
+    _UI_STATE["session_select_index"] = session_selection[0]
   window.Element("LIST_SESSIONS").Update(disabled=True)
+  window.Element("SUMMARIZE_SESSIONS").Update(disabled=True)
   window.Element("OPEN_SESSION_FOLDER").Update(disabled=True)
   window.Element("DOWNLOAD_SESSION_TO_LOCAL").Update(disabled=True)
   window.Element("PREPROCESS_SESSION").Update(disabled=True)
@@ -337,6 +375,7 @@ def _disable_all_buttons(window):
 
 def _enable_all_buttons(window):
   window.Element("LIST_SESSIONS").Update(disabled=False)
+  window.Element("SUMMARIZE_SESSIONS").Update(disabled=False)
   window.Element("OPEN_SESSION_FOLDER").Update(disabled=False)
   window.Element("DOWNLOAD_SESSION_TO_LOCAL").Update(disabled=False)
   window.Element("PREPROCESS_SESSION").Update(disabled=False)
@@ -467,6 +506,7 @@ def main():
           sg.Text("Containers:", size=(15, 1)),
           session_container_listbox,
           sg.Button("List sessions", key="LIST_SESSIONS"),
+          sg.Button("Summarize", key="SUMMARIZE_SESSIONS"),
       ],
       [
           sg.Text("Sessions:", size=(15, 2), key="SESSION_TITLE"),
@@ -520,6 +560,38 @@ def main():
     elif event == "LIST_SESSIONS":
       session_prefixes = _list_sessions(
           window, data_manager, session_container_prefixes)
+    elif event == "SUMMARIZE_SESSIONS":
+      # Summarize all sessions in a given container.
+      _disable_all_buttons(window)
+      container_prefix = _get_container_prefix(
+          window, session_container_prefixes)
+      if container_prefix:
+        session_prefixes = _list_sessions(
+            window, data_manager, session_container_prefixes)
+        window.Element("STATUS_MESSAGE").Update(
+            "Generating summary of %d sessions... Please wait." %
+            len(session_prefixes), text_color="yellow")
+        (num_sessions, num_complete_sessions, total_duration_s,
+         total_keypresses, total_audio_files, total_screenshots,
+         total_objects) = data_manager.get_sessions_stats(
+            container_prefix, session_prefixes)
+        report = {
+            "report_generated": datetime.datetime.now(pytz.timezone("UTC")).isoformat(),
+            "num_sessions": num_sessions,
+            "num_complete_sessions": num_complete_sessions,
+            "total_duration_s": total_duration_s,
+            "total_keypresses": total_keypresses,
+            "total_audio_files": total_audio_files,
+            "total_screenshots": total_screenshots,
+            "total_objects": total_objects,
+        }
+        summary_text = json.dumps(report, indent=2)
+        print("Summary of sessions:\n%s" % summary_text)
+        sg.Popup(summary_text,
+                 title="Summary of %d sessions" % num_sessions,
+                 modal=True)
+      _enable_all_buttons(window)
+      window.Element("STATUS_MESSAGE").Update("")
     elif event in ("SESSION_LIST",
                    "OPEN_SESSION_FOLDER",
                    "DOWNLOAD_SESSION_TO_LOCAL",

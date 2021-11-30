@@ -576,6 +576,7 @@ def main():
          total_objects) = data_manager.get_sessions_stats(
             container_prefix, session_prefixes)
         report = {
+            "report_generated": datetime.datetime.now(pytz.timezone("UTC")).isoformat(),
             "num_sessions": num_sessions,
             "num_complete_sessions": num_complete_sessions,
             "total_duration_s": total_duration_s,
@@ -586,7 +587,9 @@ def main():
         }
         summary_text = json.dumps(report, indent=2)
         print("Summary of sessions:\n%s" % summary_text)
-        sg.Popup(summary_text, modal=True)
+        sg.Popup(summary_text,
+                 title="Summary of %d sessions" % num_sessions,
+                 modal=True)
       _enable_all_buttons(window)
       window.Element("STATUS_MESSAGE").Update("")
     elif event in ("SESSION_LIST",

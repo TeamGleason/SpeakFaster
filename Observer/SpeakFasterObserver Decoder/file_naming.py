@@ -12,6 +12,16 @@ MERGED_TSV_FILENAME = "merged.tsv"
 CONCATENATED_AUDIO_FILENAME = "concatenated_audio.wav"
 SCREENSHOTS_MP4_FILENAME = "screenshots.mp4"
 
+# Assumed output from ELAN as a result of manual curation.
+CURATED_TSV_FILENAME = "curated.tsv"
+_CURATED_PROCESSED_FILENAME = "curated_processed"
+CURATED_PROCESSED_JSON_FILENAME = _CURATED_PROCESSED_FILENAME + ".json"
+CURATED_PROCESSED_TSV_FILENAME = _CURATED_PROCESSED_FILENAME + ".tsv"
+CURATED_PROCESSED_SPEECH_ONLY_TSV_FILENAME = (
+    _CURATED_PROCESSED_FILENAME + "_speech_only.tsv")
+
+SPEAKER_ID_CONFIG_JSON_FILENAME = "speaker_id_config.json"
+
 
 def parse_timestamp(timestamp):
   """Parse timestamp into a Python datetime.datetime object.

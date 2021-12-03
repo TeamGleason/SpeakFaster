@@ -368,21 +368,6 @@ def write_rows_to_tsv(rows,
       f.write(tsv_data.DELIMITER.join(str_items) + "\n")
 
 
-def parse_args():
-  parser = argparse.ArgumentParser()
-  parser.add_argument(
-      "input_dir",
-      type=str,
-      help="Input directory path. This directory is assumed to contain the "
-      "curated.tsv file from the ELAN curation process.")
-  parser.add_argument(
-      "speaker_map_tsv_path",
-      type=str,
-      help="Path to the speaker map file. This file is assumed to be a tsv file "
-      "with two columns: RealName and Pseudonym")
-  return parser.parse_args()
-
-
 def maybe_read_session_end_metadata(input_dir):
   """If a SessionEnd.bin file exists in input dir, reads and returns it.
 
@@ -413,14 +398,27 @@ def maybe_read_session_end_metadata(input_dir):
   }
 
 
-def main():
-  args = parse_args()
+def parse_args():
+  parser = argparse.ArgumentParser()
+  parser.add_argument(
+      "input_dir",
+      type=str,
+      help="Input directory path. This directory is assumed to contain the "
+      "curated.tsv file from the ELAN curation process.")
+  parser.add_argument(
+      "speaker_id_config_json_path",
+      type=str,
+      help="Path to the speaker map file. This file is assumed to be a tsv file "
+      "with two columns: RealName and Pseudonym")
+  return parser.parse_args()
+
+
+def postprocess_curated(input_dir, speaker_id_config_json_path):
   nlp.init()
 
-  realname_to_pseudonym = load_speaker_map(args.speaker_map_tsv_path)
-  merged_tsv_path = os.path.join(args.input_dir,
-                                 file_naming.MERGED_TSV_FILENAME)
-  curated_tsv_path = os.path.join(args.input_dir, "curated.tsv")
+  realname_to_pseudonym = load_speaker_map(speaker_id_config_json_path)
+  merged_tsv_path = os.path.join(input_dir, file_naming.MERGED_TSV_FILENAME)
+  curated_tsv_path = os.path.join(input_dir, file_naming.CURATED_TSV_FILENAME)
   column_order, has_header = infer_columns(curated_tsv_path)
   rows = load_rows(curated_tsv_path, column_order, has_header=has_header)
   speech_curation_stats = calculate_speech_curation_stats(
@@ -428,24 +426,29 @@ def main():
   keypress_redaction_time_ranges = apply_speaker_map_and_redaction_masks(
       rows, realname_to_pseudonym)
   redact_keypresses(rows, keypress_redaction_time_ranges)
-  out_json_path = os.path.join(args.input_dir, "curated_processed.json")
-  out_tsv_path = os.path.join(args.input_dir, "curated_processed.tsv")
+  out_json_path = os.path.join(input_dir, "curated_processed.json")
+  out_tsv_path = os.path.join(input_dir, "curated_processed.tsv")
   write_rows_to_tsv(rows, out_tsv_path)
   print("\nSuccess: Converted postprocessed tsv file and saved result to: %s" %
         out_tsv_path)
-  speech_only_out_tsv_path = os.path.join(args.input_dir,
-                                          "curated_processed_speech_only.tsv")
+  speech_only_out_tsv_path = os.path.join(
+      input_dir, file_naming.CURATED_PROCESSED_SPEECH_ONLY_TSV_FILENAME)
   write_rows_to_tsv(rows, speech_only_out_tsv_path, speech_transcript_only=True)
   print("\nSuccess: Wrote speech-transcript only tsv file to: %s" %
         speech_only_out_tsv_path)
 
-  out_json = maybe_read_session_end_metadata(args.input_dir)
+  out_json = maybe_read_session_end_metadata(input_dir)
   with open(out_json_path, "wt") as f:
     out_json["proprocessing_timestamp"] = (
         str(datetime.utcnow().strftime("%Y%m%dT%H%M%S.%fZ")))
     out_json["speech_curation_stats"] = speech_curation_stats
     json.dump(out_json, f, indent=2)
     print("\nWrote additional info to JSON file: %s" % out_json_path)
+
+
+def main():
+  args = parse_args()
+  postprocess_curated(args.input_dir, args.speaker_id_config_json_path)
 
 
 if __name__ == "__main__":

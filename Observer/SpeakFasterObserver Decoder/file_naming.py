@@ -12,7 +12,7 @@ MERGED_TSV_FILENAME = "merged.tsv"
 CONCATENATED_AUDIO_FILENAME = "concatenated_audio.wav"
 SCREENSHOTS_MP4_FILENAME = "screenshots.mp4"
 
-# Assumed output from ELAN as a result of manual curation.
+# Assumed name of the file from manual curation in ELAN.
 CURATED_TSV_FILENAME = "curated.tsv"
 _CURATED_PROCESSED_FILENAME = "curated_processed"
 CURATED_PROCESSED_JSON_FILENAME = _CURATED_PROCESSED_FILENAME + ".json"

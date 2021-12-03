@@ -317,6 +317,8 @@ class DataManager(object):
         "--include=%s" % file_naming.CONCATENATED_AUDIO_FILENAME,
         "--include=%s" % file_naming.SCREENSHOTS_MP4_FILENAME]
     self._run_command_line(command_args)
+    print("Done uploading the preprocessing results for session %s" %
+          session_prefix)
 
   def _run_command_line(self, command_args):
     print("Calling: %s" % (" ".join(command_args)))

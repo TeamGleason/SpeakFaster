@@ -27,6 +27,7 @@ import time
 import boto3
 import PySimpleGUI as sg
 
+import elan_process_curated
 import file_naming
 import metadata_pb2
 import process_keypresses
@@ -83,6 +84,29 @@ def _get_timezone(readable_timezone_name):
     raise ValueError("Unimplemented time zone: %s" % time_zone)
 
 
+def find_speaker_id_config_json():
+  """Try to find the speaker ID config JSON file among known possibilities."""
+  possible_paths = [
+      os.path.join("/", "SpeakFasterObs", "Creds_NoShare",
+          file_naming.SPEAKER_ID_CONFIG_JSON_FILENAME),
+      os.path.join("/", "SpeakFasterObs", "Creds_noShare",
+          file_naming.SPEAKER_ID_CONFIG_JSON_FILENAME),
+      os.path.join(pathlib.Path.home(), "SpeakFasterObs", "Creds_NoShare",
+          file_naming.SPEAKER_ID_CONFIG_JSON_FILENAME),
+      os.path.join(pathlib.Path.home(), "SpeakFasterObs", "Creds_noShare",
+          file_naming.SPEAKER_ID_CONFIG_JSON_FILENAME),
+      os.path.join(os.path.dirname(__file__), "testdata",
+          file_naming.SPEAKER_ID_CONFIG_JSON_FILENAME)]
+  for possible_path in possible_paths:
+    if os.path.isfile(possible_path):
+      print("Located speaker ID config JSON file at %s" % possible_path)
+      return possible_path
+  raise ValueError(
+      "Cannot find speaker ID config JSON file among these possibilities: %s. "
+      "Make sure you put the file at one of those paths." %
+      possible_paths)
+
+
 class DataManager(object):
 
   def __init__(self, aws_profile_name, s3_bucket_name, local_data_root):
@@ -90,6 +114,8 @@ class DataManager(object):
     self._aws_profile_name = aws_profile_name
     self._s3_bucket_name = s3_bucket_name
     self._local_data_root = local_data_root
+    self._speaker_id_config_json_path = find_speaker_id_config_json()
+    self._session_keypresses_per_second = None
     self._manual_timezone_name = None
 
   def get_session_container_prefixes(self):
@@ -227,6 +253,7 @@ class DataManager(object):
     total_audio_files = 0
     total_screenshots = 0
     total_objects = 0
+    session_keypresses_per_second = dict()
     for session_prefix in session_prefixes:
       (is_session_complete,
        _, _, duration_s, num_keypresses, num_audio_files,
@@ -240,9 +267,12 @@ class DataManager(object):
       total_audio_files += num_audio_files
       total_screenshots += num_screenshots
       total_objects += len(object_keys)
+      session_keypresses_per_second[session_prefix] = (
+          None if duration_s == 0 else num_keypresses / duration_s)
+    self._session_keypresses_per_second = session_keypresses_per_second
     return (num_sessions, num_complete_sessions, total_duration_s,
             total_keypresses, total_audio_files, total_screenshots,
-            total_objects)
+            total_objects, session_keypresses_per_second)
 
   def get_session_basename(self, session_prefix):
     path_items = session_prefix.split("/")
@@ -252,7 +282,8 @@ class DataManager(object):
     session_basename = self.get_session_basename(session_prefix)
     return os.path.join(self._local_data_root, session_basename)
 
-  def _nonempty_file_exists(self, file_path):
+  def _nonempty_file_exists(self, dir_path, file_name):
+    file_path = os.path.join(dir_path, file_name)
     if not os.path.isfile(file_path):
       return False
     return os.path.getsize(file_path) > 0
@@ -271,7 +302,6 @@ class DataManager(object):
     print("Download complete.")
 
   def get_local_session_folder_status(self, session_prefix):
-    # TODO(cais): Add CURATED and POSTPROCESSED states.
     local_dest_dir = self.get_local_session_dir(session_prefix)
     if not os.path.isdir(local_dest_dir):
       return "NOT_DOWNLOADED"
@@ -279,44 +309,161 @@ class DataManager(object):
       session_end_bin_path = glob.glob(os.path.join(
           local_dest_dir, "*-SessionEnd.bin"))
       if (self._nonempty_file_exists(
-              os.path.join(local_dest_dir, file_naming.MERGED_TSV_FILENAME)) and
+              local_dest_dir, file_naming.CURATED_PROCESSED_JSON_FILENAME) and
           self._nonempty_file_exists(
-              os.path.join(local_dest_dir, file_naming.CONCATENATED_AUDIO_FILENAME)) and
+              local_dest_dir, file_naming.CURATED_PROCESSED_TSV_FILENAME) and
           self._nonempty_file_exists(
-              os.path.join(local_dest_dir, file_naming.SCREENSHOTS_MP4_FILENAME))):
+              local_dest_dir, file_naming.CURATED_PROCESSED_SPEECH_ONLY_TSV_FILENAME)):
+        return "POSTPROCESSED"
+      elif self._nonempty_file_exists(
+          local_dest_dir, file_naming.CURATED_TSV_FILENAME):
+        return "CURATED"
+      elif (self._nonempty_file_exists(
+              local_dest_dir, file_naming.MERGED_TSV_FILENAME) and
+          self._nonempty_file_exists(
+              local_dest_dir, file_naming.CONCATENATED_AUDIO_FILENAME) and
+          self._nonempty_file_exists(
+              local_dest_dir, file_naming.SCREENSHOTS_MP4_FILENAME)):
         return "PREPROCESSED"
       elif glob.glob(os.path.join(local_dest_dir, "*-SessionEnd.bin")):
         return "DOWNLOADED"
       else:
         return "NOT_DOWNLOADED"
 
-  def get_remote_session_folder_status(self, session_prefix):
-    merged_tsv_key = session_prefix + file_naming.MERGED_TSV_FILENAME
+  def get_session_keypresses_per_second(self, session_prefix):
+    if self._session_keypresses_per_second is not None:
+      return self._session_keypresses_per_second.get(session_prefix, None)
+
+  def _remote_object_exists(self, session_prefix, filename):
+    merged_tsv_key = session_prefix + filename
     response = self._s3_client.list_objects_v2(
         Bucket=self._s3_bucket_name, Prefix=merged_tsv_key)
-    if response["KeyCount"] == 1:
+    return "KeyCount" in response and response["KeyCount"] > 0
+
+  def get_remote_session_folder_status(self, session_prefix):
+    if self._remote_object_exists(
+        session_prefix, file_naming.CURATED_PROCESSED_TSV_FILENAME):
+      return "POSTPROCESSED"
+    elif self._remote_object_exists(
+        session_prefix, file_naming.MERGED_TSV_FILENAME):
       return "PREPROCESSED"
     else:
       return "NOT_PREPROCESSED"
 
   def preprocess_session(self, session_prefix):
+    to_run_preproc = True
+    if self.get_local_session_folder_status(session_prefix) in (
+        "PREPROCESSED", "CURATED", "POSTPROCESSED"):
+      answer = sg.popup_yes_no(
+          "Session %s has already been preprocessed locally. "
+          "Do you want to run preprocessing again?" % session_prefix)
+      to_run_preproc = answer == "Yes"
+    if not to_run_preproc:
+      return "Preprocessing was not run.", False
+
     local_dest_dir = self.get_local_session_dir(session_prefix)
     (_, readable_timezone_name,
      _, _, _, _, _, _) = self.get_session_details(session_prefix)
     timezone = _get_timezone(readable_timezone_name)
     command_args = ["python", "elan_format_raw.py", local_dest_dir, timezone]
     self._run_command_line(command_args)
-    print("Preprocessing complete.")
+    message = "Preprocessing complete."
+    print(message)
+    return message, True
 
   def upload_sesssion_preproc_results(self, session_prefix):
+    if self.get_local_session_folder_status(session_prefix) not in  (
+        "PREPROCESSED", "CURATED", "POSTPROCESSED"):
+      sg.Popup(
+          "Cannot upload the preprocessing results of session %s, "
+          "because no preprocessing results are found" % session_prefix,
+          modal=True)
+      return "Not uploading preprocessing results", False
+    to_upload = True
+    if self.get_remote_session_folder_status(session_prefix) != "NOT_PREPROCESSED":
+      answer = sg.popup_yes_no(
+          "Session %s already contains preprocessing results remotely. "
+          "Do you want to upload preprocessing results again?" % session_prefix)
+      to_upload = answer == "Yes"
+    if not to_upload:
+      return "Uploading of preprocessing results canceled", False
+
     local_dest_dir = self.get_local_session_dir(session_prefix)
     command_args = [
         "aws", "s3", "sync", "--profile=%s" % self._aws_profile_name,
         local_dest_dir, "s3://" + self._s3_bucket_name + "/" + session_prefix,
         "--exclude=*", "--include=*.tsv",
-        "--include=%s" % file_naming.CONCATENATED_AUDIO_FILENAME,
-        "--include=%s" % file_naming.SCREENSHOTS_MP4_FILENAME]
+        "--include=%s" % file_naming.CURATED_PROCESSED_JSON_FILENAME,
+        "--include=%s" % file_naming.CURATED_PROCESSED_TSV_FILENAME,
+        "--include=%s" % file_naming.CURATED_PROCESSED_SPEECH_ONLY_TSV_FILENAME]
     self._run_command_line(command_args)
+    print("Done uploading the preprocessing results for session %s" %
+          session_prefix)
+    return "Uploading of preprocessing results complete", True
+
+  def postprocess_curation(self, session_prefix):
+    local_dest_dir = self.get_local_session_dir(session_prefix)
+    local_status = self.get_local_session_folder_status(session_prefix)
+    if local_status not in ("CURATED", "POSTPROCESSED"):
+      sg.Popup(
+          "Cannot postprocess the curation results of session %s, "
+          "because the local directory for the session doesn't contain "
+          "the expected file from ELAN: %s" %
+          (session_prefix, file_naming.CURATED_TSV_FILENAME),
+          modal=True)
+      return ("Not postprocessing curation results: Cannot find %s" %
+              file_naming.CURATED_TSV_FILENAME), False
+    to_postprocess = True
+    if local_status == "POSTPROCESSED":
+      answer = sg.popup_yes_no(
+          "Session is %s already postprocessed successfully. "
+          "Do you want to do postprocessing again?" % session_prefix)
+      to_postprocess = answer == "Yes"
+    if not to_postprocess:
+      return "Not performing postprocessing", False
+
+    local_dest_dir = self.get_local_session_dir(session_prefix)
+    try:
+      elan_process_curated.postprocess_curated(
+          local_dest_dir, self._speaker_id_config_json_path)
+      message = "Postprocessing succeeded!"
+      print(message)
+      sg.Popup(message, modal=True)
+      return message
+    except Exception as e:
+      failure_message = "Postprocessing failed with error message:\n\n%s" % e
+      print(failure_message)
+      sg.Popup(failure_message, title="Postprocessing failed", modal=True)
+      return "Postprocessing failed", True
+
+  def upload_session_postproc_results(self, session_prefix):
+    if self.get_local_session_folder_status(session_prefix) != "POSTPROCESSED":
+      sg.Popup(
+          "Cannot upload the postprocessing results of session %s, "
+          "because no postprocessing results are found" % session_prefix,
+          modal=True)
+      return "Not uploading postprocessing results", False
+    to_upload = True
+    if self.get_remote_session_folder_status(session_prefix) == "POSTPROCESSED":
+      answer = sg.popup_yes_no(
+          "Session %s already contains postprocessing results remotely. "
+          "Do you want to upload postprocessing results again?" % session_prefix)
+      to_upload = answer == "Yes"
+    if not to_upload:
+      return "Uploading of postprocessing results canceled.", False
+
+    local_dest_dir = self.get_local_session_dir(session_prefix)
+    command_args = [
+        "aws", "s3", "sync", "--profile=%s" % self._aws_profile_name,
+        local_dest_dir, "s3://" + self._s3_bucket_name + "/" + session_prefix,
+        "--exclude=*", "--include=*.tsv",
+        "--include=%s" % file_naming.CURATED_PROCESSED_JSON_FILENAME,
+        "--include=%s" % file_naming.CURATED_PROCESSED_TSV_FILENAME,
+        "--include=%s" % file_naming.CURATED_PROCESSED_SPEECH_ONLY_TSV_FILENAME]
+    self._run_command_line(command_args)
+    print("Done uploading the postprocessing results for session %s" %
+          session_prefix)
+    return "Down uploading postprocessing results", True
 
   def _run_command_line(self, command_args):
     print("Calling: %s" % (" ".join(command_args)))
@@ -368,6 +515,8 @@ def _disable_all_buttons(window):
   window.Element("DOWNLOAD_SESSION_TO_LOCAL").Update(disabled=True)
   window.Element("PREPROCESS_SESSION").Update(disabled=True)
   window.Element("UPLOAD_PREPROC").Update(disabled=True)
+  window.Element("POSTPROC_CURATION").Update(disabled=True)
+  window.Element("UPLOAD_POSTPROC").Update(disabled=True)
   window.Element("SESSION_CONTAINER_LIST").Update(disabled=True)
   window.Element("SESSION_LIST").Update(disabled=True)
   window.Element("OBJECT_LIST").Update(disabled=True)
@@ -380,6 +529,8 @@ def _enable_all_buttons(window):
   window.Element("DOWNLOAD_SESSION_TO_LOCAL").Update(disabled=False)
   window.Element("PREPROCESS_SESSION").Update(disabled=False)
   window.Element("UPLOAD_PREPROC").Update(disabled=False)
+  window.Element("POSTPROC_CURATION").Update(disabled=False)
+  window.Element("UPLOAD_POSTPROC").Update(disabled=False)
   window.Element("SESSION_CONTAINER_LIST").Update(disabled=False)
   window.Element("SESSION_LIST").Update(disabled=False)
   window.Element("OBJECT_LIST").Update(disabled=False)
@@ -404,12 +555,19 @@ def _list_sessions(window,
         container_prefix + session_prefix)
     local_status = data_manager.get_local_session_folder_status(
         container_prefix + session_prefix)
+    keypresses_per_second = data_manager.get_session_keypresses_per_second(
+        session_prefix)
+    kps_string = ("[? kps]" if keypresses_per_second is None else
+                  ("[%.2f kps]" % keypresses_per_second))
     session_prefixes_with_status.append(
-        "%s (Remote: %s) (Local: %s)" %
-        (session_prefix, remote_status, local_status))
-    session_color = "black"
-    if remote_status != "NOT_PREPROCESSED":
+        "%s %s (Remote: %s) (Local: %s)" %
+        (kps_string, session_prefix, remote_status, local_status))
+    if remote_status == "POSTPROCESSED":
+      session_color = "green"
+    elif remote_status == "PREPROCESSED":
       session_color = "blue"
+    else:
+      session_color = "black"
     session_colors.append(session_color)
   session_list = window.Element("SESSION_LIST")
   session_list.Update(disabled=False)
@@ -548,6 +706,8 @@ def main():
           sg.Button("Download session", key="DOWNLOAD_SESSION_TO_LOCAL"),
           sg.Button("Preprocess session", key="PREPROCESS_SESSION"),
           sg.Button("Upload preprocessing data", key="UPLOAD_PREPROC"),
+          sg.Button("Postprocess curation", key="POSTPROC_CURATION"),
+          sg.Button("Upload postprocessed data", key="UPLOAD_POSTPROC"),
       ]
   ]
   session_prefixes = None
@@ -572,8 +732,8 @@ def main():
             "Generating summary of %d sessions... Please wait." %
             len(session_prefixes), text_color="yellow")
         (num_sessions, num_complete_sessions, total_duration_s,
-         total_keypresses, total_audio_files, total_screenshots,
-         total_objects) = data_manager.get_sessions_stats(
+         total_keypresses, total_audio_files, total_screenshots, total_objects,
+         session_keypresses_per_second) = data_manager.get_sessions_stats(
             container_prefix, session_prefixes)
         report = {
             "report_generated": datetime.datetime.now(pytz.timezone("UTC")).isoformat(),
@@ -590,13 +750,17 @@ def main():
         sg.Popup(summary_text,
                  title="Summary of %d sessions" % num_sessions,
                  modal=True)
+        session_prefixes = _list_sessions(
+            window, data_manager, session_container_prefixes)
       _enable_all_buttons(window)
       window.Element("STATUS_MESSAGE").Update("")
     elif event in ("SESSION_LIST",
                    "OPEN_SESSION_FOLDER",
                    "DOWNLOAD_SESSION_TO_LOCAL",
                    "PREPROCESS_SESSION",
-                   "UPLOAD_PREPROC"):
+                   "UPLOAD_PREPROC",
+                   "POSTPROC_CURATION",
+                   "UPLOAD_POSTPROC"):
       if not session_prefixes:
         sg.Popup("Please list sessions first", modal=True)
         continue
@@ -618,12 +782,18 @@ def main():
         continue
       elif event == "SESSION_LIST":
         continue
+      sessions_changed = True
+      status_message = ""
       if event == "DOWNLOAD_SESSION_TO_LOCAL":
         status_message = "Downloading session. Please wait..."
       elif event == "PREPROCESS_SESSION":
         status_message = "Preprocessing session. Please wait..."
-      else:
+      elif event == "UPLOAD_PREPROC":
         status_message = "Uploading session preprocessing results. Please wait..."
+      elif event == "POSTPROCESS_CURATION":
+        status_message = "Postprocessing curation results. Please wait..."
+      elif event == "UPLOAD_POSTPROC":
+        status_message = "Uploading session postprocessing results. Please wait..."
       window.Element("STATUS_MESSAGE").Update(status_message)
       window.Element("STATUS_MESSAGE").Update(text_color="yellow")
       _disable_all_buttons(window)
@@ -632,49 +802,29 @@ def main():
         data_manager.sync_to_local(session_prefix)
         status_message = "Session downloading complete."
       elif event == "PREPROCESS_SESSION":
-        to_run_preproc = True
-        if data_manager.get_local_session_folder_status(
-            session_prefix) == "PREPROCESSED":
-          answer = sg.popup_yes_no(
-              "Session %s has already been preprocessed locally. "
-              "Do you want to run preprocessing again?" % session_prefix)
-          to_run_preproc = answer == "Yes"
-        if to_run_preproc:
-          data_manager.preprocess_session(session_prefix)
-          status_message = "Session preprocessing complete."
-        else:
-          status_message = "Preprocessing was not run."
-      else:
-        if data_manager.get_local_session_folder_status(
-            session_prefix) != "PREPROCESSED":
-          # TODO(cais): Accommodate CURATED and POSTPROCESSED states.
-          sg.Popup(
-              "Cannot upload the preprocessing results of session %s, "
-              "because no preprocessing results are found" % session_prefix,
-              modal=True)
-          status_message = "Not uploading preprocessing results"
-        else:
-          to_upload = True
-          if data_manager.get_remote_session_folder_status(
-              session_prefix) != "NOT_PREPROCESSED":
-            answer = sg.popup_yes_no(
-                "Session %s already contains preprocessing results remotely. "
-                "Do you want to upload preprocessing results again?" % session_prefix)
-            to_upload = answer == "Yes"
-          if to_upload:
-            data_manager.upload_sesssion_preproc_results(session_prefix)
-            status_message = "Uploading of precessing results complete."
-          else:
-            status_message = "Uploading of precessing results canceled."
+        (status_message,
+         sessions_changed) = data_manager.preprocess_session(session_prefix)
+      elif event == "UPLOAD_PREPROC":
+        (status_message,
+         sessions_changed) = data_manager.upload_sesssion_preproc_results(
+            session_prefix)
+      elif event == "POSTPROC_CURATION":
+        (status_message,
+         sessions_changed) = data_manager.postprocess_curation(session_prefix)
+      elif event == "UPLOAD_POSTPROC":
+        (status_message,
+         sessions_changed) = data_manager.upload_session_postproc_results(
+            session_prefix)
       window.Element("STATUS_MESSAGE").Update(status_message)
       window.Element("STATUS_MESSAGE").Update(text_color="white")
       _enable_all_buttons(window)
       # Refresh all sessions after the selected session has finished downloading.
-      session_prefixes = _list_sessions(
-          window,
-          data_manager,
-          session_container_prefixes,
-          restore_session_selection=True)
+      if sessions_changed:
+        session_prefixes = _list_sessions(
+            window,
+            data_manager,
+            session_container_prefixes,
+            restore_session_selection=True)
     else:
       raise ValueError("Invalid event: %s" % event)
 

@@ -1,4 +1,4 @@
-import {Component, Input, OnInit} from '@angular/core';
+import {ChangeDetectorRef, Component, Input, OnInit} from '@angular/core';
 import {Subject} from 'rxjs';
 
 import {TextEntryBeginEvent, TextInjection} from '../types/text-injection';
@@ -18,6 +18,8 @@ export class MetricsComponent implements OnInit {
   private elapsedTimesMillis: number[] = [];
   private characterCounts: number[] = [];
   overallWordsPerMinute: number|null = null;
+
+  constructor(private changeDtectorRef: ChangeDetectorRef) {}
 
   ngOnInit() {
     this.textEntryBeginSubject.subscribe((event: TextEntryBeginEvent) => {
@@ -46,6 +48,7 @@ export class MetricsComponent implements OnInit {
           event.timestampMillis - this.currentStartTimeMillis);
       this.characterCounts.push(numCharacters);
       this.calculateMetrics();
+      this.changeDtectorRef.detectChanges();
     });
   }
 

@@ -1,9 +1,10 @@
-import {Component, OnInit} from '@angular/core';
+import {AfterViewInit, Component, OnInit, ViewChild} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
 import {Subject} from 'rxjs';
 
-import {bindCefSharpListener} from '../utils/cefsharp';
+import {bindCefSharpListener, registerExternalKeypressCallback} from '../utils/cefsharp';
 
+import {ExternalEventsComponent} from './external/external-events.component';
 import {SpeakFasterService} from './speakfaster-service';
 import {AbbreviationExpansionSelectionEvent, InputAbbreviationChangedEvent} from './types/abbreviations';
 import {TextEntryBeginEvent, TextInjection} from './types/text-injection';
@@ -13,8 +14,11 @@ import {TextEntryBeginEvent, TextInjection} from './types/text-injection';
   templateUrl: './app.component.html',
   providers: [SpeakFasterService],
 })
-export class AppComponent implements OnInit {
+export class AppComponent implements OnInit, AfterViewInit {
   title = 'SpeakFasterApp';
+
+  @ViewChild('externalEvents')
+  externalEventsComponent!: ExternalEventsComponent;
 
   // Set this to `false` to skip using access token (e.g., developing with
   // an automatically authorized browser context.)
@@ -49,6 +53,12 @@ export class AppComponent implements OnInit {
         this.useAccessToken = false;
       }
     });
+  }
+
+  ngAfterViewInit() {
+    registerExternalKeypressCallback(
+        this.externalEventsComponent.externalKeypressCallback.bind(
+            this.externalEventsComponent));
   }
 
   onNewAccessToken(accessToken: string) {

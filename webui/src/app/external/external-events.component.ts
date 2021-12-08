@@ -50,6 +50,9 @@ export enum VIRTUAL_KEY {
   SLASH_QUESTION_MARK = '/?',
 }
 
+// Windows virtual keys, see
+// https://docs.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
+// This may be an incomplete list.
 export const VKCODE_SPECIAL_KEYS: {[vkCode: number]: VIRTUAL_KEY} = {
   8: VIRTUAL_KEY.BACKSPACE,
   13: VIRTUAL_KEY.ENTER,
@@ -96,7 +99,8 @@ function getKeyFromVirtualKeyCode(vkCode: number): string|null {
   }
 }
 
-function getPunctuationLiteral(vkCode: VIRTUAL_KEY, isShift: boolean): string {
+export function getPunctuationLiteral(
+    vkCode: VIRTUAL_KEY, isShift: boolean): string {
   switch (vkCode) {
     case VIRTUAL_KEY.SEMICOLON_COLON:
       return isShift ? ':' : ';';
@@ -143,6 +147,7 @@ export class ExternalEventsComponent {
   // Millisecond timestamp (since epoch) for the previous keypress (if any)
   private text: string = '';
   private cursorPos: number = 0;
+  private isShiftOn = false;
 
   ExternalEvewntsComponent() {}
 
@@ -171,17 +176,26 @@ export class ExternalEventsComponent {
     const originallyEmpty = this.text === '';
     if (virtualKey.length === 1 && (virtualKey >= 'a' && virtualKey <= 'z') ||
         (virtualKey >= '0' && virtualKey <= '9')) {
-      this.text += virtualKey;
-      this.cursorPos += 1;
+      this.insertCharAsCursorPos(virtualKey);
     } else if (virtualKey === VIRTUAL_KEY.SPACE) {
-      this.text += ' ';
-      this.cursorPos += 1;
+      this.insertCharAsCursorPos(' ');
     } else if (virtualKey === VIRTUAL_KEY.ENTER) {
-      this.text += '\n';
-      this.cursorPos += 1;
+      this.insertCharAsCursorPos('\n');
+    } else if (virtualKey === VIRTUAL_KEY.HOME) {
+      this.cursorPos = this.getHomeKeyDestination();
+    } else if (virtualKey === VIRTUAL_KEY.END) {
+      this.cursorPos = this.getEndKeyDestination();
     } else if (PUNCTUATION.indexOf(virtualKey as VIRTUAL_KEY) !== -1) {
-      // TODO(cais): Add shift state.
-      this.text += getPunctuationLiteral(virtualKey as VIRTUAL_KEY, false);
+      this.insertCharAsCursorPos(
+          getPunctuationLiteral(virtualKey as VIRTUAL_KEY, this.isShiftOn));
+    } else if (virtualKey === VIRTUAL_KEY.LARROW) {
+      if (this.cursorPos > 0) {
+        this.cursorPos--;
+      }
+    } else if (virtualKey === VIRTUAL_KEY.RARROW) {
+      if (this.cursorPos < this.text.length) {
+        this.cursorPos++;
+      }
     } else if (virtualKey === VIRTUAL_KEY.BACKSPACE) {
       if (this.cursorPos > 0) {
         this.text = this.text.slice(0, this.cursorPos - 1) +
@@ -189,10 +203,18 @@ export class ExternalEventsComponent {
         this.cursorPos--;
       }
     } else if (virtualKey === VIRTUAL_KEY.DELETE) {
-      if (this.cursorPos < this.text.length - 1) {
+      if (this.cursorPos < this.text.length) {
         this.text = this.text.slice(0, this.cursorPos) +
             this.text.slice(this.cursorPos + 1);
       }
+    } else if (
+        virtualKey === VIRTUAL_KEY.LSHIFT ||
+        virtualKey === VIRTUAL_KEY.RSHIFT) {
+      this.isShiftOn = true;
+    }
+    if (virtualKey !== VIRTUAL_KEY.LSHIFT &&
+        virtualKey !== VIRTUAL_KEY.RSHIFT) {
+      this.isShiftOn = false;
     }
     if (originallyEmpty && this.text.length > 0) {
       this.textEntryBeginSubject.next({timestampMillis: Date.now()});
@@ -205,14 +227,45 @@ export class ExternalEventsComponent {
       this.numGazeKeypresses++;
     }
     this.previousKeypressTimeMillis = Date.now();
-    // TODO(cais): Take care of the home, end and the arrow keys.
-    // TODO(cais): Take care of the Ctrl+A.
-    // TODO(cais): Take care of shift Backspace and shift delete.
-    // TODO(cais): Toggle ctrl state.
-
+    // TODO(cais): Take care of the up and down arrow keys.
+    // TODO(cais): Track ctrl state.
+    // TODO(cais): Take care of selection state, including Ctrl+A.
+    // TODO(cais): Take care of Shift+Backspace and Shift+Delete.
     console.log(
         `externalKeypressCallback(): virtualKey=${virtualKey}; ` +
         `text="${this.text}"; cursorPos=${this.cursorPos}`);
+  }
+
+  private insertCharAsCursorPos(char: string) {
+    if (this.cursorPos === this.text.length) {
+      this.text += char;
+    } else {
+      this.text = this.text.slice(0, this.cursorPos) + char +
+          this.text.slice(this.cursorPos);
+    }
+    this.cursorPos += 1;
+  }
+
+  private getHomeKeyDestination(): number {
+    let p = this.cursorPos;
+    while (p > 0) {
+      if (this.text[p - 1] === '\n') {
+        return p;
+      }
+      p--;
+    }
+    return p;
+  }
+
+  private getEndKeyDestination(): number {
+    let p = this.cursorPos;
+    while (p < this.text.length) {
+      if (this.text[p + 1] === '\n') {
+        return p;
+      }
+      p++;
+    }
+    return p;
   }
 
   private reset() {
@@ -220,6 +273,7 @@ export class ExternalEventsComponent {
     this.numGazeKeypresses = 0;
     this.text = '';
     this.cursorPos = 0;
+    this.isShiftOn = false;
     this.keySequence.splice(0);
   }
 }

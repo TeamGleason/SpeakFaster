@@ -5,7 +5,7 @@ import {createUuid} from '../..//utils/uuid';
 import {updateButtonBoxes} from '../../utils/cefsharp';
 import {KeyboardComponent} from '../keyboard/keyboard.component';
 import {ContextSignal, SpeakFasterService} from '../speakfaster-service';
-import {TextInjection} from '../types/text-injection';
+import {TextEntryEndEvent} from '../types/text-injection';
 
 import {ConversationTurnComponent} from './conversation-turn.component';
 import {DEFAULT_CONTEXT_SIGNALS} from './default-context';
@@ -24,7 +24,7 @@ export class ContextComponent implements OnInit, AfterViewInit {
 
   @Input() endpoint!: string;
   @Input() accessToken!: string;
-  @Input() textInjectionSubject!: Subject<TextInjection>;
+  @Input() textInjectionSubject!: Subject<TextEntryEndEvent>;
 
   private static readonly CONTEXT_POLLING_INTERVAL_MILLIS = 2 * 1000;
   readonly contextSignals: ContextSignal[] = [];
@@ -44,7 +44,7 @@ export class ContextComponent implements OnInit, AfterViewInit {
     KeyboardComponent.registerCallback(
         ContextComponent._NAME, this.handleKeyboardEvent.bind(this));
     this.focusContextIds.splice(0);
-    this.textInjectionSubject.subscribe((textInjection: TextInjection) => {
+    this.textInjectionSubject.subscribe((textInjection: TextEntryEndEvent) => {
       if (!textInjection.isFinal) {
         return;
       }

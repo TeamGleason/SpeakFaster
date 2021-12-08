@@ -19,7 +19,13 @@
 import {Component, Input} from '@angular/core';
 import {Subject} from 'rxjs';
 
-import {TextEntryBeginEvent, TextInjection} from '../types/text-injection';
+import {TextEntryBeginEvent, TextEntryEndEvent} from '../types/text-injection';
+
+// The minimum delay between a preceeding keypress and an eye-gaze-triggered
+// keypress. This is also the maximum delay between a preceding keypress and a
+// keypress for which the (2nd) keypress is deteremined as an automatic keypress
+// (e.g., from selection of a word completion).
+const MIN_GAZE_KEYPRESS_MILLIS = 200;
 
 export enum VIRTUAL_KEY {
   BACKSPACE = 'Backspace',
@@ -125,9 +131,16 @@ function allItemsEqual(array1: string[], array2: string[]): boolean {
 })
 export class ExternalEventsComponent {
   @Input() textEntryBeginSubject!: Subject<TextEntryBeginEvent>;
-  @Input() textInjectionSubject!: Subject<TextInjection>;
+  @Input() textEntryEndSubject!: Subject<TextEntryEndEvent>;
 
+  private previousKeypressTimeMillis: number|null = null;
+  // Number of keypresses effected through eye gaze (as determiend by
+  // a temporal threshold).
+  private numGazeKeypresses = 0;
+  // The sequence of all keys, including ASCII and functional keys. Used in
+  // the calculation of speed and keystroke saving rate (KSR).
   private readonly keySequence: string[] = [];
+  // Millisecond timestamp (since epoch) for the previous keypress (if any)
   private text: string = '';
   private cursorPos: number = 0;
 
@@ -146,14 +159,13 @@ export class ExternalEventsComponent {
             TTS_TRIGGER_COMBO_KEY)) {
       // A TTS action has been triggered.
       console.log(`TTS event: "${this.text}"`);
-      this.textInjectionSubject.next({
+      this.textEntryEndSubject.next({
         text: this.text,
         timestampMillis: Date.now(),
+        numHumanKeypresses: this.numGazeKeypresses,
         isFinal: true,
       });
-      this.text = '';
-      this.cursorPos = 0;
-      this.keySequence.splice(0);
+      this.reset();
       return;
     }
     const originallyEmpty = this.text === '';
@@ -185,6 +197,14 @@ export class ExternalEventsComponent {
     if (originallyEmpty && this.text.length > 0) {
       this.textEntryBeginSubject.next({timestampMillis: Date.now()});
     }
+
+    const nowMillis = Date.now();
+    if (this.previousKeypressTimeMillis == null ||
+        (nowMillis - this.previousKeypressTimeMillis) >
+            MIN_GAZE_KEYPRESS_MILLIS) {
+      this.numGazeKeypresses++;
+    }
+    this.previousKeypressTimeMillis = Date.now();
     // TODO(cais): Take care of the home, end and the arrow keys.
     // TODO(cais): Take care of the Ctrl+A.
     // TODO(cais): Take care of shift Backspace and shift delete.
@@ -193,5 +213,13 @@ export class ExternalEventsComponent {
     console.log(
         `externalKeypressCallback(): virtualKey=${virtualKey}; ` +
         `text="${this.text}"; cursorPos=${this.cursorPos}`);
+  }
+
+  private reset() {
+    this.previousKeypressTimeMillis = null;
+    this.numGazeKeypresses = 0;
+    this.text = '';
+    this.cursorPos = 0;
+    this.keySequence.splice(0);
   }
 }

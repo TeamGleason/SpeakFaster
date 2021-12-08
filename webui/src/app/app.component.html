@@ -40,12 +40,12 @@ app-context-component {
   <app-external-events-component
       #externalEvents
       [textEntryBeginSubject]="textEntryBeginSubject"
-      [textInjectionSubject]="textInjectionSubject">
+      [textEntryEndSubject]="textEntryEndSubject">
   </app-external-events-component>
 
   <app-metrics-component
       [textEntryBeginSubject]="textEntryBeginSubject"
-      [textInjectionSubject]="textInjectionSubject"
+      [textEntryEndSubject]="textEntryEndSubject"
   ></app-metrics-component>
 
   <div *ngIf="hasAccessToken()">
@@ -53,13 +53,13 @@ app-context-component {
     <app-context-component
       [endpoint]="endpoint"
       [accessToken]="accessToken"
-      [textInjectionSubject]="textInjectionSubject"
+      [textInjectionSubject]="textEntryEndSubject"
       (contextStringsSelected)="onContextStringsSelected($event)"
     ></app-context-component>
 
     <app-abbreviation-editing-component
-      [textInjectionSubject]="textInjectionSubject"
       [textEntryBeginSubject]="textEntryBeginSubject"
+      [textInjectionSubject]="textEntryEndSubject"
       (inputAbbreviationChanged)="onAbbreviationInputChanged($event)"
       (spellingStateChanged)="onSpellingStateChanged($event)"
     ></app-abbreviation-editing-component>
@@ -70,7 +70,7 @@ app-context-component {
       [accessToken]="accessToken"
       [contextStrings]="contextStrings"
       [textPrefix]=(inputAbbreviation)
-      [textInjectionSubject]="textInjectionSubject"
+      [textInjectionSubject]="textEntryEndSubject"
     ></app-text-continuation-component>
 
     <app-abbreviation-component

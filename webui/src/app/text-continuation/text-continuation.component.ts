@@ -3,7 +3,7 @@ import {Subject} from 'rxjs';
 import {updateButtonBoxForHtmlElements} from 'src/utils/cefsharp';
 
 import {SpeakFasterService} from '../speakfaster-service';
-import {TextInjection} from '../types/text-injection';
+import {TextEntryEndEvent} from '../types/text-injection';
 
 @Component({
   selector: 'app-text-continuation-component',
@@ -16,7 +16,7 @@ export class TextContinuationComponent implements AfterViewInit, OnChanges {
   @Input() accessToken!: string;
   @Input() contextStrings!: string[];
   @Input() textPrefix!: string;
-  @Input() textInjectionSubject!: Subject<TextInjection>;
+  @Input() textInjectionSubject!: Subject<TextEntryEndEvent>;
 
   @ViewChildren('clickableButton')
   buttons!: QueryList<ElementRef<HTMLButtonElement>>;

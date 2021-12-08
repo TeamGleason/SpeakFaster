@@ -5,7 +5,7 @@ import {updateButtonBoxForHtmlElements} from 'src/utils/cefsharp';
 import {isTextContentKey} from '../../utils/keyboard-utils';
 import {KeyboardComponent} from '../keyboard/keyboard.component';
 import {AbbreviationSpec, AbbreviationToken, InputAbbreviationChangedEvent, StartSpellingEvent} from '../types/abbreviations';
-import {TextEntryBeginEvent, TextInjection} from '../types/text-injection';
+import {TextEntryBeginEvent, TextEntryEndEvent} from '../types/text-injection';
 
 enum State {
   ENTERING_ABBREVIATION = 'ENTERING_ABBREVIATION',
@@ -20,7 +20,7 @@ enum State {
 export class AbbreviationEditingComponent implements OnInit, AfterViewInit {
   private static readonly _NAME = 'AbbreviationEditingComponent';
 
-  @Input() textInjectionSubject!: Subject<TextInjection>;
+  @Input() textInjectionSubject!: Subject<TextEntryEndEvent>;
   @Input() textEntryBeginSubject!: Subject<TextEntryBeginEvent>;
   @Output()
   inputAbbreviationChanged: EventEmitter<InputAbbreviationChangedEvent> =
@@ -39,7 +39,7 @@ export class AbbreviationEditingComponent implements OnInit, AfterViewInit {
   private isSpellingTaskIsNew = true;
 
   ngOnInit() {
-    this.textInjectionSubject.subscribe((textInjection: TextInjection) => {
+    this.textInjectionSubject.subscribe((textInjection: TextEntryEndEvent) => {
       if (textInjection.isFinal) {
         this.resetState();
       } else {

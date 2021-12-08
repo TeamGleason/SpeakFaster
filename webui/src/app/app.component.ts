@@ -7,7 +7,7 @@ import {bindCefSharpListener, registerExternalKeypressCallback} from '../utils/c
 import {ExternalEventsComponent} from './external/external-events.component';
 import {SpeakFasterService} from './speakfaster-service';
 import {AbbreviationExpansionSelectionEvent, InputAbbreviationChangedEvent} from './types/abbreviations';
-import {TextEntryBeginEvent, TextInjection} from './types/text-injection';
+import {TextEntryBeginEvent, TextEntryEndEvent} from './types/text-injection';
 
 @Component({
   selector: 'app-root',
@@ -30,9 +30,9 @@ export class AppComponent implements OnInit, AfterViewInit {
 
   abbreviationExpansionTriggers: Subject<InputAbbreviationChangedEvent> =
       new Subject();
-  textInjectionSubject: Subject<TextInjection> = new Subject();
   textEntryBeginSubject: Subject<TextEntryBeginEvent> =
       new Subject<TextEntryBeginEvent>();
+  textEntryEndSubject: Subject<TextEntryEndEvent> = new Subject();
   // Context speech content used for AE and other text predictions.
   inputAbbreviation: string = '';
   contextStrings: string[] = [];
@@ -99,7 +99,7 @@ export class AppComponent implements OnInit, AfterViewInit {
   }
 
   onAbbreviationExpansionSelected(event: AbbreviationExpansionSelectionEvent) {
-    this.textInjectionSubject.next({
+    this.textEntryEndSubject.next({
       text: event.expansionText,
       timestampMillis: Date.now(),
       isFinal: true,

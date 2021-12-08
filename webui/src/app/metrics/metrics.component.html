@@ -1,22 +1,69 @@
 <style>
 
 :host {
-    white-space: pre-wrap
+  white-space: pre-wrap
 }
 
-.wpm-tag {
+.icon-tag {
+  display: inline-block
+}
+
+.ksr {
+  background-color: #170;
+}
+
+.latest-metric {
   display: inline-block;
+  font-size: 18px;
+}
+
+.metric-container {
+  display: inline-block;
+  border-radius: 5px;
   color: #999;
+  line-height: 24px;
   font-size: 21px;
   margin-left: 6px;
+  padding: 2px 4px;
 }
+
+.overall-metric-value {
+  color: #ddd;
+}
+
+.wpm {
+  background-color: #222;
+}
+
 
 </style>
 
-<div class="wpm-tag">
-  WPM:
-  <span
-      *ngIf="overallWordsPerMinute !== null">
-      {{overallWordsPerMinute.toFixed(1)}}
+<div class="icon-tag">
+  ⏱️
+</div>
+
+<div
+    class="metric-container wpm"
+    *ngIf="overallWpm !== null">
+  <span>WPM:</span>
+  <span class="overall-metric-value">
+      {{overallWpm.toFixed(1)}}
+  </span>
+
+  <span class="latest-metric" *ngIf="latestWpm !== null">
+    (latest:{{latestWpm.toFixed(1)}})
+  </span>
+</div>
+
+<div
+    class="metric-container ksr"
+    *ngIf="overallKsr !== null">
+  <span>KSR:</span>
+  <span class="overall-metric-value">
+      {{overallKsr.toFixed(2)}}
+  </span>
+
+  <span class="latest-metric" *ngIf="latestKsr !== null">
+    (latest:{{latestKsr.toFixed(2)}})
   </span>
 </div>

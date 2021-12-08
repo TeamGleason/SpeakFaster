@@ -1,12 +1,23 @@
-/** Types related to text injection. */
+/** Types related to text entry events. */
 
+/**
+ * An event that signifies the beginning of a text entry, i.e., when the
+ * users starts typing to compose a message.
+ */
 export interface TextEntryBeginEvent {
   // Milliseconds since the epoch.
   timestampMillis: number;
 }
 
+
+/**
+ * An event that signifies the end or intermediate state of a user's text
+ * entry. It is assumed to be paired with a previous TextEntryBeginEvent.
+ * Whether the text entry has reached the end is determined by the `isFinal`
+ * field.
+ */
 export interface TextEntryEndEvent {
-  // A human-oriented, human-readable form of the injected text.
+  // A human-oriented, human-readable form of the entered text.
   text: string;
 
   // Total number of key presses, including backspaces, function keys and other
@@ -24,6 +35,6 @@ export interface TextEntryEndEvent {
   // Whether the text entry is final.
   isFinal: boolean;
 
-  // Sequence of injected keys;
+  // Sequence of automatically injected keys;
   injectedKeys?: string[];
 }

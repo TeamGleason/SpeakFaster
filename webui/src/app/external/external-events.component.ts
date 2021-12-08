@@ -157,6 +157,13 @@ export class ExternalEventsComponent {
       return;
     }
     this.keySequence.push(virtualKey);
+    const nowMillis = Date.now();
+    if (this.previousKeypressTimeMillis === null ||
+        (nowMillis - this.previousKeypressTimeMillis) >
+            MIN_GAZE_KEYPRESS_MILLIS) {
+      this.numGazeKeypresses++;
+    }
+    this.previousKeypressTimeMillis = nowMillis;
     if (this.keySequence.length > TTS_TRIGGER_COMBO_KEY.length &&
         allItemsEqual(
             this.keySequence.slice(
@@ -220,13 +227,6 @@ export class ExternalEventsComponent {
       this.textEntryBeginSubject.next({timestampMillis: Date.now()});
     }
 
-    const nowMillis = Date.now();
-    if (this.previousKeypressTimeMillis == null ||
-        (nowMillis - this.previousKeypressTimeMillis) >
-            MIN_GAZE_KEYPRESS_MILLIS) {
-      this.numGazeKeypresses++;
-    }
-    this.previousKeypressTimeMillis = Date.now();
     // TODO(cais): Take care of the up and down arrow keys.
     // TODO(cais): Track ctrl state.
     // TODO(cais): Take care of selection state, including Ctrl+A.

@@ -30,13 +30,12 @@ export class MetricsComponent implements OnInit {
       if (!event.isFinal) {
         return;
       }
-      console.log('100;')  // DEBUG
       if (this.currentStartTimeMillis === null) {
         console.error(
             'Received text-entry end event before a text-entry begin event.');
         return;
       }
-      if (event.timestampMillis <= this.currentStartTimeMillis) {
+      if (event.timestampMillis < this.currentStartTimeMillis) {
         console.error('Timestamp out of order');
         this.currentStartTimeMillis = null;
         return;
@@ -90,7 +89,7 @@ export class MetricsComponent implements OnInit {
       return null;
     }
     let totalChars = 0;
-    let totalHumanKeystrokes = 0;
+    let totalHumanKeypresses = 0;
     for (let i = 0; i < this.charCounts.length; ++i) {
       const characterCount = this.charCounts[i];
       const humanKeystrokeCount = this.humanKeystrokeCounts[i];
@@ -98,12 +97,12 @@ export class MetricsComponent implements OnInit {
         continue;
       }
       totalChars += characterCount;
-      totalHumanKeystrokes += humanKeystrokeCount;
+      totalHumanKeypresses += humanKeystrokeCount;
     }
     if (totalChars === 0) {
       return null;
     }
-    return 1 - totalHumanKeystrokes / totalChars;
+    return 1 - totalHumanKeypresses / totalChars;
   }
 
   /** Calculates the overall text-entry speed in words per minute (WPM). */

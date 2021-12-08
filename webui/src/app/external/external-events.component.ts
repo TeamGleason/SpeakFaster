@@ -50,6 +50,9 @@ export enum VIRTUAL_KEY {
   SLASH_QUESTION_MARK = '/?',
 }
 
+// Windows virtual keys, see
+// https://docs.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
+// This may be an incomplete list.
 export const VKCODE_SPECIAL_KEYS: {[vkCode: number]: VIRTUAL_KEY} = {
   8: VIRTUAL_KEY.BACKSPACE,
   13: VIRTUAL_KEY.ENTER,
@@ -96,7 +99,8 @@ function getKeyFromVirtualKeyCode(vkCode: number): string|null {
   }
 }
 
-function getPunctuationLiteral(vkCode: VIRTUAL_KEY, isShift: boolean): string {
+export function getPunctuationLiteral(
+    vkCode: VIRTUAL_KEY, isShift: boolean): string {
   switch (vkCode) {
     case VIRTUAL_KEY.SEMICOLON_COLON:
       return isShift ? ':' : ';';

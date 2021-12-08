@@ -3,12 +3,16 @@ import {RouterTestingModule} from '@angular/router/testing';
 
 import {AppComponent} from './app.component';
 import {AuthModule} from './auth/auth.module';
+import {ExternalEventsModule} from './external/external-events.module';
+import {MetricsModule} from './metrics/metrics.module';
 
 describe('AppComponent', () => {
   beforeEach(async () => {
     await TestBed
         .configureTestingModule({
-          imports: [RouterTestingModule, AuthModule],
+          imports: [
+            RouterTestingModule, AuthModule, ExternalEventsModule, MetricsModule
+          ],
           declarations: [AppComponent],
         })
         .compileComponents();

@@ -15,6 +15,17 @@
 <div class="content" role="main">
   <!-- TODO(cais): Hide app-auth-component on newAccessToken. -->
   <app-auth-component (newAccessToken)="onNewAccessToken($event)"></app-auth-component>
+
+  <app-external-events-component
+      #externalEvents
+      [textEntryBeginSubject]="textEntryBeginSubject"
+      [textEntryEndSubject]="textEntryEndSubject">
+  </app-external-events-component>
+
+  <app-metrics-component
+      [textEntryBeginSubject]="textEntryBeginSubject"
+      [textEntryEndSubject]="textEntryEndSubject"
+  ></app-metrics-component>
 </div>
 
 <router-outlet></router-outlet>

@@ -1,18 +1,30 @@
-import {Component, OnInit} from '@angular/core';
+import {AfterViewInit, Component, OnInit, ViewChild} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
+import {Subject} from 'rxjs';
+
+import {registerExternalKeypressCallback} from '../utils/cefsharp';
 
 import {SpeakFasterService} from './speakfaster-service';
+import {ExternalEventsComponent} from './external/external-events.component';
+import {TextEntryBeginEvent, TextEntryEndEvent} from './types/text-entry';
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
   providers: [SpeakFasterService],
 })
-export class AppComponent implements OnInit {
+export class AppComponent implements OnInit, AfterViewInit {
   title = 'SpeakFasterApp';
+
+  @ViewChild('externalEvents')
+  externalEventsComponent!: ExternalEventsComponent;
 
   private endpoint: string = '';
   private accessToken: string = '';
+
+  textEntryBeginSubject: Subject<TextEntryBeginEvent> =
+      new Subject<TextEntryBeginEvent>();
+  textEntryEndSubject: Subject<TextEntryEndEvent> = new Subject();
 
   constructor(
       private route: ActivatedRoute,
@@ -25,6 +37,12 @@ export class AppComponent implements OnInit {
         console.log('SpeakFaster endpoint:', this.endpoint);
       }
     });
+  }
+
+  ngAfterViewInit() {
+    registerExternalKeypressCallback(
+        this.externalEventsComponent.externalKeypressCallback.bind(
+            this.externalEventsComponent));
   }
 
   onNewAccessToken(accessToken: string) {

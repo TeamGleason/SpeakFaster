@@ -55,24 +55,65 @@ fdescribe('ExternalEventsComponent', () => {
   });
 
   it('typing a key sends TextEntryBeginEvent', () => {
-    component.externalKeypressCallback(65);  // 'a'.
+    component.externalKeypressCallback(65);  // 'a'
     expect(beginEvents.length).toEqual(1);
   });
 
-  it('on TTS combo key, reconstructs text and sends end event', () => {
-    component.externalKeypressCallback(72);   // 'h'.
-    component.externalKeypressCallback(73);   // 'i'.
-    component.externalKeypressCallback(188);  // ','.
-    component.externalKeypressCallback(32);   // ' '.
-    component.externalKeypressCallback(87);   // 'w'
-    component.externalKeypressCallback(190);  // '.'
-    component.externalKeypressCallback(162);  // LCtrl
-    component.externalKeypressCallback(81);   // 'q'
-    expect(beginEvents.length).toEqual(1);
-    expect(endEvents.length).toEqual(1);
-    expect(endEvents[0].text).toEqual('hi, w.');
-    expect(endEvents[0].isFinal).toBeTrue();
-    expect(endEvents[0].timestampMillis)
-        .toBeGreaterThan(beginEvents[0].timestampMillis);
-  });
+  const vkCodesAndExpectedTextWithTestDescription:
+      Array<[string, number[], string]> = [
+        [
+          'letters, number, space and punctuation',
+          [72, 73, 188, 32, 87, 49, 190, 162, 81], 'hi, w1.'
+        ],
+        ['shift punctuation', [72, 73, 160, 186, 191, 162, 81], 'hi:/'],
+        ['repeating LCtrl key', [72, 73, 162, 162, 81], 'hi'],
+        ['with new lines', [72, 73, 188, 13, 87, 162, 81], 'hi,\nw'],
+        ['with backspace', [72, 73, 8, 72, 162, 81], 'hh'],
+        ['with left arrow and inserted char', [72, 73, 37, 65, 162, 81], 'hai'],
+        ['with left arrow and backspace', [72, 73, 37, 8, 162, 81], 'i'],
+        ['with noop left arrow', [39, 72, 73, 162, 81], 'hi'],
+        ['with noop right arrow', [72, 73, 39, 162, 81], 'hi'],
+        [
+          'with left & right arrow, inserted chars',
+          [72, 73, 37, 65, 39, 65, 162, 81], 'haia'
+        ],
+        ['home key', [72, 73, 188, 32, 36, 65, 66, 162, 81], 'abhi, '],
+        [
+          'home key and end key', [72, 73, 188, 32, 36, 65, 35, 66, 162, 81],
+          'ahi, b'
+        ],
+        [
+          'new line and home key', [72, 73, 188, 13, 87, 36, 65, 162, 81],
+          'hi,\naw'
+        ],
+        [
+          'new line, home and end key',
+          [72, 73, 188, 13, 87, 36, 35, 65, 162, 81], 'hi,\nwa'
+        ],
+        ['with noop home key', [36, 72, 73, 162, 81], 'hi'],
+        ['with noop end key', [72, 73, 35, 162, 81], 'hi'],
+        ['home and delete key', [72, 73, 188, 36, 46, 162, 81], 'i,'],
+        ['1 left arrow and 1 delete key', [72, 73, 188, 37, 46, 162, 81], 'hi'],
+        [
+          '2 left arrows and 1 delete key', [72, 73, 188, 37, 37, 46, 162, 81],
+          'h,'
+        ],
+      ];
+  for (const
+           [description,
+            vkCodes,
+            expectedText,
+  ] of vkCodesAndExpectedTextWithTestDescription) {
+    it(`reconstructs text and sends end event: ${description}`, () => {
+      for (const vkCode of vkCodes) {
+        component.externalKeypressCallback(vkCode);
+      }
+      expect(beginEvents.length).toEqual(1);
+      expect(endEvents.length).toEqual(1);
+      expect(endEvents[0].text).toEqual(expectedText);
+      expect(endEvents[0].isFinal).toBeTrue();
+      expect(endEvents[0].timestampMillis)
+          .toBeGreaterThanOrEqual(beginEvents[0].timestampMillis);
+    });
+  }
 });

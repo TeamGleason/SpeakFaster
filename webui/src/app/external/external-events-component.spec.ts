@@ -2,7 +2,7 @@ import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {By} from '@angular/platform-browser';
 import {Subject} from 'rxjs';
 
-import {TextEntryBeginEvent, TextEntryEndEvent} from '../types/text-injection';
+import {TextEntryBeginEvent, TextEntryEndEvent} from '../types/text-entry';
 
 import {ExternalEventsComponent, getPunctuationLiteral, VIRTUAL_KEY, VKCODE_SPECIAL_KEYS} from './external-events.component';
 import {ExternalEventsModule} from './external-events.module';

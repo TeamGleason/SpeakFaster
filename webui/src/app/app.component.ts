@@ -7,7 +7,7 @@ import {bindCefSharpListener, registerExternalKeypressCallback} from '../utils/c
 import {ExternalEventsComponent} from './external/external-events.component';
 import {SpeakFasterService} from './speakfaster-service';
 import {AbbreviationExpansionSelectionEvent, InputAbbreviationChangedEvent} from './types/abbreviations';
-import {TextEntryBeginEvent, TextEntryEndEvent} from './types/text-injection';
+import {TextEntryBeginEvent, TextEntryEndEvent} from './types/text-entry';
 
 @Component({
   selector: 'app-root',

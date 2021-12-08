@@ -1,7 +1,7 @@
 import {ChangeDetectorRef, Component, Input, OnInit} from '@angular/core';
 import {Subject} from 'rxjs';
 
-import {TextEntryBeginEvent, TextEntryEndEvent} from '../types/text-injection';
+import {TextEntryBeginEvent, TextEntryEndEvent} from '../types/text-entry';
 
 const ASSUMED_AVERAGE_WORD_LENGTH = 5;
 const MILLIS_PER_MINUTE = 60 * 1000;

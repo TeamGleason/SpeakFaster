@@ -19,7 +19,7 @@
 import {Component, Input} from '@angular/core';
 import {Subject} from 'rxjs';
 
-import {TextEntryBeginEvent, TextEntryEndEvent} from '../types/text-injection';
+import {TextEntryBeginEvent, TextEntryEndEvent} from '../types/text-entry';
 
 // The minimum delay between a preceeding keypress and an eye-gaze-triggered
 // keypress. This is also the maximum delay between a preceding keypress and a

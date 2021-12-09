@@ -2,7 +2,7 @@ import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {By} from '@angular/platform-browser';
 import {Subject} from 'rxjs';
 
-import {TextEntryBeginEvent, TextEntryEndEvent} from '../types/text-injection';
+import {TextEntryBeginEvent, TextEntryEndEvent} from '../types/text-entry';
 
 import {MetricsComponent} from './metrics.component';
 import {MetricsModule} from './metrics.module';

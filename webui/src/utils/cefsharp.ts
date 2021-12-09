@@ -70,5 +70,5 @@ export function updateButtonBoxForHtmlElements(
 export type ExternalKeypressCallback = (vkCode: number) => void;
 
 export function registerExternalKeypressCallback(callback: ExternalKeypressCallback) {
-  (window as any)["externalKeypressCallback"] = callback;
+  (window as any)["externalKeypressHook"] = callback;
 }

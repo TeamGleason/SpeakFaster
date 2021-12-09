@@ -3,7 +3,7 @@ import {Subject} from 'rxjs';
 import {updateButtonBoxForHtmlElements} from 'src/utils/cefsharp';
 
 import {SpeakFasterService} from '../speakfaster-service';
-import {TextEntryEndEvent} from '../types/text-injection';
+import {TextEntryEndEvent} from '../types/text-entry';
 
 @Component({
   selector: 'app-text-continuation-component',

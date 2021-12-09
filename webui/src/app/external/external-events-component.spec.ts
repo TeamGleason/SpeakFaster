@@ -2,7 +2,7 @@ import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {By} from '@angular/platform-browser';
 import {Subject} from 'rxjs';
 
-import {TextEntryBeginEvent, TextEntryEndEvent} from '../types/text-injection';
+import {TextEntryBeginEvent, TextEntryEndEvent} from '../types/text-entry';
 
 import {ExternalEventsComponent, getPunctuationLiteral, VIRTUAL_KEY, VKCODE_SPECIAL_KEYS} from './external-events.component';
 import {ExternalEventsModule} from './external-events.module';
@@ -34,6 +34,7 @@ fdescribe('ExternalEventsComponent', () => {
     fixture.componentInstance.textEntryBeginSubject = textEntryBeginSubject;
     fixture.componentInstance.textEntryEndSubject = textEntryEndSubject;
     fixture.detectChanges();
+    jasmine.getEnv().allowRespy(true);
   });
 
   it('Virtual key codes map has no duplicate values', () => {
@@ -55,7 +56,7 @@ fdescribe('ExternalEventsComponent', () => {
   });
 
   it('typing a key sends TextEntryBeginEvent', () => {
-    component.externalKeypressCallback(65);  // 'a'
+    component.externalKeypressHook(65);  // 'a'
     expect(beginEvents.length).toEqual(1);
   });
 
@@ -65,6 +66,7 @@ fdescribe('ExternalEventsComponent', () => {
           'letters, number, space and punctuation',
           [72, 73, 188, 32, 87, 49, 190, 162, 81], 'hi, w1.'
         ],
+        ['with exclamation point', [72, 73, 160, 49, 162, 81], 'hi!'],
         ['shift punctuation', [72, 73, 160, 186, 191, 162, 81], 'hi:/'],
         ['repeating LCtrl key', [72, 73, 162, 162, 81], 'hi'],
         ['with new lines', [72, 73, 188, 13, 87, 162, 81], 'hi,\nw'],
@@ -106,7 +108,7 @@ fdescribe('ExternalEventsComponent', () => {
   ] of vkCodesAndExpectedTextWithTestDescription) {
     it(`reconstructs text and sends end event: ${description}`, () => {
       for (const vkCode of vkCodes) {
-        component.externalKeypressCallback(vkCode);
+        component.externalKeypressHook(vkCode);
       }
       expect(beginEvents.length).toEqual(1);
       expect(endEvents.length).toEqual(1);
@@ -116,4 +118,59 @@ fdescribe('ExternalEventsComponent', () => {
           .toBeGreaterThanOrEqual(beginEvents[0].timestampMillis);
     });
   }
+
+
+  it('Correctly identifies human-entered and auto-injected keys', () => {
+    spyOn(Date, 'now').and.returnValue(0);
+    component.externalKeypressHook(65);  // Human-entered.
+    spyOn(Date, 'now').and.returnValue(1000);
+    component.externalKeypressHook(
+        66);  // Word completion selection by human.
+    spyOn(Date, 'now').and.returnValue(1010);
+    component.externalKeypressHook(67);  // Injected key.
+    spyOn(Date, 'now').and.returnValue(1020);
+    component.externalKeypressHook(68);  // Injected key.
+    spyOn(Date, 'now').and.returnValue(1030);
+    component.externalKeypressHook(32);  // Injected key.
+    spyOn(Date, 'now').and.returnValue(2000);
+    component.externalKeypressHook(
+        69);  // Word completion selection by human.
+    spyOn(Date, 'now').and.returnValue(2010);
+    component.externalKeypressHook(70);  // Injected key.
+    spyOn(Date, 'now').and.returnValue(3000);
+    component.externalKeypressHook(162);  // Human-entered.
+    spyOn(Date, 'now').and.returnValue(3600);
+    component.externalKeypressHook(81);  // Human-entered.
+    expect(beginEvents.length).toEqual(1);
+    expect(endEvents.length).toEqual(1);
+    expect(endEvents[0].text).toEqual('abcd ef');
+    expect(endEvents[0].numHumanKeypresses).toEqual(5);
+  });
+
+  it('Correct resets human-entered keypress after previous end event', () => {
+    spyOn(Date, 'now').and.returnValue(0);
+    component.externalKeypressHook(65);  // Human-entered.
+    spyOn(Date, 'now').and.returnValue(1000);
+    component.externalKeypressHook(162);  // Human-entered.
+    spyOn(Date, 'now').and.returnValue(2000);
+    component.externalKeypressHook(81);  // Human-entered.
+    // Ends first phrase; begins second one.
+    spyOn(Date, 'now').and.returnValue(3000);
+    component.externalKeypressHook(65);  // Human-entered.
+    spyOn(Date, 'now').and.returnValue(4000);
+    component.externalKeypressHook(
+        66);  // Word completion selection by human.
+    spyOn(Date, 'now').and.returnValue(4010);
+    component.externalKeypressHook(67);  // Injected key.
+    spyOn(Date, 'now').and.returnValue(5000);
+    component.externalKeypressHook(162);  // Human-entered.
+    spyOn(Date, 'now').and.returnValue(6000);
+    component.externalKeypressHook(81);  // Human-entered.
+    expect(beginEvents.length).toEqual(2);
+    expect(endEvents.length).toEqual(2);
+    expect(endEvents[0].text).toEqual('a');
+    expect(endEvents[0].numHumanKeypresses).toEqual(3);
+    expect(endEvents[1].text).toEqual('abc');
+    expect(endEvents[1].numHumanKeypresses).toEqual(4);
+  });
 });

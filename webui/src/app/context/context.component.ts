@@ -5,7 +5,7 @@ import {createUuid} from '../..//utils/uuid';
 import {updateButtonBoxes} from '../../utils/cefsharp';
 import {KeyboardComponent} from '../keyboard/keyboard.component';
 import {ContextSignal, SpeakFasterService} from '../speakfaster-service';
-import {TextEntryEndEvent} from '../types/text-injection';
+import {TextEntryEndEvent} from '../types/text-entry';
 
 import {ConversationTurnComponent} from './conversation-turn.component';
 import {DEFAULT_CONTEXT_SIGNALS} from './default-context';

@@ -279,24 +279,13 @@ export class ExternalEventsComponent {
 
   private getHomeKeyDestination(): number {
     let p = this.cursorPos;
-    while (p > 0) {
-      if (this.text[p - 1] === '\n') {
-        return p;
-      }
-      p--;
-    }
-    return p;
+    const indexNewLine = this.text.lastIndexOf("\n", this.cursorPos);
+    return indexNewLine === -1 ? 0 : indexNewLine + 1;
   }
 
   private getEndKeyDestination(): number {
-    let p = this.cursorPos;
-    while (p < this.text.length) {
-      if (this.text[p + 1] === '\n') {
-        return p;
-      }
-      p++;
-    }
-    return p;
+    const indexNewLine = this.text.indexOf("\n", this.cursorPos);
+    return indexNewLine === -1 ? this.text.length : indexNewLine - 1;
   }
 
   private reset() {

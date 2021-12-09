@@ -4,15 +4,15 @@
  *
  * Test commands in DevTools console:
  * ```javascript
- * externalKeypressCallback(72);  // h
- * externalKeypressCallback(73);  // i
- * externalKeypressCallback(32);  // space
- * externalKeypressCallback(80);  // p
- * externalKeypressCallback(65);  // a
- * externalKeypressCallback(76);  // l
- * externalKeypressCallback(190);  // .
- * externalKeypressCallback(162);  // LCtrl
- * externalKeypressCallback(81);  // Q
+ * externalKeypressHook(72);  // h
+ * externalKeypressHook(73);  // i
+ * externalKeypressHook(32);  // space
+ * externalKeypressHook(80);  // p
+ * externalKeypressHook(65);  // a
+ * externalKeypressHook(76);  // l
+ * externalKeypressHook(190);  // .
+ * externalKeypressHook(162);  // LCtrl
+ * externalKeypressHook(81);  // Q
  * ```
  */
 
@@ -117,6 +117,34 @@ export function getPunctuationLiteral(
   }
 }
 
+export function getNumOrPunctuationLiteral(
+    vkCode: number, isShift: boolean): string {
+  switch (vkCode) {
+    case 48:
+      return isShift ? ')' : '0';
+    case 49:
+      return isShift ? '!' : '1';
+    case 50:
+      return isShift ? '@' : '2';
+    case 51:
+      return isShift ? '#' : '3';
+    case 52:
+      return isShift ? '$' : '4';
+    case 53:
+      return isShift ? '%' : '5';
+    case 54:
+      return isShift ? '^' : '6';
+    case 55:
+      return isShift ? '&' : '7';
+    case 56:
+      return isShift ? '*' : '8';
+    case 56:
+      return isShift ? '(' : '9';
+    default:
+      throw new Error(`Invalid key code for number keys: ${vkCode}`);
+  }
+}
+
 function allItemsEqual(array1: string[], array2: string[]): boolean {
   if (array1.length !== array2.length) {
     return false;
@@ -151,7 +179,7 @@ export class ExternalEventsComponent {
 
   ExternalEvewntsComponent() {}
 
-  public externalKeypressCallback(vkCode: number) {
+  public externalKeypressHook(vkCode: number) {
     const virtualKey = getKeyFromVirtualKeyCode(vkCode);
     if (virtualKey === null) {
       return;
@@ -181,9 +209,12 @@ export class ExternalEventsComponent {
       return;
     }
     const originallyEmpty = this.text === '';
-    if (virtualKey.length === 1 && (virtualKey >= 'a' && virtualKey <= 'z') ||
-        (virtualKey >= '0' && virtualKey <= '9')) {
+    if (virtualKey.length === 1 && (virtualKey >= 'a' && virtualKey <= 'z')) {
       this.insertCharAsCursorPos(virtualKey);
+    } else if (
+        virtualKey.length === 1 && (virtualKey >= '0' && virtualKey <= '9')) {
+      this.insertCharAsCursorPos(
+          getNumOrPunctuationLiteral(vkCode, this.isShiftOn));
     } else if (virtualKey === VIRTUAL_KEY.SPACE) {
       this.insertCharAsCursorPos(' ');
     } else if (virtualKey === VIRTUAL_KEY.ENTER) {
@@ -232,7 +263,7 @@ export class ExternalEventsComponent {
     // TODO(cais): Take care of selection state, including Ctrl+A.
     // TODO(cais): Take care of Shift+Backspace and Shift+Delete.
     console.log(
-        `externalKeypressCallback(): virtualKey=${virtualKey}; ` +
+        `externalKeypressHook(): virtualKey=${virtualKey}; ` +
         `text="${this.text}"; cursorPos=${this.cursorPos}`);
   }
 

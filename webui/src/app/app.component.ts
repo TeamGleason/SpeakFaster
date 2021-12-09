@@ -41,7 +41,7 @@ export class AppComponent implements OnInit, AfterViewInit {
 
   ngAfterViewInit() {
     registerExternalKeypressCallback(
-        this.externalEventsComponent.externalKeypressCallback.bind(
+        this.externalEventsComponent.externalKeypressHook.bind(
             this.externalEventsComponent));
   }
 

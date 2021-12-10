@@ -123,7 +123,7 @@ class DataManager(object):
       self._run_command_line(["aws", "--version"])
     except subprocess.CalledProcessError:
       raise ValueError(
-          "It appears that you don't have aws cli install. "
+          "It appears that you don't have aws cli installed and on the path. "
           "Please install it and make sure it is on the path.")
 
   def get_session_container_prefixes(self):

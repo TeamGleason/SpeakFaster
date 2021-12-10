@@ -11,7 +11,10 @@ describe('AppComponent', () => {
     await TestBed
         .configureTestingModule({
           imports: [
-            RouterTestingModule, AuthModule, ExternalEventsModule, MetricsModule
+            AuthModule,
+            ExternalEventsModule,
+            MetricsModule,
+            RouterTestingModule,
           ],
           declarations: [AppComponent],
         })

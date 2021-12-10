@@ -1,7 +1,7 @@
 /** Utilites for communication with CefSharp host (if exists.) */
 
-export type ExternalKeypressCallback = (vkCode: number) => void;
+export type ExternalKeypressHook = (vkCode: number) => void;
 
-export function registerExternalKeypressCallback(callback: ExternalKeypressCallback) {
+export function registerExternalKeypressHook(callback: ExternalKeypressHook) {
   (window as any)["externalKeypressHook"] = callback;
 }

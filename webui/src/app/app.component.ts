@@ -2,7 +2,7 @@ import {AfterViewInit, Component, OnInit, ViewChild} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
 import {Subject} from 'rxjs';
 
-import {bindCefSharpListener, registerExternalKeypressCallback} from '../utils/cefsharp';
+import {bindCefSharpListener, registerExternalKeypressHook} from '../utils/cefsharp';
 
 import {ExternalEventsComponent} from './external/external-events.component';
 import {SpeakFasterService} from './speakfaster-service';
@@ -56,7 +56,7 @@ export class AppComponent implements OnInit, AfterViewInit {
   }
 
   ngAfterViewInit() {
-    registerExternalKeypressCallback(
+    registerExternalKeypressHook(
         this.externalEventsComponent.externalKeypressHook.bind(
             this.externalEventsComponent));
   }

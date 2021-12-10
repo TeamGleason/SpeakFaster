@@ -22,7 +22,6 @@ import pytz
 import subprocess
 import sys
 import tempfile
-import time
 
 import boto3
 import PySimpleGUI as sg
@@ -77,11 +76,11 @@ def _get_timezone(readable_timezone_name):
   elif ("Mountain Time (US & Canada)" in readable_timezone_name or
         readable_timezone_name == "US/Mountain"):
     return "US/Mountain"
-  elif ("Pacific Time (US & Canada)" in readable_timezone_Name or
+  elif ("Pacific Time (US & Canada)" in readable_timezone_name or
         readable_timezone_name == "US/Pacific"):
     return "US/Pacific"
   else:
-    raise ValueError("Unimplemented time zone: %s" % time_zone)
+    raise ValueError("Unimplemented time zone: %s" % readable_timezone_name)
 
 
 def find_speaker_id_config_json():
@@ -117,6 +116,15 @@ class DataManager(object):
     self._speaker_id_config_json_path = find_speaker_id_config_json()
     self._session_keypresses_per_second = None
     self._manual_timezone_name = None
+    self._check_aws_cli()
+
+  def _check_aws_cli(self):
+    try:
+      self._run_command_line(["aws", "--version"])
+    except subprocess.CalledProcessError:
+      raise ValueError(
+          "It appears that you don't have aws cli installed and on the path. "
+          "Please install it and make sure it is on the path.")
 
   def get_session_container_prefixes(self):
     """Find the prefixes that hold the session folders as children.
@@ -306,8 +314,6 @@ class DataManager(object):
     if not os.path.isdir(local_dest_dir):
       return "NOT_DOWNLOADED"
     else:
-      session_end_bin_path = glob.glob(os.path.join(
-          local_dest_dir, "*-SessionEnd.bin"))
       if (self._nonempty_file_exists(
               local_dest_dir, file_naming.CURATED_PROCESSED_JSON_FILENAME) and
           self._nonempty_file_exists(

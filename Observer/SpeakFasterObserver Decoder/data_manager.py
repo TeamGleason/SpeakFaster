@@ -399,9 +399,8 @@ class DataManager(object):
         "aws", "s3", "sync", "--profile=%s" % self._aws_profile_name,
         local_dest_dir, "s3://" + self._s3_bucket_name + "/" + session_prefix,
         "--exclude=*", "--include=*.tsv",
-        "--include=%s" % file_naming.CURATED_PROCESSED_JSON_FILENAME,
-        "--include=%s" % file_naming.CURATED_PROCESSED_TSV_FILENAME,
-        "--include=%s" % file_naming.CURATED_PROCESSED_SPEECH_ONLY_TSV_FILENAME]
+        "--include=%s" % file_naming.CONCATENATED_AUDIO_FILENAME,
+        "--include=%s" % file_naming.SCREENSHOTS_MP4_FILENAME]
     self._run_command_line(command_args)
     print("Done uploading the preprocessing results for session %s" %
           session_prefix)

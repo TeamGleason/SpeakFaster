@@ -19,7 +19,8 @@ It is recommended to use VSCode as the code editor for this project.
 ### Serving app locally
 
 ```sh
-cd webuiz
+cd webui
+npm install
 ng serve
 ```
 

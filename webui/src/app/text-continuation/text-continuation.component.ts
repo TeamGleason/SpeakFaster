@@ -1,6 +1,6 @@
 import {AfterViewInit, Component, ElementRef, EventEmitter, Input, OnChanges, OnInit, Output, QueryList, SimpleChange, SimpleChanges, ViewChildren} from '@angular/core';
 import {Subject} from 'rxjs';
-import {updateButtonBoxForHtmlElements} from 'src/utils/cefsharp';
+import {updateButtonBoxesForElements} from 'src/utils/cefsharp';
 import {createUuid} from 'src/utils/uuid';
 
 import {SpeakFasterService} from '../speakfaster-service';
@@ -32,10 +32,8 @@ export class TextContinuationComponent implements AfterViewInit, OnChanges {
   ngAfterViewInit() {
     this.buttons.changes.subscribe(
         (queryList: QueryList<ElementRef<HTMLButtonElement>>) => {
-          setTimeout(
-              () => updateButtonBoxForHtmlElements(
-                  TextContinuationComponent._NAME + this.instanceId, queryList),
-              20);
+          updateButtonBoxesForElements(
+              TextContinuationComponent._NAME + this.instanceId, queryList);
         });
   }
 

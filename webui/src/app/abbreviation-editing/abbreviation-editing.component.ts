@@ -1,6 +1,6 @@
 import {AfterViewInit, Component, ElementRef, EventEmitter, Input, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
 import {Subject} from 'rxjs';
-import {updateButtonBoxForHtmlElements} from 'src/utils/cefsharp';
+import {updateButtonBoxesForElements} from 'src/utils/cefsharp';
 import {createUuid} from 'src/utils/uuid';
 
 import {isTextContentKey} from '../../utils/keyboard-utils';
@@ -56,11 +56,8 @@ export class AbbreviationEditingComponent implements OnInit, AfterViewInit {
   ngAfterViewInit() {
     this.buttons.changes.subscribe(
         (queryList: QueryList<ElementRef<HTMLButtonElement>>) => {
-          setTimeout(
-              () => updateButtonBoxForHtmlElements(
-                  AbbreviationEditingComponent._NAME + this.instanceId,
-                  queryList),
-              20);
+          updateButtonBoxesForElements(
+              AbbreviationEditingComponent._NAME + this.instanceId, queryList);
         });
   }
 

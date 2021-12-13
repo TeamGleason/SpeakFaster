@@ -3,7 +3,7 @@ import {Subject} from 'rxjs';
 import {limitStringLength} from 'src/utils/text-utils';
 import {createUuid} from 'src/utils/uuid';
 
-import {updateButtonBoxForHtmlElements} from '../../utils/cefsharp';
+import {updateButtonBoxesForElements} from '../../utils/cefsharp';
 import {isPlainAlphanumericKey, isTextContentKey} from '../../utils/keyboard-utils';
 import {KeyboardComponent} from '../keyboard/keyboard.component';
 import {SpeakFasterService} from '../speakfaster-service';
@@ -74,12 +74,8 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
   ngAfterViewInit() {
     this.clickableButtons.changes.subscribe(
         (queryList: QueryList<ElementRef>) => {
-          setTimeout(() => {
-            updateButtonBoxForHtmlElements(
-                AbbreviationComponent._NAME + this.instanceId, queryList);
-          }, 20);
-          // TODO(cais): Can we get rid of this ugly hack? The position of the
-          // elements change during layout.
+          updateButtonBoxesForElements(
+              AbbreviationComponent._NAME + this.instanceId, queryList);
         });
   }
 

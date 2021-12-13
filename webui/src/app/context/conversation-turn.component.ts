@@ -1,7 +1,7 @@
 import {AfterViewInit, Component, ElementRef, Input, QueryList, ViewChild, ViewChildren} from '@angular/core';
-import { createUuid } from 'src/utils/uuid';
+import {createUuid} from 'src/utils/uuid';
 
-import {updateButtonBoxForHtmlElements} from '../../utils/cefsharp';
+import {updateButtonBoxesForElements} from '../../utils/cefsharp';
 import {getAgoString} from '../../utils/datetime-utils';
 import {limitStringLength} from '../../utils/text-utils';
 import {ConversationTurn} from '../speakfaster-service';
@@ -54,12 +54,8 @@ export class ConversationTurnComponent implements AfterViewInit {
           0.45);
     }
     contentElement.style.fontSize = `${fontSizePx.toFixed(1)}px`;
-    setTimeout(() => {
-      console.log('Calling updateButtonBoxForHtmlElements()');  // DEBUG
-      // TODO(cais): Address the issue of multiple instances.
-      updateButtonBoxForHtmlElements(
-          ConversationTurnComponent._NAME + this.instanceId, this.buttons);
-    }, 20);
+    updateButtonBoxesForElements(
+        ConversationTurnComponent._NAME + this.instanceId, this.buttons);
   }
 
   // Returns left, top, right, bottom.

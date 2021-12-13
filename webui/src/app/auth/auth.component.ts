@@ -3,7 +3,7 @@ import {MatSnackBar, MatSnackBarConfig} from '@angular/material/snack-bar';
 import {ActivatedRoute} from '@angular/router';
 import {createUuid} from 'src/utils/uuid';
 
-import {registerNewAccessToken, updateButtonBoxesToEmpty, updateButtonBoxForHtmlElements} from '../../utils/cefsharp';
+import {registerNewAccessToken, updateButtonBoxesToEmpty, updateButtonBoxesForElements} from '../../utils/cefsharp';
 import {isPlainAlphanumericKey} from '../../utils/keyboard-utils';
 import {KeyboardComponent} from '../keyboard/keyboard.component';
 
@@ -56,10 +56,8 @@ export class AuthComponent implements OnInit, AfterViewInit, OnDestroy {
     }, 10);
     this.clickableButtons.changes.subscribe(
         (queryList: QueryList<ElementRef<HTMLElement>>) => {
-          setTimeout(
-              () => updateButtonBoxForHtmlElements(
-                  AuthComponent._NAME + this.instanceId, queryList),
-              20);
+          updateButtonBoxesForElements(
+              AuthComponent._NAME + this.instanceId, queryList);
         });
   }
 

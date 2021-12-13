@@ -57,14 +57,18 @@ export function updateButtonBoxesToEmpty(componentName: string) {
   updateButtonBoxes(componentName, []);
 }
 
-export function updateButtonBoxForHtmlElements(
+export function updateButtonBoxesForElements(
     componentName: string, queryList: QueryList<ElementRef<any>>) {
-  const boxes: Array<[number, number, number, number]> = [];
-  queryList.forEach(elementRef => {
-    const box = elementRef.nativeElement.getBoundingClientRect();
-    boxes.push([box.left, box.top, box.right, box.bottom]);
-  });
-  updateButtonBoxes(componentName, boxes);
+  // Use setTimeout() to execute this asynchronously, so the elements' positions
+  // may have a chance to stabilize.
+  setTimeout(() => {
+    const boxes: Array<[number, number, number, number]> = [];
+    queryList.forEach(elementRef => {
+      const box = elementRef.nativeElement.getBoundingClientRect();
+      boxes.push([box.left, box.top, box.right, box.bottom]);
+    });
+    updateButtonBoxes(componentName, boxes);
+  }, 0);
 }
 
 export type ExternalKeypressHook = (vkCode: number) => void;

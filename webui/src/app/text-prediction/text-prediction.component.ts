@@ -41,6 +41,10 @@ export class TextPredictionComponent implements AfterViewInit, OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges) {
+    if (this.buttons != null) {
+      updateButtonBoxesForElements(
+          TextPredictionComponent._NAME + this.instanceId, this.buttons);
+    }
     if (!changes['textPrefix']) {
       return;
     }

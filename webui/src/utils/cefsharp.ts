@@ -42,10 +42,12 @@ export function callOnDomChange() {
   console.log('Called onDomChange()');
 }
 
+/** TODO(cais): Add doc string. */
 export function updateButtonBoxesForElements(
     componentName: string, queryList: QueryList<ElementRef<any>>) {
-  // Use setTimeout() to execute this asynchronously, so the elements' positions
-  // may have a chance to stabilize.
+  // Use setTimeout() to execute the logic asynchronously, so the elements'
+  // positions may have a chance to stabilize. In some cases, the positions of
+  // the elements need time to stop updating since the call to this function.
   setTimeout(() => {
     const boxes: Array<[number, number, number, number]> = [];
     queryList.forEach(elementRef => {
@@ -53,7 +55,7 @@ export function updateButtonBoxesForElements(
       boxes.push([box.left, box.top, box.right, box.bottom]);
     });
     updateButtonBoxes(componentName, boxes);
-  }, 20);
+  }, 0);
 }
 
 export function updateButtonBoxesToEmpty(componentName: string) {

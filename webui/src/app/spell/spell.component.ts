@@ -1,6 +1,6 @@
 import {AfterViewInit, Component, ElementRef, EventEmitter, Input, OnDestroy, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
 import {Subject} from 'rxjs';
-import {updateButtonBoxesToEmpty, updateButtonBoxesForElements} from 'src/utils/cefsharp';
+import {updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
 import {createUuid} from 'src/utils/uuid';
 
 import {isPlainAlphanumericKey, isTextContentKey} from '../../utils/keyboard-utils';
@@ -55,10 +55,8 @@ export class SpellComponent implements OnInit, AfterViewInit, OnDestroy {
   ngAfterViewInit() {
     this.clickableButtons.changes.subscribe(
         (queryList: QueryList<ElementRef<HTMLButtonElement>>) => {
-          setTimeout(() => {
-            updateButtonBoxesForElements(
-                SpellComponent._NAME + this.instanceId, queryList);
-          }, 20);
+          updateButtonBoxesForElements(
+              SpellComponent._NAME + this.instanceId, queryList);
         });
   }
 

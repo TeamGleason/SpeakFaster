@@ -57,11 +57,4 @@ export class ConversationTurnComponent implements AfterViewInit {
     updateButtonBoxesForElements(
         ConversationTurnComponent._NAME + this.instanceId, this.buttons);
   }
-
-  // Returns left, top, right, bottom.
-  // getBox(): [number, number, number, number] {
-  //   // console.log('button viewButton:', this.viewButton)
-  //   const rect = this.viewButton.nativeElement.getBoundingClientRect();
-  //   return [rect.left, rect.top, rect.right, rect.bottom];
-  // }
 }

@@ -1,4 +1,5 @@
 import {AfterViewInit, Component, ElementRef, Input, QueryList, ViewChild, ViewChildren} from '@angular/core';
+import { createUuid } from 'src/utils/uuid';
 
 import {updateButtonBoxForHtmlElements} from '../../utils/cefsharp';
 import {getAgoString} from '../../utils/datetime-utils';
@@ -17,6 +18,7 @@ export class ConversationTurnComponent implements AfterViewInit {
   private static readonly BASE_FONT_SIZE_PX = 24;
   private static readonly FONT_SCALING_LENGTH_THRESHOLD = 45;
 
+  private readonly instanceId = createUuid();
   @Input() turn!: ConversationTurn;
   @Input() isFocus: boolean = false;
   @ViewChildren('button') buttons!: QueryList<ElementRef<HTMLButtonElement>>;
@@ -56,7 +58,7 @@ export class ConversationTurnComponent implements AfterViewInit {
       console.log('Calling updateButtonBoxForHtmlElements()');  // DEBUG
       // TODO(cais): Address the issue of multiple instances.
       updateButtonBoxForHtmlElements(
-          ConversationTurnComponent._NAME, this.buttons);
+          ConversationTurnComponent._NAME + this.instanceId, this.buttons);
     }, 20);
   }
 

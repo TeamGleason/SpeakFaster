@@ -1,6 +1,7 @@
 import {AfterViewInit, Component, ElementRef, EventEmitter, Input, OnChanges, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
 import {Subject} from 'rxjs';
 import {limitStringLength} from 'src/utils/text-utils';
+import {createUuid} from 'src/utils/uuid';
 
 import {updateButtonBoxForHtmlElements} from '../../utils/cefsharp';
 import {isPlainAlphanumericKey, isTextContentKey} from '../../utils/keyboard-utils';
@@ -25,7 +26,7 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
   private static readonly _TOKEN_REPLACEMENT_KEYBOARD_CALLBACK_NAME =
       'AbbreviationComponent_TokenReplacementKeyboardCallbackName';
   private static readonly _MAX_NUM_REPLACEMENT_TOKENS = 6;
-
+  private readonly instanceId = createUuid();
   @Input() endpoint!: string;
   @Input() accessToken!: string;
   @Input() contextStrings!: string[];
@@ -75,7 +76,7 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
         (queryList: QueryList<ElementRef>) => {
           setTimeout(() => {
             updateButtonBoxForHtmlElements(
-                AbbreviationComponent._NAME, queryList);
+                AbbreviationComponent._NAME + this.instanceId, queryList);
           }, 20);
           // TODO(cais): Can we get rid of this ugly hack? The position of the
           // elements change during layout.

@@ -1,6 +1,7 @@
 import {AfterViewInit, Component, ElementRef, EventEmitter, OnDestroy, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
 import {MatSnackBar, MatSnackBarConfig} from '@angular/material/snack-bar';
 import {ActivatedRoute} from '@angular/router';
+import {createUuid} from 'src/utils/uuid';
 
 import {registerNewAccessToken, updateButtonBoxesToEmpty, updateButtonBoxForHtmlElements} from '../../utils/cefsharp';
 import {isPlainAlphanumericKey} from '../../utils/keyboard-utils';
@@ -22,6 +23,7 @@ export class AuthComponent implements OnInit, AfterViewInit, OnDestroy {
   refreshToken = '';
   showAuthButton = false;
 
+  private readonly instanceId = createUuid();
   private refreshTokenIntervalSeconds = 60 * 5;
   private shouldStopRefreshToken = false;
 
@@ -56,7 +58,7 @@ export class AuthComponent implements OnInit, AfterViewInit, OnDestroy {
         (queryList: QueryList<ElementRef<HTMLElement>>) => {
           setTimeout(
               () => updateButtonBoxForHtmlElements(
-                  AuthComponent._NAME, queryList),
+                  AuthComponent._NAME + this.instanceId, queryList),
               20);
         });
   }

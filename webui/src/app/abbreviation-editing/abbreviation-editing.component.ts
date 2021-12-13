@@ -1,6 +1,7 @@
 import {AfterViewInit, Component, ElementRef, EventEmitter, Input, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
 import {Subject} from 'rxjs';
 import {updateButtonBoxForHtmlElements} from 'src/utils/cefsharp';
+import {createUuid} from 'src/utils/uuid';
 
 import {isTextContentKey} from '../../utils/keyboard-utils';
 import {KeyboardComponent} from '../keyboard/keyboard.component';
@@ -20,6 +21,7 @@ enum State {
 export class AbbreviationEditingComponent implements OnInit, AfterViewInit {
   private static readonly _NAME = 'AbbreviationEditingComponent';
 
+  private readonly instanceId = createUuid();
   @Input() textInjectionSubject!: Subject<TextEntryEndEvent>;
   @Input() textEntryBeginSubject!: Subject<TextEntryBeginEvent>;
   @Output()
@@ -56,7 +58,8 @@ export class AbbreviationEditingComponent implements OnInit, AfterViewInit {
         (queryList: QueryList<ElementRef<HTMLButtonElement>>) => {
           setTimeout(
               () => updateButtonBoxForHtmlElements(
-                  AbbreviationEditingComponent._NAME, queryList),
+                  AbbreviationEditingComponent._NAME + this.instanceId,
+                  queryList),
               20);
         });
   }
@@ -116,7 +119,8 @@ export class AbbreviationEditingComponent implements OnInit, AfterViewInit {
   }
 
   onExpandAbbreviationButtonClicked(event: Event) {
-    if (this.state != State.ENTERING_ABBREVIATION || this.inputAbbreviation.indexOf(' ') !== -1) {
+    if (this.state != State.ENTERING_ABBREVIATION ||
+        this.inputAbbreviation.indexOf(' ') !== -1) {
       return;
     }
     const abbreviationSpec: AbbreviationSpec = {
@@ -127,7 +131,7 @@ export class AbbreviationEditingComponent implements OnInit, AfterViewInit {
       readableString: this.inputAbbreviation,
     };
     this.inputAbbreviationChanged.emit(
-      {abbreviationSpec, triggerExpansion: true});
+        {abbreviationSpec, triggerExpansion: true});
   }
 
   onSpellButtonClicked(event: Event) {

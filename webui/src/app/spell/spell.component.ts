@@ -1,6 +1,7 @@
 import {AfterViewInit, Component, ElementRef, EventEmitter, Input, OnDestroy, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
 import {Subject} from 'rxjs';
 import {updateButtonBoxesToEmpty, updateButtonBoxForHtmlElements} from 'src/utils/cefsharp';
+import {createUuid} from 'src/utils/uuid';
 
 import {isPlainAlphanumericKey, isTextContentKey} from '../../utils/keyboard-utils';
 import {KeyboardComponent} from '../keyboard/keyboard.component';
@@ -20,6 +21,7 @@ enum SpellingState {
 export class SpellComponent implements OnInit, AfterViewInit, OnDestroy {
   private static readonly _NAME = 'SpellComponent';
 
+  private readonly instanceId = createUuid();
   @Input() spellIndex: number|null = null;
   @Input() startSpellingSubject!: Subject<StartSpellingEvent>;
   @Output()
@@ -54,7 +56,8 @@ export class SpellComponent implements OnInit, AfterViewInit, OnDestroy {
     this.clickableButtons.changes.subscribe(
         (queryList: QueryList<ElementRef<HTMLButtonElement>>) => {
           setTimeout(() => {
-            updateButtonBoxForHtmlElements(SpellComponent._NAME, queryList);
+            updateButtonBoxForHtmlElements(
+                SpellComponent._NAME + this.instanceId, queryList);
           }, 20);
         });
   }

@@ -1,6 +1,6 @@
 import {AfterViewInit, Component, ElementRef, EventEmitter, Input, OnDestroy, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
 import {Subject} from 'rxjs';
-import {updateButtonBoxes, updateButtonBoxForHtmlElements} from 'src/utils/cefsharp';
+import {updateButtonBoxesToEmpty, updateButtonBoxForHtmlElements} from 'src/utils/cefsharp';
 
 import {isPlainAlphanumericKey, isTextContentKey} from '../../utils/keyboard-utils';
 import {KeyboardComponent} from '../keyboard/keyboard.component';
@@ -135,7 +135,7 @@ export class SpellComponent implements OnInit, AfterViewInit, OnDestroy {
     KeyboardComponent.unregisterCallback(SpellComponent._NAME);
     this.newAbbreviationSpec.emit(this.reconstructAbbreviation());
     this.spellIndex = null;
-    updateButtonBoxes(SpellComponent._NAME, []);
+    updateButtonBoxesToEmpty(SpellComponent._NAME);
   }
 
   private reconstructAbbreviation(): AbbreviationSpec {

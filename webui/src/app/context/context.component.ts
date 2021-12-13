@@ -1,8 +1,8 @@
-import {AfterViewInit, Component, EventEmitter, Input, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
+import {AfterViewInit, Component, ElementRef, EventEmitter, Input, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
 import {Subject, timer} from 'rxjs';
 
 import {createUuid} from '../..//utils/uuid';
-import {updateButtonBoxes} from '../../utils/cefsharp';
+import {updateButtonBoxForHtmlElements} from '../../utils/cefsharp';
 import {KeyboardComponent} from '../keyboard/keyboard.component';
 import {ContextSignal, SpeakFasterService} from '../speakfaster-service';
 import {TextEntryEndEvent} from '../types/text-entry';
@@ -65,21 +65,21 @@ export class ContextComponent implements OnInit, AfterViewInit {
   }
 
   ngAfterViewInit() {
-    this.viewButtons.changes.subscribe(
-        (r: QueryList<ConversationTurnComponent>) => {
-          setTimeout(() => {
-            const boxes: Array<[number, number, number, number]> = [];
-            r.forEach((element) => {
-              boxes.push(element.getBox());
-            })
-            updateButtonBoxes(ContextComponent._NAME, boxes);
-          }, 20);
-        });
+    // this.viewButtons.changes.subscribe(
+    //     (r: QueryList<ElementRef<ConversationTurnComponent>>) => {
+    //       setTimeout(() => {
+    //         // const boxes: Array<[number, number, number, number]> = [];
+    //         // r.forEach((element) => {
+    //         //   boxes.push(element.getBox());
+    //         // })
+    //         // updateButtonBoxes(ContextComponent._NAME, boxes);
+    //         updateButtonBoxForHtmlElements(ContextComponent._NAME, r);
+    //       }, 20);
+    //     });
     timer(50, ContextComponent.CONTEXT_POLLING_INTERVAL_MILLIS)
         .subscribe(() => {
           this.retrieveContext();
         });
-    // TODO(cais): Do not hardcode delay.
   }
 
   isContextInFocus(contextId: string): boolean {

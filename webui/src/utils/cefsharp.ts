@@ -45,7 +45,7 @@ export function updateButtonBoxes(
     componentName: string, boxes: Array<[number, number, number, number]>) {
   console.log(`updateButtonBoxes(): ${componentName}:`, JSON.stringify(boxes));
   if ((window as any)[BOUND_LISTENER_NAME] == null) {
-    console.warn(`Cannot call onDomChange(), because object ${
+    console.warn(`Cannot call updateButtonBoxes(), because object ${
         BOUND_LISTENER_NAME} is not found`)
     return;
   }
@@ -58,7 +58,7 @@ export function updateButtonBoxesToEmpty(componentName: string) {
 }
 
 export function updateButtonBoxForHtmlElements(
-    componentName: string, queryList: QueryList<ElementRef<HTMLElement>>) {
+    componentName: string, queryList: QueryList<ElementRef<any>>) {
   const boxes: Array<[number, number, number, number]> = [];
   queryList.forEach(elementRef => {
     const box = elementRef.nativeElement.getBoundingClientRect();
@@ -70,5 +70,5 @@ export function updateButtonBoxForHtmlElements(
 export type ExternalKeypressHook = (vkCode: number) => void;
 
 export function registerExternalKeypressHook(callback: ExternalKeypressHook) {
-  (window as any)["externalKeypressHook"] = callback;
+  (window as any)['externalKeypressHook'] = callback;
 }

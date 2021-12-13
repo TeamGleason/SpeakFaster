@@ -1,5 +1,6 @@
-import {AfterViewInit, Component, ElementRef, Input, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, ElementRef, Input, QueryList, ViewChild, ViewChildren} from '@angular/core';
 
+import {updateButtonBoxForHtmlElements} from '../../utils/cefsharp';
 import {getAgoString} from '../../utils/datetime-utils';
 import {limitStringLength} from '../../utils/text-utils';
 import {ConversationTurn} from '../speakfaster-service';
@@ -18,7 +19,7 @@ export class ConversationTurnComponent implements AfterViewInit {
 
   @Input() turn!: ConversationTurn;
   @Input() isFocus: boolean = false;
-  @ViewChild('button') viewButton!: ElementRef;
+  @ViewChildren('button') buttons!: QueryList<ElementRef<HTMLButtonElement>>;
   @ViewChild('turnContent') turnContentElement!: ElementRef;
 
   constructor() {}
@@ -47,15 +48,22 @@ export class ConversationTurnComponent implements AfterViewInit {
         ConversationTurnComponent.FONT_SCALING_LENGTH_THRESHOLD) {
       fontSizePx /= Math.pow(
           (this.turn.speechContent.length /
-           ConversationTurnComponent.FONT_SCALING_LENGTH_THRESHOLD), 0.45);
+           ConversationTurnComponent.FONT_SCALING_LENGTH_THRESHOLD),
+          0.45);
     }
     contentElement.style.fontSize = `${fontSizePx.toFixed(1)}px`;
+    setTimeout(() => {
+      console.log('Calling updateButtonBoxForHtmlElements()');  // DEBUG
+      // TODO(cais): Address the issue of multiple instances.
+      updateButtonBoxForHtmlElements(
+          ConversationTurnComponent._NAME, this.buttons);
+    }, 20);
   }
 
   // Returns left, top, right, bottom.
-  getBox(): [number, number, number, number] {
-    // console.log('button viewButton:', this.viewButton)
-    const rect = this.viewButton.nativeElement.getBoundingClientRect();
-    return [rect.left, rect.top, rect.right, rect.bottom];
-  }
+  // getBox(): [number, number, number, number] {
+  //   // console.log('button viewButton:', this.viewButton)
+  //   const rect = this.viewButton.nativeElement.getBoundingClientRect();
+  //   return [rect.left, rect.top, rect.right, rect.bottom];
+  // }
 }

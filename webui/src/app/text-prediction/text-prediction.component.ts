@@ -1,17 +1,17 @@
-import {AfterViewInit, Component, ElementRef, EventEmitter, Input, OnChanges, OnInit, Output, QueryList, SimpleChange, SimpleChanges, ViewChildren} from '@angular/core';
+import {AfterViewInit, Component, ElementRef, Input, OnChanges, QueryList, SimpleChange, SimpleChanges, ViewChildren} from '@angular/core';
 import {Subject} from 'rxjs';
-import {updateButtonBoxesForElements} from 'src/utils/cefsharp';
+import {injectKeys, updateButtonBoxesForElements} from 'src/utils/cefsharp';
 import {createUuid} from 'src/utils/uuid';
 
 import {SpeakFasterService} from '../speakfaster-service';
 import {TextEntryEndEvent} from '../types/text-entry';
 
 @Component({
-  selector: 'app-text-continuation-component',
-  templateUrl: './text-continuation.component.html',
+  selector: 'app-text-prediction-component',
+  templateUrl: './text-prediction.component.html',
 })
-export class TextContinuationComponent implements AfterViewInit, OnChanges {
-  private static readonly _NAME = 'TextContinuationComponent';
+export class TextPredictionComponent implements AfterViewInit, OnChanges {
+  private static readonly _NAME = 'TextPredictionComponent';
 
   private readonly instanceId = createUuid();
   @Input() endpoint!: string;
@@ -23,7 +23,9 @@ export class TextContinuationComponent implements AfterViewInit, OnChanges {
   @ViewChildren('clickableButton')
   buttons!: QueryList<ElementRef<HTMLButtonElement>>;
 
-  readonly continuationOptions: string[] = [];
+  // TODO(#59): Use service endpoint to get contextual predictions instead of
+  // hardcoding.
+  readonly predictions: string[] = ['Hello', 'Thank you'];
 
   constructor(private speakFasterService: SpeakFasterService) {}
 
@@ -33,7 +35,7 @@ export class TextContinuationComponent implements AfterViewInit, OnChanges {
     this.buttons.changes.subscribe(
         (queryList: QueryList<ElementRef<HTMLButtonElement>>) => {
           updateButtonBoxesForElements(
-              TextContinuationComponent._NAME + this.instanceId, queryList);
+              TextPredictionComponent._NAME + this.instanceId, queryList);
         });
   }
 
@@ -47,28 +49,30 @@ export class TextContinuationComponent implements AfterViewInit, OnChanges {
       return;
     }
     this.speakFasterService
-        .textContinuation(
+        .textPrediction(
             this.endpoint, this.accessToken, this.contextStrings,
             textPrefix.trim())
         .subscribe(
             data => {
-              this.continuationOptions.splice(0);
-              this.continuationOptions.push(...data.outputs);
+              this.predictions.splice(0);
+              this.predictions.push(...data.outputs);
             },
             error => {
-              this.continuationOptions.splice(0);
+              this.predictions.splice(0);
               // TODO(cais): UI for indicating error.
             });
   }
 
-  onContinuationOptionButtonClicked(event: Event, index: number) {
-    const text =
-        this.textPrefix.trim() + ' ' + this.continuationOptions[index].trim();
+  onPredictionButtonClicked(event: Event, index: number) {
+    const chars: string[] = this.predictions[index].split('');
+    injectKeys(chars);  // TODO(cais): Add unit test.
+    // TODO(cais): Support backspace injection.
+    const text = this.textPrefix.trim() + ' ' + this.predictions[index].trim();
     this.textInjectionSubject.next({
       text,
       timestampMillis: Date.now(),
       isFinal: false,
     });
-    this.continuationOptions.splice(0);
+    this.predictions.splice(0);
   }
 }

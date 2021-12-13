@@ -10,22 +10,7 @@
     white-space: pre-wrap;
 }
 
-.action-button {
-  background: #333;
-  border: 2px solid #888;
-  border-radius: 5px;
-  color: #eee;
-  font-size: 20px;
-  height: 45px;
-  margin-left: 10px;
-  margin-bottom: 6px;
-  min-width: 150px;
-  padding: 5px;
-  vertical-align: middle;
-  width: fit-content;
-}
-
-.continuation-option {
+.prediction-option {
   background-color: lightyellow;
   border: 2px solid #888;
   border-radius: 5px;
@@ -33,29 +18,19 @@
   display: inline-block;
   font-size: 26px;
   margin: 10px;
+  min-height: 50px;
   min-width: 100px;
   padding: 5px 10px;
   vertical-align: middle;;
   width: fit-content;
 }
 
-.continuation-tag {
-  display: inline-block;
-  color: #777;
-  font-size: 21px;
-  margin-left: 6px;
-}
-
 </style>
-
-<div class="continuation-tag">
-    Continuation:
-</div>
 
 <button
     #clickableButton
-    *ngFor="let continuationOption of continuationOptions; let i = index"
-    class="continuation-option"
-    (click)="onContinuationOptionButtonClicked($event, i)">
-  {{continuationOption}}
+    *ngFor="let prediction of predictions; let i = index"
+    class="prediction-option"
+    (click)="onPredictionButtonClicked($event, i)">
+  {{prediction}}
 </button>

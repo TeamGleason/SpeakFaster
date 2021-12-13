@@ -64,14 +64,13 @@ app-context-component {
       (spellingStateChanged)="onSpellingStateChanged($event)"
     ></app-abbreviation-editing-component>
 
-    <app-text-continuation-component
-      *ngIf="inputAbbreviation.indexOf(' ') !== -1 && !isSpelling"
+    <app-text-prediction-component
       [endpoint]="endpoint"
       [accessToken]="accessToken"
       [contextStrings]="contextStrings"
       [textPrefix]=(inputAbbreviation)
       [textInjectionSubject]="textEntryEndSubject"
-    ></app-text-continuation-component>
+    ></app-text-prediction-component>
 
     <app-abbreviation-component
       [endpoint]="endpoint"

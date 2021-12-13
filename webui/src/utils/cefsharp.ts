@@ -1,6 +1,7 @@
 /** Utilites for communication with CefSharp host (if exists.) */
 
 import {ElementRef, QueryList} from '@angular/core';
+import {getVirtualkeyCode, VIRTUAL_KEY} from 'src/app/external/external-events.component';
 
 const CEFSHARP_OBJECT_NAME = 'CefSharp';
 const BOUND_LISTENER_NAME = 'boundListener';
@@ -41,22 +42,6 @@ export function callOnDomChange() {
   console.log('Called onDomChange()');
 }
 
-export function updateButtonBoxes(
-    componentName: string, boxes: Array<[number, number, number, number]>) {
-  console.log(`updateButtonBoxes(): ${componentName}:`, JSON.stringify(boxes));
-  if ((window as any)[BOUND_LISTENER_NAME] == null) {
-    console.warn(`Cannot call updateButtonBoxes(), because object ${
-        BOUND_LISTENER_NAME} is not found`)
-    return;
-  }
-  ((window as any)[BOUND_LISTENER_NAME] as any)
-      .updateButtonBoxes(componentName, boxes);
-}
-
-export function updateButtonBoxesToEmpty(componentName: string) {
-  updateButtonBoxes(componentName, []);
-}
-
 export function updateButtonBoxesForElements(
     componentName: string, queryList: QueryList<ElementRef<any>>) {
   // Use setTimeout() to execute this asynchronously, so the elements' positions
@@ -69,6 +54,35 @@ export function updateButtonBoxesForElements(
     });
     updateButtonBoxes(componentName, boxes);
   }, 0);
+}
+
+export function updateButtonBoxesToEmpty(componentName: string) {
+  updateButtonBoxes(componentName, []);
+}
+
+function updateButtonBoxes(
+    componentName: string, boxes: Array<[number, number, number, number]>) {
+  console.log(`updateButtonBoxes(): ${componentName}:`, JSON.stringify(boxes));
+  if ((window as any)[BOUND_LISTENER_NAME] == null) {
+    console.warn(`Cannot call updateButtonBoxes(), because object ${
+        BOUND_LISTENER_NAME} is not found`)
+    return;
+  }
+  ((window as any)[BOUND_LISTENER_NAME] as any)
+      .updateButtonBoxes(componentName, boxes);
+}
+
+export function injectKeys(virtualKeys: Array<string|VIRTUAL_KEY>) {
+  if ((window as any)[BOUND_LISTENER_NAME] == null) {
+    console.warn(`Cannot call injectKeys(), because object ${
+        BOUND_LISTENER_NAME} is not found`)
+    return;
+  }
+  const virtualKeyCodes: number[] = [];
+  for (const virtualKey of virtualKeys) {
+    virtualKeyCodes.push(getVirtualkeyCode(virtualKey));
+  }
+  ((window as any)[BOUND_LISTENER_NAME] as any).injectKeys(virtualKeyCodes);
 }
 
 export type ExternalKeypressHook = (vkCode: number) => void;

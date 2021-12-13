@@ -10,7 +10,7 @@ import {ContextModule} from './context/context.module';
 import {ExternalEventsModule} from './external/external-events.module';
 import {KeyboardModule} from './keyboard/keyboard.module';
 import {MetricsModule} from './metrics/metrics.module';
-import {TextContinuationModule} from './text-continuation/text-continuation.module';
+import {TextPredictionModule} from './text-prediction/text-prediction.module';
 
 @NgModule({
   declarations: [AppComponent],
@@ -24,7 +24,7 @@ import {TextContinuationModule} from './text-continuation/text-continuation.modu
     ExternalEventsModule,
     KeyboardModule,
     MetricsModule,
-    TextContinuationModule,
+    TextPredictionModule,
   ],
   providers: [],
   bootstrap: [AppComponent]

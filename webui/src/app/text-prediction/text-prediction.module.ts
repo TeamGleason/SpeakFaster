@@ -3,15 +3,15 @@ import {BrowserModule} from '@angular/platform-browser';
 
 import {SpellModule} from '../spell/spell.module';
 
-import {TextContinuationComponent} from './text-continuation.component';
+import {TextPredictionComponent} from './text-prediction.component';
 
 @NgModule({
-  declarations: [TextContinuationComponent],
+  declarations: [TextPredictionComponent],
   imports: [
     BrowserModule,
     SpellModule,
   ],
-  exports: [TextContinuationComponent],
+  exports: [TextPredictionComponent],
 })
-export class TextContinuationModule {
+export class TextPredictionModule {
 }

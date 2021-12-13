@@ -41,19 +41,13 @@ export interface ContextSignal {
   isManuallyAdded?: boolean;
 }
 
-// export interface RetrieveContextRequest {
-//   userId: string;
-//   maxNumSignals?: number;
-//   contextSignalType?: string;
-// }
-
 export interface RetrieveContextResponse {
   result: 'UNKNOWN'|'SUCCESS'|'ERROR_INVALID_USER_ID'|'ERROR_INVALID_TIMESPAN';
   errorMessage?: string;
   contextSignals?: ContextSignal[];
 }
 
-export interface TextContinuationResponse {
+export interface TextPredictionResponse {
   outputs: string[],
 }
 
@@ -69,9 +63,9 @@ export interface SpeakFasterServiceStub {
       abbreviationSpec: AbbreviationSpec, numSamples: number):
       Observable<AbbreviationExpansionRespnose>;
 
-  textContinuation(
+  textPrediction(
       endpoint: string, accessToken: string, contextTurns: string[],
-      textPrefix: string): Observable<TextContinuationResponse>;
+      textPrefix: string): Observable<TextPredictionResponse>;
 
   fillMask(
       endpoint: string, accessToken: string, speechContent: string,
@@ -124,12 +118,12 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
     });
   }
 
-  textContinuation(
+  textPrediction(
       endpoint: string, accessToken: string, contextTurns: string[],
-      textPrefix: string): Observable<TextContinuationResponse> {
+      textPrefix: string): Observable<TextPredictionResponse> {
     const {headers, withCredentials} =
         this.getHeadersAndWithCredentials(accessToken);
-    return this.http.get<TextContinuationResponse>(endpoint, {
+    return this.http.get<TextPredictionResponse>(endpoint, {
       params: {
         mode: 'text_continuation',
         speechContent: contextTurns.join('|'),

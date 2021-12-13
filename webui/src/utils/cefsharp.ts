@@ -53,7 +53,7 @@ export function updateButtonBoxesForElements(
       boxes.push([box.left, box.top, box.right, box.bottom]);
     });
     updateButtonBoxes(componentName, boxes);
-  }, 0);
+  }, 20);
 }
 
 export function updateButtonBoxesToEmpty(componentName: string) {

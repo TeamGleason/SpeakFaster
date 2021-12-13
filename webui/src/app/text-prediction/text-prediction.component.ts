@@ -29,11 +29,12 @@ export class TextPredictionComponent implements AfterViewInit, OnChanges {
 
   constructor(private speakFasterService: SpeakFasterService) {}
 
-  ngOnInit() {}
-
   ngAfterViewInit() {
+    updateButtonBoxesForElements(
+        TextPredictionComponent._NAME + this.instanceId, this.buttons);
     this.buttons.changes.subscribe(
         (queryList: QueryList<ElementRef<HTMLButtonElement>>) => {
+          console.log('text-predictions: update()');  // DEBUG
           updateButtonBoxesForElements(
               TextPredictionComponent._NAME + this.instanceId, queryList);
         });
@@ -65,6 +66,7 @@ export class TextPredictionComponent implements AfterViewInit, OnChanges {
 
   onPredictionButtonClicked(event: Event, index: number) {
     const chars: string[] = this.predictions[index].split('');
+    console.log('Calling injectKeys() with: ', chars);  // DEBUG
     injectKeys(chars);  // TODO(cais): Add unit test.
     // TODO(cais): Support backspace injection.
     const text = this.textPrefix.trim() + ' ' + this.predictions[index].trim();

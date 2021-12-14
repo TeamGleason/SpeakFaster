@@ -1,4 +1,4 @@
-import {AfterViewInit, Component, ElementRef, Input, OnChanges, QueryList, SimpleChange, SimpleChanges, ViewChildren} from '@angular/core';
+import {AfterViewInit, Component, ElementRef, Input, OnChanges, OnDestroy, QueryList, SimpleChange, SimpleChanges, ViewChildren} from '@angular/core';
 import {Subject} from 'rxjs';
 import {injectKeys, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
 import {createUuid} from 'src/utils/uuid';
@@ -10,7 +10,7 @@ import {TextEntryEndEvent} from '../types/text-entry';
   selector: 'app-text-prediction-component',
   templateUrl: './text-prediction.component.html',
 })
-export class TextPredictionComponent implements AfterViewInit, OnChanges {
+export class TextPredictionComponent implements AfterViewInit, OnChanges, OnDestroy {
   private static readonly _NAME = 'TextPredictionComponent';
 
   private readonly instanceId =

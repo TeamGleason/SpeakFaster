@@ -1,8 +1,6 @@
 /** Unit tests for TextPredictionComponent. */
-
-import {HttpClient} from '@angular/common/http';
-import {ElementRef, Injectable, QueryList} from '@angular/core';
-import {ComponentFixture, fakeAsync, TestBed, tick} from '@angular/core/testing';
+import {Injectable} from '@angular/core';
+import {ComponentFixture, TestBed} from '@angular/core/testing';
 
 import * as cefSharp from '../../utils/cefsharp';
 import {VIRTUAL_KEY} from '../external/external-events.component';

@@ -32,18 +32,8 @@ export function registerNewAccessToken(accessToken: string) {
   console.log('Called registerNewAccessToken()');
 }
 
-export function callOnDomChange() {
-  if ((window as any)[BOUND_LISTENER_NAME] == null) {
-    console.warn(`Cannot call onDomChange(), because object ${
-        BOUND_LISTENER_NAME} is not found`)
-    return;
-  }
-  ((window as any)[BOUND_LISTENER_NAME] as any).onDomChange();
-  console.log('Called onDomChange()');
-}
-
 /**
- * Update the clickable buttons for a component.
+ * Update the clickable buttons for a component instance.
  *
  * The instanceId is used to track updates to the clickable buttons.
  *

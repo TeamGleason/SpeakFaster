@@ -4,7 +4,7 @@ import {Subject} from 'rxjs';
 
 import {TextEntryBeginEvent, TextEntryEndEvent} from '../types/text-entry';
 
-import {ExternalEventsComponent, getPunctuationLiteral, VIRTUAL_KEY, VKCODE_SPECIAL_KEYS} from './external-events.component';
+import {ExternalEventsComponent, getPunctuationLiteral, getVirtualkeyCode, VIRTUAL_KEY, VKCODE_SPECIAL_KEYS} from './external-events.component';
 import {ExternalEventsModule} from './external-events.module';
 
 describe('ExternalEventsComponent', () => {
@@ -39,6 +39,24 @@ describe('ExternalEventsComponent', () => {
   it('Virtual key codes map has no duplicate values', () => {
     const valueSet = new Set(Object.values(VKCODE_SPECIAL_KEYS));
     expect(Object.values(VKCODE_SPECIAL_KEYS).length).toEqual(valueSet.size);
+  });
+
+  it('getVirtualkeyCode returns correct code for special keys', () => {
+    expect(getVirtualkeyCode(VIRTUAL_KEY.BACKSPACE)).toEqual(8);
+    expect(getVirtualkeyCode(VIRTUAL_KEY.ENTER)).toEqual(13);
+    expect(getVirtualkeyCode(VIRTUAL_KEY.SPACE)).toEqual(32);
+    expect(getVirtualkeyCode(VIRTUAL_KEY.END)).toEqual(35);
+    expect(getVirtualkeyCode(VIRTUAL_KEY.HOME)).toEqual(36);
+    expect(getVirtualkeyCode('.')).toEqual(190);
+    expect(getVirtualkeyCode(',')).toEqual(188);
+  });
+
+  it('getVirtualkeyCode returns correct code for non-special keys', () => {
+    expect(getVirtualkeyCode(' ')).toEqual(32);
+    expect(getVirtualkeyCode('A')).toEqual(65);
+    expect(getVirtualkeyCode('a')).toEqual(65);
+    expect(getVirtualkeyCode('Z')).toEqual(90);
+    expect(getVirtualkeyCode('z')).toEqual(90);
   });
 
   it('getPunctuationLiteral returns correct values', () => {

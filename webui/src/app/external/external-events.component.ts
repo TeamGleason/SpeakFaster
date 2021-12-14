@@ -76,6 +76,16 @@ export const VKCODE_SPECIAL_KEYS: {[vkCode: number]: VIRTUAL_KEY} = {
   191: VIRTUAL_KEY.SLASH_QUESTION_MARK,
 };
 
+// The reverse of the VKCODE_SPECIAL_KEYS map.
+export const SPECIAL_VIRTUAL_KEY_TO_CODE: Map<VIRTUAL_KEY, number> = new Map();
+for (const k of Object.keys(VKCODE_SPECIAL_KEYS)) {
+  if (VKCODE_SPECIAL_KEYS.hasOwnProperty(k)) {
+    const code = Number(k);
+    const vk = VKCODE_SPECIAL_KEYS[code];
+    SPECIAL_VIRTUAL_KEY_TO_CODE.set(vk, code);
+  }
+}
+
 export const PUNCTUATION: VIRTUAL_KEY[] = [
   VIRTUAL_KEY.SEMICOLON_COLON,
   VIRTUAL_KEY.PLUS,
@@ -96,6 +106,28 @@ function getKeyFromVirtualKeyCode(vkCode: number): string|null {
     return VKCODE_SPECIAL_KEYS[vkCode];
   } else {
     return null;
+  }
+}
+
+/**
+ * Get the virtual key code from the character or key name.
+ * @param charOrKey Character or special key name from the VIRTUAL_KEY enum.
+ * @returns The virtual key code for the chararacter or special-key name. For
+ *   letters, they are converted to uppercase before conversion to key code.
+ * @throws Error if `charOrKey` is not in the VIRTUAL_KEY enum and has a length
+ *   that is not 1.
+ */
+export function getVirtualkeyCode(charOrKey: string|VIRTUAL_KEY): number {
+  if (SPECIAL_VIRTUAL_KEY_TO_CODE.has(charOrKey as VIRTUAL_KEY)) {
+    return SPECIAL_VIRTUAL_KEY_TO_CODE.get(charOrKey as VIRTUAL_KEY) as number;
+  } else {
+    if (charOrKey.length !== 1) {
+      throw new Error(
+          `Expected non-special char to have length 1, ` +
+          `but got ${charOrKey.length} ('${charOrKey}')`)
+    }
+    // TODO(cais): Support other punctuation including '!' and '?'.
+    return charOrKey.toUpperCase().charCodeAt(0);
   }
 }
 

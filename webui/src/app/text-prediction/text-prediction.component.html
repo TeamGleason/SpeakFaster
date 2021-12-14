@@ -1,0 +1,36 @@
+<style>
+
+:host {
+    box-sizing: border-box;
+    color: #EEE;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+    font-size: 32px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    white-space: pre-wrap;
+}
+
+.prediction-option {
+  background-color: lightyellow;
+  border: 2px solid #888;
+  border-radius: 5px;
+  color: #111;
+  display: inline-block;
+  font-size: 26px;
+  margin: 10px;
+  min-height: 50px;
+  min-width: 100px;
+  padding: 5px 10px;
+  vertical-align: middle;;
+  width: fit-content;
+}
+
+</style>
+
+<button
+    #clickableButton
+    *ngFor="let prediction of predictions; let i = index"
+    class="prediction-option"
+    (click)="onPredictionButtonClicked($event, i)">
+  {{prediction}}
+</button>

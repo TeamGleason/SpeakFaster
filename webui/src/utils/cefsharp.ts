@@ -4,7 +4,7 @@ import {ElementRef, QueryList} from '@angular/core';
 import {getVirtualkeyCode, VIRTUAL_KEY} from 'src/app/external/external-events.component';
 
 const CEFSHARP_OBJECT_NAME = 'CefSharp';
-const BOUND_LISTENER_NAME = 'boundListener';
+export const BOUND_LISTENER_NAME = 'boundListener';
 
 export async function bindCefSharpListener() {
   if ((window as any)[BOUND_LISTENER_NAME]) {
@@ -42,24 +42,33 @@ export function callOnDomChange() {
   console.log('Called onDomChange()');
 }
 
-/** TODO(cais): Add doc string. */
+/**
+ * Update the clickable buttons for a component.
+ *
+ * The instanceId is used to track updates to the clickable buttons.
+ *
+ * @param instanceId Unique identifier for the component instance. Different
+ *   instances of the same component type must have different `instanceId`s.
+ * @param elements The list of clickable buttons to register.
+ */
 export function updateButtonBoxesForElements(
-    componentName: string, queryList: QueryList<ElementRef<any>>) {
+    instanceId: string, elements: QueryList<ElementRef<any>>) {
   // Use setTimeout() to execute the logic asynchronously, so the elements'
   // positions may have a chance to stabilize. In some cases, the positions of
   // the elements need time to stop updating since the call to this function.
   setTimeout(() => {
     const boxes: Array<[number, number, number, number]> = [];
-    queryList.forEach(elementRef => {
+    elements.forEach(elementRef => {
       const box = elementRef.nativeElement.getBoundingClientRect();
       boxes.push([box.left, box.top, box.right, box.bottom]);
     });
-    updateButtonBoxes(componentName, boxes);
+    updateButtonBoxes(instanceId, boxes);
   }, 0);
 }
 
-export function updateButtonBoxesToEmpty(componentName: string) {
-  updateButtonBoxes(componentName, []);
+/** Remove the clickable buttons of a given instance to an empty array. */
+export function updateButtonBoxesToEmpty(instanceId: string) {
+  updateButtonBoxes(instanceId, []);
 }
 
 function updateButtonBoxes(
@@ -74,6 +83,13 @@ function updateButtonBoxes(
       .updateButtonBoxes(componentName, boxes);
 }
 
+/**
+ * Request programmable injection of keys.
+ * @param virtualKeys The characters or special keys to inject, in the given
+ *   order. A special key (Backspace or Enter) must use the VIRTUAL_KEY enum.
+ *   Non-special keys (e.g., letters, numbers, and punctuation) should be in
+ *   their literal form.
+ */
 export function injectKeys(virtualKeys: Array<string|VIRTUAL_KEY>) {
   if ((window as any)[BOUND_LISTENER_NAME] == null) {
     console.warn(`Cannot call injectKeys(), because object ${

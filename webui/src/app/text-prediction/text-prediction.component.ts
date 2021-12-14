@@ -1,6 +1,6 @@
 import {AfterViewInit, Component, ElementRef, Input, OnChanges, QueryList, SimpleChange, SimpleChanges, ViewChildren} from '@angular/core';
 import {Subject} from 'rxjs';
-import {injectKeys, updateButtonBoxesForElements} from 'src/utils/cefsharp';
+import {injectKeys, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
 import {createUuid} from 'src/utils/uuid';
 
 import {SpeakFasterService} from '../speakfaster-service';
@@ -13,7 +13,8 @@ import {TextEntryEndEvent} from '../types/text-entry';
 export class TextPredictionComponent implements AfterViewInit, OnChanges {
   private static readonly _NAME = 'TextPredictionComponent';
 
-  private readonly instanceId = createUuid();
+  private readonly instanceId =
+      TextPredictionComponent._NAME + '_' + createUuid();
   @Input() endpoint!: string;
   @Input() accessToken!: string;
   @Input() contextStrings!: string[];
@@ -30,20 +31,18 @@ export class TextPredictionComponent implements AfterViewInit, OnChanges {
   constructor(private speakFasterService: SpeakFasterService) {}
 
   ngAfterViewInit() {
-    updateButtonBoxesForElements(
-        TextPredictionComponent._NAME + this.instanceId, this.buttons);
+    updateButtonBoxesForElements(this.instanceId, this.buttons);
     this.buttons.changes.subscribe(
         (queryList: QueryList<ElementRef<HTMLButtonElement>>) => {
-          console.log('text-predictions: update()');  // DEBUG
-          updateButtonBoxesForElements(
-              TextPredictionComponent._NAME + this.instanceId, queryList);
+          updateButtonBoxesForElements(this.instanceId, queryList);
         });
   }
 
   ngOnChanges(changes: SimpleChanges) {
     if (this.buttons != null) {
-      updateButtonBoxesForElements(
-          TextPredictionComponent._NAME + this.instanceId, this.buttons);
+      // NOTE: This is necessary if other components affect the layout and
+      // cause position shift in this item.
+      updateButtonBoxesForElements(this.instanceId, this.buttons);
     }
     if (!changes['textPrefix']) {
       return;
@@ -68,10 +67,13 @@ export class TextPredictionComponent implements AfterViewInit, OnChanges {
             });
   }
 
+  ngOnDestroy() {
+    updateButtonBoxesToEmpty(this.instanceId);
+  }
+
   onPredictionButtonClicked(event: Event, index: number) {
     const chars: string[] = this.predictions[index].split('');
-    console.log('Calling injectKeys() with: ', chars);  // DEBUG
-    injectKeys(chars);  // TODO(cais): Add unit test.
+    injectKeys(chars);
     // TODO(cais): Support backspace injection.
     const text = this.textPrefix.trim() + ' ' + this.predictions[index].trim();
     this.textInjectionSubject.next({

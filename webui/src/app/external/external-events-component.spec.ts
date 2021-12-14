@@ -43,21 +43,25 @@ fdescribe('ExternalEventsComponent', () => {
   });
 
   it('getVirtualkeyCode returns correct code for special keys', () => {
-    expect(getVirtualkeyCode(VIRTUAL_KEY.BACKSPACE)).toEqual(8);
-    expect(getVirtualkeyCode(VIRTUAL_KEY.ENTER)).toEqual(13);
-    expect(getVirtualkeyCode(VIRTUAL_KEY.SPACE)).toEqual(32);
-    expect(getVirtualkeyCode(VIRTUAL_KEY.END)).toEqual(35);
-    expect(getVirtualkeyCode(VIRTUAL_KEY.HOME)).toEqual(36);
-    expect(getVirtualkeyCode('.')).toEqual(190);
-    expect(getVirtualkeyCode(',')).toEqual(188);
+    expect(getVirtualkeyCode(VIRTUAL_KEY.BACKSPACE)).toEqual([8]);
+    expect(getVirtualkeyCode(VIRTUAL_KEY.ENTER)).toEqual([13]);
+    expect(getVirtualkeyCode(VIRTUAL_KEY.SPACE)).toEqual([32]);
+    expect(getVirtualkeyCode(VIRTUAL_KEY.END)).toEqual([35]);
+    expect(getVirtualkeyCode(VIRTUAL_KEY.HOME)).toEqual([36]);
+    expect(getVirtualkeyCode('.')).toEqual([190]);
+    expect(getVirtualkeyCode(',')).toEqual([188]);
   });
 
   it('getVirtualkeyCode returns correct code for non-special keys', () => {
-    expect(getVirtualkeyCode(' ')).toEqual(32);
-    expect(getVirtualkeyCode('A')).toEqual(65);
-    expect(getVirtualkeyCode('a')).toEqual(65);
-    expect(getVirtualkeyCode('Z')).toEqual(90);
-    expect(getVirtualkeyCode('z')).toEqual(90);
+    expect(getVirtualkeyCode(' ')).toEqual([32]);
+    expect(getVirtualkeyCode('A')).toEqual([65]);
+    expect(getVirtualkeyCode('a')).toEqual([65]);
+    expect(getVirtualkeyCode('Z')).toEqual([90]);
+    expect(getVirtualkeyCode('z')).toEqual([90]);
+    expect(getVirtualkeyCode('!')).toEqual([160, 49]);
+    expect(getVirtualkeyCode('?')).toEqual([160, 191]);
+    expect(getVirtualkeyCode('.')).toEqual([190]);
+    expect(getVirtualkeyCode(',')).toEqual([188]);
   });
 
   it('getPunctuationLiteral returns correct values', () => {

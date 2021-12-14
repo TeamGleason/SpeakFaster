@@ -88,7 +88,7 @@ export function injectKeys(virtualKeys: Array<string|VIRTUAL_KEY>) {
   }
   const virtualKeyCodes: number[] = [];
   for (const virtualKey of virtualKeys) {
-    virtualKeyCodes.push(getVirtualkeyCode(virtualKey));
+    virtualKeyCodes.push(...getVirtualkeyCode(virtualKey));
   }
   ((window as any)[BOUND_LISTENER_NAME] as any).injectKeys(virtualKeyCodes);
 }

@@ -110,24 +110,37 @@ function getKeyFromVirtualKeyCode(vkCode: number): string|null {
 }
 
 /**
- * Get the virtual key code from the character or key name.
+ * Get the virtual key code(s) needed to enter the character or key name.
  * @param charOrKey Character or special key name from the VIRTUAL_KEY enum.
- * @returns The virtual key code for the chararacter or special-key name. For
+ * @returns The virtual key codes for the chararacter or special-key name. For
  *   letters, they are converted to uppercase before conversion to key code.
  * @throws Error if `charOrKey` is not in the VIRTUAL_KEY enum and has a length
  *   that is not 1.
  */
-export function getVirtualkeyCode(charOrKey: string|VIRTUAL_KEY): number {
+export function getVirtualkeyCode(charOrKey: string|VIRTUAL_KEY): number[] {
   if (SPECIAL_VIRTUAL_KEY_TO_CODE.has(charOrKey as VIRTUAL_KEY)) {
-    return SPECIAL_VIRTUAL_KEY_TO_CODE.get(charOrKey as VIRTUAL_KEY) as number;
+    return [
+      SPECIAL_VIRTUAL_KEY_TO_CODE.get(charOrKey as VIRTUAL_KEY) as number
+    ];
   } else {
     if (charOrKey.length !== 1) {
       throw new Error(
           `Expected non-special char to have length 1, ` +
           `but got ${charOrKey.length} ('${charOrKey}')`)
     }
+    if (charOrKey === '!') {
+      return [
+        SPECIAL_VIRTUAL_KEY_TO_CODE.get(VIRTUAL_KEY.LSHIFT) as number, 49
+      ];
+    } else if (charOrKey === '?') {
+      return [
+        SPECIAL_VIRTUAL_KEY_TO_CODE.get(VIRTUAL_KEY.LSHIFT) as number,
+        SPECIAL_VIRTUAL_KEY_TO_CODE.get(VIRTUAL_KEY.SLASH_QUESTION_MARK) as
+            number
+      ];
+    }
     // TODO(cais): Support other punctuation including '!' and '?'.
-    return charOrKey.toUpperCase().charCodeAt(0);
+    return [charOrKey.toUpperCase().charCodeAt(0)];
   }
 }
 

@@ -19,7 +19,7 @@ export class TextPredictionComponent implements AfterViewInit, OnChanges, OnDest
 
   // TODO(#59): Use service endpoint to get contextual predictions instead of
   // hardcoding.
-  readonly predictions: string[] = ['Hello', 'Thank you'];
+  readonly predictions: string[] = ['Hello', 'Thank you!'];
 
   constructor() {}
 

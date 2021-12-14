@@ -41,7 +41,7 @@ describe('TextPredictionCmponent', () => {
 
   beforeEach(async () => {
     testListener = new TestListener();
-    (window as any)[cefSharp.BOUND_LISTENER_NAME] = testListener
+    (window as any)[cefSharp.BOUND_LISTENER_NAME] = testListener;
     await TestBed
         .configureTestingModule({
           imports: [TextPredictionModule],
@@ -99,10 +99,12 @@ describe('TextPredictionCmponent', () => {
     const buttons = Array.from(
         fixture.nativeElement.querySelectorAll('.prediction-option'));
     expect(buttons.length).toEqual(2);
-    const button = buttons[0] as HTMLButtonElement;
-    expect(button.innerText.trim()).toEqual('Hello');
+    const button = buttons[1] as HTMLButtonElement;
+    expect(button.innerText.trim()).toEqual('Thank you!');
     button.click();
     const injectedKeysCalls = testListener.injectedKeysCalls;
-    expect(injectedKeysCalls).toEqual([[72, 69, 76, 76, 79]]);
+    expect(injectedKeysCalls).toEqual([
+      [84, 72, 65, 78, 75, 32, 89, 79, 85, 160, 49]
+    ]);
   });
 });

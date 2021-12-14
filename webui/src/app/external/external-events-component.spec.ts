@@ -47,8 +47,6 @@ describe('ExternalEventsComponent', () => {
     expect(getVirtualkeyCode(VIRTUAL_KEY.SPACE)).toEqual([32]);
     expect(getVirtualkeyCode(VIRTUAL_KEY.END)).toEqual([35]);
     expect(getVirtualkeyCode(VIRTUAL_KEY.HOME)).toEqual([36]);
-    expect(getVirtualkeyCode('.')).toEqual([190]);
-    expect(getVirtualkeyCode(',')).toEqual([188]);
   });
 
   it('getVirtualkeyCode returns correct code for non-special keys', () => {

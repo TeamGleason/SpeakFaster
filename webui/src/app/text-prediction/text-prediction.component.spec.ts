@@ -58,7 +58,6 @@ describe('TextPredictionCmponent', () => {
   });
 
   afterAll(async () => {
-    // TODO(cais): make sure cleaning up is done.
     delete (window as any)[cefSharp.BOUND_LISTENER_NAME];
   });
 

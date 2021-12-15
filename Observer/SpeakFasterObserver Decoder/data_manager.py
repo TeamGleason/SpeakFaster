@@ -22,8 +22,10 @@ import pytz
 import subprocess
 import sys
 import tempfile
+import time
 
 import boto3
+import numpy as np
 import PySimpleGUI as sg
 
 import elan_process_curated
@@ -41,6 +43,26 @@ POSSIBLE_DATA_ROOT_DIRS = (
     os.path.join(pathlib.Path.home(), "sf_observer_data"),
 )
 DEFAULT_TIMEZONE_NAME = "US/Central"
+
+# Time-of-the-day hour ranges. Local time.
+HOUR_RANGES = ((0, 3), (3, 6), (6, 9), (9, 12), (12, 15), (15, 18),
+               (18, 21), (21, 24))
+WEEKDAYS = ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+
+
+def _get_hour_index(hour):
+  for i, (hour_min, hour_max) in enumerate(HOUR_RANGES):
+    if hour >= hour_min and hour < hour_max:
+      return i
+  return len(HOUR_RANGES) - 1
+
+
+def _print_time_summary_table(table):
+  print("=== Distribution of session start times ===")
+  print("\t" + "\t".join(["%d-%d" %
+      (hour_min, hour_max) for hour_min, hour_max in HOUR_RANGES]))
+  for i, weekday in enumerate(WEEKDAYS):
+    print(weekday + "\t" + "\t".join(["%d" % n for n in table[i, :].tolist()]))
 
 
 def parse_args():
@@ -262,11 +284,15 @@ class DataManager(object):
     total_screenshots = 0
     total_objects = 0
     session_keypresses_per_second = dict()
+    start_time_table = np.zeros([7, len(HOUR_RANGES)])
+
     for session_prefix in session_prefixes:
-      (is_session_complete,
-       _, _, duration_s, num_keypresses, num_audio_files,
+      (is_session_complete, _,
+       start_time, duration_s, num_keypresses, num_audio_files,
        num_screenshots, object_keys) = self.get_session_details(
           container_prefix + session_prefix)
+      start_time_table[
+          start_time.weekday(), _get_hour_index(start_time.hour)] += 1
       num_sessions += 1
       if is_session_complete:
         num_complete_sessions += 1
@@ -346,15 +372,38 @@ class DataManager(object):
         Bucket=self._s3_bucket_name, Prefix=merged_tsv_key)
     return "KeyCount" in response and response["KeyCount"] > 0
 
-  def get_remote_session_folder_status(self, session_prefix):
-    if self._remote_object_exists(
-        session_prefix, file_naming.CURATED_PROCESSED_TSV_FILENAME):
-      return "POSTPROCESSED"
-    elif self._remote_object_exists(
-        session_prefix, file_naming.MERGED_TSV_FILENAME):
-      return "PREPROCESSED"
+  def update_remote_session_objects_status(self, session_container_prefix):
+    """Update the status of key remote objects."""
+    paginator = self._s3_client.get_paginator("list_objects")
+    pages = paginator.paginate(
+        Bucket=self._s3_bucket_name, Prefix=session_container_prefix)
+    self._sessions_with_merged_tsv = []
+    self._sessions_with_curated_tsv = []
+    for page in pages:
+      for content in page["Contents"]:
+        session = content["Key"][:content["Key"].rindex("/") + 1]
+        if os.path.basename(content["Key"]) == file_naming.MERGED_TSV_FILENAME:
+          self._sessions_with_merged_tsv.append(session)
+        elif  os.path.basename(content["Key"]) == file_naming.CURATED_TSV_FILENAME:
+          self._sessions_with_merged_tsv.append(session)
+
+  def get_remote_session_folder_status(self, session_prefix, use_cached=False):
+    if use_cached:
+      if session_prefix in self._sessions_with_curated_tsv:
+        return "POSTPROCESSED"
+      elif session_prefix in self._sessions_with_merged_tsv:
+        return "PREPROCESSED"
+      else:
+        return "NOT_PREPROCESSED"
     else:
-      return "NOT_PREPROCESSED"
+      if self._remote_object_exists(
+         session_prefix, file_naming.CURATED_PROCESSED_TSV_FILENAME):
+        return "POSTPROCESSED"
+      elif self._remote_object_exists(
+        session_prefix, file_naming.MERGED_TSV_FILENAME):
+        return "PREPROCESSED"
+      else:
+        return "NOT_PREPROCESSED"
 
   def preprocess_session(self, session_prefix):
     to_run_preproc = True
@@ -545,6 +594,7 @@ def _list_sessions(window,
                    data_manager,
                    session_container_prefixes,
                    restore_session_selection=False):
+  t0 = time.time()
   window.Element("STATUS_MESSAGE").Update("Listing sessions. Please wait...")
   window.Element("STATUS_MESSAGE").Update(text_color="yellow")
   window.Element("SESSION_LIST").Update(disabled=True)
@@ -555,9 +605,11 @@ def _list_sessions(window,
   session_prefixes = data_manager.get_session_prefixes(container_prefix)
   session_prefixes_with_status = []
   session_colors = []
+
+  data_manager.update_remote_session_objects_status(container_prefix)
   for session_prefix in session_prefixes:
     remote_status = data_manager.get_remote_session_folder_status(
-        container_prefix + session_prefix)
+        container_prefix + session_prefix, use_cached=True)
     local_status = data_manager.get_local_session_folder_status(
         container_prefix + session_prefix)
     keypresses_per_second = data_manager.get_session_keypresses_per_second(
@@ -590,6 +642,7 @@ def _list_sessions(window,
     window.Element("SESSION_LIST").update(
         set_to_index=[selection_index],
         scroll_to_index=selection_index)
+  print("Listing sessions took %.3f seconds" % (time.time() - t0))
   return session_prefixes
 
 

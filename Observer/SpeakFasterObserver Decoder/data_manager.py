@@ -25,6 +25,7 @@ import tempfile
 import time
 
 import boto3
+import numpy as np
 import PySimpleGUI as sg
 
 import elan_process_curated
@@ -42,6 +43,26 @@ POSSIBLE_DATA_ROOT_DIRS = (
     os.path.join(pathlib.Path.home(), "sf_observer_data"),
 )
 DEFAULT_TIMEZONE_NAME = "US/Central"
+
+# Time-of-the-day hour ranges. Local time.
+HOUR_RANGES = ((0, 3), (3, 6), (6, 9), (9, 12), (12, 15), (15, 18),
+               (18, 21), (21, 24))
+WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+
+
+def _get_hour_index(hour):
+  for i, (hour_min, hour_max) in enumerate(HOUR_RANGES):
+    if hour >= hour_min and hour < hour_max:
+      return i
+  return len(HOUR_RANGES) - 1
+
+
+def _print_time_summary_table(table):
+  print("=== Distribution of session start times ===")
+  print("\t" + "\t".join(["%d-%d" %
+      (hour_min, hour_max) for hour_min, hour_max in HOUR_RANGES]))
+  for i, weekday in enumerate(WEEKDAYS):
+    print(weekday + "\t" + "\t".join(["%d" % n for n in table[i, :].tolist()]))
 
 
 def parse_args():
@@ -263,11 +284,16 @@ class DataManager(object):
     total_screenshots = 0
     total_objects = 0
     session_keypresses_per_second = dict()
+    start_time_table = np.zeros([7, len(HOUR_RANGES)])
+
     for session_prefix in session_prefixes:
-      (is_session_complete,
-       _, _, duration_s, num_keypresses, num_audio_files,
+      (is_session_complete, _,
+       start_time, duration_s, num_keypresses, num_audio_files,
        num_screenshots, object_keys) = self.get_session_details(
           container_prefix + session_prefix)
+      start_time_table[
+          start_time.weekday(), _get_hour_index(start_time.hour)] += 1
+      # print(start_time.weekday(), start_time.hour)  # DEBUG
       num_sessions += 1
       if is_session_complete:
         num_complete_sessions += 1
@@ -279,6 +305,7 @@ class DataManager(object):
       session_keypresses_per_second[session_prefix] = (
           None if duration_s == 0 else num_keypresses / duration_s)
     self._session_keypresses_per_second = session_keypresses_per_second
+    _print_time_summary_table(start_time_table)  # DEBUG
     return (num_sessions, num_complete_sessions, total_duration_s,
             total_keypresses, total_audio_files, total_screenshots,
             total_objects, session_keypresses_per_second)
@@ -343,9 +370,6 @@ class DataManager(object):
 
   def _remote_object_exists(self, session_prefix, filename):
     merged_tsv_key = session_prefix + filename
-    # print("Calling list_objects_v2: merged_tsv_key = %s" %
-    #       merged_tsv_key)  # DEBUG
-    # sys.exit(1)  # DEBUG
     response = self._s3_client.list_objects_v2(
         Bucket=self._s3_bucket_name, Prefix=merged_tsv_key)
     return "KeyCount" in response and response["KeyCount"] > 0
@@ -364,7 +388,6 @@ class DataManager(object):
           self._sessions_with_merged_tsv.append(session)
         elif  os.path.basename(content["Key"]) == file_naming.CURATED_TSV_FILENAME:
           self._sessions_with_merged_tsv.append(session)
-    print(self._sessions_with_merged_tsv)  # DEBUG
 
   def get_remote_session_folder_status(self, session_prefix, use_cached=False):
     if use_cached:

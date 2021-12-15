@@ -47,7 +47,7 @@ DEFAULT_TIMEZONE_NAME = "US/Central"
 # Time-of-the-day hour ranges. Local time.
 HOUR_RANGES = ((0, 3), (3, 6), (6, 9), (9, 12), (12, 15), (15, 18),
                (18, 21), (21, 24))
-WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+WEEKDAYS = ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
 
 
 def _get_hour_index(hour):
@@ -293,7 +293,6 @@ class DataManager(object):
           container_prefix + session_prefix)
       start_time_table[
           start_time.weekday(), _get_hour_index(start_time.hour)] += 1
-      # print(start_time.weekday(), start_time.hour)  # DEBUG
       num_sessions += 1
       if is_session_complete:
         num_complete_sessions += 1
@@ -305,7 +304,6 @@ class DataManager(object):
       session_keypresses_per_second[session_prefix] = (
           None if duration_s == 0 else num_keypresses / duration_s)
     self._session_keypresses_per_second = session_keypresses_per_second
-    _print_time_summary_table(start_time_table)  # DEBUG
     return (num_sessions, num_complete_sessions, total_duration_s,
             total_keypresses, total_audio_files, total_screenshots,
             total_objects, session_keypresses_per_second)

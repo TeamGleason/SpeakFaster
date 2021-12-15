@@ -22,6 +22,7 @@ import pytz
 import subprocess
 import sys
 import tempfile
+import time
 
 import boto3
 import PySimpleGUI as sg
@@ -342,19 +343,46 @@ class DataManager(object):
 
   def _remote_object_exists(self, session_prefix, filename):
     merged_tsv_key = session_prefix + filename
+    # print("Calling list_objects_v2: merged_tsv_key = %s" %
+    #       merged_tsv_key)  # DEBUG
+    # sys.exit(1)  # DEBUG
     response = self._s3_client.list_objects_v2(
         Bucket=self._s3_bucket_name, Prefix=merged_tsv_key)
     return "KeyCount" in response and response["KeyCount"] > 0
 
-  def get_remote_session_folder_status(self, session_prefix):
-    if self._remote_object_exists(
-        session_prefix, file_naming.CURATED_PROCESSED_TSV_FILENAME):
-      return "POSTPROCESSED"
-    elif self._remote_object_exists(
-        session_prefix, file_naming.MERGED_TSV_FILENAME):
-      return "PREPROCESSED"
+  def update_remote_session_objects_status(self, session_container_prefix):
+    """Update the status of key remote objects."""
+    paginator = self._s3_client.get_paginator("list_objects")
+    pages = paginator.paginate(
+        Bucket=self._s3_bucket_name, Prefix=session_container_prefix)
+    self._sessions_with_merged_tsv = []
+    self._sessions_with_curated_tsv = []
+    for page in pages:
+      for content in page["Contents"]:
+        session = content["Key"][:content["Key"].rindex("/") + 1]
+        if os.path.basename(content["Key"]) == file_naming.MERGED_TSV_FILENAME:
+          self._sessions_with_merged_tsv.append(session)
+        elif  os.path.basename(content["Key"]) == file_naming.CURATED_TSV_FILENAME:
+          self._sessions_with_merged_tsv.append(session)
+    print(self._sessions_with_merged_tsv)  # DEBUG
+
+  def get_remote_session_folder_status(self, session_prefix, use_cached=False):
+    if use_cached:
+      if session_prefix in self._sessions_with_curated_tsv:
+        return "POSTPROCESSED"
+      elif session_prefix in self._sessions_with_merged_tsv:
+        return "PREPROCESSED"
+      else:
+        return "NOT_PREPROCESSED"
     else:
-      return "NOT_PREPROCESSED"
+      if self._remote_object_exists(
+         session_prefix, file_naming.CURATED_PROCESSED_TSV_FILENAME):
+        return "POSTPROCESSED"
+      elif self._remote_object_exists(
+        session_prefix, file_naming.MERGED_TSV_FILENAME):
+        return "PREPROCESSED"
+      else:
+        return "NOT_PREPROCESSED"
 
   def preprocess_session(self, session_prefix):
     to_run_preproc = True
@@ -546,6 +574,7 @@ def _list_sessions(window,
                    data_manager,
                    session_container_prefixes,
                    restore_session_selection=False):
+  t0 = time.time()
   window.Element("STATUS_MESSAGE").Update("Listing sessions. Please wait...")
   window.Element("STATUS_MESSAGE").Update(text_color="yellow")
   window.Element("SESSION_LIST").Update(disabled=True)
@@ -556,9 +585,11 @@ def _list_sessions(window,
   session_prefixes = data_manager.get_session_prefixes(container_prefix)
   session_prefixes_with_status = []
   session_colors = []
+
+  data_manager.update_remote_session_objects_status(container_prefix)
   for session_prefix in session_prefixes:
     remote_status = data_manager.get_remote_session_folder_status(
-        container_prefix + session_prefix)
+        container_prefix + session_prefix, use_cached=True)
     local_status = data_manager.get_local_session_folder_status(
         container_prefix + session_prefix)
     keypresses_per_second = data_manager.get_session_keypresses_per_second(
@@ -591,6 +622,7 @@ def _list_sessions(window,
     window.Element("SESSION_LIST").update(
         set_to_index=[selection_index],
         scroll_to_index=selection_index)
+  print("Listing sessions took %.3f seconds" % (time.time() - t0))
   return session_prefixes
 
 

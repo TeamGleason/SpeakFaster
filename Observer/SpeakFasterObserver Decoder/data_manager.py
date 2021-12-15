@@ -304,6 +304,7 @@ class DataManager(object):
       session_keypresses_per_second[session_prefix] = (
           None if duration_s == 0 else num_keypresses / duration_s)
     self._session_keypresses_per_second = session_keypresses_per_second
+    _print_time_summary_table(start_time_table)
     return (num_sessions, num_complete_sessions, total_duration_s,
             total_keypresses, total_audio_files, total_screenshots,
             total_objects, session_keypresses_per_second)

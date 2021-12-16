@@ -62,7 +62,13 @@ def _print_time_summary_table(table):
   print("\t" + "\t".join(["%d-%d" %
       (hour_min, hour_max) for hour_min, hour_max in HOUR_RANGES]))
   for i, weekday in enumerate(WEEKDAYS):
-    print(weekday + "\t" + "\t".join(["%d" % n for n in table[i, :].tolist()]))
+    day_line = weekday + "\t" + "\t".join(
+        ["%d" % n for n in table[i, :].tolist()])
+    day_line += "\t%d" % np.sum(table[i, :])
+    print(day_line)
+  print("-------------------------------------------")
+  print("   \t" +
+        "\t".join(["%d" % n for n in np.sum(table, axis=0).tolist()]))
 
 
 def parse_args():

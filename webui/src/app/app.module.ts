@@ -6,6 +6,7 @@ import {AppComponent} from './app.component';
 import {AuthModule} from './auth/auth.module';
 import {ExternalEventsModule} from './external/external-events.module';
 import {MetricsModule} from './metrics/metrics.module';
+import {TextPredictionModule} from './text-prediction/text-prediction.module';
 
 @NgModule({
   declarations: [AppComponent],
@@ -15,6 +16,7 @@ import {MetricsModule} from './metrics/metrics.module';
     BrowserModule,
     ExternalEventsModule,
     MetricsModule,
+    TextPredictionModule,
   ],
   providers: [],
   bootstrap: [AppComponent]

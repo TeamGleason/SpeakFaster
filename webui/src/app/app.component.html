@@ -13,8 +13,9 @@
 </style>
 
 <div class="content" role="main">
-  <!-- TODO(cais): Hide app-auth-component on newAccessToken. -->
-  <app-auth-component (newAccessToken)="onNewAccessToken($event)"></app-auth-component>
+  <div *ngIf="!hasAccessToken()" class="auth-area">
+    <app-auth-component (newAccessToken)="onNewAccessToken($event)"></app-auth-component>
+  </div>
 
   <app-external-events-component
       #externalEvents
@@ -26,6 +27,13 @@
       [textEntryBeginSubject]="textEntryBeginSubject"
       [textEntryEndSubject]="textEntryEndSubject">
   </app-metrics-component>
+
+  <div *ngIf="hasAccessToken()">
+    <app-text-prediction-component
+      [endpoint]="endpoint"
+      [accessToken]="accessToken"
+    ></app-text-prediction-component>
+  </div>
 </div>
 
 <router-outlet></router-outlet>

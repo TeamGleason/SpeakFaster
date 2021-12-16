@@ -64,7 +64,7 @@ export class AppComponent implements OnInit, AfterViewInit {
   onNewAccessToken(accessToken: string) {
     this._accessToken = accessToken;
     if (this.endpoint) {
-      this.speakFasterService.ping(this.endpoint, this._accessToken)
+      this.speakFasterService.ping(this._endpoint, this._accessToken)
           .subscribe(data => {
             console.log('Ping response:', data);
           });

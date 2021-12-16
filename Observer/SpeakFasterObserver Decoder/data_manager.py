@@ -25,6 +25,7 @@ import tempfile
 import time
 
 import boto3
+import numpy as np
 import PySimpleGUI as sg
 
 import elan_process_curated
@@ -42,6 +43,32 @@ POSSIBLE_DATA_ROOT_DIRS = (
     os.path.join(pathlib.Path.home(), "sf_observer_data"),
 )
 DEFAULT_TIMEZONE_NAME = "US/Central"
+
+# Time-of-the-day hour ranges. Local time.
+HOUR_RANGES = ((0, 3), (3, 6), (6, 9), (9, 12), (12, 15), (15, 18),
+               (18, 21), (21, 24))
+WEEKDAYS = ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+
+
+def _get_hour_index(hour):
+  for i, (hour_min, hour_max) in enumerate(HOUR_RANGES):
+    if hour >= hour_min and hour < hour_max:
+      return i
+  return len(HOUR_RANGES) - 1
+
+
+def _print_time_summary_table(table):
+  print("=== Distribution of session start times ===")
+  print("\t" + "\t".join(["%d-%d" %
+      (hour_min, hour_max) for hour_min, hour_max in HOUR_RANGES]))
+  for i, weekday in enumerate(WEEKDAYS):
+    day_line = weekday + "\t" + "\t".join(
+        ["%d" % n for n in table[i, :].tolist()])
+    day_line += "\t%d" % np.sum(table[i, :])
+    print(day_line)
+  print("-------------------------------------------")
+  print("   \t" +
+        "\t".join(["%d" % n for n in np.sum(table, axis=0).tolist()]))
 
 
 def parse_args():
@@ -77,11 +104,11 @@ def _get_timezone(readable_timezone_name):
   elif ("Mountain Time (US & Canada)" in readable_timezone_name or
         readable_timezone_name == "US/Mountain"):
     return "US/Mountain"
-  elif ("Pacific Time (US & Canada)" in readable_timezone_Name or
+  elif ("Pacific Time (US & Canada)" in readable_timezone_name or
         readable_timezone_name == "US/Pacific"):
     return "US/Pacific"
   else:
-    raise ValueError("Unimplemented time zone: %s" % time_zone)
+    raise ValueError("Unimplemented time zone: %s" % readable_timezone_name)
 
 
 def find_speaker_id_config_json():
@@ -117,6 +144,15 @@ class DataManager(object):
     self._speaker_id_config_json_path = find_speaker_id_config_json()
     self._session_keypresses_per_second = None
     self._manual_timezone_name = None
+    self._check_aws_cli()
+
+  def _check_aws_cli(self):
+    try:
+      self._run_command_line(["aws", "--version"])
+    except subprocess.CalledProcessError:
+      raise ValueError(
+          "It appears that you don't have aws cli installed and on the path. "
+          "Please install it and make sure it is on the path.")
 
   def get_session_container_prefixes(self):
     """Find the prefixes that hold the session folders as children.
@@ -254,11 +290,15 @@ class DataManager(object):
     total_screenshots = 0
     total_objects = 0
     session_keypresses_per_second = dict()
+    start_time_table = np.zeros([7, len(HOUR_RANGES)])
+
     for session_prefix in session_prefixes:
-      (is_session_complete,
-       _, _, duration_s, num_keypresses, num_audio_files,
+      (is_session_complete, _,
+       start_time, duration_s, num_keypresses, num_audio_files,
        num_screenshots, object_keys) = self.get_session_details(
           container_prefix + session_prefix)
+      start_time_table[
+          start_time.weekday(), _get_hour_index(start_time.hour)] += 1
       num_sessions += 1
       if is_session_complete:
         num_complete_sessions += 1
@@ -270,6 +310,7 @@ class DataManager(object):
       session_keypresses_per_second[session_prefix] = (
           None if duration_s == 0 else num_keypresses / duration_s)
     self._session_keypresses_per_second = session_keypresses_per_second
+    _print_time_summary_table(start_time_table)
     return (num_sessions, num_complete_sessions, total_duration_s,
             total_keypresses, total_audio_files, total_screenshots,
             total_objects, session_keypresses_per_second)
@@ -306,8 +347,6 @@ class DataManager(object):
     if not os.path.isdir(local_dest_dir):
       return "NOT_DOWNLOADED"
     else:
-      session_end_bin_path = glob.glob(os.path.join(
-          local_dest_dir, "*-SessionEnd.bin"))
       if (self._nonempty_file_exists(
               local_dest_dir, file_naming.CURATED_PROCESSED_JSON_FILENAME) and
           self._nonempty_file_exists(
@@ -340,15 +379,38 @@ class DataManager(object):
         Bucket=self._s3_bucket_name, Prefix=merged_tsv_key)
     return "KeyCount" in response and response["KeyCount"] > 0
 
-  def get_remote_session_folder_status(self, session_prefix):
-    if self._remote_object_exists(
-        session_prefix, file_naming.CURATED_PROCESSED_TSV_FILENAME):
-      return "POSTPROCESSED"
-    elif self._remote_object_exists(
-        session_prefix, file_naming.MERGED_TSV_FILENAME):
-      return "PREPROCESSED"
+  def update_remote_session_objects_status(self, session_container_prefix):
+    """Update the status of key remote objects."""
+    paginator = self._s3_client.get_paginator("list_objects")
+    pages = paginator.paginate(
+        Bucket=self._s3_bucket_name, Prefix=session_container_prefix)
+    self._sessions_with_merged_tsv = []
+    self._sessions_with_curated_tsv = []
+    for page in pages:
+      for content in page["Contents"]:
+        session = content["Key"][:content["Key"].rindex("/") + 1]
+        if os.path.basename(content["Key"]) == file_naming.MERGED_TSV_FILENAME:
+          self._sessions_with_merged_tsv.append(session)
+        elif  os.path.basename(content["Key"]) == file_naming.CURATED_TSV_FILENAME:
+          self._sessions_with_merged_tsv.append(session)
+
+  def get_remote_session_folder_status(self, session_prefix, use_cached=False):
+    if use_cached:
+      if session_prefix in self._sessions_with_curated_tsv:
+        return "POSTPROCESSED"
+      elif session_prefix in self._sessions_with_merged_tsv:
+        return "PREPROCESSED"
+      else:
+        return "NOT_PREPROCESSED"
     else:
-      return "NOT_PREPROCESSED"
+      if self._remote_object_exists(
+         session_prefix, file_naming.CURATED_PROCESSED_TSV_FILENAME):
+        return "POSTPROCESSED"
+      elif self._remote_object_exists(
+        session_prefix, file_naming.MERGED_TSV_FILENAME):
+        return "PREPROCESSED"
+      else:
+        return "NOT_PREPROCESSED"
 
   def preprocess_session(self, session_prefix):
     to_run_preproc = True
@@ -393,9 +455,8 @@ class DataManager(object):
         "aws", "s3", "sync", "--profile=%s" % self._aws_profile_name,
         local_dest_dir, "s3://" + self._s3_bucket_name + "/" + session_prefix,
         "--exclude=*", "--include=*.tsv",
-        "--include=%s" % file_naming.CURATED_PROCESSED_JSON_FILENAME,
-        "--include=%s" % file_naming.CURATED_PROCESSED_TSV_FILENAME,
-        "--include=%s" % file_naming.CURATED_PROCESSED_SPEECH_ONLY_TSV_FILENAME]
+        "--include=%s" % file_naming.CONCATENATED_AUDIO_FILENAME,
+        "--include=%s" % file_naming.SCREENSHOTS_MP4_FILENAME]
     self._run_command_line(command_args)
     print("Done uploading the preprocessing results for session %s" %
           session_prefix)
@@ -540,6 +601,7 @@ def _list_sessions(window,
                    data_manager,
                    session_container_prefixes,
                    restore_session_selection=False):
+  t0 = time.time()
   window.Element("STATUS_MESSAGE").Update("Listing sessions. Please wait...")
   window.Element("STATUS_MESSAGE").Update(text_color="yellow")
   window.Element("SESSION_LIST").Update(disabled=True)
@@ -550,9 +612,11 @@ def _list_sessions(window,
   session_prefixes = data_manager.get_session_prefixes(container_prefix)
   session_prefixes_with_status = []
   session_colors = []
+
+  data_manager.update_remote_session_objects_status(container_prefix)
   for session_prefix in session_prefixes:
     remote_status = data_manager.get_remote_session_folder_status(
-        container_prefix + session_prefix)
+        container_prefix + session_prefix, use_cached=True)
     local_status = data_manager.get_local_session_folder_status(
         container_prefix + session_prefix)
     keypresses_per_second = data_manager.get_session_keypresses_per_second(
@@ -585,6 +649,7 @@ def _list_sessions(window,
     window.Element("SESSION_LIST").update(
         set_to_index=[selection_index],
         scroll_to_index=selection_index)
+  print("Listing sessions took %.3f seconds" % (time.time() - t0))
   return session_prefixes
 
 

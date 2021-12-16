@@ -5,10 +5,15 @@ import os
 import tensorflow as tf
 
 import elan_process_curated
+import nlp
 import tsv_data
 
 
 class LoadSpeakerMapTest(tf.test.TestCase):
+
+  @classmethod
+  def setUpClass(cls):
+    nlp.init()
 
   def testLoadSpeakerMap_success(self):
     speaker_map_tsv_path = os.path.join("testdata", "speaker_id_config.json")
@@ -52,6 +57,10 @@ class LoadSpeakerMapTest(tf.test.TestCase):
 
 class InferColumnsTest(tf.test.TestCase):
 
+  @classmethod
+  def setUpClass(cls):
+    nlp.init()
+
   def testInferColumns_noHeader_success(self):
     tsv_path= os.path.join("testdata", "curated_1.tsv")
     column_order, has_header = elan_process_curated.infer_columns(tsv_path)
@@ -72,6 +81,10 @@ class InferColumnsTest(tf.test.TestCase):
 
 
 class LoadRowsTest(tf.test.TestCase):
+
+  @classmethod
+  def setUpClass(cls):
+    nlp.init()
 
   def testLoadRows_noHeader_success(self):
     tsv_path = os.path.join("testdata", "curated_1.tsv")
@@ -105,6 +118,10 @@ class LoadRowsTest(tf.test.TestCase):
 
 
 class ApplySpeakerMapGetKeypressRedactionsTest(tf.test.TestCase):
+
+  @classmethod
+  def setUpClass(cls):
+    nlp.init()
 
   def setUp(self):
     super(ApplySpeakerMapGetKeypressRedactionsTest, self).setUp()
@@ -190,6 +207,10 @@ class ApplySpeakerMapGetKeypressRedactionsTest(tf.test.TestCase):
 
 class RedactKeypressesTest(tf.test.TestCase):
 
+  @classmethod
+  def setUpClass(cls):
+    nlp.init()
+
   def testRedactsOnlyTheSpecifiedKeys(self):
     rows = [
         [0.1, 1.3, "SpeechTranscript", "Good morning. [Speaker:Partner005] "],
@@ -250,6 +271,10 @@ class RedactKeypressesTest(tf.test.TestCase):
 
 
 class CalculuateSpeechCurationStatsTest(tf.test.TestCase):
+
+  @classmethod
+  def setUpClass(cls):
+    nlp.init()
 
   def setUp(self):
     super().setUp()

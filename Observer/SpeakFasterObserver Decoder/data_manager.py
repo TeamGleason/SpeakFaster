@@ -373,6 +373,18 @@ class DataManager(object):
     if self._session_keypresses_per_second is not None:
       return self._session_keypresses_per_second.get(session_prefix, None)
 
+  def get_session_status_string(self,
+                                session_prefix,
+                                remote_status,
+                                local_status):
+    keypresses_per_second = self.get_session_keypresses_per_second(
+        session_prefix)
+    session_prefix = _get_base_session_prefix(session_prefix)
+    kps_string = ("[? kps]" if keypresses_per_second is None else
+                  ("[%.2f kps]" % keypresses_per_second))
+    return "%s %s (Remote: %s) (Local: %s)" % (
+        kps_string, session_prefix, remote_status, local_status)
+
   def _remote_object_exists(self, session_prefix, filename):
     merged_tsv_key = session_prefix + filename
     response = self._s3_client.list_objects_v2(
@@ -384,19 +396,24 @@ class DataManager(object):
     paginator = self._s3_client.get_paginator("list_objects")
     pages = paginator.paginate(
         Bucket=self._s3_bucket_name, Prefix=session_container_prefix)
+    query_string = (
+        "Contents[?ends_with(Key, `/%s`) || ends_with(Key, `/%s`)][]" %
+        (file_naming.MERGED_TSV_FILENAME,
+         file_naming.CURATED_PROCESSED_TSV_FILENAME))
+    objects = pages.search(query_string)
     self._sessions_with_merged_tsv = []
-    self._sessions_with_curated_tsv = []
-    for page in pages:
-      for content in page["Contents"]:
-        session = content["Key"][:content["Key"].rindex("/") + 1]
-        if os.path.basename(content["Key"]) == file_naming.MERGED_TSV_FILENAME:
-          self._sessions_with_merged_tsv.append(session)
-        elif  os.path.basename(content["Key"]) == file_naming.CURATED_TSV_FILENAME:
-          self._sessions_with_merged_tsv.append(session)
+    self._sessions_with_curated_processed_tsv = []
+    for obj in objects:
+      obj_key = obj["Key"]
+      session = obj_key[:obj_key.rindex("/") + 1]
+      if obj_key.endswith(file_naming.MERGED_TSV_FILENAME):
+        self._sessions_with_merged_tsv.append(session)
+      elif obj_key.endswith(file_naming.CURATED_PROCESSED_TSV_FILENAME):
+        self._sessions_with_curated_processed_tsv.append(session)
 
   def get_remote_session_folder_status(self, session_prefix, use_cached=False):
     if use_cached:
-      if session_prefix in self._sessions_with_curated_tsv:
+      if session_prefix in self._sessions_with_curated_processed_tsv:
         return "POSTPROCESSED"
       elif session_prefix in self._sessions_with_merged_tsv:
         return "PREPROCESSED"
@@ -564,18 +581,24 @@ def _get_session_prefix(window, session_container_prefixes, session_prefixes):
 # UI state remembered between operations.
 _UI_STATE = {
     "session_select_index": None,
+    "session_yview": None,
+    "session_colors": None,
 }
 
 def _disable_all_buttons(window):
-  session_selection = window.Element("SESSION_LIST").Widget.curselection()
+  session_list = window.Element("SESSION_LIST")
+  session_selection = session_list.Widget.curselection()
   if session_selection:
     _UI_STATE["session_select_index"] = session_selection[0]
+    _UI_STATE["session_yview"] = session_list.Widget.yview()[0]
   window.Element("LIST_SESSIONS").Update(disabled=True)
   window.Element("SUMMARIZE_SESSIONS").Update(disabled=True)
   window.Element("OPEN_SESSION_FOLDER").Update(disabled=True)
+  window.Element("REFRESH_SESSION_STATE").Update(disabled=True)
   window.Element("DOWNLOAD_SESSION_TO_LOCAL").Update(disabled=True)
   window.Element("PREPROCESS_SESSION").Update(disabled=True)
   window.Element("UPLOAD_PREPROC").Update(disabled=True)
+  window.Element("DOWNLOAD_PREPROCESS_UPLOAD_SESSIONS_BATCH").Update(disabled=True)
   window.Element("POSTPROC_CURATION").Update(disabled=True)
   window.Element("UPLOAD_POSTPROC").Update(disabled=True)
   window.Element("SESSION_CONTAINER_LIST").Update(disabled=True)
@@ -587,9 +610,11 @@ def _enable_all_buttons(window):
   window.Element("LIST_SESSIONS").Update(disabled=False)
   window.Element("SUMMARIZE_SESSIONS").Update(disabled=False)
   window.Element("OPEN_SESSION_FOLDER").Update(disabled=False)
+  window.Element("REFRESH_SESSION_STATE").Update(disabled=False)
   window.Element("DOWNLOAD_SESSION_TO_LOCAL").Update(disabled=False)
   window.Element("PREPROCESS_SESSION").Update(disabled=False)
   window.Element("UPLOAD_PREPROC").Update(disabled=False)
+  window.Element("DOWNLOAD_PREPROCESS_UPLOAD_SESSIONS_BATCH").Update(disabled=False)
   window.Element("POSTPROC_CURATION").Update(disabled=False)
   window.Element("UPLOAD_POSTPROC").Update(disabled=False)
   window.Element("SESSION_CONTAINER_LIST").Update(disabled=False)
@@ -619,13 +644,8 @@ def _list_sessions(window,
         container_prefix + session_prefix, use_cached=True)
     local_status = data_manager.get_local_session_folder_status(
         container_prefix + session_prefix)
-    keypresses_per_second = data_manager.get_session_keypresses_per_second(
-        session_prefix)
-    kps_string = ("[? kps]" if keypresses_per_second is None else
-                  ("[%.2f kps]" % keypresses_per_second))
-    session_prefixes_with_status.append(
-        "%s %s (Remote: %s) (Local: %s)" %
-        (kps_string, session_prefix, remote_status, local_status))
+    session_prefixes_with_status.append(data_manager.get_session_status_string(
+        session_prefix, remote_status, local_status))
     if remote_status == "POSTPROCESSED":
       session_color = "green"
     elif remote_status == "PREPROCESSED":
@@ -636,21 +656,91 @@ def _list_sessions(window,
   session_list = window.Element("SESSION_LIST")
   session_list.Update(disabled=False)
   session_list.Update(session_prefixes_with_status)
-  session_widget = session_list.Widget
-  for i, session_color in enumerate(session_colors):
-    session_widget.itemconfigure(i, {"fg": session_color})
+  _UI_STATE["session_colors"] = session_colors
+  _apply_session_colors(window)
   window.Element("SESSION_TITLE").Update(
       "Sessions:\n%d sessions" % len(session_prefixes))
   window.Element("STATUS_MESSAGE").Update("")
   window.Element("STATUS_MESSAGE").Update(text_color="white")
+  session_list = window.Element("SESSION_LIST")
   if (restore_session_selection and
       _UI_STATE["session_select_index"] is not None):
     selection_index = _UI_STATE["session_select_index"]
-    window.Element("SESSION_LIST").update(
-        set_to_index=[selection_index],
-        scroll_to_index=selection_index)
+    session_list.update(set_to_index=[selection_index])
+  if _UI_STATE["session_yview"] is not None:
+    session_list.Widget.yview_moveto(_UI_STATE["session_yview"])
   print("Listing sessions took %.3f seconds" % (time.time() - t0))
   return session_prefixes
+
+
+def _get_base_session_prefix(session_prefix):
+  if session_prefix.endswith("/"):
+    session_prefix = session_prefix[:-1]
+  if "/" in session_prefix:
+    session_prefix = session_prefix[session_prefix.rindex("/") + 1:]
+  return session_prefix
+
+
+def _download_preprocess_upload_sessions_from(window,
+                                              data_manager,
+                                              session_container_prefixes,
+                                              session_prefixes):
+  """Preprocess & upload sessions that aren't remotely preprocessed, in batch."""
+  container_prefix = _get_container_prefix(window, session_container_prefixes)
+  session_prefix = _get_session_prefix(
+      window, session_container_prefixes, session_prefixes)
+  task_session_prefixes = []
+  start_index = -1
+  for i, prefix in enumerate(session_prefixes):
+    if container_prefix + prefix == session_prefix:
+      start_index = i
+      break
+  assert start_index >= 0
+  session_prefixes = session_prefixes[start_index:]
+  print("List of sessions to run:")
+  for session_prefix in session_prefixes:
+    if data_manager.get_remote_session_folder_status(
+        container_prefix + session_prefix) != "NOT_PREPROCESSED":
+      continue
+    (_, _, _, _, num_keypresses, num_audio_files,
+     _, _) = data_manager.get_session_details(container_prefix + session_prefix)
+    if num_keypresses == 0 or num_audio_files == 0:
+      continue
+    task_session_prefixes.append(container_prefix + session_prefix)
+    print("  %s" % session_prefix)
+  if not task_session_prefixes:
+    print("There are no sessions to preprocess or upload")
+    return "No sessions to preprocess or upload", False
+  while True:
+    answer = input("Do you want to run %d sessions? (y/n): " %
+                   len(task_session_prefixes)).strip()
+    if answer in ("y", "n"):
+      break
+  if answer == "n":
+    return "Batch preprocessing and uploading is canceled.", False
+  for session_prefix in task_session_prefixes:
+    print("")
+    local_status = data_manager.get_local_session_folder_status(session_prefix)
+    if local_status == "NOT_DOWNLOADED":
+      print("Downloading %s ..." % session_prefix)
+      data_manager.sync_to_local(session_prefix)
+    local_status = data_manager.get_local_session_folder_status(session_prefix)
+    if local_status == "DOWNLOADED":
+      print("Preprocessing %s ..." % session_prefix)
+      data_manager.preprocess_session(session_prefix)
+    print("Uploading preprocessing results for %s..." % session_prefix)
+    data_manager.upload_sesssion_preproc_results(session_prefix)
+  return ("Done preprocessing and uploading %d sessions" %
+          len(task_session_prefixes), True)
+
+
+def _apply_session_colors(window):
+  if not _UI_STATE["session_colors"]:
+    return
+  session_list = window.Element("SESSION_LIST")
+  session_widget = session_list.Widget
+  for i, session_color in enumerate(_UI_STATE["session_colors"]):
+    session_widget.itemconfigure(i, {"fg": session_color})
 
 
 def _show_session_info(window,
@@ -661,6 +751,8 @@ def _show_session_info(window,
       window, session_container_prefixes, session_prefixes)
   if not session_prefix:
     return
+  session_list = window.Element("SESSION_LIST")
+  _UI_STATE["session_yview"] = session_list.Widget.yview()[0]
   (is_session_complete, time_zone, start_time, duration_s, num_keypresses,
    num_audio_files, num_screenshots,
    object_keys) = data_manager.get_session_details(session_prefix)
@@ -678,6 +770,19 @@ def _show_session_info(window,
   window.Element("OBJECT_LIST").Update(object_keys)
   window.Element("OBJECTS_TITLE").Update(
       "Remote objects:\n%d objects" % len(object_keys))
+
+  selection_index = session_list.Widget.curselection()
+  new_list = session_list.Values[:]
+  remote_status = data_manager.get_remote_session_folder_status(session_prefix,
+                                                                use_cached=True)
+  local_status = data_manager.get_local_session_folder_status(session_prefix)
+  new_list[selection_index[0]] = data_manager.get_session_status_string(
+      session_prefix, remote_status, local_status)
+  session_list.Update(new_list)
+  session_list.update(set_to_index=[selection_index])
+  _apply_session_colors(window)
+  if _UI_STATE["session_yview"] is not None:
+    session_list.Widget.yview_moveto(_UI_STATE["session_yview"])
 
 
 def _open_folder(dir_path):
@@ -735,6 +840,7 @@ def main():
           sg.Text("Sessions:", size=(15, 2), key="SESSION_TITLE"),
           session_listbox,
           sg.Button("Open session folder", key="OPEN_SESSION_FOLDER"),
+          sg.Button("Refresh session state", key="REFRESH_SESSION_STATE"),
       ],
       [
           [
@@ -773,7 +879,12 @@ def main():
           sg.Button("Upload preprocessing data", key="UPLOAD_PREPROC"),
           sg.Button("Postprocess curation", key="POSTPROC_CURATION"),
           sg.Button("Upload postprocessed data", key="UPLOAD_POSTPROC"),
-      ]
+      ],
+      [
+          sg.Text("", size=(15, 2)),
+          sg.Button("Preprocess and upload sessions from here on",
+                    key="DOWNLOAD_PREPROCESS_UPLOAD_SESSIONS_BATCH"),
+      ],
   ]
   session_prefixes = None
   window = sg.Window(
@@ -821,9 +932,11 @@ def main():
       window.Element("STATUS_MESSAGE").Update("")
     elif event in ("SESSION_LIST",
                    "OPEN_SESSION_FOLDER",
+                   "REFRESH_SESSION_STATE",
                    "DOWNLOAD_SESSION_TO_LOCAL",
                    "PREPROCESS_SESSION",
                    "UPLOAD_PREPROC",
+                   "DOWNLOAD_PREPROCESS_UPLOAD_SESSIONS_BATCH",
                    "POSTPROC_CURATION",
                    "UPLOAD_POSTPROC"):
       if not session_prefixes:
@@ -845,6 +958,10 @@ def main():
               "Local session directory not found. Download the session first",
               modal=True)
         continue
+      elif event == "REFRESH_SESSION_STATE":
+        _show_session_info(window, data_manager, session_container_prefixes,
+                           session_prefixes)
+        continue
       elif event == "SESSION_LIST":
         continue
       sessions_changed = True
@@ -855,6 +972,8 @@ def main():
         status_message = "Preprocessing session. Please wait..."
       elif event == "UPLOAD_PREPROC":
         status_message = "Uploading session preprocessing results. Please wait..."
+      elif event == "DOWNLOAD_PREPROCESS_UPLOAD_SESSIONS_BATCH":
+        status_message = "Batch downloading, preprocessing and uploading sessions. Please wait..."
       elif event == "POSTPROCESS_CURATION":
         status_message = "Postprocessing curation results. Please wait..."
       elif event == "UPLOAD_POSTPROC":
@@ -873,6 +992,11 @@ def main():
         (status_message,
          sessions_changed) = data_manager.upload_sesssion_preproc_results(
             session_prefix)
+      elif event == "DOWNLOAD_PREPROCESS_UPLOAD_SESSIONS_BATCH":
+        _download_preprocess_upload_sessions_from(
+           window, data_manager, session_container_prefixes, session_prefixes)
+        status_message = ""
+        sessions_changed = True
       elif event == "POSTPROC_CURATION":
         (status_message,
          sessions_changed) = data_manager.postprocess_curation(session_prefix)

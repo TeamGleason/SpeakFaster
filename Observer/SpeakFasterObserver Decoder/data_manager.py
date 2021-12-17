@@ -373,6 +373,21 @@ class DataManager(object):
     if self._session_keypresses_per_second is not None:
       return self._session_keypresses_per_second.get(session_prefix, None)
 
+  def get_session_status_string(self,
+                                session_prefix,
+                                remote_status,
+                                local_status):
+    keypresses_per_second = self.get_session_keypresses_per_second(
+        session_prefix)
+    if session_prefix.endswith("/"):
+      session_prefix = session_prefix[:-1]
+    if "/" in session_prefix:
+      session_prefix = session_prefix[session_prefix.rindex("/") + 1:]
+    kps_string = ("[? kps]" if keypresses_per_second is None else
+                  ("[%.2f kps]" % keypresses_per_second))
+    return "%s %s (Remote: %s) (Local: %s)" % (
+        kps_string, session_prefix, remote_status, local_status)
+
   def _remote_object_exists(self, session_prefix, filename):
     merged_tsv_key = session_prefix + filename
     response = self._s3_client.list_objects_v2(
@@ -569,15 +584,20 @@ def _get_session_prefix(window, session_container_prefixes, session_prefixes):
 # UI state remembered between operations.
 _UI_STATE = {
     "session_select_index": None,
+    "session_yview": None,
+    "session_colors": None,
 }
 
 def _disable_all_buttons(window):
-  session_selection = window.Element("SESSION_LIST").Widget.curselection()
+  session_list = window.Element("SESSION_LIST")
+  session_selection = session_list.Widget.curselection()
   if session_selection:
     _UI_STATE["session_select_index"] = session_selection[0]
+    _UI_STATE["session_yview"] = session_list.Widget.yview()[0]
   window.Element("LIST_SESSIONS").Update(disabled=True)
   window.Element("SUMMARIZE_SESSIONS").Update(disabled=True)
   window.Element("OPEN_SESSION_FOLDER").Update(disabled=True)
+  window.Element("REFRESH_SESSION_STATE").Update(disabled=True)
   window.Element("DOWNLOAD_SESSION_TO_LOCAL").Update(disabled=True)
   window.Element("PREPROCESS_SESSION").Update(disabled=True)
   window.Element("UPLOAD_PREPROC").Update(disabled=True)
@@ -592,6 +612,7 @@ def _enable_all_buttons(window):
   window.Element("LIST_SESSIONS").Update(disabled=False)
   window.Element("SUMMARIZE_SESSIONS").Update(disabled=False)
   window.Element("OPEN_SESSION_FOLDER").Update(disabled=False)
+  window.Element("REFRESH_SESSION_STATE").Update(disabled=False)
   window.Element("DOWNLOAD_SESSION_TO_LOCAL").Update(disabled=False)
   window.Element("PREPROCESS_SESSION").Update(disabled=False)
   window.Element("UPLOAD_PREPROC").Update(disabled=False)
@@ -624,13 +645,14 @@ def _list_sessions(window,
         container_prefix + session_prefix, use_cached=True)
     local_status = data_manager.get_local_session_folder_status(
         container_prefix + session_prefix)
-    keypresses_per_second = data_manager.get_session_keypresses_per_second(
-        session_prefix)
-    kps_string = ("[? kps]" if keypresses_per_second is None else
-                  ("[%.2f kps]" % keypresses_per_second))
-    session_prefixes_with_status.append(
-        "%s %s (Remote: %s) (Local: %s)" %
-        (kps_string, session_prefix, remote_status, local_status))
+    # keypresses_per_second = data_manager.get_session_keypresses_per_second(
+    #     session_prefix)
+    # kps_string = ("[? kps]" if keypresses_per_second is None else
+    #               ("[%.2f kps]" % keypresses_per_second))
+    session_prefixes_with_status.append(data_manager.get_session_status_string(
+        session_prefix, remote_status, local_status))
+        # "%s %s (Remote: %s) (Local: %s)" %
+        # (kps_string, session_prefix, remote_status, local_status))
     if remote_status == "POSTPROCESSED":
       session_color = "green"
     elif remote_status == "PREPROCESSED":
@@ -641,21 +663,30 @@ def _list_sessions(window,
   session_list = window.Element("SESSION_LIST")
   session_list.Update(disabled=False)
   session_list.Update(session_prefixes_with_status)
-  session_widget = session_list.Widget
-  for i, session_color in enumerate(session_colors):
-    session_widget.itemconfigure(i, {"fg": session_color})
+  _UI_STATE["session_colors"] = session_colors
+  _apply_session_colors(window)
   window.Element("SESSION_TITLE").Update(
       "Sessions:\n%d sessions" % len(session_prefixes))
   window.Element("STATUS_MESSAGE").Update("")
   window.Element("STATUS_MESSAGE").Update(text_color="white")
+  session_list = window.Element("SESSION_LIST")
   if (restore_session_selection and
       _UI_STATE["session_select_index"] is not None):
     selection_index = _UI_STATE["session_select_index"]
-    window.Element("SESSION_LIST").update(
-        set_to_index=[selection_index],
-        scroll_to_index=selection_index)
+    session_list.update(set_to_index=[selection_index])
+  if _UI_STATE["session_yview"] is not None:
+    session_list.Widget.yview_moveto(_UI_STATE["session_yview"])
   print("Listing sessions took %.3f seconds" % (time.time() - t0))
   return session_prefixes
+
+
+def _apply_session_colors(window):
+  if not _UI_STATE["session_colors"]:
+    return
+  session_list = window.Element("SESSION_LIST")
+  session_widget = session_list.Widget
+  for i, session_color in enumerate(_UI_STATE["session_colors"]):
+    session_widget.itemconfigure(i, {"fg": session_color})
 
 
 def _show_session_info(window,
@@ -666,6 +697,8 @@ def _show_session_info(window,
       window, session_container_prefixes, session_prefixes)
   if not session_prefix:
     return
+  session_list = window.Element("SESSION_LIST")
+  _UI_STATE["session_yview"] = session_list.Widget.yview()[0]
   (is_session_complete, time_zone, start_time, duration_s, num_keypresses,
    num_audio_files, num_screenshots,
    object_keys) = data_manager.get_session_details(session_prefix)
@@ -683,6 +716,19 @@ def _show_session_info(window,
   window.Element("OBJECT_LIST").Update(object_keys)
   window.Element("OBJECTS_TITLE").Update(
       "Remote objects:\n%d objects" % len(object_keys))
+
+  selection_index = session_list.Widget.curselection()
+  new_list = session_list.Values[:]
+  remote_status = data_manager.get_remote_session_folder_status(session_prefix,
+                                                                use_cached=True)
+  local_status = data_manager.get_local_session_folder_status(session_prefix)
+  new_list[selection_index[0]] = data_manager.get_session_status_string(
+      session_prefix, remote_status, local_status)
+  session_list.Update(new_list)
+  session_list.update(set_to_index=[selection_index])
+  _apply_session_colors(window)
+  if _UI_STATE["session_yview"] is not None:
+    session_list.Widget.yview_moveto(_UI_STATE["session_yview"])
 
 
 def _open_folder(dir_path):
@@ -740,6 +786,7 @@ def main():
           sg.Text("Sessions:", size=(15, 2), key="SESSION_TITLE"),
           session_listbox,
           sg.Button("Open session folder", key="OPEN_SESSION_FOLDER"),
+          sg.Button("Refresh session state", key="REFRESH_SESSION_STATE"),
       ],
       [
           [
@@ -826,6 +873,7 @@ def main():
       window.Element("STATUS_MESSAGE").Update("")
     elif event in ("SESSION_LIST",
                    "OPEN_SESSION_FOLDER",
+                   "REFRESH_SESSION_STATE",
                    "DOWNLOAD_SESSION_TO_LOCAL",
                    "PREPROCESS_SESSION",
                    "UPLOAD_PREPROC",
@@ -849,6 +897,10 @@ def main():
           sg.Popup(
               "Local session directory not found. Download the session first",
               modal=True)
+        continue
+      elif event == "REFRESH_SESSION_STATE":
+        _show_session_info(window, data_manager, session_container_prefixes,
+                           session_prefixes)
         continue
       elif event == "SESSION_LIST":
         continue

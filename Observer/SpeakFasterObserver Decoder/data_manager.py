@@ -685,7 +685,7 @@ def _download_preprocess_upload_sessions_from(window,
                                               data_manager,
                                               session_container_prefixes,
                                               session_prefixes):
-  """Preprocess and upload sessions that are not remotely preprocessed."""
+  """Preprocess & upload sessions that aren't remotely preprocessed, in batch."""
   container_prefix = _get_container_prefix(window, session_container_prefixes)
   session_prefix = _get_session_prefix(
       window, session_container_prefixes, session_prefixes)
@@ -716,6 +716,8 @@ def _download_preprocess_upload_sessions_from(window,
                    len(task_session_prefixes)).strip()
     if answer in ("y", "n"):
       break
+  if answer == "n":
+    return "Batch preprocessing and uploading is canceled.", False
   for session_prefix in task_session_prefixes:
     print("")
     local_status = data_manager.get_local_session_folder_status(session_prefix)

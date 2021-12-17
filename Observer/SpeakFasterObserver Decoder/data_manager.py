@@ -384,19 +384,24 @@ class DataManager(object):
     paginator = self._s3_client.get_paginator("list_objects")
     pages = paginator.paginate(
         Bucket=self._s3_bucket_name, Prefix=session_container_prefix)
+    query_string = (
+        "Contents[?ends_with(Key, `/%s`) || ends_with(Key, `/%s`)][]" %
+        (file_naming.MERGED_TSV_FILENAME,
+         file_naming.CURATED_PROCESSED_TSV_FILENAME))
+    objects = pages.search(query_string)
     self._sessions_with_merged_tsv = []
-    self._sessions_with_curated_tsv = []
-    for page in pages:
-      for content in page["Contents"]:
-        session = content["Key"][:content["Key"].rindex("/") + 1]
-        if os.path.basename(content["Key"]) == file_naming.MERGED_TSV_FILENAME:
-          self._sessions_with_merged_tsv.append(session)
-        elif  os.path.basename(content["Key"]) == file_naming.CURATED_TSV_FILENAME:
-          self._sessions_with_merged_tsv.append(session)
+    self._sessions_with_curated_processed_tsv = []
+    for obj in objects:
+      obj_key = obj["Key"]
+      session = obj_key[:obj_key.rindex("/") + 1]
+      if obj_key.endswith(file_naming.MERGED_TSV_FILENAME):
+        self._sessions_with_merged_tsv.append(session)
+      elif obj_key.endswith(file_naming.CURATED_PROCESSED_TSV_FILENAME):
+        self._sessions_with_curated_processed_tsv.append(session)
 
   def get_remote_session_folder_status(self, session_prefix, use_cached=False):
     if use_cached:
-      if session_prefix in self._sessions_with_curated_tsv:
+      if session_prefix in self._sessions_with_curated_processed_tsv:
         return "POSTPROCESSED"
       elif session_prefix in self._sessions_with_merged_tsv:
         return "PREPROCESSED"

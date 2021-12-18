@@ -5,7 +5,7 @@ import {createUuid} from 'src/utils/uuid';
 
 import {isPlainAlphanumericKey, isTextContentKey} from '../../utils/keyboard-utils';
 import {KeyboardComponent} from '../keyboard/keyboard.component';
-import {AbbreviationSpec, AbbreviationToken, StartSpellingEvent} from '../types/abbreviations';
+import {AbbreviationSpec, AbbreviationToken, StartSpellingEvent} from '../types/abbreviation';
 
 enum SpellingState {
   NOT_STARTED = 'NOT_STARTED',
@@ -137,28 +137,32 @@ export class SpellComponent implements OnInit, AfterViewInit {
 
   private reconstructAbbreviation(): AbbreviationSpec {
     this.spelledWords[this.spellIndex!] = this.tokenSpellingInput.trim();
-    const abbrevSpec: AbbreviationSpec = {tokens: [], readableString: ''};
     let currentToken: AbbreviationToken = {value: '', isKeyword: false};
+    const tokens: AbbreviationToken[] = [];
     for (let i = 0; i < this.originalAbbreviationChars.length; ++i) {
       if (this.spelledWords[i] !== null) {
         if (currentToken.value.length > 0) {
-          abbrevSpec.tokens.push(currentToken);
+          tokens.push(currentToken);
         }
-        abbrevSpec.tokens.push({
+        tokens.push({
           value: this.spelledWords[i] as string,
           isKeyword: true,
         });
         currentToken = {value: '', isKeyword: false};
       } else {
         const char = this.originalAbbreviationChars[i];
-        currentToken.value += char;
+        currentToken = {
+          value: currentToken.value + char,
+          isKeyword: currentToken.isKeyword,
+        };
       }
     }
     if (currentToken.value.length > 0) {
-      abbrevSpec.tokens.push(currentToken);
+      tokens.push(currentToken);
     }
-    abbrevSpec.readableString =
-        abbrevSpec.tokens.map(token => token.value).join(' ');
-    return abbrevSpec;
+    return {
+      tokens,
+      readableString: tokens.map(token => token.value).join(' '),
+    };
   }
 }

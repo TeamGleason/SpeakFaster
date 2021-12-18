@@ -4,7 +4,8 @@ import {HttpClient} from '@angular/common/http';
 import {Injectable} from '@angular/core';
 import {Observable} from 'rxjs';
 
-import {AbbreviationSpec} from './types/abbreviations';
+import {AbbreviationSpec} from './types/abbreviation';
+import {ContextSignal} from './types/context';
 
 export interface PingResponse {
   ping_response: string;
@@ -13,32 +14,6 @@ export interface PingResponse {
 export interface AbbreviationExpansionRespnose {
   exactMatches?: string[];
   prefixMatches?: string[];
-}
-
-export interface ConversationTurn {
-  speakerId?: string;
-  speechContent: string;
-  startTimestamp?: string;
-  endTimestamp?: string;
-  timezone?: string;
-  isHardcoded?: boolean;
-  isTts?: boolean;
-}
-
-export interface PartnerProximityEvent {
-  eventType: 'UNKNOWN'|'FOUND'|'LOST';
-  partnerId: string;
-  distanceM: number;
-}
-
-export interface ContextSignal {
-  userId: string;
-  contextId?: string;
-  conversationTurn?: ConversationTurn;
-  partnerProximityEvent?: PartnerProximityEvent;
-  timestamp?: string;
-  timezone?: string;
-  isManuallyAdded?: boolean;
 }
 
 export interface RetrieveContextResponse {

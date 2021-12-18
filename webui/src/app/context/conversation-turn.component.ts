@@ -4,7 +4,7 @@ import {createUuid} from 'src/utils/uuid';
 import {updateButtonBoxesForElements} from '../../utils/cefsharp';
 import {getAgoString} from '../../utils/datetime-utils';
 import {limitStringLength} from '../../utils/text-utils';
-import {ConversationTurn} from '../speakfaster-service';
+import {ConversationTurn} from '../types/conversation';
 
 @Component({
   selector: 'app-conversation-turn-component',

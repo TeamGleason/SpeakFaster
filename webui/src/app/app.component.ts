@@ -6,7 +6,7 @@ import {bindCefSharpListener, registerExternalKeypressHook} from '../utils/cefsh
 
 import {ExternalEventsComponent} from './external/external-events.component';
 import {configureService, SpeakFasterService} from './speakfaster-service';
-import {AbbreviationExpansionSelectionEvent, InputAbbreviationChangedEvent} from './types/abbreviations';
+import {AbbreviationExpansionSelectionEvent, InputAbbreviationChangedEvent} from './types/abbreviation';
 import {TextEntryBeginEvent, TextEntryEndEvent} from './types/text-entry';
 
 @Component({

@@ -1,9 +1,12 @@
-import {AfterViewInit, Component, ElementRef, EventEmitter, Input, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
+/** TODO(cais): Add doc string. */
+
+import {AfterViewInit, Component, EventEmitter, Input, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
 import {Subject, timer} from 'rxjs';
 
 import {createUuid} from '../..//utils/uuid';
 import {KeyboardComponent} from '../keyboard/keyboard.component';
-import {ContextSignal, SpeakFasterService} from '../speakfaster-service';
+import {SpeakFasterService} from '../speakfaster-service';
+import {ContextSignal, ConversationTurnContextSignal, getConversationTurnContextSignal} from '../types/context';
 import {TextEntryEndEvent} from '../types/text-entry';
 
 import {ConversationTurnComponent} from './conversation-turn.component';
@@ -24,8 +27,9 @@ export class ContextComponent implements OnInit, AfterViewInit {
   @Input() textInjectionSubject!: Subject<TextEntryEndEvent>;
 
   private static readonly CONTEXT_POLLING_INTERVAL_MILLIS = 2 * 1000;
-  readonly contextSignals: ContextSignal[] = [];
-  private readonly textInjectionContextSignals: ContextSignal[] = [];
+  readonly contextSignals: ConversationTurnContextSignal[] = [];
+  private readonly textInjectionContextSignals:
+      ConversationTurnContextSignal[] = [];
   contextRetrievalError: string|null = null;
 
   @Output() contextStringsSelected: EventEmitter<string[]> = new EventEmitter();
@@ -45,17 +49,14 @@ export class ContextComponent implements OnInit, AfterViewInit {
       if (!textInjection.isFinal) {
         return;
       }
-      const timestamp = new Date(textInjection.timestampMillis).toISOString();
-      this.textInjectionContextSignals.push({
-        userId: '',  // TODO(cais): Populate proper user ID.
-        conversationTurn: {
-          speechContent: textInjection.text,
-          startTimestamp: timestamp,
-          isTts: true,
-        },
-        timestamp,
-        contextId: createUuid(),
-      });
+      const timestamp = new Date(textInjection.timestampMillis);
+      this.textInjectionContextSignals.push(getConversationTurnContextSignal(
+          '',  // TODO(cais): Populate proper user ID.
+          {
+            speechContent: textInjection.text,
+            startTimestamp: timestamp,
+            isTts: true,
+          }));
       // TODO(cais): Limit length of textInjections?
       this.retrieveContext();
     });
@@ -93,16 +94,14 @@ export class ContextComponent implements OnInit, AfterViewInit {
     if (text === null) {
       return;
     }
-    const addedContextSignal: ContextSignal = {
-      userId: '',  // TODO(cais): Enter proper context.
-      contextId: createUuid(),
-      conversationTurn: {
-        speechContent: text,
-        startTimestamp: new Date().toString(),
-        isTts: false,
-      },
-      isManuallyAdded: true,
-    };
+    const addedContextSignal: ConversationTurnContextSignal =
+        getConversationTurnContextSignal(
+            '',  // TODO(cais): Enter proper user id.
+            {
+              speechContent: text,
+              startTimestamp: new Date(),
+              isTts: false,
+            });
     this.contextSignals.push(addedContextSignal);
     this.focusContextIds.splice(0);
     this.focusContextIds.push(addedContextSignal.contextId!);
@@ -175,16 +174,12 @@ export class ContextComponent implements OnInit, AfterViewInit {
               }
               this.cleanUpContextSignals();
               for (const contextSignal of data.contextSignals) {
-                if (contextSignal.timestamp != null &&
-                    contextSignal.conversationTurn != null &&
-                    contextSignal.conversationTurn.startTimestamp == null) {
-                  contextSignal.conversationTurn.startTimestamp =
-                      contextSignal.timestamp;
+                if (contextSignal.contextType !== 'ConversationTurn' ||
+                    contextSignal.timestamp === undefined) {
+                  continue;
                 }
-                if (contextSignal.conversationTurn != null) {
-                  // TODO(cais): Deduplicate.
-                  this.contextSignals.push(contextSignal);
-                }
+                this.contextSignals.push(
+                    contextSignal as ConversationTurnContextSignal);
               }
               this.appendTextInjectionToContext();
               this.limitContextItemsCount();

@@ -27,8 +27,6 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
       'AbbreviationComponent_TokenReplacementKeyboardCallbackName';
   private static readonly _MAX_NUM_REPLACEMENT_TOKENS = 6;
   private readonly instanceId = createUuid();
-  @Input() endpoint!: string;
-  @Input() accessToken!: string;
   @Input() contextStrings!: string[];
   @Input()
   abbreviationExpansionTriggers!: Subject<InputAbbreviationChangedEvent>;
@@ -135,10 +133,7 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
     const maskInitial = this.editTokens[index][0];
     const speechContent = this.contextStrings[this.contextStrings.length - 1];
     this.selectedTokenIndex = index;
-    this.speakFasterService
-        .fillMask(
-            this.endpoint, this.accessToken, speechContent, phraseWithMask,
-            maskInitial)
+    this.speakFasterService.fillMask(speechContent, phraseWithMask, maskInitial)
         .subscribe(
             data => {
               this.replacementTokens.splice(0);
@@ -234,10 +229,6 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
   }
 
   private expandAbbreviation() {
-    if (!this.endpoint) {
-      this.responseError = 'Cannot expand abbreviation: endpoint is empty';
-      return;
-    }
     if (this.contextStrings.length === 0) {
       this.responseError =
           'Cannot expand abbreviation: no speech content as context';
@@ -265,8 +256,7 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
         usedContextStrings, this.abbreviation);
     this.speakFasterService
         .expandAbbreviation(
-            this.endpoint, this.accessToken, usedContextStrings.join('|'),
-            this.abbreviation, numSamples)
+            usedContextStrings.join('|'), this.abbreviation, numSamples)
         .subscribe(
             data => {
               this.requestOngoing = false;

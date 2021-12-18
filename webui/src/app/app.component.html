@@ -51,8 +51,6 @@ app-context-component {
   <div *ngIf="hasAccessToken()">
 
     <app-context-component
-      [endpoint]="endpoint"
-      [accessToken]="accessToken"
       [textInjectionSubject]="textEntryEndSubject"
       (contextStringsSelected)="onContextStringsSelected($event)"
     ></app-context-component>
@@ -65,16 +63,12 @@ app-context-component {
     ></app-abbreviation-editing-component>
 
     <app-text-prediction-component
-      [endpoint]="endpoint"
-      [accessToken]="accessToken"
       [contextStrings]="contextStrings"
       [textPrefix]=(inputAbbreviation)
       [textInjectionSubject]="textEntryEndSubject"
     ></app-text-prediction-component>
 
     <app-abbreviation-component
-      [endpoint]="endpoint"
-      [accessToken]="accessToken"
       [contextStrings]="contextStrings"
       [abbreviationExpansionTriggers]="abbreviationExpansionTriggers"
       [isSpelling]="isSpelling"

@@ -5,7 +5,7 @@ import {Subject} from 'rxjs';
 import {bindCefSharpListener, registerExternalKeypressHook} from '../utils/cefsharp';
 
 import {ExternalEventsComponent} from './external/external-events.component';
-import {SpeakFasterService} from './speakfaster-service';
+import {configureService, SpeakFasterService} from './speakfaster-service';
 import {AbbreviationExpansionSelectionEvent, InputAbbreviationChangedEvent} from './types/abbreviations';
 import {TextEntryBeginEvent, TextEntryEndEvent} from './types/text-entry';
 
@@ -51,6 +51,10 @@ export class AppComponent implements OnInit, AfterViewInit {
       if (typeof useOauth === 'string' &&
           (useOauth.toLocaleLowerCase() === 'false' || useOauth === '0')) {
         this.useAccessToken = false;
+        configureService({
+          endpoint: this._endpoint,
+          accessToken: '',
+        })
       }
     });
   }
@@ -63,12 +67,10 @@ export class AppComponent implements OnInit, AfterViewInit {
 
   onNewAccessToken(accessToken: string) {
     this._accessToken = accessToken;
-    if (this.endpoint) {
-      this.speakFasterService.ping(this._endpoint, this._accessToken)
-          .subscribe(data => {
-            console.log('Ping response:', data);
-          });
-    }
+    configureService({
+      endpoint: this._endpoint,
+      accessToken,
+    });
   }
 
   hasAccessToken(): boolean {

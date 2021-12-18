@@ -1,4 +1,4 @@
-import {AfterViewInit, Component, ElementRef, EventEmitter, Input, OnDestroy, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
+import {AfterViewInit, Component, ElementRef, EventEmitter, Input, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
 import {Subject} from 'rxjs';
 import {updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
 import {createUuid} from 'src/utils/uuid';
@@ -18,7 +18,7 @@ enum SpellingState {
   selector: 'app-spell-component',
   templateUrl: './spell.component.html',
 })
-export class SpellComponent implements OnInit, AfterViewInit, OnDestroy {
+export class SpellComponent implements OnInit, AfterViewInit {
   private static readonly _NAME = 'SpellComponent';
 
   private readonly instanceId = createUuid();
@@ -58,10 +58,6 @@ export class SpellComponent implements OnInit, AfterViewInit, OnDestroy {
           updateButtonBoxesForElements(
               SpellComponent._NAME + this.instanceId, queryList);
         });
-  }
-
-  ngOnDestroy() {
-    // NOTE: Hide doesn't really call onDestroy().
   }
 
   state: SpellingState = SpellingState.NOT_STARTED;

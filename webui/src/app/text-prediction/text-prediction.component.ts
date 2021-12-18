@@ -10,13 +10,12 @@ import {TextEntryEndEvent} from '../types/text-entry';
   selector: 'app-text-prediction-component',
   templateUrl: './text-prediction.component.html',
 })
-export class TextPredictionComponent implements AfterViewInit, OnChanges, OnDestroy {
+export class TextPredictionComponent implements AfterViewInit, OnChanges,
+                                                OnDestroy {
   private static readonly _NAME = 'TextPredictionComponent';
 
   private readonly instanceId =
       TextPredictionComponent._NAME + '_' + createUuid();
-  @Input() endpoint!: string;
-  @Input() accessToken!: string;
   @Input() contextStrings!: string[];
   @Input() textPrefix!: string;
   @Input() textInjectionSubject!: Subject<TextEntryEndEvent>;
@@ -53,9 +52,7 @@ export class TextPredictionComponent implements AfterViewInit, OnChanges, OnDest
       return;
     }
     this.speakFasterService
-        .textPrediction(
-            this.endpoint, this.accessToken, this.contextStrings,
-            textPrefix.trim())
+        .textPrediction(this.contextStrings, textPrefix.trim())
         .subscribe(
             data => {
               this.predictions.splice(0);

@@ -21,8 +21,6 @@ export class ContextComponent implements OnInit, AfterViewInit {
   private static readonly MAX_DISPLAYED_CONTEXT_COUNT = 4;
   private static readonly MAX_FOCUS_CONTEXT_SIGNALS = 2;
 
-  @Input() endpoint!: string;
-  @Input() accessToken!: string;
   @Input() textInjectionSubject!: Subject<TextEntryEndEvent>;
 
   private static readonly CONTEXT_POLLING_INTERVAL_MILLIS = 2 * 1000;
@@ -163,8 +161,7 @@ export class ContextComponent implements OnInit, AfterViewInit {
   }
 
   private retrieveContext() {
-    this.speakFasterService
-        .retrieveContext(this.endpoint, this.accessToken, this.userId)
+    this.speakFasterService.retrieveContext(this.userId)
         .subscribe(
             data => {
               if (data.errorMessage != null) {

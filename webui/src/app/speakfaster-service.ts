@@ -56,35 +56,39 @@ export interface FillMaskResponse {
 }
 
 export interface SpeakFasterServiceStub {
-  ping(endpoint: string, accessToken: string): Observable<PingResponse>;
+  ping(): Observable<PingResponse>;
 
   expandAbbreviation(
-      endpoint: string, accessToken: string, contextTurn: string,
-      abbreviationSpec: AbbreviationSpec, numSamples: number):
-      Observable<AbbreviationExpansionRespnose>;
+      speechContent: string, abbreviationSpec: AbbreviationSpec,
+      numSamples: number): Observable<AbbreviationExpansionRespnose>;
 
-  textPrediction(
-      endpoint: string, accessToken: string, contextTurns: string[],
-      textPrefix: string): Observable<TextPredictionResponse>;
+  textPrediction(contextTurns: string[], textPrefix: string):
+      Observable<TextPredictionResponse>;
 
-  fillMask(
-      endpoint: string, accessToken: string, speechContent: string,
-      phraseWithMask: string,
-      maskInitial: string): Observable<FillMaskResponse>;
+  fillMask(speechContent: string, phraseWithMask: string, maskInitial: string):
+      Observable<FillMaskResponse>;
 
   // TODO(cais): Add other parameters.
-  retrieveContext(endpoint: string, accessToken: string, userId: string):
-      Observable<RetrieveContextResponse>;
+  retrieveContext(userId: string): Observable<RetrieveContextResponse>;
+}
+
+export interface ServiceConfiguration {
+  endpoint: string, accessToken: string|null,
+}
+
+let configuration: ServiceConfiguration|null = null;
+
+export function configureService(config: ServiceConfiguration) {
+  configuration = config;
 }
 
 @Injectable()
 export class SpeakFasterService implements SpeakFasterServiceStub {
   constructor(private http: HttpClient) {}
 
-  ping(endpoint: string, accessToken: string) {
-    const {headers, withCredentials} =
-        this.getHeadersAndWithCredentials(accessToken);
-    return this.http.get<PingResponse>(endpoint, {
+  ping() {
+    const {headers, withCredentials} = this.getServerCallParams();
+    return this.http.get<PingResponse>(configuration!.endpoint, {
       params: {
         mode: 'ping',
       },
@@ -95,10 +99,9 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
 
   // TODO(cais): Add other parameters.
   expandAbbreviation(
-      endpoint: string, accessToken: string, speechContent: string,
-      abbreviationSpec: AbbreviationSpec, numSamples: number) {
-    const {headers, withCredentials} =
-        this.getHeadersAndWithCredentials(accessToken);
+      speechContent: string, abbreviationSpec: AbbreviationSpec,
+      numSamples: number) {
+    const {endpoint, headers, withCredentials} = this.getServerCallParams();
     const keywordIndices: number[] = [];
     for (let i = 0; i < abbreviationSpec.tokens.length; ++i) {
       if (abbreviationSpec.tokens[i].isKeyword) {
@@ -118,11 +121,9 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
     });
   }
 
-  textPrediction(
-      endpoint: string, accessToken: string, contextTurns: string[],
-      textPrefix: string): Observable<TextPredictionResponse> {
-    const {headers, withCredentials} =
-        this.getHeadersAndWithCredentials(accessToken);
+  textPrediction(contextTurns: string[], textPrefix: string):
+      Observable<TextPredictionResponse> {
+    const {endpoint, headers, withCredentials} = this.getServerCallParams();
     return this.http.get<TextPredictionResponse>(endpoint, {
       params: {
         mode: 'text_continuation',
@@ -134,12 +135,9 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
     });
   }
 
-  fillMask(
-      endpoint: string, accessToken: string, speechContent: string,
-      phraseWithMask: string,
-      maskInitial: string): Observable<FillMaskResponse> {
-    const {headers, withCredentials} =
-        this.getHeadersAndWithCredentials(accessToken);
+  fillMask(speechContent: string, phraseWithMask: string, maskInitial: string):
+      Observable<FillMaskResponse> {
+    const {endpoint, headers, withCredentials} = this.getServerCallParams();
     return this.http.get<FillMaskResponse>(endpoint, {
       params: {
         mode: 'fill_mask',
@@ -153,9 +151,8 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
   }
 
   // TODO(cais): Add other parameters.
-  retrieveContext(endpoint: string, accessToken: string, userId: string) {
-    const {headers, withCredentials} =
-        this.getHeadersAndWithCredentials(accessToken);
+  retrieveContext(userId: string) {
+    const {endpoint, headers, withCredentials} = this.getServerCallParams();
     return this.http.get<RetrieveContextResponse>(endpoint, {
       params: {
         mode: 'retrieve_context',
@@ -166,15 +163,25 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
     });
   }
 
-  private getHeadersAndWithCredentials(accessToken: string): {
+  private getServerCallParams(): {
+    endpoint: string,
     headers: any,
     withCredentials: boolean,
   } {
-    const headers: any = {};
-    if (accessToken !== '') {
-      headers['Authorization'] = `Bearer ${accessToken}`;
+    if (configuration === null) {
+      throw new Error(
+          'Service is not configured yet. Call configureService() first.');
     }
-    const withCredentials: boolean = accessToken === '';
-    return {headers, withCredentials};
+    if (configuration.endpoint === '') {
+      throw new Error(
+          'Service endpoint is empty. ' +
+          'Call configureService() with a non-empty endpoint first.');
+    }
+    const headers: any = {};
+    if (configuration.accessToken !== '') {
+      headers['Authorization'] = `Bearer ${configuration.accessToken}`;
+    }
+    const withCredentials: boolean = configuration.accessToken === '';
+    return {endpoint: configuration.endpoint, headers, withCredentials};
   }
 }

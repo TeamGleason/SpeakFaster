@@ -128,7 +128,7 @@ export class AbbreviationEditingComponent implements OnInit, AfterViewInit {
       readableString: this.inputAbbreviation,
     };
     this.inputAbbreviationChanged.emit(
-        {abbreviationSpec, triggerExpansion: true});
+        {abbreviationSpec, requestExpansion: true});
   }
 
   onSpellButtonClicked(event: Event) {
@@ -153,7 +153,7 @@ export class AbbreviationEditingComponent implements OnInit, AfterViewInit {
     this.state = State.ENTERING_ABBREVIATION;
     this.spellingStateChanged.emit('END');
     this.inputAbbreviationChanged.emit(
-        {abbreviationSpec, triggerExpansion: true});
+        {abbreviationSpec, requestExpansion: true});
   }
 
   private resetState() {
@@ -165,7 +165,7 @@ export class AbbreviationEditingComponent implements OnInit, AfterViewInit {
         tokens: [],
         readableString: '',
       },
-      triggerExpansion: false,
+      requestExpansion: false,
     });
   }
 
@@ -177,7 +177,7 @@ export class AbbreviationEditingComponent implements OnInit, AfterViewInit {
       readableString: abbreviationToken.value
     };
     this.inputAbbreviationChanged.emit(
-        {abbreviationSpec, triggerExpansion: false});
+        {abbreviationSpec, requestExpansion: false});
     event.preventDefault();
     event.stopPropagation();
   }

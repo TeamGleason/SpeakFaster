@@ -3,10 +3,9 @@
 import {AfterViewInit, Component, EventEmitter, Input, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
 import {Subject, timer} from 'rxjs';
 
-import {createUuid} from '../..//utils/uuid';
 import {KeyboardComponent} from '../keyboard/keyboard.component';
 import {SpeakFasterService} from '../speakfaster-service';
-import {ContextSignal, ConversationTurnContextSignal, getConversationTurnContextSignal} from '../types/context';
+import {ConversationTurnContextSignal, getConversationTurnContextSignal} from '../types/context';
 import {TextEntryEndEvent} from '../types/text-entry';
 
 import {ConversationTurnComponent} from './conversation-turn.component';
@@ -28,8 +27,6 @@ export class ContextComponent implements OnInit, AfterViewInit {
 
   private static readonly CONTEXT_POLLING_INTERVAL_MILLIS = 2 * 1000;
   readonly contextSignals: ConversationTurnContextSignal[] = [];
-  private readonly textInjectionContextSignals:
-      ConversationTurnContextSignal[] = [];
   contextRetrievalError: string|null = null;
 
   @Output() contextStringsSelected: EventEmitter<string[]> = new EventEmitter();
@@ -50,13 +47,14 @@ export class ContextComponent implements OnInit, AfterViewInit {
         return;
       }
       const timestamp = new Date(textInjection.timestampMillis);
-      this.textInjectionContextSignals.push(getConversationTurnContextSignal(
+      this.appendTextInjectionToContext(getConversationTurnContextSignal(
           '',  // TODO(cais): Populate proper user ID.
           {
             speakerId: this.userId,
             speechContent: textInjection.text,
             startTimestamp: timestamp,
             isTts: true,
+            isHardcoded: false,
           }));
       // TODO(cais): Limit length of textInjections?
       this.retrieveContext();
@@ -103,6 +101,7 @@ export class ContextComponent implements OnInit, AfterViewInit {
               speechContent: text,
               startTimestamp: new Date(),
               isTts: false,
+              isHardcoded: true,
             });
     this.contextSignals.push(addedContextSignal);
     this.focusContextIds.splice(0);
@@ -139,9 +138,11 @@ export class ContextComponent implements OnInit, AfterViewInit {
   }
 
   private populateConversationTurnWithDefault() {
+    if (this.contextSignals.length > 0) {
+      return;
+    }
     this.cleanUpContextSignals();
     this.contextSignals.push(...DEFAULT_CONTEXT_SIGNALS);
-    this.appendTextInjectionToContext();
     if (this.contextSignals.length > 0 && this.focusContextIds.length === 0) {
       this.focusContextIds.push(
           this.contextSignals[this.contextSignals.length - 1].contextId!);
@@ -155,7 +156,7 @@ export class ContextComponent implements OnInit, AfterViewInit {
    */
   private cleanUpContextSignals() {
     for (let i = this.contextSignals.length - 1; i >= 0; --i) {
-      if (!this.contextSignals[i].isManuallyAdded) {
+      if (this.contextSignals[i].isHardcoded) {
         this.contextSignals.splice(i, 1);
       }
     }
@@ -183,7 +184,6 @@ export class ContextComponent implements OnInit, AfterViewInit {
                 this.contextSignals.push(
                     contextSignal as ConversationTurnContextSignal);
               }
-              this.appendTextInjectionToContext();
               this.limitContextItemsCount();
               this.cleanUpAndSortFocusContextIds();
               // TODO(cais): Discard obsolete context IDs.
@@ -204,9 +204,10 @@ export class ContextComponent implements OnInit, AfterViewInit {
             });
   }
 
-  private appendTextInjectionToContext() {
+  private appendTextInjectionToContext(turnSignal:
+                                           ConversationTurnContextSignal) {
     // Also add the latest user entered text.
-    this.contextSignals.push(...this.textInjectionContextSignals);
+    this.contextSignals.push(turnSignal);
     // Sort context turns in asecnding order of timestamp.
     this.contextSignals.sort((turn0, turn1) => {
       // Hardcoded ones always go to the first.

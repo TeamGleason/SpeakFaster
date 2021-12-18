@@ -36,7 +36,7 @@ export interface ContextSignal {
 
   // Whether this context signal is added manually (as versus detected by
   // mechanisms such as ASR and user-entered text.)
-  readonly isManuallyAdded?: boolean;
+  readonly isHardcoded?: boolean;
 }
 
 /** Specialization of ContextSignal for a turn of conversation. */
@@ -65,14 +65,13 @@ export interface PartnerProximityContextSignal extends ContextSignal {
 export function getConversationTurnContextSignal(
     userId: string, conversationTurn: ConversationTurn,
     contextId?: string): ConversationTurnContextSignal {
-  const signal: ConversationTurnContextSignal = {
+  return {
     contextType: 'ConversationTurn',
     userId,
     conversationTurn,
     contextId: contextId || createUuid(),
     timestamp: conversationTurn.startTimestamp,
     timezone: conversationTurn.timezone,
+    isHardcoded: conversationTurn.isHardcoded,
   };
-  // TODO(cais): Add unit tests.
-  return signal;
 }

@@ -18,6 +18,7 @@ fdescribe('getConversationTurnContextSignal', () => {
        expect(signal.conversationTurn.speechContent)
            .toEqual('greetings, mate!');
        expect(signal.conversationTurn.startTimestamp.getTime()).toEqual(123456);
+       expect(signal.isHardcoded).toBeUndefined();
      });
 
   it('preserves provided contextId', () => {
@@ -29,5 +30,16 @@ fdescribe('getConversationTurnContextSignal', () => {
         },
         '1234abcd');
     expect(signal.contextId).toEqual('1234abcd');
+  });
+
+  it('preserves isHardcoded', () => {
+    const signal = getConversationTurnContextSignal(
+      'foo_user', {
+        speakerId: 'bar_speaker',
+        speechContent: 'greetings, mate!',
+        startTimestamp: new Date(123456),
+        isHardcoded: true
+      });
+      expect(signal.isHardcoded).toEqual(true);
   });
 });

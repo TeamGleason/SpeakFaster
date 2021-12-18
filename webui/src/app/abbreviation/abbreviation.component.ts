@@ -63,7 +63,7 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
     this.abbreviationExpansionTriggers.subscribe(
         (event: InputAbbreviationChangedEvent) => {
           this.abbreviation = event.abbreviationSpec;
-          if (event.triggerExpansion) {
+          if (event.requestExpansion) {
             this.expandAbbreviation();
           }
         });

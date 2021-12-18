@@ -53,6 +53,7 @@ export class ContextComponent implements OnInit, AfterViewInit {
       this.textInjectionContextSignals.push(getConversationTurnContextSignal(
           '',  // TODO(cais): Populate proper user ID.
           {
+            speakerId: this.userId,
             speechContent: textInjection.text,
             startTimestamp: timestamp,
             isTts: true,
@@ -98,6 +99,7 @@ export class ContextComponent implements OnInit, AfterViewInit {
         getConversationTurnContextSignal(
             '',  // TODO(cais): Enter proper user id.
             {
+              speakerId: this.userId,
               speechContent: text,
               startTimestamp: new Date(),
               isTts: false,

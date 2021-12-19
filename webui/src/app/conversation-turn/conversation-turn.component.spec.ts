@@ -1,6 +1,5 @@
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {By} from '@angular/platform-browser';
-import {Subject} from 'rxjs';
 
 import {ConversationTurnComponent} from './conversation-turn.component';
 import {ConversationTurnModule} from './conversation-turn.module';
@@ -30,8 +29,27 @@ fdescribe('ConversationTurnComponent', () => {
     const turnContent =
         fixture.debugElement.query(By.css('.turn-content')).nativeElement;
     expect(turnContent.innerText).toEqual('Hi, there!');
+    const speakerTag =
+        fixture.debugElement.query(By.css('.speaker-tag')).nativeElement
+    expect(speakerTag.innerText).toEqual('foo_speaker');
     const ttsTag = fixture.debugElement.query(By.css('.tts-tag'));
     expect(ttsTag).not.toBeNull();
+  });
+
+  it('displays long tts turn with ellipses', () => {
+    fixture.componentInstance.turn = {
+      speakerId: 'bar_speaker',
+      startTimestamp: new Date(),
+      speechContent:
+          'The rose is red, the violet is blue, the honey is sweet, ' +
+          'and so are you.',
+      isTts: true,
+    };
+    fixture.detectChanges();
+    const turnContent =
+        fixture.debugElement.query(By.css('.turn-content')).nativeElement;
+    expect(turnContent.innerText)
+        .toEqual('...is blue, the honey is sweet, and so are you.');
   });
 
   for (const isTts of [undefined, false]) {

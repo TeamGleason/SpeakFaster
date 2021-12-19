@@ -1,14 +1,14 @@
 /** Component that displays the contextual signals relevant for text entry. */
 
 import {AfterViewInit, Component, EventEmitter, Input, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
-import {Subject, timer} from 'rxjs';
+import {Observable, Subject, Subscription, timer} from 'rxjs';
 
+import {ConversationTurnComponent} from '../conversation-turn/conversation-turn.component';
 import {KeyboardComponent} from '../keyboard/keyboard.component';
 import {SpeakFasterService} from '../speakfaster-service';
 import {ConversationTurnContextSignal, getConversationTurnContextSignal} from '../types/context';
 import {TextEntryEndEvent} from '../types/text-entry';
 
-import {ConversationTurnComponent} from '../conversation-turn/conversation-turn.component';
 import {DEFAULT_CONTEXT_SIGNALS} from './default-context';
 
 @Component({
@@ -26,6 +26,7 @@ export class ContextComponent implements OnInit, AfterViewInit {
   @Input() textEntryEndSubject!: Subject<TextEntryEndEvent>;
 
   private static readonly CONTEXT_POLLING_INTERVAL_MILLIS = 2 * 1000;
+  private contextRetrievalTimerSubscription: Subscription|null = null;
   readonly contextSignals: ConversationTurnContextSignal[] = [];
   contextRetrievalError: string|null = null;
 
@@ -35,6 +36,7 @@ export class ContextComponent implements OnInit, AfterViewInit {
   viewButtons!: QueryList<ConversationTurnComponent>;
 
   private readonly focusContextIds: string[] = [];
+  private continuousContextRetrieval = true;
 
   constructor(private speakFasterService: SpeakFasterService) {}
 
@@ -47,9 +49,8 @@ export class ContextComponent implements OnInit, AfterViewInit {
         return;
       }
       const timestamp = new Date(textInjection.timestampMillis);
-      this.appendTextInjectionToContext(getConversationTurnContextSignal(
-          this.userId,
-          {
+      this.appendTextInjectionToContext(
+          getConversationTurnContextSignal(this.userId, {
             speakerId: this.userId,
             speechContent: textInjection.text,
             startTimestamp: timestamp,
@@ -57,15 +58,26 @@ export class ContextComponent implements OnInit, AfterViewInit {
             isHardcoded: false,
           }));
       // TODO(cais): Limit length of textInjections?
-      this.retrieveContext();
     });
   }
 
   ngAfterViewInit() {
-    timer(50, ContextComponent.CONTEXT_POLLING_INTERVAL_MILLIS)
-        .subscribe(() => {
-          this.retrieveContext();
-        });
+    if (!this.continuousContextRetrieval) {
+      return;
+    }
+    this.contextRetrievalTimerSubscription =
+        timer(50, ContextComponent.CONTEXT_POLLING_INTERVAL_MILLIS)
+            .subscribe(() => {
+              this.retrieveContext();
+            });
+  }
+
+  disableContinuousContextRetrieval() {
+    this.continuousContextRetrieval = false;
+    if (this.contextRetrievalTimerSubscription === null) {
+      return;
+    }
+    this.contextRetrievalTimerSubscription.unsubscribe();
   }
 
   isContextInFocus(contextId: string): boolean {

@@ -4,6 +4,7 @@ import {ComponentFixture, TestBed} from '@angular/core/testing';
 
 import * as cefSharp from '../../utils/cefsharp';
 import {SpeakFasterService} from '../speakfaster-service';
+import {TestListener} from '../test-utils/test-cefsharp-listener';
 
 import {TextPredictionComponent} from './text-prediction.component';
 import {TextPredictionModule} from './text-prediction.module';
@@ -12,28 +13,6 @@ import {TextPredictionModule} from './text-prediction.module';
 class SpeakFasterServiceForTest {
   // TODO(cais): Flesh out test implementations.
 }
-
-class TestListener {
-  private readonly buttonBoxesCalls: Array<[string, number[][]]> = [];
-  private readonly injectedKeys: Array<number[]> = [];
-
-  public updateButtonBoxes(componentName: string, boxes: number[][]) {
-    this.buttonBoxesCalls.push([componentName, boxes]);
-  }
-
-  get updateButtonBoxesCalls() {
-    return this.buttonBoxesCalls;
-  }
-
-  public injectKeys(virtualKeys: number[]) {
-    this.injectedKeys.push(virtualKeys);
-  }
-
-  get injectedKeysCalls() {
-    return this.injectedKeys;
-  }
-}
-
 
 // TODO(cais): Remove fdescribe. DO NOT SUBMIT.
 fdescribe('TextPredictionCmponent', () => {
@@ -65,7 +44,7 @@ fdescribe('TextPredictionCmponent', () => {
 
   it('Initial prediction buttons invoke updateButtonBoxesForElements',
      async () => {
-       await fixture.whenStable()
+       await fixture.whenStable();
        const calls = testListener.updateButtonBoxesCalls;
        expect(calls.length).toEqual(1);
        expect(calls[0][0].indexOf('TextPredictionComponent')).toEqual(0);

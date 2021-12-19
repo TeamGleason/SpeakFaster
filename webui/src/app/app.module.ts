@@ -4,6 +4,7 @@ import {BrowserModule} from '@angular/platform-browser';
 import {AppRoutingModule} from './app-routing.module';
 import {AppComponent} from './app.component';
 import {AuthModule} from './auth/auth.module';
+import {ContextModule} from './context/context.module';
 import {ExternalEventsModule} from './external/external-events.module';
 import {MetricsModule} from './metrics/metrics.module';
 import {TextPredictionModule} from './text-prediction/text-prediction.module';
@@ -14,6 +15,7 @@ import {TextPredictionModule} from './text-prediction/text-prediction.module';
     AppRoutingModule,
     AuthModule,
     BrowserModule,
+    ContextModule,
     ExternalEventsModule,
     MetricsModule,
     TextPredictionModule,

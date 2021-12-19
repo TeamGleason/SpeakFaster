@@ -3,11 +3,9 @@
 import {Component, EventEmitter, Input, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
 import {Subject} from 'rxjs';
 
-import {SpeakFasterService} from '../speakfaster-service';
+import {ConversationTurnComponent} from '../conversation-turn/conversation-turn.component';
 import {ConversationTurnContextSignal, getConversationTurnContextSignal} from '../types/context';
 import {TextEntryEndEvent} from '../types/text-entry';
-
-import {ConversationTurnComponent} from './conversation-turn.component';
 
 @Component({
   selector: 'app-context-component',
@@ -33,8 +31,6 @@ export class ContextComponent implements OnInit {
 
   private readonly focusContextIds: string[] = [];
 
-  constructor(private speakFasterService: SpeakFasterService) {}
-
   ngOnInit() {
     this.focusContextIds.splice(0);
     this.textEntryEndSubject.subscribe((textInjection: TextEntryEndEvent) => {
@@ -58,33 +54,6 @@ export class ContextComponent implements OnInit {
 
   isContextInFocus(contextId: string): boolean {
     return this.focusContextIds.indexOf(contextId) !== -1;
-  }
-
-  onTurnClicked(event: Event, contextId: string) {
-    const i = this.focusContextIds.indexOf(contextId);
-    if (i === -1) {
-      this.focusContextIds.push(contextId);
-      this.cleanUpAndSortFocusContextIds();
-      for (let i = 0; i < this.contextSignals.length; ++i) {
-        if (this.contextSignals[i].contextId === contextId) {
-          break;
-        }
-      }
-    } else {
-      this.focusContextIds.splice(i, 1);
-    }
-    this.emitContextStringsSelected();
-  }
-
-  /**
-   * Clean ups all the context signals that are not manually entered.
-   */
-  private cleanUpContextSignals() {
-    for (let i = this.contextSignals.length - 1; i >= 0; --i) {
-      if (this.contextSignals[i].isHardcoded) {
-        this.contextSignals.splice(i, 1);
-      }
-    }
   }
 
   private appendTextInjectionToContext(turnSignal:

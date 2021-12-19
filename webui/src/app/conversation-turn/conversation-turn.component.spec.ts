@@ -28,6 +28,9 @@ describe('ConversationTurnComponent', () => {
     const turnContent =
         fixture.debugElement.query(By.css('.turn-content')).nativeElement;
     expect(turnContent.innerText).toEqual('Hi, there!');
+    const speakerTag =
+        fixture.debugElement.query(By.css('.speaker-tag')).nativeElement
+    expect(speakerTag.innerText).toEqual('foo_speaker');
     const ttsTag = fixture.debugElement.query(By.css('.tts-tag'));
     expect(ttsTag).not.toBeNull();
   });

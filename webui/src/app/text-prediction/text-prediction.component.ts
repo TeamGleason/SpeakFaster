@@ -11,8 +11,6 @@ export class TextPredictionComponent implements AfterViewInit, OnChanges, OnDest
 
   private readonly instanceId =
       TextPredictionComponent._NAME + '_' + createUuid();
-  @Input() endpoint!: string;
-  @Input() accessToken!: string;
 
   @ViewChildren('clickableButton')
   buttons!: QueryList<ElementRef<HTMLButtonElement>>;

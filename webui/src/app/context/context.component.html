@@ -60,23 +60,21 @@
     </div>
 </div>
 
-<ng-template #noError>
-  <div *ngIf="contextSignals.length > 0" class="context-container">
-    <div
-        *ngFor="let contextSignal of contextSignals; let i = index"
-        class="conversation-turn">
-      <app-conversation-turn-component
-        #contextItem
-        [turn]="contextSignal.conversationTurn!"
-        [isFocus]="isContextInFocus(contextSignal.contextId!)"
-        (click)="onTurnClicked($event, contextSignal.contextId!)"
-      ></app-conversation-turn-component>
-    </div>
+<div *ngIf="contextSignals.length > 0" class="context-container">
+  <div
+      *ngFor="let contextSignal of contextSignals; let i = index"
+      class="conversation-turn">
+    <app-conversation-turn-component
+      #contextItem
+      [turn]="contextSignal.conversationTurn!"
+      [isFocus]="isContextInFocus(contextSignal.contextId!)"
+      (click)="onTurnClicked($event, contextSignal.contextId!)"
+    ></app-conversation-turn-component>
   </div>
+</div>
 
-  <div *ngIf="contextSignals.length === 0" class="no-context-found">
-    <div>
-      No context found
-    </div>
+<div *ngIf="contextSignals.length === 0" class="no-context-found">
+  <div>
+    No context found
   </div>
-</ng-template>
+</div>

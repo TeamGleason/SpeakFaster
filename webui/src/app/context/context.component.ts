@@ -1,6 +1,6 @@
 /** Component that displays the contextual signals relevant for text entry. */
 
-import {Component, EventEmitter, Input, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
+import {ChangeDetectorRef, Component, EventEmitter, Input, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
 import {Subject} from 'rxjs';
 
 import {ConversationTurnComponent} from '../conversation-turn/conversation-turn.component';
@@ -30,6 +30,8 @@ export class ContextComponent implements OnInit {
   viewButtons!: QueryList<ConversationTurnComponent>;
 
   private readonly focusContextIds: string[] = [];
+
+  constructor(private cdr: ChangeDetectorRef) {}
 
   ngOnInit() {
     this.focusContextIds.splice(0);
@@ -76,7 +78,8 @@ export class ContextComponent implements OnInit {
       }
     });
     this.limitContextItemsCount();
-    this.cleanUpAndSortFocusContextIds()
+    this.cleanUpAndSortFocusContextIds();
+    this.cdr.detectChanges();
   }
 
   private limitContextItemsCount() {
@@ -124,15 +127,5 @@ export class ContextComponent implements OnInit {
                 ContextComponent.MAX_FOCUS_CONTEXT_SIGNALS);
       }
     }
-  }
-
-
-  private emitContextStringsSelected() {
-    this.contextStringsSelected.emit(
-        this.contextSignals
-            .filter(
-                signal =>
-                    this.focusContextIds.indexOf(signal.contextId!) !== -1)
-            .map(signal => signal.conversationTurn!.speechContent));
   }
 }

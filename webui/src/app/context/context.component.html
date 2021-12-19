@@ -57,7 +57,7 @@
 <div class="context-header-section">
   <div class="context-tag">
     Context:
-    </div>
+  </div>
 </div>
 
 <div *ngIf="contextSignals.length > 0" class="context-container">
@@ -67,8 +67,6 @@
     <app-conversation-turn-component
       #contextItem
       [turn]="contextSignal.conversationTurn!"
-      [isFocus]="isContextInFocus(contextSignal.contextId!)"
-      (click)="onTurnClicked($event, contextSignal.contextId!)"
     ></app-conversation-turn-component>
   </div>
 </div>

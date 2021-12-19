@@ -15,6 +15,8 @@ export class TextPredictionComponent implements AfterViewInit, OnChanges, OnDest
   @ViewChildren('clickableButton')
   buttons!: QueryList<ElementRef<HTMLButtonElement>>;
 
+  // TODO(cais) Add @Input for context strings.
+
   // TODO(#59): Use service endpoint to get contextual predictions instead of
   // hardcoding.
   readonly predictions: string[] = ['Hello', 'Thank you!'];

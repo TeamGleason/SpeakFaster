@@ -7,7 +7,8 @@ import {updateButtonBoxesForElements} from '../../utils/cefsharp';
 import {isPlainAlphanumericKey, isTextContentKey} from '../../utils/keyboard-utils';
 import {KeyboardComponent} from '../keyboard/keyboard.component';
 import {SpeakFasterService} from '../speakfaster-service';
-import {AbbreviationExpansionSelectionEvent, AbbreviationSpec, InputAbbreviationChangedEvent} from '../types/abbreviation';
+import {AbbreviationSpec, InputAbbreviationChangedEvent} from '../types/abbreviation';
+import {TextEntryEndEvent} from '../types/text-entry';
 
 enum State {
   CHOOSING_EXPANSION = 'CHOOSING_EXPANSION',
@@ -26,16 +27,14 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
   private static readonly _TOKEN_REPLACEMENT_KEYBOARD_CALLBACK_NAME =
       'AbbreviationComponent_TokenReplacementKeyboardCallbackName';
   private static readonly _MAX_NUM_REPLACEMENT_TOKENS = 6;
-  private readonly instanceId = createUuid();
+  private readonly instanceId =
+      AbbreviationComponent._NAME + '_' + createUuid();
   @Input() contextStrings!: string[];
+  @Input() textEntryEndSubject!: Subject<TextEntryEndEvent>;
   @Input()
   abbreviationExpansionTriggers!: Subject<InputAbbreviationChangedEvent>;
   @Input() abbreviationExpansionEditingTrigger!: Subject<boolean>;
   @Input() isSpelling: boolean = false;
-
-  @Output()
-  abbreviationExpansionSelected:
-      EventEmitter<AbbreviationExpansionSelectionEvent> = new EventEmitter();
 
   @ViewChildren('clickableButton')
   clickableButtons!: QueryList<ElementRef<HTMLElement>>;
@@ -193,8 +192,10 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
     // Reconstruct the phrase with the replacement.
     const tokens: string[] = this.editTokens.slice();
     tokens[this.selectedTokenIndex!] = replacementToken;
-    this.abbreviationExpansionSelected.emit({
-      expansionText: tokens.join(' '),
+    this.textEntryEndSubject.next({
+      text: tokens.join(' '),
+      timestampMillis: Date.now(),
+      isFinal: true,
     });
     KeyboardComponent.unregisterCallback(
         AbbreviationComponent._TOKEN_REPLACEMENT_KEYBOARD_CALLBACK_NAME);
@@ -207,8 +208,10 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
       return;
     }
     this._selectedAbbreviationIndex = index;
-    this.abbreviationExpansionSelected.emit({
-      expansionText: this.abbreviationOptions[this._selectedAbbreviationIndex]
+    this.textEntryEndSubject.next({
+      text: this.abbreviationOptions[this._selectedAbbreviationIndex],
+      timestampMillis: Date.now(),
+      isFinal: true,
     });
     // TODO(cais): Prevent selection in gap state.
     setTimeout(() => this.resetState(), 1000);
@@ -270,6 +273,7 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
             });
   }
 
+  /** Heuristics about the num_samples to use when requesting AE from server. */
   private getNumSamples(abbreviationSpec: AbbreviationSpec|null) {
     if (abbreviationSpec === null) {
       return 128;

@@ -6,7 +6,7 @@ import {bindCefSharpListener, registerExternalKeypressHook} from '../utils/cefsh
 
 import {ExternalEventsComponent} from './external/external-events.component';
 import {configureService, SpeakFasterService} from './speakfaster-service';
-import {AbbreviationExpansionSelectionEvent, InputAbbreviationChangedEvent} from './types/abbreviation';
+import {InputAbbreviationChangedEvent} from './types/abbreviation';
 import {TextEntryBeginEvent, TextEntryEndEvent} from './types/text-entry';
 
 @Component({
@@ -98,13 +98,5 @@ export class AppComponent implements OnInit, AfterViewInit {
 
   onSpellingStateChanged(state: 'START'|'END') {
     this.isSpelling = state === 'START';
-  }
-
-  onAbbreviationExpansionSelected(event: AbbreviationExpansionSelectionEvent) {
-    this.textEntryEndSubject.next({
-      text: event.expansionText,
-      timestampMillis: Date.now(),
-      isFinal: true,
-    });
   }
 }

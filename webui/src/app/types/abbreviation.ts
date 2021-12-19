@@ -46,13 +46,3 @@ export interface StartSpellingEvent {
   readonly isNewSpellingTask: boolean;
 }
 
-/**
- * An event tat signifies the user selection of an option for abbreviation
- * expansion.
- */
-export interface AbbreviationExpansionSelectionEvent {
-  // The expansion option selected.
-  readonly expansionText: string;
-
-  // TODO(cais): Add original AbbreviationSpec.
-}

@@ -28,10 +28,12 @@
 }
 
 .context-retrieval-error {
-  display: inline-block;
-  font-size: 28px;
-  margin-left: 6px;
   color: red;
+  display: inline-block;
+  font-size: 18px;
+  margin-left: 6px;
+  max-width: 200px;
+  white-space: pre-wrap;
 }
 
 .context-tag {
@@ -69,31 +71,30 @@
 
 <!-- TODO(cais): Add Ctrl+C instruction. -->
 <!-- TODO(cais): Add Alt+N instruction. -->
-<!-- TODO(cais): Add ellipses for long utterances. -->
 
-<div *ngIf="contextRetrievalError !== null; else noError" class="context-container">
-  <div class="context-retrieval-error">
-    Failed to get context: {{contextRetrievalError)}
+<div
+    *ngIf="contextRetrievalError !== null"
+    class="context-retrieval-error">
+  {{contextRetrievalError)}
+</div>
+
+<div *ngIf="contextSignals.length > 0" class="context-container">
+  <div
+      *ngFor="let contextSignal of contextSignals; let i = index"
+      class="conversation-turn">
+    <app-conversation-turn-component
+      #contextItem
+      *ngIf="contextSignal.contextType === 'ConversationTurn'"
+      [turn]="contextSignal.conversationTurn!"
+      [isFocus]="isContextInFocus(contextSignal.contextId!)"
+      (click)="onTurnClicked($event, contextSignal.contextId!)"
+    ></app-conversation-turn-component>
+    <!-- TODO(cais): Support other context types (contextType values). -->
   </div>
 </div>
 
-<ng-template #noError>
-  <div *ngIf="contextSignals.length > 0" class="context-container">
-    <div
-        *ngFor="let contextSignal of contextSignals; let i = index"
-        class="conversation-turn">
-      <app-conversation-turn-component
-        #contextItem
-        [turn]="contextSignal.conversationTurn!"
-        [isFocus]="isContextInFocus(contextSignal.contextId!)"
-        (click)="onTurnClicked($event, contextSignal.contextId!)"
-      ></app-conversation-turn-component>
-    </div>
+<div *ngIf="contextSignals.length === 0" class="no-context-found">
+  <div>
+    No context found
   </div>
-
-  <div *ngIf="contextSignals.length === 0" class="no-context-found">
-    <div>
-      No context found
-    </div>
-  </div>
-</ng-template>
+</div>

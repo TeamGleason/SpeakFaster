@@ -2,7 +2,7 @@ import {NgModule} from '@angular/core';
 import {BrowserModule} from '@angular/platform-browser';
 
 import {ContextComponent} from './context.component';
-import {ConversationTurnModule} from './conversation-turn.module';
+import {ConversationTurnModule} from '../conversation-turn/conversation-turn.module';
 
 @NgModule({
   declarations: [ContextComponent],

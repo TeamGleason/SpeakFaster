@@ -1,4 +1,4 @@
-/** TODO(cais): Add doc string. */
+/** Component that displays the contextual signals relevant for text entry. */
 
 import {AfterViewInit, Component, EventEmitter, Input, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
 import {Subject, timer} from 'rxjs';
@@ -8,7 +8,7 @@ import {SpeakFasterService} from '../speakfaster-service';
 import {ConversationTurnContextSignal, getConversationTurnContextSignal} from '../types/context';
 import {TextEntryEndEvent} from '../types/text-entry';
 
-import {ConversationTurnComponent} from './conversation-turn.component';
+import {ConversationTurnComponent} from '../conversation-turn/conversation-turn.component';
 import {DEFAULT_CONTEXT_SIGNALS} from './default-context';
 
 @Component({
@@ -19,11 +19,11 @@ import {DEFAULT_CONTEXT_SIGNALS} from './default-context';
 export class ContextComponent implements OnInit, AfterViewInit {
   private static readonly _NAME = 'ContextComponent';
   // TODO(cais): Do not hardcode this user ID.
-  private userId = 'cais';
+  private userId = 'testuser';
   private static readonly MAX_DISPLAYED_CONTEXT_COUNT = 4;
   private static readonly MAX_FOCUS_CONTEXT_SIGNALS = 2;
 
-  @Input() textInjectionSubject!: Subject<TextEntryEndEvent>;
+  @Input() textEntryEndSubject!: Subject<TextEntryEndEvent>;
 
   private static readonly CONTEXT_POLLING_INTERVAL_MILLIS = 2 * 1000;
   readonly contextSignals: ConversationTurnContextSignal[] = [];
@@ -42,13 +42,13 @@ export class ContextComponent implements OnInit, AfterViewInit {
     KeyboardComponent.registerCallback(
         ContextComponent._NAME, this.handleKeyboardEvent.bind(this));
     this.focusContextIds.splice(0);
-    this.textInjectionSubject.subscribe((textInjection: TextEntryEndEvent) => {
+    this.textEntryEndSubject.subscribe((textInjection: TextEntryEndEvent) => {
       if (!textInjection.isFinal) {
         return;
       }
       const timestamp = new Date(textInjection.timestampMillis);
       this.appendTextInjectionToContext(getConversationTurnContextSignal(
-          '',  // TODO(cais): Populate proper user ID.
+          this.userId,
           {
             speakerId: this.userId,
             speechContent: textInjection.text,
@@ -95,9 +95,9 @@ export class ContextComponent implements OnInit, AfterViewInit {
     }
     const addedContextSignal: ConversationTurnContextSignal =
         getConversationTurnContextSignal(
-            '',  // TODO(cais): Enter proper user id.
+            this.userId,
             {
-              speakerId: this.userId,
+              speakerId: this.userId,  // Is this right?
               speechContent: text,
               startTimestamp: new Date(),
               isTts: false,
@@ -168,6 +168,8 @@ export class ContextComponent implements OnInit, AfterViewInit {
             data => {
               if (data.errorMessage != null) {
                 this.contextRetrievalError = data.errorMessage;
+                // TODO(cais): Fix string interpolation in HTML.
+                this.populateConversationTurnWithDefault();
                 return;
               }
               if (data.contextSignals == null ||

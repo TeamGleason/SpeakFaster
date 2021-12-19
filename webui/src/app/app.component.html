@@ -51,7 +51,7 @@ app-context-component {
   <div *ngIf="hasAccessToken()">
 
     <app-context-component
-      [textInjectionSubject]="textEntryEndSubject"
+      [textEntryEndSubject]="textEntryEndSubject"
       (contextStringsSelected)="onContextStringsSelected($event)"
     ></app-context-component>
 

@@ -1,0 +1,164 @@
+import {AfterViewInit, Component, ElementRef, EventEmitter, Input, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
+import {Subject} from 'rxjs';
+import {limitStringLength} from 'src/utils/text-utils';
+import {createUuid} from 'src/utils/uuid';
+
+import {updateButtonBoxesForElements} from '../../utils/cefsharp';
+import {SpeakFasterService} from '../speakfaster-service';
+import {AbbreviationSpec, InputAbbreviationChangedEvent} from '../types/abbreviation';
+import {TextEntryEndEvent} from '../types/text-entry';
+
+enum State {
+  CHOOSING_EXPANSION = 'CHOOSING_EXPANSION',
+}
+
+@Component({
+  selector: 'app-abbreviation-component',
+  templateUrl: './abbreviation.component.html',
+  providers: [SpeakFasterService],
+})
+export class AbbreviationComponent implements OnInit, AfterViewInit {
+  private static readonly _NAME = 'AbbreviationComponent';
+  private readonly instanceId =
+      AbbreviationComponent._NAME + '_' + createUuid();
+  @Input() contextStrings!: string[];
+  @Input() textEntryEndSubject!: Subject<TextEntryEndEvent>;
+  @Input()
+  abbreviationExpansionTriggers!: Subject<InputAbbreviationChangedEvent>;
+
+  @ViewChildren('clickableButton')
+  clickableButtons!: QueryList<ElementRef<HTMLElement>>;
+
+  @ViewChildren('abbreviationOption')
+  abbreviationOptionElements!: QueryList<ElementRef<HTMLElement>>;
+
+  state = State.CHOOSING_EXPANSION;
+  readonly editTokens: string[] = [];
+  readonly replacementTokens: string[] = [];
+  selectedTokenIndex: number|null = null;
+  manualTokenString: string = '';
+
+  abbreviation: AbbreviationSpec|null = null;
+  requestOngoing: boolean = false;
+  responseError: string|null = null;
+  abbreviationOptions: string[] = [];
+  private _selectedAbbreviationIndex: number = -1;
+
+  constructor(private speakFasterService: SpeakFasterService) {}
+
+  ngOnInit() {
+    this.abbreviationExpansionTriggers.subscribe(
+        (event: InputAbbreviationChangedEvent) => {
+          this.abbreviation = event.abbreviationSpec;
+          if (event.requestExpansion) {
+            this.expandAbbreviation();
+          }
+        });
+  }
+
+  ngAfterViewInit() {
+    this.clickableButtons.changes.subscribe(
+        (queryList: QueryList<ElementRef>) => {
+          updateButtonBoxesForElements(
+              AbbreviationComponent._NAME + this.instanceId, queryList);
+        });
+  }
+
+  get selectedAbbreviationIndex() {
+    return this._selectedAbbreviationIndex;
+  }
+
+  onExpansionOptionButtonClicked(event: Event, index: number) {
+    if (this.state === 'CHOOSING_EXPANSION') {
+      this.selectExpansionOption(index);
+    }
+  }
+
+  onSpeakOptionButtonClicked(event: Event, index: number) {
+    // TODO(cais): Implement.
+  }
+
+  private selectExpansionOption(index: number) {
+    if (this._selectedAbbreviationIndex === index) {
+      return;
+    }
+    this._selectedAbbreviationIndex = index;
+    this.textEntryEndSubject.next({
+      text: this.abbreviationOptions[this._selectedAbbreviationIndex],
+      timestampMillis: Date.now(),
+      isFinal: true,
+    });
+    // TODO(cais): Prevent selection in gap state.
+    setTimeout(() => this.resetState(), 1000);
+  }
+
+  private resetState() {
+    this.abbreviation = null;
+    this.requestOngoing = false;
+    this.responseError = null;
+    if (this.abbreviationOptions.length > 0) {
+      this.abbreviationOptions.splice(0);
+    }
+    this._selectedAbbreviationIndex = -1;
+    this.editTokens.splice(0);
+    this.replacementTokens.splice(0);
+    this.manualTokenString = '';
+    this.state = State.CHOOSING_EXPANSION;
+  }
+
+  private expandAbbreviation() {
+    if (this.contextStrings.length === 0) {
+      this.responseError =
+          'Cannot expand abbreviation: no speech content as context';
+      return;
+    }
+    if (this.abbreviation === null) {
+      this.responseError = 'Cannot expand abbreviation: empty abbreviation';
+      return;
+    }
+    this.abbreviationOptions = [];
+    this.requestOngoing = true;
+    this.responseError = null;
+    const LIMIT_TURNS = 2;
+    const LIMIT_CONTECT_TURN_LENGTH = 60
+    const usedContextStrings = [...this.contextStrings.map(
+        contextString =>
+            limitStringLength(contextString, LIMIT_CONTECT_TURN_LENGTH))];
+    if (usedContextStrings.length > LIMIT_TURNS) {
+      usedContextStrings.splice(0, usedContextStrings.length - LIMIT_TURNS);
+    }
+    // TODO(cais): Limit by token length?
+    const numSamples = this.getNumSamples(this.abbreviation);
+    console.log(
+        `Calling expandAbbreviation() (numSamples=${numSamples}):`,
+        usedContextStrings, this.abbreviation);
+    this.speakFasterService
+        .expandAbbreviation(
+            usedContextStrings.join('|'), this.abbreviation, numSamples)
+        .subscribe(
+            data => {
+              this.requestOngoing = false;
+              if (data.exactMatches != null) {
+                this.abbreviationOptions = data.exactMatches;
+              }
+            },
+            error => {
+              this.requestOngoing = false;
+              this.responseError = error.message;
+            });
+  }
+
+  /** Heuristics about the num_samples to use when requesting AE from server. */
+  private getNumSamples(abbreviationSpec: AbbreviationSpec|null) {
+    if (abbreviationSpec === null) {
+      return 128;
+    }
+    let maxAbbrevLength = 0;
+    for (const token of abbreviationSpec.tokens) {
+      if (!token.isKeyword && token.value.length > maxAbbrevLength) {
+        maxAbbrevLength = token.value.length;
+      }
+    }
+    return maxAbbrevLength > 5 ? 256 : 128;
+  }
+}

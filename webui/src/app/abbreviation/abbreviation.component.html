@@ -1,0 +1,148 @@
+<style>
+
+:host {
+    box-sizing: border-box;
+    color: #EEE;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+    font-size: 32px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.abbreviation-expansion {
+  align-self: center;
+  display: inline;
+  flex: 5;
+  white-space: pre-wrap;
+  vertical-align: middle;
+}
+
+.abbreviation-option {
+  background: #333;
+  border-radius: 5px;
+  color: #eee;
+  display: flex;
+  font-size: 22px;
+  height: 65px;
+  line-height: 32px;
+  margin: 5px;
+  min-width: 300px;
+  padding-left: 5px;
+  white-space: nowrap;
+}
+
+.abbreviation-options-container {
+  display: inline-block;
+}
+
+.abbreviation-options-grid {
+  align-items: start;
+  display: grid;
+  gap: 5px;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+  grid-template-areas:
+    "a a a a c c c c e e e e"
+    "a a a a c c c c e e e e"
+    "b b b b d d d d f f f f"
+    "b b b b d d d d f f f f";
+}
+
+.item1 {
+  grid-area: a;
+}
+
+.item2 {
+  grid-area: b;
+}
+
+.item3 {
+  grid-area: c;
+}
+
+.item4 {
+  grid-area: d;
+}
+
+.item5 {
+  grid-area: e;
+}
+
+.item6 {
+  grid-area: f;
+}
+
+.expansions {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.info {
+  margin-left: 10px;
+}
+
+.is-selected {
+  border: 3px solid cyan;
+}
+
+.request-ongoing {
+  color: yellow;
+}
+
+.response-error {
+  color: orange;
+}
+
+.action-button {
+  background-color: grey;
+  border-radius: 5px;
+  color: #111;
+  display: inline;
+  float: right;
+  height: 67px;
+  font-size: 20px;
+  margin-left: 5px;
+  width: 80px;
+  padding: 2px 5px;
+}
+
+.speak-button {
+  width: 70px;
+}
+
+</style>
+
+<div *ngIf="requestOngoing" class="info request-ongoing">
+  Getting abbrevaition expansions...
+</div>
+<div *ngIf="responseError !== null" class="info response-error">
+  Error: {{responseError}}
+</div>
+<!-- TODO(cais): Add unit tests. -->
+<div
+    *ngIf="state === 'CHOOSING_EXPANSION'"
+    class="expansions">
+  <div class="abbreviation-options-container">
+    <div class="abbreviation-options-grid">
+      <div
+          *ngFor="let abbreviationOption of abbreviationOptions; let i = index"
+          #abbreviationOption
+          class="abbreviation-option item{{i + 1}}">
+        <div class="abbreviation-expansion">{{abbreviationOption}}</div>
+        <button
+            #clickableButton
+            class="action-button"
+            [ngClass]="{'is-selected': i === selectedAbbreviationIndex}"
+            (click)="onExpansionOptionButtonClicked($event, i)">
+          Shift-{{i + 1}}
+        </button>
+        <button
+            #clickableButton
+            class="action-button speak-button"
+            (click)="onSpeakOptionButtonClicked($event, i)">
+          🔊
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

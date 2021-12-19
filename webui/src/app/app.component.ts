@@ -4,8 +4,9 @@ import {Subject} from 'rxjs';
 
 import {bindCefSharpListener, registerExternalKeypressHook} from '../utils/cefsharp';
 
-import {SpeakFasterService} from './speakfaster-service';
 import {ExternalEventsComponent} from './external/external-events.component';
+import {configureService, SpeakFasterService} from './speakfaster-service';
+import {InputAbbreviationChangedEvent} from './types/abbreviation';
 import {TextEntryBeginEvent, TextEntryEndEvent} from './types/text-entry';
 
 @Component({
@@ -26,6 +27,8 @@ export class AppComponent implements OnInit, AfterViewInit {
   private _endpoint: string = '';
   private _accessToken: string = '';
 
+  abbreviationExpansionTriggers: Subject<InputAbbreviationChangedEvent> =
+      new Subject();
   textEntryBeginSubject: Subject<TextEntryBeginEvent> =
       new Subject<TextEntryBeginEvent>();
   textEntryEndSubject: Subject<TextEntryEndEvent> = new Subject();
@@ -56,12 +59,10 @@ export class AppComponent implements OnInit, AfterViewInit {
 
   onNewAccessToken(accessToken: string) {
     this._accessToken = accessToken;
-    if (this.endpoint) {
-      this.speakFasterService.ping(this._endpoint, this._accessToken)
-          .subscribe(data => {
-            console.log('Ping response:', data);
-          });
-    }
+    configureService({
+      endpoint: this._endpoint,
+      accessToken,
+    });
   }
 
   hasAccessToken(): boolean {

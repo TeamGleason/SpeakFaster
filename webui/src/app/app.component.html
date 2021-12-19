@@ -24,7 +24,8 @@ app-context-component {
   <app-external-events-component
       #externalEvents
       [textEntryBeginSubject]="textEntryBeginSubject"
-      [textEntryEndSubject]="textEntryEndSubject">
+      [textEntryEndSubject]="textEntryEndSubject"
+      [abbreviationExpansionTriggers]="abbreviationExpansionTriggers">
   </app-external-events-component>
 
   <app-metrics-component
@@ -40,6 +41,14 @@ app-context-component {
 
     <app-text-prediction-component
     ></app-text-prediction-component>
+
+    <!-- TODO(cais): Do not hard code context strings. DO NOT SUBMIT. -->
+    <app-abbreviation-component
+      [contextStrings]="[]"
+      [abbreviationExpansionTriggers]="abbreviationExpansionTriggers"
+      [textEntryEndSubject]="textEntryEndSubject"
+    ></app-abbreviation-component>
+
   </div>
 </div>
 

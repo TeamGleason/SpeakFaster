@@ -13,18 +13,17 @@ import {ConversationTurn} from '../types/conversation';
 })
 export class ConversationTurnComponent implements AfterViewInit {
   private static readonly _NAME = 'ConversationTurnComponent';
+  private readonly instanceId =
+      ConversationTurnComponent._NAME + '_' + createUuid();
 
   private static readonly CONTENT_STRING_MAX_LENGTH = 50;
   private static readonly BASE_FONT_SIZE_PX = 24;
   private static readonly FONT_SCALING_LENGTH_THRESHOLD = 45;
 
-  private readonly instanceId = createUuid();
   @Input() turn!: ConversationTurn;
   @Input() isFocus: boolean = false;
   @ViewChildren('button') buttons!: QueryList<ElementRef<HTMLButtonElement>>;
   @ViewChild('turnContent') turnContentElement!: ElementRef;
-
-  constructor() {}
 
   get agoString(): string {
     return getAgoString(new Date(this.turn.startTimestamp!), new Date());

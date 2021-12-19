@@ -1,7 +1,7 @@
 /** Component that displays the contextual signals relevant for text entry. */
 
-import {AfterViewInit, Component, EventEmitter, Input, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
-import {Observable, Subject, Subscription, timer} from 'rxjs';
+import {AfterViewInit, ChangeDetectorRef, Component, EventEmitter, Input, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
+import {Subject, Subscription, timer} from 'rxjs';
 
 import {ConversationTurnComponent} from '../conversation-turn/conversation-turn.component';
 import {KeyboardComponent} from '../keyboard/keyboard.component';
@@ -38,7 +38,9 @@ export class ContextComponent implements OnInit, AfterViewInit {
   private readonly focusContextIds: string[] = [];
   private continuousContextRetrieval = true;
 
-  constructor(private speakFasterService: SpeakFasterService) {}
+  constructor(
+      private speakFasterService: SpeakFasterService,
+      private cdr: ChangeDetectorRef) {}
 
   ngOnInit() {
     KeyboardComponent.registerCallback(
@@ -238,7 +240,8 @@ export class ContextComponent implements OnInit, AfterViewInit {
       }
     });
     this.limitContextItemsCount();
-    this.cleanUpAndSortFocusContextIds()
+    this.cleanUpAndSortFocusContextIds();
+    this.cdr.detectChanges();
   }
 
   private limitContextItemsCount() {

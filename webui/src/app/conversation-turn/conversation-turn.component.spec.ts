@@ -1,14 +1,20 @@
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {By} from '@angular/platform-browser';
 
+import * as cefSharp from '../../utils/cefsharp';
+import {TestListener} from '../test-utils/test-cefsharp-listener';
+
 import {ConversationTurnComponent} from './conversation-turn.component';
 import {ConversationTurnModule} from './conversation-turn.module';
 
 // TODO(cais): Remove fdescribe. DO NOT SUBMIT.
 fdescribe('ConversationTurnComponent', () => {
   let fixture: ComponentFixture<ConversationTurnComponent>;
+  let testListener: TestListener;
 
   beforeEach(async () => {
+    testListener = new TestListener();
+    (window as any)[cefSharp.BOUND_LISTENER_NAME] = testListener;
     await TestBed
         .configureTestingModule({
           imports: [ConversationTurnModule],
@@ -65,4 +71,19 @@ fdescribe('ConversationTurnComponent', () => {
       expect(ttsTag).toBeNull();
     });
   }
+
+  it('calls updateButtonBoxesCalls', async () => {
+    fixture.componentInstance.turn = {
+      speakerId: 'foo_speaker',
+      startTimestamp: new Date(),
+      speechContent: 'Hi, there!',
+    };
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const calls = testListener.updateButtonBoxesCalls;
+    expect(calls.length).toEqual(1);
+    expect(calls[0][0].indexOf('ConversationTurnComponent')).toEqual(0);
+    expect(calls[0][1].length).toEqual(1);
+    expect(calls[0][1][0].length).toEqual(4);
+  });
 });

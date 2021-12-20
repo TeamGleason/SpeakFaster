@@ -320,20 +320,30 @@ export class ExternalEventsComponent {
       this.textEntryBeginSubject.next({timestampMillis: Date.now()});
     }
 
-    if (this.keySequenceEndsWith(ABBRVIATION_EXPANSION_TRIGGER_COMBO_KEY)) {
-      const text = this.text.trim();
-      if (text.length > 0 && text.match(/\s/g) === null) {
+    if (this.keySequenceEndsWith(ABBRVIATION_EXPANSION_TRIGGER_COMBO_KEY) &&
+        this.text.trim().length > 0) {
+      let spaceIndex = this.text.length - 1;
+      while (this.text[spaceIndex] === ' ' && spaceIndex >= 0) {
+        spaceIndex--;
+      }
+      while (this.text[spaceIndex] !== ' ' && spaceIndex >= 0) {
+        spaceIndex--;
+      }
+      let text = this.text.slice(spaceIndex + 1);
+      const eraserLength = text.length;
+      text = text.trim();
+      if (text.length > 0) {
         // An abbreviation expansion has been triggered.
         // TODO(#49): Take care of whitespace in the text and perform
         // context-based AE.
+        console.log('text length:', text.length);  // DEBUG
         const abbreviationSpec: AbbreviationSpec = {
           tokens: text.split('').map(char => ({
                                        value: char,
                                        isKeyword: false,
                                      })),
           readableString: text,
-          eraserSequence:
-              repeatVirtualKey(VIRTUAL_KEY.BACKSPACE, this.text.length),
+          eraserSequence: repeatVirtualKey(VIRTUAL_KEY.BACKSPACE, eraserLength),
         };
         console.log('Abbreviation expansion triggered:', abbreviationSpec);
         this.abbreviationExpansionTriggers.next(

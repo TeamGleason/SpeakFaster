@@ -88,35 +88,39 @@ describe('ExternalEventsComponent', () => {
     expect(beginEvents.length).toEqual(1);
   });
 
-  it('Double space triggers abbreviation expansion', () => {
-    component.externalKeypressHook(72);  // 'h'
-    component.externalKeypressHook(65);  // 'a'
-    component.externalKeypressHook(89);  // 'y'
-    component.externalKeypressHook(32);  // Space
-    component.externalKeypressHook(32);  // Space
-    const expected: InputAbbreviationChangedEvent = {
-      abbreviationSpec: {
-        tokens: [
-          {
-            value: 'h',
-            isKeyword: false,
-          },
-          {
-            value: 'a',
-            isKeyword: false,
-          },
-          {
-            value: 'y',
-            isKeyword: false,
-          }
-        ],
-        readableString: 'hay',
-        eraserSequence: repeatVirtualKey(VIRTUAL_KEY.BACKSPACE, 5),
-      },
-      requestExpansion: true,
-    };
-    expect(abbreviationChangeEvents).toEqual([expected]);
-  });
+  for (const keyCodeSequence of [
+           [72, 65, 89, 32, 32],          // h, a, y, space, space
+           [32, 72, 65, 89, 32, 32],      // space, h, a, y, space, space
+           [65, 32, 72, 65, 89, 32, 32],  // a, space, h, a, y, space, space
+  ]) {
+    it(`Double space triggers abbreviation expansion, key codes = ${
+           keyCodeSequence}`,
+       () => {
+         keyCodeSequence.forEach(code => component.externalKeypressHook(code));
+         const expected: InputAbbreviationChangedEvent = {
+           abbreviationSpec: {
+             tokens: [
+               {
+                 value: 'h',
+                 isKeyword: false,
+               },
+               {
+                 value: 'a',
+                 isKeyword: false,
+               },
+               {
+                 value: 'y',
+                 isKeyword: false,
+               }
+             ],
+             readableString: 'hay',
+             eraserSequence: repeatVirtualKey(VIRTUAL_KEY.BACKSPACE, 5),
+           },
+           requestExpansion: true,
+         };
+         expect(abbreviationChangeEvents).toEqual([expected]);
+       });
+  }
 
   const vkCodesAndExpectedTextWithTestDescription:
       Array<[string, number[], string]> = [

@@ -1,19 +1,22 @@
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {Subject} from 'rxjs';
 
+import {InputAbbreviationChangedEvent} from '../types/abbreviation';
 import {TextEntryBeginEvent, TextEntryEndEvent} from '../types/text-entry';
 
-import {ExternalEventsComponent, getPunctuationLiteral, getVirtualkeyCode, VIRTUAL_KEY, VKCODE_SPECIAL_KEYS} from './external-events.component';
+import {ExternalEventsComponent, getPunctuationLiteral, getVirtualkeyCode, repeatVirtualKey, VIRTUAL_KEY, VKCODE_SPECIAL_KEYS} from './external-events.component';
 import {ExternalEventsModule} from './external-events.module';
 
 // TODO(cais): Remove fdescribe. DO NOT SUBMIT.
 fdescribe('ExternalEventsComponent', () => {
   let textEntryBeginSubject: Subject<TextEntryBeginEvent>;
   let textEntryEndSubject: Subject<TextEntryEndEvent>;
+  let abbreviationExpansionTriggers: Subject<InputAbbreviationChangedEvent>;
   let fixture: ComponentFixture<ExternalEventsComponent>;
   let component: ExternalEventsComponent;
   let beginEvents: TextEntryBeginEvent[];
   let endEvents: TextEntryEndEvent[];
+  let abbreviationChangeEvents: InputAbbreviationChangedEvent[];
 
   beforeEach(async () => {
     await TestBed
@@ -24,14 +27,20 @@ fdescribe('ExternalEventsComponent', () => {
         .compileComponents();
     textEntryBeginSubject = new Subject();
     textEntryEndSubject = new Subject();
+    abbreviationExpansionTriggers = new Subject();
     beginEvents = [];
     endEvents = [];
+    abbreviationChangeEvents = [];
     textEntryBeginSubject.subscribe((event) => beginEvents.push(event));
     textEntryEndSubject.subscribe((event) => endEvents.push(event));
+    abbreviationExpansionTriggers.subscribe(
+        (event) => abbreviationChangeEvents.push(event));
     fixture = TestBed.createComponent(ExternalEventsComponent);
     component = fixture.componentInstance;
     fixture.componentInstance.textEntryBeginSubject = textEntryBeginSubject;
     fixture.componentInstance.textEntryEndSubject = textEntryEndSubject;
+    fixture.componentInstance.abbreviationExpansionTriggers =
+        abbreviationExpansionTriggers;
     fixture.detectChanges();
     jasmine.getEnv().allowRespy(true);
   });
@@ -78,6 +87,40 @@ fdescribe('ExternalEventsComponent', () => {
     component.externalKeypressHook(65);  // 'a'
     expect(beginEvents.length).toEqual(1);
   });
+
+  for (const keyCodeSequence of [
+           [72, 65, 89, 32, 32],          // h, a, y, space, space
+           [32, 72, 65, 89, 32, 32],      // space, h, a, y, space, space
+           [65, 32, 72, 65, 89, 32, 32],  // a, space, h, a, y, space, space
+  ]) {
+    it(`Double space triggers abbreviation expansion, key codes = ${
+           keyCodeSequence}`,
+       () => {
+         keyCodeSequence.forEach(code => component.externalKeypressHook(code));
+         const expected: InputAbbreviationChangedEvent = {
+           abbreviationSpec: {
+             tokens: [
+               {
+                 value: 'h',
+                 isKeyword: false,
+               },
+               {
+                 value: 'a',
+                 isKeyword: false,
+               },
+               {
+                 value: 'y',
+                 isKeyword: false,
+               }
+             ],
+             readableString: 'hay',
+             eraserSequence: repeatVirtualKey(VIRTUAL_KEY.BACKSPACE, 5),
+           },
+           requestExpansion: true,
+         };
+         expect(abbreviationChangeEvents).toEqual([expected]);
+       });
+  }
 
   const vkCodesAndExpectedTextWithTestDescription:
       Array<[string, number[], string]> = [
@@ -138,13 +181,11 @@ fdescribe('ExternalEventsComponent', () => {
     });
   }
 
-
   it('Correctly identifies human-entered and auto-injected keys', () => {
     spyOn(Date, 'now').and.returnValue(0);
     component.externalKeypressHook(65);  // Human-entered.
     spyOn(Date, 'now').and.returnValue(1000);
-    component.externalKeypressHook(
-        66);  // Word completion selection by human.
+    component.externalKeypressHook(66);  // Word completion selection by human.
     spyOn(Date, 'now').and.returnValue(1010);
     component.externalKeypressHook(67);  // Injected key.
     spyOn(Date, 'now').and.returnValue(1020);
@@ -152,8 +193,7 @@ fdescribe('ExternalEventsComponent', () => {
     spyOn(Date, 'now').and.returnValue(1030);
     component.externalKeypressHook(32);  // Injected key.
     spyOn(Date, 'now').and.returnValue(2000);
-    component.externalKeypressHook(
-        69);  // Word completion selection by human.
+    component.externalKeypressHook(69);  // Word completion selection by human.
     spyOn(Date, 'now').and.returnValue(2010);
     component.externalKeypressHook(70);  // Injected key.
     spyOn(Date, 'now').and.returnValue(3000);
@@ -177,8 +217,7 @@ fdescribe('ExternalEventsComponent', () => {
     spyOn(Date, 'now').and.returnValue(3000);
     component.externalKeypressHook(65);  // Human-entered.
     spyOn(Date, 'now').and.returnValue(4000);
-    component.externalKeypressHook(
-        66);  // Word completion selection by human.
+    component.externalKeypressHook(66);  // Word completion selection by human.
     spyOn(Date, 'now').and.returnValue(4010);
     component.externalKeypressHook(67);  // Injected key.
     spyOn(Date, 'now').and.returnValue(5000);

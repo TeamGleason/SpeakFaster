@@ -53,7 +53,7 @@ export class AuthComponent implements OnInit {
   }
 
   ngOnDestroy() {
-    updateButtonBoxesToEmpty(AuthComponent._NAME);
+    updateButtonBoxesToEmpty(this.instanceId);
   }
 
   // Info related to limited-input device authentication.

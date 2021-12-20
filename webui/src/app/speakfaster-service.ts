@@ -30,9 +30,23 @@ export interface FillMaskResponse {
   results: string[];
 }
 
+/** Abstract interface for SpeakFaster service backend. */
 export interface SpeakFasterServiceStub {
+  /** Simple ping service. Can be used to confirm backend is live. */
   ping(): Observable<PingResponse>;
 
+  /**
+   * Expand abbreviation, potentially using context.
+   *
+   * @param speechContent The speech content used as the context for this
+   *     abbreviation expansion. If there are multiple turns of conversation,
+   *     separate them with '|', e.g., 'how are you|i am fine'
+   * @param abbreviationSpec Specs for the abbreviation, including the
+   *     characters and keywords (if any)
+   * @param numSamples: How many samples to draw from he underlying language
+   *     model (prior to filtering and sorting).
+   * @returns Options for the expanded phrase.
+   */
   expandAbbreviation(
       speechContent: string, abbreviationSpec: AbbreviationSpec,
       numSamples: number): Observable<AbbreviationExpansionRespnose>;
@@ -47,8 +61,16 @@ export interface SpeakFasterServiceStub {
   retrieveContext(userId: string): Observable<RetrieveContextResponse>;
 }
 
+/** Configuration for remote service. */
 export interface ServiceConfiguration {
-  endpoint: string, accessToken: string|null,
+  /** URL to service endpiont. */
+  endpoint: string;
+
+  /**
+   * Access token used for authentication. If `null` will use `withCredentials:
+   * true`.
+   */
+  accessToken: string|null;
 }
 
 let configuration: ServiceConfiguration|null = null;

@@ -203,7 +203,7 @@
           <div class="abbreviation-expansion">{{abbreviationOption}}</div>
           <button
               #clickableButton
-              class="action-button"
+              class="action-button select-button"
               [ngClass]="{'is-selected': i === selectedAbbreviationIndex}"
               (click)="onExpansionOptionButtonClicked($event, i)">
             Shift-{{i + 1}}

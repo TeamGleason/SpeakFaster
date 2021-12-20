@@ -19,6 +19,7 @@
 import {Component, Input} from '@angular/core';
 import {Subject} from 'rxjs';
 
+import {AbbreviationSpec, InputAbbreviationChangedEvent} from '../types/abbreviation';
 import {TextEntryBeginEvent, TextEntryEndEvent} from '../types/text-entry';
 
 // The minimum delay between a preceeding keypress and an eye-gaze-triggered
@@ -96,6 +97,11 @@ export const PUNCTUATION: VIRTUAL_KEY[] = [
 ];
 
 export const TTS_TRIGGER_COMBO_KEY: string[] = [VIRTUAL_KEY.LCTRL, 'q'];
+// Abbreviation expansion can be triggered by entering the abbreviation followed
+// by typing two consecutive spaces in the external app.
+// TODO(#49): This can be generalized and made configurable
+export const ABBRVIATION_EXPANSION_TRIGGER_COMBO_KEY: string[] =
+    [VIRTUAL_KEY.SPACE, VIRTUAL_KEY.SPACE];
 
 function getKeyFromVirtualKeyCode(vkCode: number): string|null {
   if (vkCode >= 48 && vkCode <= 57) {
@@ -209,6 +215,8 @@ function allItemsEqual(array1: string[], array2: string[]): boolean {
 export class ExternalEventsComponent {
   @Input() textEntryBeginSubject!: Subject<TextEntryBeginEvent>;
   @Input() textEntryEndSubject!: Subject<TextEntryEndEvent>;
+  @Input()
+  abbreviationExpansionTriggers!: Subject<InputAbbreviationChangedEvent>;
 
   private previousKeypressTimeMillis: number|null = null;
   // Number of keypresses effected through eye gaze (as determiend by
@@ -237,11 +245,7 @@ export class ExternalEventsComponent {
       this.numGazeKeypresses++;
     }
     this.previousKeypressTimeMillis = nowMillis;
-    if (this.keySequence.length > TTS_TRIGGER_COMBO_KEY.length &&
-        allItemsEqual(
-            this.keySequence.slice(
-                this.keySequence.length - TTS_TRIGGER_COMBO_KEY.length),
-            TTS_TRIGGER_COMBO_KEY)) {
+    if (this.keySequenceEndsWith(TTS_TRIGGER_COMBO_KEY)) {
       // A TTS action has been triggered.
       console.log(`TTS event: "${this.text}"`);
       this.textEntryEndSubject.next({
@@ -252,7 +256,29 @@ export class ExternalEventsComponent {
       });
       this.reset();
       return;
+    } else if (this.keySequenceEndsWith(
+                   ABBRVIATION_EXPANSION_TRIGGER_COMBO_KEY)) {
+      const text = this.text.trim();
+      if (text.length > 0 && text.match(/\s/g) === null) {
+        // TODO(cais): Add unit test.
+        // An abbreviation expansion has been triggered.
+        // TODO(#49): Take care of whitespace in the text and perform
+        // context-based AE.
+        const abbreviationSpec: AbbreviationSpec = {
+          tokens: text.split('').map(char => ({
+                                       value: char,
+                                       isKeyword: false,
+                                     })),
+          readableString: text
+        };
+        console.log('Abbreviation expansion triggered:', abbreviationSpec);
+        this.abbreviationExpansionTriggers.next(
+            {abbreviationSpec, requestExpansion: true});
+        this.reset();
+        return;
+      }
     }
+
     const originallyEmpty = this.text === '';
     if (virtualKey.length === 1 && (virtualKey >= 'a' && virtualKey <= 'z')) {
       this.insertCharAsCursorPos(virtualKey);
@@ -310,6 +336,13 @@ export class ExternalEventsComponent {
     console.log(
         `externalKeypressHook(): virtualKey=${virtualKey}; ` +
         `text="${this.text}"; cursorPos=${this.cursorPos}`);
+  }
+
+  private keySequenceEndsWith(suffix: string[]): boolean {
+    return this.keySequence.length > suffix.length &&
+        allItemsEqual(
+               this.keySequence.slice(this.keySequence.length - suffix.length),
+               suffix);
   }
 
   private insertCharAsCursorPos(char: string) {

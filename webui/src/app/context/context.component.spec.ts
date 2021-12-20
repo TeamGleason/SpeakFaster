@@ -32,7 +32,7 @@ fdescribe('ContextComponent', () => {
           providers: [{
             provide: SpeakFasterService,
             useValue: new SpeakFasterServiceForTest()
-          }]
+          }],
         })
         .compileComponents();
     textEntryEndSubject = new Subject();

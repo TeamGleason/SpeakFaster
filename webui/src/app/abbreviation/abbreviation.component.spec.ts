@@ -6,6 +6,7 @@ import {By} from '@angular/platform-browser';
 import {of, Subject} from 'rxjs';
 
 import * as cefSharp from '../../utils/cefsharp';
+import {VIRTUAL_KEY} from '../external/external-events.component';
 import {TestListener} from '../test-utils/test-cefsharp-listener';
 import {AbbreviationSpec, InputAbbreviationChangedEvent} from '../types/abbreviation';
 import {TextEntryEndEvent} from '../types/text-entry';
@@ -138,6 +139,14 @@ describe('AbbreviationComponent', () => {
     textEntryEndSubject.subscribe(event => {
       events.push(event);
     });
+    fixture.componentInstance.abbreviation = {
+      tokens: ['w', 't', 'i', 'i'].map(char => ({
+                                         value: char,
+                                         isKeyword: false,
+                                       })),
+      readableString: 'wtii',
+      triggerKeys: [VIRTUAL_KEY.SPACE, VIRTUAL_KEY.SPACE]
+    };
     fixture.componentInstance.abbreviationOptions =
         ['what time is it', 'we took it in'];
     fixture.detectChanges();
@@ -148,7 +157,10 @@ describe('AbbreviationComponent', () => {
     expect(events[0].text).toEqual('we took it in');
     expect(events[0].isFinal).toBeTrue();
     expect(events[0].timestampMillis).toBeGreaterThan(0);
+    // "wtii" as a length 4; the trigger keys has a lenght 2; additionally,
+    // there is the selection key at the end.
+    const expectedNumKeypresses = 4 + 2 + 1;
+    expect(events[0].numKeypresses).toEqual(expectedNumKeypresses);
+    expect(events[0].numHumanKeypresses).toEqual(expectedNumKeypresses);
   });
-
-  // TODO(cais): Test registration of button boxes.
 });

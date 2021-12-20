@@ -80,7 +80,8 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
   }
 
   onSpeakOptionButtonClicked(event: Event, index: number) {
-    // TODO(cais): Implement.
+    throw new Error('Not implemented yet');
+    // TODO(#49): Implement key injection with TTS trigger.
   }
 
   private selectExpansionOption(index: number) {
@@ -88,10 +89,19 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
       return;
     }
     this._selectedAbbreviationIndex = index;
+    let numKeypresses = 0;
+    if (this.abbreviation !== null) {
+      numKeypresses = this.abbreviation.readableString.length + 1;
+      if (this.abbreviation.triggerKeys != null) {
+        numKeypresses += this.abbreviation.triggerKeys.length;
+      }
+    }
     this.textEntryEndSubject.next({
       text: this.abbreviationOptions[this._selectedAbbreviationIndex],
       timestampMillis: Date.now(),
       isFinal: true,
+      numKeypresses,
+      numHumanKeypresses: numKeypresses,
     });
     // TODO(cais): Prevent selection in gap state.
     setTimeout(

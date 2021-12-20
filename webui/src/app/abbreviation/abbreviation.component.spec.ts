@@ -6,7 +6,7 @@ import {By} from '@angular/platform-browser';
 import {of, Subject} from 'rxjs';
 
 import * as cefSharp from '../../utils/cefsharp';
-import {VIRTUAL_KEY} from '../external/external-events.component';
+import {repeatVirtualKey, VIRTUAL_KEY} from '../external/external-events.component';
 import {TestListener} from '../test-utils/test-cefsharp-listener';
 import {AbbreviationSpec, InputAbbreviationChangedEvent} from '../types/abbreviation';
 import {TextEntryEndEvent} from '../types/text-entry';
@@ -149,16 +149,7 @@ describe('AbbreviationComponent', () => {
                                        })),
       readableString: 'wtii',
       triggerKeys: [VIRTUAL_KEY.SPACE, VIRTUAL_KEY.SPACE],
-      eraserSequence: [
-        VIRTUAL_KEY.BACKSPACE,
-        VIRTUAL_KEY.BACKSPACE,
-        VIRTUAL_KEY.BACKSPACE,
-        VIRTUAL_KEY.BACKSPACE,
-        VIRTUAL_KEY.BACKSPACE,
-        VIRTUAL_KEY.BACKSPACE,
-        VIRTUAL_KEY.BACKSPACE,
-        VIRTUAL_KEY.BACKSPACE,
-      ],
+      eraserSequence: repeatVirtualKey(VIRTUAL_KEY.BACKSPACE, 8),
     };
     fixture.componentInstance.abbreviationOptions = ['what time is it'];
     fixture.detectChanges();

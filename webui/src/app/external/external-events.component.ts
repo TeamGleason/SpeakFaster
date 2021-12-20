@@ -212,10 +212,10 @@ function allItemsEqual(array1: string[], array2: string[]): boolean {
  * Get a sequence of backspace keys that erases the effect of the given key
  * sequence (i.e., delete the visible text that resulted from it).
  */
- function getBackspaceSequence(num: number): VIRTUAL_KEY[] {
+export function repeatVirtualKey(key: VIRTUAL_KEY, num: number): VIRTUAL_KEY[] {
   const keys: VIRTUAL_KEY[] = [];
   for (let i = 0; i < num; ++i) {
-    keys.push(VIRTUAL_KEY.BACKSPACE);
+    keys.push(key);
   }
   return keys;
 }
@@ -268,28 +268,6 @@ export class ExternalEventsComponent {
       });
       this.reset();
       return;
-    } else if (this.keySequenceEndsWith(
-                   ABBRVIATION_EXPANSION_TRIGGER_COMBO_KEY)) {
-      const text = this.text.trim();
-      if (text.length > 0 && text.match(/\s/g) === null) {
-        // TODO(cais): Add unit test. DO NOT SUBMIT.
-        // An abbreviation expansion has been triggered.
-        // TODO(#49): Take care of whitespace in the text and perform
-        // context-based AE.
-        const abbreviationSpec: AbbreviationSpec = {
-          tokens: text.split('').map(char => ({
-                                       value: char,
-                                       isKeyword: false,
-                                     })),
-          readableString: text,
-          eraserSequence: getBackspaceSequence(this.text.length),
-        };
-        console.log('Abbreviation expansion triggered:', abbreviationSpec);
-        this.abbreviationExpansionTriggers.next(
-            {abbreviationSpec, requestExpansion: true});
-        this.reset();
-        return;
-      }
     }
 
     const originallyEmpty = this.text === '';
@@ -340,6 +318,29 @@ export class ExternalEventsComponent {
     }
     if (originallyEmpty && this.text.length > 0) {
       this.textEntryBeginSubject.next({timestampMillis: Date.now()});
+    }
+
+    if (this.keySequenceEndsWith(ABBRVIATION_EXPANSION_TRIGGER_COMBO_KEY)) {
+      const text = this.text.trim();
+      if (text.length > 0 && text.match(/\s/g) === null) {
+        // An abbreviation expansion has been triggered.
+        // TODO(#49): Take care of whitespace in the text and perform
+        // context-based AE.
+        const abbreviationSpec: AbbreviationSpec = {
+          tokens: text.split('').map(char => ({
+                                       value: char,
+                                       isKeyword: false,
+                                     })),
+          readableString: text,
+          eraserSequence:
+              repeatVirtualKey(VIRTUAL_KEY.BACKSPACE, this.text.length),
+        };
+        console.log('Abbreviation expansion triggered:', abbreviationSpec);
+        this.abbreviationExpansionTriggers.next(
+            {abbreviationSpec, requestExpansion: true});
+        this.reset();
+        return;
+      }
     }
 
     // TODO(cais): Take care of the up and down arrow keys.

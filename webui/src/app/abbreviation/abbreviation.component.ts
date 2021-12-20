@@ -244,6 +244,7 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
       const injectedKeys: Array<string|VIRTUAL_KEY> =
           this.abbreviation!.eraserSequence || [];
       injectedKeys.push(...text.split(''));
+      injectedKeys.push(VIRTUAL_KEY.SPACE);  // Append a space at the end.
       injectKeys(injectedKeys);
     }
     // TODO(cais): Prevent selection in gap state.

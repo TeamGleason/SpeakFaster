@@ -160,9 +160,10 @@ fdescribe('AbbreviationComponent', () => {
     await fixture.whenStable();
     const calls = testListener.injectedKeysCalls;
     expect(calls.length).toEqual(1);
+    // Includes the leading eraser keys and the trailing space.
     expect(calls[0]).toEqual([
       8,  8,  8,  8,  8,  8,  8,  8,  87, 72, 65, 84,
-      32, 84, 73, 77, 69, 32, 73, 83, 32, 73, 84
+      32, 84, 73, 77, 69, 32, 73, 83, 32, 73, 84, 32,
     ]);
   });
 

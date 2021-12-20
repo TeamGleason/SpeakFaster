@@ -19,7 +19,7 @@ import {DEFAULT_CONTEXT_SIGNALS} from './default-context';
 export class ContextComponent implements OnInit, AfterViewInit {
   private static readonly _NAME = 'ContextComponent';
   // TODO(cais): Do not hardcode this user ID.
-  private userId = 'testuser';
+  private userId = 'cais';
   private static readonly MAX_DISPLAYED_CONTEXT_COUNT = 4;
   private static readonly MAX_FOCUS_CONTEXT_SIGNALS = 2;
 

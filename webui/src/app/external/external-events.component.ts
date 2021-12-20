@@ -336,7 +336,6 @@ export class ExternalEventsComponent {
         // An abbreviation expansion has been triggered.
         // TODO(#49): Take care of whitespace in the text and perform
         // context-based AE.
-        console.log('text length:', text.length);  // DEBUG
         const abbreviationSpec: AbbreviationSpec = {
           tokens: text.split('').map(char => ({
                                        value: char,

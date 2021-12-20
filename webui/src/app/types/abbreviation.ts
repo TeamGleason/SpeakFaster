@@ -55,3 +55,4 @@ export interface StartSpellingEvent {
   readonly originalAbbreviationChars: string[];
   readonly isNewSpellingTask: boolean;
 }
+

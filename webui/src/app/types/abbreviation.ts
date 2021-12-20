@@ -1,6 +1,6 @@
 /** Types related to abbreviations. */
 
-import { VIRTUAL_KEY } from "../external/external-events.component";
+import {VIRTUAL_KEY} from '../external/external-events.component';
 
 /**
  * A token in an abbreviation. In the context of abbreviation, a token is
@@ -34,6 +34,11 @@ export interface AbbreviationSpec {
 
   // Key sequence used to trigger the abbreviation expansion request.
   readonly triggerKeys?: Array<string|VIRTUAL_KEY>,
+
+  // The sequence of keys that can erase the abbreviation and characters
+  // that resulted from the trigger keys, which can be used for key
+  // injection later.
+  readonly eraserSequence?: VIRTUAL_KEY[],
 }
 
 /** An event that signifies the change in an input abbreviation */
@@ -50,4 +55,3 @@ export interface StartSpellingEvent {
   readonly originalAbbreviationChars: string[];
   readonly isNewSpellingTask: boolean;
 }
-

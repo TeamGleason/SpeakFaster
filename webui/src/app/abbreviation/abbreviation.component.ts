@@ -3,7 +3,8 @@ import {Subject} from 'rxjs';
 import {limitStringLength} from 'src/utils/text-utils';
 import {createUuid} from 'src/utils/uuid';
 
-import {updateButtonBoxesForElements} from '../../utils/cefsharp';
+import {injectKeys, updateButtonBoxesForElements} from '../../utils/cefsharp';
+import {VIRTUAL_KEY} from '../external/external-events.component';
 import {SpeakFasterService} from '../speakfaster-service';
 import {AbbreviationSpec, InputAbbreviationChangedEvent} from '../types/abbreviation';
 import {TextEntryEndEvent} from '../types/text-entry';
@@ -75,7 +76,7 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
 
   onExpansionOptionButtonClicked(event: Event, index: number) {
     if (this.state === 'CHOOSING_EXPANSION') {
-      this.selectExpansionOption(index);
+      this.selectExpansionOption(index, /* injectKeys= */ true);
     }
   }
 
@@ -84,25 +85,31 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
     // TODO(#49): Implement key injection with TTS trigger.
   }
 
-  private selectExpansionOption(index: number) {
-    if (this._selectedAbbreviationIndex === index) {
+  private selectExpansionOption(index: number, toInjectKeys: boolean) {
+    if (this._selectedAbbreviationIndex === index || !this.abbreviation) {
       return;
     }
     this._selectedAbbreviationIndex = index;
     let numKeypresses = 0;
-    if (this.abbreviation !== null) {
-      numKeypresses = this.abbreviation.readableString.length + 1;
-      if (this.abbreviation.triggerKeys != null) {
-        numKeypresses += this.abbreviation.triggerKeys.length;
-      }
+    numKeypresses = this.abbreviation.readableString.length + 1;
+    if (this.abbreviation.triggerKeys != null) {
+      numKeypresses += this.abbreviation.triggerKeys.length;
     }
+    const text = this.abbreviationOptions[this._selectedAbbreviationIndex];
     this.textEntryEndSubject.next({
-      text: this.abbreviationOptions[this._selectedAbbreviationIndex],
+      text,
       timestampMillis: Date.now(),
       isFinal: true,
       numKeypresses,
       numHumanKeypresses: numKeypresses,
     });
+    if (toInjectKeys) {
+      const injectedKeys: Array<string|VIRTUAL_KEY> =
+          this.abbreviation!.eraserSequence || [];
+      injectedKeys.push(...text.split(''));
+      console.log('Injecting keys:', injectedKeys);  // DEBUG
+      injectKeys(injectedKeys);
+    }
     // TODO(cais): Prevent selection in gap state.
     setTimeout(
         () => this.resetState(),

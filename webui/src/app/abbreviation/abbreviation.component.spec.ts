@@ -121,6 +121,14 @@ describe('AbbreviationComponent', () => {
        textEntryEndSubject.subscribe(event => {
          events.push(event);
        });
+       fixture.componentInstance.abbreviation = {
+         tokens: ['w', 't', 'i', 'i'].map(char => ({
+                                            value: char,
+                                            isKeyword: false,
+                                          })),
+         readableString: 'wtii',
+         triggerKeys: [VIRTUAL_KEY.SPACE, VIRTUAL_KEY.SPACE]
+       };
        fixture.componentInstance.abbreviationOptions = ['what time is it'];
        fixture.detectChanges();
        const selectButtons =
@@ -128,11 +136,43 @@ describe('AbbreviationComponent', () => {
        (selectButtons[0].nativeElement as HTMLButtonElement).click();
        await fixture.whenStable();
        const calls = testListener.updateButtonBoxesCalls;
-       // expect(calls.length).toEqual(1);
        expect(calls[calls.length - 1][0].indexOf('AbbreviationComponent'))
            .toEqual(0);
        expect(calls[calls.length - 1][1]).toEqual([]);
      });
+
+  it('Calls injectKeys when option is selected', async () => {
+    fixture.componentInstance.abbreviation = {
+      tokens: ['w', 't', 'i', 'i'].map(char => ({
+                                         value: char,
+                                         isKeyword: false,
+                                       })),
+      readableString: 'wtii',
+      triggerKeys: [VIRTUAL_KEY.SPACE, VIRTUAL_KEY.SPACE],
+      eraserSequence: [
+        VIRTUAL_KEY.BACKSPACE,
+        VIRTUAL_KEY.BACKSPACE,
+        VIRTUAL_KEY.BACKSPACE,
+        VIRTUAL_KEY.BACKSPACE,
+        VIRTUAL_KEY.BACKSPACE,
+        VIRTUAL_KEY.BACKSPACE,
+        VIRTUAL_KEY.BACKSPACE,
+        VIRTUAL_KEY.BACKSPACE,
+      ],
+    };
+    fixture.componentInstance.abbreviationOptions = ['what time is it'];
+    fixture.detectChanges();
+    const selectButtons =
+        fixture.debugElement.queryAll(By.css('.select-button'));
+    (selectButtons[0].nativeElement as HTMLButtonElement).click();
+    await fixture.whenStable();
+    const calls = testListener.injectedKeysCalls;
+    expect(calls.length).toEqual(1);
+    expect(calls[0]).toEqual([
+      8,  8,  8,  8,  8,  8,  8,  8,  87, 72, 65, 84,
+      32, 84, 73, 77, 69, 32, 73, 83, 32, 73, 84
+    ]);
+  });
 
   it('clicking select-button publishes to textEntryEndSubject', () => {
     const events: TextEntryEndEvent[] = [];

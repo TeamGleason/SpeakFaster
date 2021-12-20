@@ -23,9 +23,10 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
   private readonly instanceId =
       AbbreviationComponent._NAME + '_' + createUuid();
   @Input() contextStrings!: string[];
-  @Input() textEntryEndSubject!: Subject<TextEntryEndEvent>;
   @Input()
   abbreviationExpansionTriggers!: Subject<InputAbbreviationChangedEvent>;
+  @Input() textEntryEndSubject!: Subject<TextEntryEndEvent>;
+
 
   @ViewChildren('clickableButton')
   clickableButtons!: QueryList<ElementRef<HTMLElement>>;
@@ -46,7 +47,7 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
   private _selectedAbbreviationIndex: number = -1;
 
   constructor(
-      private speakFasterService: SpeakFasterService,
+      public speakFasterService: SpeakFasterService,
       private cdr: ChangeDetectorRef) {}
 
   ngOnInit() {

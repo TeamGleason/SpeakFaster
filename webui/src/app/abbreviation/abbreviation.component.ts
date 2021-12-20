@@ -1,4 +1,4 @@
-import {AfterViewInit, Component, ElementRef, EventEmitter, Input, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
+import {AfterViewInit, ChangeDetectorRef, Component, ElementRef, EventEmitter, Input, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
 import {Subject} from 'rxjs';
 import {limitStringLength} from 'src/utils/text-utils';
 import {createUuid} from 'src/utils/uuid';
@@ -19,6 +19,7 @@ enum State {
 })
 export class AbbreviationComponent implements OnInit, AfterViewInit {
   private static readonly _NAME = 'AbbreviationComponent';
+  private static readonly _POST_SELECTION_DELAY_MILLIS = 500;
   private readonly instanceId =
       AbbreviationComponent._NAME + '_' + createUuid();
   @Input() contextStrings!: string[];
@@ -44,15 +45,18 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
   abbreviationOptions: string[] = [];
   private _selectedAbbreviationIndex: number = -1;
 
-  constructor(private speakFasterService: SpeakFasterService) {}
+  constructor(
+      private speakFasterService: SpeakFasterService,
+      private cdr: ChangeDetectorRef) {}
 
   ngOnInit() {
     this.abbreviationExpansionTriggers.subscribe(
         (event: InputAbbreviationChangedEvent) => {
-          this.abbreviation = event.abbreviationSpec;
-          if (event.requestExpansion) {
-            this.expandAbbreviation();
+          if (!event.requestExpansion) {
+            return;
           }
+          this.abbreviation = event.abbreviationSpec;
+          this.expandAbbreviation();
         });
   }
 
@@ -89,7 +93,9 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
       isFinal: true,
     });
     // TODO(cais): Prevent selection in gap state.
-    setTimeout(() => this.resetState(), 1000);
+    setTimeout(
+        () => this.resetState(),
+        AbbreviationComponent._POST_SELECTION_DELAY_MILLIS);
   }
 
   private resetState() {
@@ -104,6 +110,7 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
     this.replacementTokens.splice(0);
     this.manualTokenString = '';
     this.state = State.CHOOSING_EXPANSION;
+    this.cdr.detectChanges();
   }
 
   private expandAbbreviation() {
@@ -140,11 +147,13 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
               this.requestOngoing = false;
               if (data.exactMatches != null) {
                 this.abbreviationOptions = data.exactMatches;
+                this.cdr.detectChanges();
               }
             },
             error => {
               this.requestOngoing = false;
               this.responseError = error.message;
+              this.cdr.detectChanges();
             });
   }
 

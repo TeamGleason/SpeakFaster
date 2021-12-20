@@ -47,6 +47,10 @@ export class AppComponent implements OnInit, AfterViewInit {
       if (typeof useOauth === 'string' &&
           (useOauth.toLocaleLowerCase() === 'false' || useOauth === '0')) {
         this.useAccessToken = false;
+        configureService({
+          endpoint: this._endpoint,
+          accessToken: '',
+        })
       }
     });
   }

@@ -19,7 +19,7 @@
 import {Component, Input} from '@angular/core';
 import {Subject} from 'rxjs';
 
-import {AbbreviationSpec, AbbreviationToken, InputAbbreviationChangedEvent} from '../types/abbreviation';
+import {AbbreviationSpec, InputAbbreviationChangedEvent} from '../types/abbreviation';
 import {TextEntryBeginEvent, TextEntryEndEvent} from '../types/text-entry';
 
 // The minimum delay between a preceeding keypress and an eye-gaze-triggered
@@ -98,7 +98,7 @@ export const PUNCTUATION: VIRTUAL_KEY[] = [
 
 export const TTS_TRIGGER_COMBO_KEY: string[] = [VIRTUAL_KEY.LCTRL, 'q'];
 // Abbreviation expansion can be triggered by entering the abbreviation followed
-// by typing two consecutive spaces.
+// by typing two consecutive spaces in the external app.
 // TODO(#49): This can be generalized and made configurable
 export const ABBRVIATION_EXPANSION_TRIGGER_COMBO_KEY: string[] =
     [VIRTUAL_KEY.SPACE, VIRTUAL_KEY.SPACE];

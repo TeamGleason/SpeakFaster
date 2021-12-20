@@ -94,9 +94,11 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
       isFinal: true,
     });
     // TODO(cais): Prevent selection in gap state.
+    console.log('A100');  // DEBUG
     setTimeout(
         () => this.resetState(),
         AbbreviationComponent._POST_SELECTION_DELAY_MILLIS);
+    console.log('A200');  // DEBUG
   }
 
   private resetState() {

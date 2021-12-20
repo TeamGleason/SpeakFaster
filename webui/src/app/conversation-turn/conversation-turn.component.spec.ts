@@ -24,6 +24,10 @@ describe('ConversationTurnComponent', () => {
     jasmine.getEnv().allowRespy(true);
   });
 
+  afterAll(async () => {
+    delete (window as any)[cefSharp.BOUND_LISTENER_NAME];
+  });
+
   it('displays short tts turn text without ellipses', () => {
     fixture.componentInstance.turn = {
       speakerId: 'foo_speaker',

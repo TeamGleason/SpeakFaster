@@ -1,12 +1,12 @@
 /** Unit tests for AbbreviationComponent. */
 
 import {HttpClientModule} from '@angular/common/http';
-import {Injectable} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {By} from '@angular/platform-browser';
-import {Observable, of, Subject} from 'rxjs';
+import {of, Subject} from 'rxjs';
 
-import {AbbreviationExpansionRespnose, SpeakFasterService} from '../speakfaster-service';
+import * as cefSharp from '../../utils/cefsharp';
+import {TestListener} from '../test-utils/test-cefsharp-listener';
 import {AbbreviationSpec, InputAbbreviationChangedEvent} from '../types/abbreviation';
 import {TextEntryEndEvent} from '../types/text-entry';
 
@@ -17,8 +17,11 @@ describe('AbbreviationComponent', () => {
   let abbreviationExpansionTriggers: Subject<InputAbbreviationChangedEvent>;
   let textEntryEndSubject: Subject<TextEntryEndEvent>;
   let fixture: ComponentFixture<AbbreviationComponent>;
+  let testListener: TestListener;
 
   beforeEach(async () => {
+    testListener = new TestListener();
+    (window as any)[cefSharp.BOUND_LISTENER_NAME] = testListener;
     await TestBed
         .configureTestingModule({
           imports: [AbbreviationModule, HttpClientModule],
@@ -32,6 +35,10 @@ describe('AbbreviationComponent', () => {
         abbreviationExpansionTriggers;
     fixture.componentInstance.textEntryEndSubject = textEntryEndSubject;
     fixture.detectChanges();
+  });
+
+  afterAll(async () => {
+    delete (window as any)[cefSharp.BOUND_LISTENER_NAME];
   });
 
   it('initially displays no abbreviation options', () => {
@@ -90,6 +97,35 @@ describe('AbbreviationComponent', () => {
     const speakButtons = fixture.debugElement.queryAll(By.css('.speak-button'));
     expect(speakButtons.length).toEqual(2);
   });
+
+  it('calls updateButtonBoxes when expansion options become available',
+     async () => {
+       fixture.componentInstance.abbreviationOptions = ['what time is it'];
+       fixture.detectChanges();
+       await fixture.whenStable();
+       const calls = testListener.updateButtonBoxesCalls;
+       expect(calls.length).toEqual(1);
+       expect(calls[0][0].indexOf('AbbreviationComponent')).toEqual(0);
+       expect(calls[0][1].length).toEqual(2);
+     });
+
+  it('calls updateButtonBoxes with empty arg when option is selcted',
+      async () => {
+        const events: TextEntryEndEvent[] = [];
+        textEntryEndSubject.subscribe(event => {
+          events.push(event);
+        });
+        fixture.componentInstance.abbreviationOptions = ['what time is it'];
+        fixture.detectChanges();
+        const selectButtons =
+            fixture.debugElement.queryAll(By.css('.select-button'));
+        (selectButtons[0].nativeElement as HTMLButtonElement).click();
+        await fixture.whenStable();
+        const calls = testListener.updateButtonBoxesCalls;
+        // expect(calls.length).toEqual(1);
+        expect(calls[calls.length - 1][0].indexOf('AbbreviationComponent')).toEqual(0);
+        expect(calls[calls.length - 1][1]).toEqual([]);
+      });
 
   it('clicking select-button publishes to textEntryEndSubject', () => {
     const events: TextEntryEndEvent[] = [];

@@ -32,6 +32,7 @@ export class AppComponent implements OnInit, AfterViewInit {
   textEntryBeginSubject: Subject<TextEntryBeginEvent> =
       new Subject<TextEntryBeginEvent>();
   textEntryEndSubject: Subject<TextEntryEndEvent> = new Subject();
+  readonly contextStrings: string[] = [];
 
   constructor(
       private route: ActivatedRoute,
@@ -51,6 +52,13 @@ export class AppComponent implements OnInit, AfterViewInit {
           endpoint: this._endpoint,
           accessToken: '',
         })
+      }
+    });
+    this.textEntryEndSubject.subscribe(textEntryEndEvent => {
+      if (textEntryEndEvent.text.length > 0) {
+        // TODO(#59): Support multiple contexts, with timing information.
+        this.contextStrings.splice(0);
+        this.contextStrings.push(textEntryEndEvent.text);
       }
     });
   }

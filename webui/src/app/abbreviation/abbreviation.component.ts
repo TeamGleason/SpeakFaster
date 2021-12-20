@@ -94,11 +94,9 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
       isFinal: true,
     });
     // TODO(cais): Prevent selection in gap state.
-    console.log('A100');  // DEBUG
     setTimeout(
         () => this.resetState(),
         AbbreviationComponent._POST_SELECTION_DELAY_MILLIS);
-    console.log('A200');  // DEBUG
   }
 
   private resetState() {
@@ -117,11 +115,6 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
   }
 
   private expandAbbreviation() {
-    if (this.contextStrings.length === 0) {
-      this.responseError =
-          'Cannot expand abbreviation: no speech content as context';
-      return;
-    }
     if (this.abbreviation === null) {
       this.responseError = 'Cannot expand abbreviation: empty abbreviation';
       return;
@@ -137,14 +130,15 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
     if (usedContextStrings.length > LIMIT_TURNS) {
       usedContextStrings.splice(0, usedContextStrings.length - LIMIT_TURNS);
     }
-    // TODO(cais): Limit by token length?
+    // TODO(#49): Limit by token length?
     const numSamples = this.getNumSamples(this.abbreviation);
+    const usedContextString = usedContextStrings.join('|');
     console.log(
-        `Calling expandAbbreviation() (numSamples=${numSamples}):`,
-        usedContextStrings, this.abbreviation);
+        `Calling expandAbbreviation() (numSamples=${numSamples}):` +
+            `context='${usedContextString}'; abbreviation=`,
+        this.abbreviation);
     this.speakFasterService
-        .expandAbbreviation(
-            usedContextStrings.join('|'), this.abbreviation, numSamples)
+        .expandAbbreviation(usedContextString, this.abbreviation, numSamples)
         .subscribe(
             data => {
               this.requestOngoing = false;

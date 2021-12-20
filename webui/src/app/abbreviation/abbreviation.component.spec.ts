@@ -47,40 +47,45 @@ describe('AbbreviationComponent', () => {
     expect(abbreviationOptions.length).toEqual(0);
   });
 
-  it('sends http request on trigger', () => {
-    fixture.componentInstance.contextStrings = ['hello'];
-    const spy =
-        spyOn(
-            fixture.componentInstance.speakFasterService, 'expandAbbreviation')
-            .and.returnValue(of({
-              exactMatches: ['how are you', 'how about you'],
-            }));
-    const abbreviationSpec: AbbreviationSpec = {
-      tokens: [
-        {
-          value: 'h',
-          isKeyword: false,
-        },
-        {
-          value: 'a',
-          isKeyword: false,
-        },
-        {
-          value: 'y',
-          isKeyword: false,
-        }
-      ],
-      readableString: 'ace',
-    };
-    abbreviationExpansionTriggers.next({
-      abbreviationSpec,
-      requestExpansion: true,
-    });
-    expect(spy).toHaveBeenCalledOnceWith('hello', abbreviationSpec, 128);
-    expect(fixture.componentInstance.abbreviationOptions).toEqual([
-      'how are you', 'how about you'
-    ]);
-  });
+  for (const contextStrings of [[], ['hello']]) {
+    it('sends http request on trigger: ' +
+           `contextStrings = ${JSON.stringify(contextStrings)}`,
+       () => {
+         fixture.componentInstance.contextStrings = contextStrings;
+         const spy = spyOn(
+                         fixture.componentInstance.speakFasterService,
+                         'expandAbbreviation')
+                         .and.returnValue(of({
+                           exactMatches: ['how are you', 'how about you'],
+                         }));
+         const abbreviationSpec: AbbreviationSpec = {
+           tokens: [
+             {
+               value: 'h',
+               isKeyword: false,
+             },
+             {
+               value: 'a',
+               isKeyword: false,
+             },
+             {
+               value: 'y',
+               isKeyword: false,
+             }
+           ],
+           readableString: 'ace',
+         };
+         abbreviationExpansionTriggers.next({
+           abbreviationSpec,
+           requestExpansion: true,
+         });
+         expect(spy).toHaveBeenCalledOnceWith(
+             contextStrings.join('|'), abbreviationSpec, 128);
+         expect(fixture.componentInstance.abbreviationOptions).toEqual([
+           'how are you', 'how about you'
+         ]);
+       });
+  }
 
   it('displays expansion options when available', () => {
     fixture.componentInstance.abbreviationOptions =
@@ -110,22 +115,23 @@ describe('AbbreviationComponent', () => {
      });
 
   it('calls updateButtonBoxes with empty arg when option is selcted',
-      async () => {
-        const events: TextEntryEndEvent[] = [];
-        textEntryEndSubject.subscribe(event => {
-          events.push(event);
-        });
-        fixture.componentInstance.abbreviationOptions = ['what time is it'];
-        fixture.detectChanges();
-        const selectButtons =
-            fixture.debugElement.queryAll(By.css('.select-button'));
-        (selectButtons[0].nativeElement as HTMLButtonElement).click();
-        await fixture.whenStable();
-        const calls = testListener.updateButtonBoxesCalls;
-        // expect(calls.length).toEqual(1);
-        expect(calls[calls.length - 1][0].indexOf('AbbreviationComponent')).toEqual(0);
-        expect(calls[calls.length - 1][1]).toEqual([]);
-      });
+     async () => {
+       const events: TextEntryEndEvent[] = [];
+       textEntryEndSubject.subscribe(event => {
+         events.push(event);
+       });
+       fixture.componentInstance.abbreviationOptions = ['what time is it'];
+       fixture.detectChanges();
+       const selectButtons =
+           fixture.debugElement.queryAll(By.css('.select-button'));
+       (selectButtons[0].nativeElement as HTMLButtonElement).click();
+       await fixture.whenStable();
+       const calls = testListener.updateButtonBoxesCalls;
+       // expect(calls.length).toEqual(1);
+       expect(calls[calls.length - 1][0].indexOf('AbbreviationComponent'))
+           .toEqual(0);
+       expect(calls[calls.length - 1][1]).toEqual([]);
+     });
 
   it('clicking select-button publishes to textEntryEndSubject', () => {
     const events: TextEntryEndEvent[] = [];

@@ -35,7 +35,7 @@ export class AppComponent implements OnInit, AfterViewInit {
   textEntryEndSubject: Subject<TextEntryEndEvent> = new Subject();
   // Context speech content used for AE and other text predictions.
   inputAbbreviation: string = '';
-  contextStrings: string[] = [];
+  readonly contextStrings: string[] = [];
 
   constructor(
       private route: ActivatedRoute,
@@ -86,7 +86,8 @@ export class AppComponent implements OnInit, AfterViewInit {
   }
 
   onContextStringsSelected(contextStrings: string[]) {
-    this.contextStrings = contextStrings;
+    this.contextStrings.splice(0);
+    this.contextStrings.push(...contextStrings);
   }
 
   onAbbreviationInputChanged(abbreviationChangedEvent:

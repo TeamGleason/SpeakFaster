@@ -1,5 +1,7 @@
 /** Types related to abbreviations. */
 
+import {VIRTUAL_KEY} from '../external/external-events.component';
+
 /**
  * A token in an abbreviation. In the context of abbreviation, a token is
  * defined as a unit that represents a word. It can be:
@@ -29,6 +31,14 @@ export interface AbbreviationSpec {
   // of keyword(s), the keyword abbreviation tokens may be separated from
   // adjacent tokens by spaces (e.g., "why did you do that" --> "wdy do t").
   readonly readableString: string;
+
+  // Key sequence used to trigger the abbreviation expansion request.
+  readonly triggerKeys?: Array<string|VIRTUAL_KEY>,
+
+  // The sequence of keys that can erase the abbreviation and characters
+  // that resulted from the trigger keys, which can be used for key
+  // injection later.
+  readonly eraserSequence?: VIRTUAL_KEY[],
 }
 
 /** An event that signifies the change in an input abbreviation */

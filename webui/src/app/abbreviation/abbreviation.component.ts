@@ -1,9 +1,10 @@
-import {AfterViewInit, ChangeDetectorRef, Component, ElementRef, EventEmitter, Input, OnChanges, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
+import {AfterViewInit, ChangeDetectorRef, Component, ElementRef, Input, OnInit, QueryList, ViewChild, ViewChildren} from '@angular/core';
 import {Subject} from 'rxjs';
 import {limitStringLength} from 'src/utils/text-utils';
 import {createUuid} from 'src/utils/uuid';
 
-import {updateButtonBoxesForElements} from '../../utils/cefsharp';
+import {injectKeys, updateButtonBoxesForElements} from '../../utils/cefsharp';
+import {VIRTUAL_KEY} from '../external/external-events.component';
 import {isPlainAlphanumericKey, isTextContentKey} from '../../utils/keyboard-utils';
 import {KeyboardComponent} from '../keyboard/keyboard.component';
 import {SpeakFasterService} from '../speakfaster-service';
@@ -43,6 +44,10 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
   @ViewChildren('abbreviationOption')
   abbreviationOptionElements!: QueryList<ElementRef<HTMLElement>>;
 
+  @ViewChildren('tokenInput')
+  tokenInputElements!: QueryList<ElementRef<HTMLElement>>;
+  private tokenInput: HTMLInputElement|null = null;
+
   state = State.CHOOSING_EXPANSION;
   readonly editTokens: string[] = [];
   readonly replacementTokens: string[] = [];
@@ -64,10 +69,11 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
         AbbreviationComponent._NAME, this.baseKeyboardHandler.bind(this));
     this.abbreviationExpansionTriggers.subscribe(
         (event: InputAbbreviationChangedEvent) => {
-          this.abbreviation = event.abbreviationSpec;
-          if (event.requestExpansion) {
-            this.expandAbbreviation();
+          if (!event.requestExpansion) {
+            return;
           }
+          this.abbreviation = event.abbreviationSpec;
+          this.expandAbbreviation();
         });
   }
 
@@ -77,6 +83,11 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
           updateButtonBoxesForElements(
               AbbreviationComponent._NAME + this.instanceId, queryList);
         });
+    // console.log(this.tokenInputElements);  // DEBUG
+    // for (const element of this.tokenInputElements) {
+    //   console.log('element:', element);
+    // }
+    // console.log('tokenInput=', this.tokenInput);  // DEBUG
   }
 
   baseKeyboardHandler(event: KeyboardEvent): boolean {
@@ -86,17 +97,21 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
     const keyIndex = event.keyCode - 49;
     // Ctrl E or Enter activates AE.
     // Ctrl Q clears all the expansion options (if any).
-    if ((event.ctrlKey && event.key.toLocaleLowerCase() === 'e') ||
-        (isPlainAlphanumericKey(event, 'Enter', false))) {
-      this.expandAbbreviation();
-      return true;
-    } else if (event.ctrlKey && event.key.toLocaleLowerCase() === 'q') {
+    // if ((event.ctrlKey && event.key.toLocaleLowerCase() === 'e') ||
+    //     (isPlainAlphanumericKey(event, 'Enter', false))) {
+    //   console.log(this.tokenInputElements);  // DEBUG
+    //   this.expandAbbreviation();
+    //   return true;
+    // }
+    // TODO(cais): Move this logic to abbreviation-editing-component.
+
+    if (event.ctrlKey && event.key.toLocaleLowerCase() === 'q') {
       this.abbreviationOptions.splice(0);
       return true;
     } else if (
         event.shiftKey && keyIndex >= 0 &&
         keyIndex < this.abbreviationOptions.length) {
-      this.selectExpansionOption(keyIndex);
+      this.selectExpansionOption(keyIndex, /* toInjectKeys= */ true);
       return true;
     }
     return false;
@@ -112,7 +127,7 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
 
   onExpansionOptionButtonClicked(event: Event, index: number) {
     if (this.state === 'CHOOSING_EXPANSION') {
-      this.selectExpansionOption(index);
+      this.selectExpansionOption(index, /* toInjectKeys= */ true);
     } else if (this.state === 'CHOOSING_EDIT_TARGET') {
       this.editTokens.splice(0);
       this.editTokens.push(...this.abbreviationOptions[index].split(' '));
@@ -122,7 +137,8 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
   }
 
   onSpeakOptionButtonClicked(event: Event, index: number) {
-    // TODO(cais): Implement.
+    throw new Error('Not implemented yet');
+    // TODO(#49): Implement key injection with TTS trigger.
   }
 
   onEditTokenButtonClicked(event: Event, index: number) {
@@ -206,16 +222,30 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
     setTimeout(() => this.resetState(), 1000);
   }
 
-  private selectExpansionOption(index: number) {
-    if (this._selectedAbbreviationIndex === index) {
+  private selectExpansionOption(index: number, toInjectKeys: boolean) {
+    if (this._selectedAbbreviationIndex === index || !this.abbreviation) {
       return;
     }
     this._selectedAbbreviationIndex = index;
+    let numKeypresses = 0;
+    numKeypresses = this.abbreviation.readableString.length + 1;
+    if (this.abbreviation.triggerKeys != null) {
+      numKeypresses += this.abbreviation.triggerKeys.length;
+    }
+    const text = this.abbreviationOptions[this._selectedAbbreviationIndex];
     this.textEntryEndSubject.next({
-      text: this.abbreviationOptions[this._selectedAbbreviationIndex],
+      text,
       timestampMillis: Date.now(),
       isFinal: true,
+      numKeypresses,
+      numHumanKeypresses: numKeypresses,
     });
+    if (toInjectKeys) {
+      const injectedKeys: Array<string|VIRTUAL_KEY> =
+          this.abbreviation!.eraserSequence || [];
+      injectedKeys.push(...text.split(''));
+      injectKeys(injectedKeys);
+    }
     // TODO(cais): Prevent selection in gap state.
     setTimeout(
         () => this.resetState(),
@@ -238,11 +268,6 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
   }
 
   private expandAbbreviation() {
-    if (this.contextStrings.length === 0) {
-      this.responseError =
-          'Cannot expand abbreviation: no speech content as context';
-      return;
-    }
     if (this.abbreviation === null) {
       this.responseError = 'Cannot expand abbreviation: empty abbreviation';
       return;
@@ -258,14 +283,15 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
     if (usedContextStrings.length > LIMIT_TURNS) {
       usedContextStrings.splice(0, usedContextStrings.length - LIMIT_TURNS);
     }
-    // TODO(cais): Limit by token length?
+    // TODO(#49): Limit by token length?
     const numSamples = this.getNumSamples(this.abbreviation);
+    const usedContextString = usedContextStrings.join('|');
     console.log(
-        `Calling expandAbbreviation() (numSamples=${numSamples}):`,
-        usedContextStrings, this.abbreviation);
+        `Calling expandAbbreviation() (numSamples=${numSamples}):` +
+            `context='${usedContextString}'; abbreviation=`,
+        this.abbreviation);
     this.speakFasterService
-        .expandAbbreviation(
-            usedContextStrings.join('|'), this.abbreviation, numSamples)
+        .expandAbbreviation(usedContextString, this.abbreviation, numSamples)
         .subscribe(
             data => {
               this.requestOngoing = false;

@@ -295,8 +295,7 @@ class DataManager(object):
 
   def get_sessions_stats(self,
                          container_prefix,
-                         session_prefixes,
-                         upload_stats_to_gcs=False):
+                         session_prefixes):
     """Get the summary statistics of the given sessions."""
     num_sessions = 0
     num_complete_sessions = 0
@@ -928,7 +927,7 @@ def main():
          total_keypresses, total_audio_files, total_screenshots, total_objects,
          session_keypresses_per_second,
          start_time_table) = data_manager.get_sessions_stats(
-            container_prefix, session_prefixes, upload_stats_to_gcs=True)
+            container_prefix, session_prefixes)
         report = {
             "report_generated": datetime.datetime.now(pytz.timezone("UTC")).isoformat(),
             "num_sessions": num_sessions,
@@ -945,13 +944,16 @@ def main():
         report["weekdays"] = WEEKDAYS
         report["hour_ranges"] = HOUR_RANGES
         destination_blob_name = "/".join(
-            [GCS_SUMMARY_PREFIX] + container_prefix.split("/") +
+            [GCS_SUMMARY_PREFIX] +
+            [item for item in container_prefix.split("/") if item] +
             [datetime.datetime.now().isoformat() + ".json"])
-        print("destination_blob_name = %s" % destination_blob_name)  # DEBUG
-        print("report: %s" % json.dumps(report, indent=2))  # DEBUG
-        gcloud_utils.upload_text_to_object(json.dumps(report, indent=2),
-                                           args.gcs_bucket_name,
-                                           destination_blob_name)
+        try:
+          gcloud_utils.upload_text_to_object(json.dumps(report, indent=2),
+                                             args.gcs_bucket_name,
+                                             destination_blob_name)
+        except Exception as e:
+          print("Failed to upload report to bucket %s: %s" %
+                (args.gcs_bucket_name, str(e)))
         sg.Popup(summary_text,
                  title="Summary of %d sessions" % num_sessions,
                  modal=True)

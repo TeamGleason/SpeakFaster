@@ -6,6 +6,18 @@ import data_manager
 
 class DataManagerTest(tf.test.TestCase):
 
+  def testWeedDays(self):
+    self.assertLen(data_manager.WEEKDAYS, 7)
+    self.assertLen(set(data_manager.WEEKDAYS), 7)
+
+  def testHourRanges(self):
+    for hour_range in data_manager.HOUR_RANGES:
+      self.assertLen(hour_range, 2)
+      self.assertIsInstance(hour_range, tuple)
+    for i in range(len(data_manager.HOUR_RANGES) - 1):
+      self.assertEqual(data_manager.HOUR_RANGES[i][1],
+                       data_manager.HOUR_RANGES[i + 1][0])
+
   def testGetHourIndex(self):
     self.assertEqual(data_manager.get_hour_index(0), 0)
     self.assertEqual(data_manager.get_hour_index(1), 0)

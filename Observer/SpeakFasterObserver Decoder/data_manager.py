@@ -30,6 +30,7 @@ import PySimpleGUI as sg
 
 import elan_process_curated
 import file_naming
+import gcloud_utils
 import metadata_pb2
 import process_keypresses
 
@@ -49,8 +50,10 @@ HOUR_RANGES = ((0, 3), (3, 6), (6, 9), (9, 12), (12, 15), (15, 18),
                (18, 21), (21, 24))
 WEEKDAYS = ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
 
+DEFAULT_GCS_BUCKET_NAME = "speak-faster-curated-data-shared"
+GCS_SUMMARY_PREFIX = "summary"
 
-def _get_hour_index(hour):
+def get_hour_index(hour):
   for i, (hour_min, hour_max) in enumerate(HOUR_RANGES):
     if hour >= hour_min and hour < hour_max:
       return i
@@ -82,6 +85,11 @@ def parse_args():
       "--s3_bucket_name",
       type=str,
       default=DEFAULT_S3_BUCKET_NAME)
+  parser.add_argument(
+      "--gcs_bucket_name",
+      type=str,
+      default=DEFAULT_GCS_BUCKET_NAME,
+      help="AWS profile name")
   return parser.parse_args()
 
 
@@ -136,10 +144,15 @@ def find_speaker_id_config_json():
 
 class DataManager(object):
 
-  def __init__(self, aws_profile_name, s3_bucket_name, local_data_root):
+  def __init__(self,
+               aws_profile_name,
+               s3_bucket_name,
+               gcs_bucket_name,
+               local_data_root):
     self._s3_client = boto3.Session(profile_name=aws_profile_name).client("s3")
     self._aws_profile_name = aws_profile_name
     self._s3_bucket_name = s3_bucket_name
+    self._gcs_bucket_name = gcs_bucket_name
     self._local_data_root = local_data_root
     self._speaker_id_config_json_path = find_speaker_id_config_json()
     self._session_keypresses_per_second = None
@@ -280,7 +293,10 @@ class DataManager(object):
             str(tz), start_time, duration_s, num_keypresses, num_audio_files,
             num_screenshots, object_keys)
 
-  def get_sessions_stats(self, container_prefix, session_prefixes):
+  def get_sessions_stats(self,
+                         container_prefix,
+                         session_prefixes,
+                         upload_stats_to_gcs=False):
     """Get the summary statistics of the given sessions."""
     num_sessions = 0
     num_complete_sessions = 0
@@ -298,7 +314,7 @@ class DataManager(object):
        num_screenshots, object_keys) = self.get_session_details(
           container_prefix + session_prefix)
       start_time_table[
-          start_time.weekday(), _get_hour_index(start_time.hour)] += 1
+          start_time.weekday(), get_hour_index(start_time.hour)] += 1
       num_sessions += 1
       if is_session_complete:
         num_complete_sessions += 1
@@ -313,7 +329,7 @@ class DataManager(object):
     _print_time_summary_table(start_time_table)
     return (num_sessions, num_complete_sessions, total_duration_s,
             total_keypresses, total_audio_files, total_screenshots,
-            total_objects, session_keypresses_per_second)
+            total_objects, session_keypresses_per_second, start_time_table)
 
   def get_session_basename(self, session_prefix):
     path_items = session_prefix.split("/")
@@ -803,6 +819,7 @@ def main():
   local_data_root = infer_local_data_root()
   data_manager = DataManager(args.aws_profile_name,
                              args.s3_bucket_name,
+                             args.gcs_bucket_name,
                              local_data_root)
   print("Inferred local data root: %s" % local_data_root)
   session_container_prefixes = data_manager.get_session_container_prefixes()
@@ -909,8 +926,9 @@ def main():
             len(session_prefixes), text_color="yellow")
         (num_sessions, num_complete_sessions, total_duration_s,
          total_keypresses, total_audio_files, total_screenshots, total_objects,
-         session_keypresses_per_second) = data_manager.get_sessions_stats(
-            container_prefix, session_prefixes)
+         session_keypresses_per_second,
+         start_time_table) = data_manager.get_sessions_stats(
+            container_prefix, session_prefixes, upload_stats_to_gcs=True)
         report = {
             "report_generated": datetime.datetime.now(pytz.timezone("UTC")).isoformat(),
             "num_sessions": num_sessions,
@@ -923,6 +941,17 @@ def main():
         }
         summary_text = json.dumps(report, indent=2)
         print("Summary of sessions:\n%s" % summary_text)
+        report["start_time_table"] = start_time_table.tolist()
+        report["weekdays"] = WEEKDAYS
+        report["hour_ranges"] = HOUR_RANGES
+        destination_blob_name = "/".join(
+            [GCS_SUMMARY_PREFIX] + container_prefix.split("/") +
+            [datetime.datetime.now().isoformat() + ".json"])
+        print("destination_blob_name = %s" % destination_blob_name)  # DEBUG
+        print("report: %s" % json.dumps(report, indent=2))  # DEBUG
+        gcloud_utils.upload_text_to_object(json.dumps(report, indent=2),
+                                           args.gcs_bucket_name,
+                                           destination_blob_name)
         sg.Popup(summary_text,
                  title="Summary of %d sessions" % num_sessions,
                  modal=True)

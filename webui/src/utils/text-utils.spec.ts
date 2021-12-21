@@ -2,8 +2,7 @@
 
 import {limitStringLength} from './text-utils';
 
-// TODO(cais): Remove fdescribe. DO NOT SUBMIT.
-fdescribe('text-utils', () => {
+describe('text-utils', () => {
   describe('limitStringLength', () => {
     it('preserves short input strings', () => {
       expect(limitStringLength('', 10)).toEqual('');

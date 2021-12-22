@@ -53,6 +53,10 @@ WEEKDAYS = ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
 DEFAULT_GCS_BUCKET_NAME = "speak-faster-curated-data-shared"
 GCS_SUMMARY_PREFIX = "summary"
 GCS_POSTPROCESSED_UPLOAD_PREFIX = "postprocessed"
+POSTPROCESSING_FILES_TO_UPLOAD = (
+          file_naming.CURATED_PROCESSED_JSON_FILENAME,
+          file_naming.CURATED_PROCESSED_TSV_FILENAME,
+          file_naming.CURATED_PROCESSED_SPEECH_ONLY_TSV_FILENAME)
 
 def get_hour_index(hour):
   for i, (hour_min, hour_max) in enumerate(HOUR_RANGES):
@@ -157,6 +161,7 @@ class DataManager(object):
     self._local_data_root = local_data_root
     self._speaker_id_config_json_path = find_speaker_id_config_json()
     self._session_keypresses_per_second = None
+    self._session_gcs_status = None
     self._manual_timezone_name = None
     self._check_aws_cli()
 
@@ -310,6 +315,7 @@ class DataManager(object):
     total_screenshots = 0
     total_objects = 0
     session_keypresses_per_second = dict()
+    session_gcs_status = dict()
     start_time_table = np.zeros([7, len(HOUR_RANGES)])
 
     for session_prefix in session_prefixes:
@@ -327,9 +333,15 @@ class DataManager(object):
       total_audio_files += num_audio_files
       total_screenshots += num_screenshots
       total_objects += len(object_keys)
-      session_keypresses_per_second[session_prefix] = (
-          None if duration_s == 0 else num_keypresses / duration_s)
+      session_keypresses_per_second[
+          get_base_session_prefix(session_prefix)] = (
+              None if duration_s == 0 else num_keypresses / duration_s)
+      session_gcs_status[get_base_session_prefix(session_prefix)] = (
+          "UPLOADED" if self.is_session_uploaded_to_gcs(
+              container_prefix + session_prefix)
+          else "NOT_UPLOADED")
     self._session_keypresses_per_second = session_keypresses_per_second
+    self._session_gcs_status = session_gcs_status
     _print_time_summary_table(start_time_table)
     return (num_sessions, num_complete_sessions, total_duration_s,
             total_keypresses, total_audio_files, total_screenshots,
@@ -390,8 +402,14 @@ class DataManager(object):
         return "NOT_DOWNLOADED"
 
   def get_session_keypresses_per_second(self, session_prefix):
+    session_prefix = get_base_session_prefix(session_prefix)
     if self._session_keypresses_per_second is not None:
       return self._session_keypresses_per_second.get(session_prefix, None)
+
+  def get_session_gcs_status(self, session_prefix):
+    session_prefix = get_base_session_prefix(session_prefix)
+    if self._session_gcs_status is not None:
+      return self._session_gcs_status.get(session_prefix, None)
 
   def get_session_status_string(self,
                                 session_prefix,
@@ -399,11 +417,19 @@ class DataManager(object):
                                 local_status):
     keypresses_per_second = self.get_session_keypresses_per_second(
         session_prefix)
-    session_prefix = _get_base_session_prefix(session_prefix)
+    session_prefix = get_base_session_prefix(session_prefix)
     kps_string = ("[? kps]" if keypresses_per_second is None else
                   ("[%.2f kps]" % keypresses_per_second))
-    return "%s %s (Remote: %s) (Local: %s)" % (
+    gcs_string = ""
+    if remote_status == "POSTPROCESSED":
+      session_gcs_status = self.get_session_gcs_status(session_prefix)
+      gcs_string = ("" if session_gcs_status is None else
+                    ("[GCS: %s]" % session_gcs_status))
+    status_string = "%s %s (Remote: %s) (Local: %s)" % (
         kps_string, session_prefix, remote_status, local_status)
+    if gcs_string:
+      status_string += " " + gcs_string
+    return status_string
 
   def _remote_object_exists(self, session_prefix, filename):
     merged_tsv_key = session_prefix + filename
@@ -448,6 +474,15 @@ class DataManager(object):
         return "PREPROCESSED"
       else:
         return "NOT_PREPROCESSED"
+
+  def is_session_uploaded_to_gcs(self, session_prefix):
+    """Check if the postprocessing results of session has been uploaded to GCS."""
+    destination_blob_prefix = "/".join(
+        [GCS_POSTPROCESSED_UPLOAD_PREFIX] +
+        [item for item in session_prefix.split("/") if item])
+    return gcloud_utils.remote_objects_exist(
+        self.gcs_bucket_name, destination_blob_prefix,
+        POSTPROCESSING_FILES_TO_UPLOAD)
 
   def preprocess_session(self, session_prefix):
     to_run_preproc = True
@@ -564,13 +599,7 @@ class DataManager(object):
             [GCS_POSTPROCESSED_UPLOAD_PREFIX] +
             [item for item in session_prefix.split("/") if item])
       print("Destination blob prefix: %s" % destination_blob_prefix)
-      upload_file_names = (
-          file_naming.CURATED_PROCESSED_JSON_FILENAME,
-          file_naming.CURATED_PROCESSED_TSV_FILENAME,
-          file_naming.CURATED_PROCESSED_SPEECH_ONLY_TSV_FILENAME)
-      all_uploaded_already = gcloud_utils.remote_objects_exist(
-          self.gcs_bucket_name, destination_blob_prefix, upload_file_names)
-      if all_uploaded_already:
+      if self.is_session_uploaded_to_gcs(session_prefix):
         answer = sg.popup_yes_no(
             "This session has already been uploaded to GCS. "
             "Do you want to uploade it again, overwriting files?")
@@ -578,8 +607,8 @@ class DataManager(object):
         if not to_upload:
           return "Not uploading postprocessing results to GCS", False
       gcloud_utils.upload_files_as_objects(
-          local_session_dir, upload_file_names, self.gcs_bucket_name,
-          destination_blob_prefix)
+          local_session_dir, POSTPROCESSING_FILES_TO_UPLOAD,
+          self.gcs_bucket_name, destination_blob_prefix)
       return "Down uploading postprocessing results to GCS", False
     else:
       # Upload to S3.
@@ -701,7 +730,10 @@ def _list_sessions(window,
     session_prefixes_with_status.append(data_manager.get_session_status_string(
         session_prefix, remote_status, local_status))
     if remote_status == "POSTPROCESSED":
-      session_color = "green"
+      if data_manager.get_session_gcs_status(session_prefix) == "UPLOADED":
+        session_color = "gray"
+      else:
+        session_color = "green"
     elif remote_status == "PREPROCESSED":
       session_color = "blue"
     else:
@@ -727,7 +759,7 @@ def _list_sessions(window,
   return session_prefixes
 
 
-def _get_base_session_prefix(session_prefix):
+def get_base_session_prefix(session_prefix):
   if session_prefix.endswith("/"):
     session_prefix = session_prefix[:-1]
   if "/" in session_prefix:

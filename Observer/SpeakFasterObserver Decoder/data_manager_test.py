@@ -28,6 +28,12 @@ class DataManagerTest(tf.test.TestCase):
     self.assertEqual(data_manager.get_hour_index(21), 7)
     self.assertEqual(data_manager.get_hour_index(23), 7)
 
+  def testGetBaseSessionPrefix(self):
+    self.assertEqual(
+        data_maanger.get_base_session_prefix(
+            "observer_data/SPO-2011/Surface/eyetracker/abcd0123/session-20211117T202235498Z"),
+        "session-20211117T202235498Z")
+
 
 
 if __name__ == "__main__":

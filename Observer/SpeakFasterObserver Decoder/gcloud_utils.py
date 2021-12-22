@@ -97,5 +97,4 @@ def upload_files_as_objects(local_dir,
     print("Uploading %s --> gs://%s/%s" %
           (file_path, bucket_name, destination_blob_name))
     blob = bucket.blob(destination_blob_name)
-    print(dir(blob))  # DEBUG
     blob.upload_from_filename(file_path)

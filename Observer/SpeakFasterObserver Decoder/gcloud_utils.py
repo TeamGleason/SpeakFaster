@@ -81,6 +81,7 @@ def upload_files_as_objects(local_dir,
   Args:
     local_dir: Path to the local directory that contains the files to upload.
     file_names: Names of the files in the local_dir.
+    bucket_name: Name of the GCS bucket to upload the files to.
     destination_blob_prefix: Destination blobl prefix.
   """
   storage_client = storage.Client()

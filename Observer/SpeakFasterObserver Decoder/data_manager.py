@@ -53,10 +53,13 @@ WEEKDAYS = ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
 DEFAULT_GCS_BUCKET_NAME = "speak-faster-curated-data-shared"
 GCS_SUMMARY_PREFIX = "summary"
 GCS_POSTPROCESSED_UPLOAD_PREFIX = "postprocessed"
+
+# The set of files to upload to shared GCS folder. Must only include
+# the post-processed, curated results.
 POSTPROCESSING_FILES_TO_UPLOAD = (
-          file_naming.CURATED_PROCESSED_JSON_FILENAME,
-          file_naming.CURATED_PROCESSED_TSV_FILENAME,
-          file_naming.CURATED_PROCESSED_SPEECH_ONLY_TSV_FILENAME)
+    file_naming.CURATED_PROCESSED_JSON_FILENAME,
+    file_naming.CURATED_PROCESSED_TSV_FILENAME,
+    file_naming.CURATED_PROCESSED_SPEECH_ONLY_TSV_FILENAME)
 
 def get_hour_index(hour):
   for i, (hour_min, hour_max) in enumerate(HOUR_RANGES):

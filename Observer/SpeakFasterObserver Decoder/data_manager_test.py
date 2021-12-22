@@ -28,6 +28,12 @@ class DataManagerTest(tf.test.TestCase):
     self.assertEqual(data_manager.get_hour_index(21), 7)
     self.assertEqual(data_manager.get_hour_index(23), 7)
 
+  def testPostprocessingFilesToUpload(self):
+    self.assertIsInstance(data_manager.POSTPROCESSING_FILES_TO_UPLOAD, tuple)
+    self.assertTrue(data_manager.POSTPROCESSING_FILES_TO_UPLOAD)
+    self.assertLen(set(data_manager.POSTPROCESSING_FILES_TO_UPLOAD),
+                   len(data_manager.POSTPROCESSING_FILES_TO_UPLOAD))
+
   def testGetBaseSessionPrefix_returnsCorrectValue(self):
     self.assertEqual(
         data_manager.get_base_session_prefix(

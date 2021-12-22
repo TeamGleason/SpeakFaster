@@ -28,12 +28,30 @@ class DataManagerTest(tf.test.TestCase):
     self.assertEqual(data_manager.get_hour_index(21), 7)
     self.assertEqual(data_manager.get_hour_index(23), 7)
 
-  def testGetBaseSessionPrefix(self):
+  def testGetBaseSessionPrefix_returnsCorrectValue(self):
     self.assertEqual(
-        data_maanger.get_base_session_prefix(
+        data_manager.get_base_session_prefix(
             "observer_data/SPO-2011/Surface/eyetracker/abcd0123/session-20211117T202235498Z"),
         "session-20211117T202235498Z")
+    self.assertEqual(
+        data_manager.get_base_session_prefix(
+            "observer_data/SPO-2011/Surface/eyetracker/abcd0123/session-20211117T202235498Z/"),
+        "session-20211117T202235498Z")
+    self.assertEqual(
+        data_manager.get_base_session_prefix("session-20211117T202235498Z"),
+        "session-20211117T202235498Z")
+    self.assertEqual(
+        data_manager.get_base_session_prefix("session-20211117T202235498Z/"),
+        "session-20211117T202235498Z")
+    self.assertEqual(
+        data_manager.get_base_session_prefix("/session-20211117T202235498Z/"),
+        "session-20211117T202235498Z")
 
+  def testGetBaseSessionPrefix_raisesValueErrorOnEmptyOrNone(self):
+    with self.assertRaisesRegex(ValueError, r"empty or None"):
+      data_manager.get_base_session_prefix("")
+    with self.assertRaisesRegex(ValueError, r"empty or None"):
+      data_manager.get_base_session_prefix(None)
 
 
 if __name__ == "__main__":

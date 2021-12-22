@@ -760,6 +760,8 @@ def _list_sessions(window,
 
 
 def get_base_session_prefix(session_prefix):
+  if not session_prefix:
+    raise ValueError("session_prefix is empty or None")
   if session_prefix.endswith("/"):
     session_prefix = session_prefix[:-1]
   if "/" in session_prefix:

@@ -52,6 +52,14 @@ WEEKDAYS = ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
 
 DEFAULT_GCS_BUCKET_NAME = "speak-faster-curated-data-shared"
 GCS_SUMMARY_PREFIX = "summary"
+GCS_POSTPROCESSED_UPLOAD_PREFIX = "postprocessed"
+
+# The set of files to upload to shared GCS folder. Must only include
+# the post-processed, curated results.
+POSTPROCESSING_FILES_TO_UPLOAD = (
+    file_naming.CURATED_PROCESSED_JSON_FILENAME,
+    file_naming.CURATED_PROCESSED_TSV_FILENAME,
+    file_naming.CURATED_PROCESSED_SPEECH_ONLY_TSV_FILENAME)
 
 def get_hour_index(hour):
   for i, (hour_min, hour_max) in enumerate(HOUR_RANGES):
@@ -156,6 +164,7 @@ class DataManager(object):
     self._local_data_root = local_data_root
     self._speaker_id_config_json_path = find_speaker_id_config_json()
     self._session_keypresses_per_second = None
+    self._session_gcs_status = None
     self._manual_timezone_name = None
     self._check_aws_cli()
 
@@ -166,6 +175,10 @@ class DataManager(object):
       raise ValueError(
           "It appears that you don't have aws cli installed and on the path. "
           "Please install it and make sure it is on the path.")
+
+  @property
+  def gcs_bucket_name(self):
+    return self._gcs_bucket_name
 
   def get_session_container_prefixes(self):
     """Find the prefixes that hold the session folders as children.
@@ -305,6 +318,7 @@ class DataManager(object):
     total_screenshots = 0
     total_objects = 0
     session_keypresses_per_second = dict()
+    session_gcs_status = dict()
     start_time_table = np.zeros([7, len(HOUR_RANGES)])
 
     for session_prefix in session_prefixes:
@@ -322,9 +336,15 @@ class DataManager(object):
       total_audio_files += num_audio_files
       total_screenshots += num_screenshots
       total_objects += len(object_keys)
-      session_keypresses_per_second[session_prefix] = (
-          None if duration_s == 0 else num_keypresses / duration_s)
+      session_keypresses_per_second[
+          get_base_session_prefix(session_prefix)] = (
+              None if duration_s == 0 else num_keypresses / duration_s)
+      session_gcs_status[get_base_session_prefix(session_prefix)] = (
+          "UPLOADED" if self.is_session_uploaded_to_gcs(
+              container_prefix + session_prefix)
+          else "NOT_UPLOADED")
     self._session_keypresses_per_second = session_keypresses_per_second
+    self._session_gcs_status = session_gcs_status
     _print_time_summary_table(start_time_table)
     return (num_sessions, num_complete_sessions, total_duration_s,
             total_keypresses, total_audio_files, total_screenshots,
@@ -385,8 +405,14 @@ class DataManager(object):
         return "NOT_DOWNLOADED"
 
   def get_session_keypresses_per_second(self, session_prefix):
+    session_prefix = get_base_session_prefix(session_prefix)
     if self._session_keypresses_per_second is not None:
       return self._session_keypresses_per_second.get(session_prefix, None)
+
+  def get_session_gcs_status(self, session_prefix):
+    session_prefix = get_base_session_prefix(session_prefix)
+    if self._session_gcs_status is not None:
+      return self._session_gcs_status.get(session_prefix, None)
 
   def get_session_status_string(self,
                                 session_prefix,
@@ -394,11 +420,19 @@ class DataManager(object):
                                 local_status):
     keypresses_per_second = self.get_session_keypresses_per_second(
         session_prefix)
-    session_prefix = _get_base_session_prefix(session_prefix)
+    session_prefix = get_base_session_prefix(session_prefix)
     kps_string = ("[? kps]" if keypresses_per_second is None else
                   ("[%.2f kps]" % keypresses_per_second))
-    return "%s %s (Remote: %s) (Local: %s)" % (
+    gcs_string = ""
+    if remote_status == "POSTPROCESSED":
+      session_gcs_status = self.get_session_gcs_status(session_prefix)
+      gcs_string = ("" if session_gcs_status is None else
+                    ("[GCS: %s]" % session_gcs_status))
+    status_string = "%s %s (Remote: %s) (Local: %s)" % (
         kps_string, session_prefix, remote_status, local_status)
+    if gcs_string:
+      status_string += " " + gcs_string
+    return status_string
 
   def _remote_object_exists(self, session_prefix, filename):
     merged_tsv_key = session_prefix + filename
@@ -443,6 +477,15 @@ class DataManager(object):
         return "PREPROCESSED"
       else:
         return "NOT_PREPROCESSED"
+
+  def is_session_uploaded_to_gcs(self, session_prefix):
+    """Check if the postprocessing results of session has been uploaded to GCS."""
+    destination_blob_prefix = "/".join(
+        [GCS_POSTPROCESSED_UPLOAD_PREFIX] +
+        [item for item in session_prefix.split("/") if item])
+    return gcloud_utils.remote_objects_exist(
+        self.gcs_bucket_name, destination_blob_prefix,
+        POSTPROCESSING_FILES_TO_UPLOAD)
 
   def preprocess_session(self, session_prefix):
     to_run_preproc = True
@@ -529,7 +572,8 @@ class DataManager(object):
       sg.Popup(failure_message, title="Postprocessing failed", modal=True)
       return "Postprocessing failed", True
 
-  def upload_session_postproc_results(self, session_prefix):
+  def upload_session_postproc_results(self, session_prefix, to_gcs=False):
+    """Upload post processing results to S3 or GCS."""
     if self.get_local_session_folder_status(session_prefix) != "POSTPROCESSED":
       sg.Popup(
           "Cannot upload the postprocessing results of session %s, "
@@ -537,7 +581,8 @@ class DataManager(object):
           modal=True)
       return "Not uploading postprocessing results", False
     to_upload = True
-    if self.get_remote_session_folder_status(session_prefix) == "POSTPROCESSED":
+    if (not to_gcs and
+        self.get_remote_session_folder_status(session_prefix) == "POSTPROCESSED"):
       answer = sg.popup_yes_no(
           "Session %s already contains postprocessing results remotely. "
           "Do you want to upload postprocessing results again?" % session_prefix)
@@ -545,18 +590,42 @@ class DataManager(object):
     if not to_upload:
       return "Uploading of postprocessing results canceled.", False
 
-    local_dest_dir = self.get_local_session_dir(session_prefix)
-    command_args = [
-        "aws", "s3", "sync", "--profile=%s" % self._aws_profile_name,
-        local_dest_dir, "s3://" + self._s3_bucket_name + "/" + session_prefix,
-        "--exclude=*", "--include=*.tsv",
-        "--include=%s" % file_naming.CURATED_PROCESSED_JSON_FILENAME,
-        "--include=%s" % file_naming.CURATED_PROCESSED_TSV_FILENAME,
-        "--include=%s" % file_naming.CURATED_PROCESSED_SPEECH_ONLY_TSV_FILENAME]
-    self._run_command_line(command_args)
-    print("Done uploading the postprocessing results for session %s" %
-          session_prefix)
-    return "Down uploading postprocessing results", True
+    local_session_dir = self.get_local_session_dir(session_prefix)
+    if to_gcs:
+      answer = sg.popup_yes_no(
+          "Are you sure you want to upload proprocessing results from session %s "
+          "to GCS bucket %s?" % (session_prefix, self.gcs_bucket_name))
+      to_upload = answer == "Yes"
+      if not to_upload:
+        return "Not uploading postprocessing results to GCS", False
+      destination_blob_prefix = "/".join(
+            [GCS_POSTPROCESSED_UPLOAD_PREFIX] +
+            [item for item in session_prefix.split("/") if item])
+      print("Destination blob prefix: %s" % destination_blob_prefix)
+      if self.is_session_uploaded_to_gcs(session_prefix):
+        answer = sg.popup_yes_no(
+            "This session has already been uploaded to GCS. "
+            "Do you want to uploade it again, overwriting files?")
+        to_upload = answer == "Yes"
+        if not to_upload:
+          return "Not uploading postprocessing results to GCS", False
+      gcloud_utils.upload_files_as_objects(
+          local_session_dir, POSTPROCESSING_FILES_TO_UPLOAD,
+          self.gcs_bucket_name, destination_blob_prefix)
+      return "Down uploading postprocessing results to GCS", False
+    else:
+      # Upload to S3.
+      command_args = [
+          "aws", "s3", "sync", "--profile=%s" % self._aws_profile_name,
+          local_session_dir, "s3://" + self._s3_bucket_name + "/" + session_prefix,
+          "--exclude=*", "--include=*.tsv",
+          "--include=%s" % file_naming.CURATED_PROCESSED_JSON_FILENAME,
+          "--include=%s" % file_naming.CURATED_PROCESSED_TSV_FILENAME,
+          "--include=%s" % file_naming.CURATED_PROCESSED_SPEECH_ONLY_TSV_FILENAME]
+      self._run_command_line(command_args)
+      print("Done uploading the postprocessing results for session %s to S3" %
+            session_prefix)
+      return "Down uploading postprocessing results to S3", True
 
   def _run_command_line(self, command_args):
     print("Calling: %s" % (" ".join(command_args)))
@@ -616,6 +685,7 @@ def _disable_all_buttons(window):
   window.Element("DOWNLOAD_PREPROCESS_UPLOAD_SESSIONS_BATCH").Update(disabled=True)
   window.Element("POSTPROC_CURATION").Update(disabled=True)
   window.Element("UPLOAD_POSTPROC").Update(disabled=True)
+  window.Element("UPLOAD_TO_GCS").Update(disabled=True)
   window.Element("SESSION_CONTAINER_LIST").Update(disabled=True)
   window.Element("SESSION_LIST").Update(disabled=True)
   window.Element("OBJECT_LIST").Update(disabled=True)
@@ -632,6 +702,7 @@ def _enable_all_buttons(window):
   window.Element("DOWNLOAD_PREPROCESS_UPLOAD_SESSIONS_BATCH").Update(disabled=False)
   window.Element("POSTPROC_CURATION").Update(disabled=False)
   window.Element("UPLOAD_POSTPROC").Update(disabled=False)
+  window.Element("UPLOAD_TO_GCS").Update(disabled=False)
   window.Element("SESSION_CONTAINER_LIST").Update(disabled=False)
   window.Element("SESSION_LIST").Update(disabled=False)
   window.Element("OBJECT_LIST").Update(disabled=False)
@@ -662,7 +733,10 @@ def _list_sessions(window,
     session_prefixes_with_status.append(data_manager.get_session_status_string(
         session_prefix, remote_status, local_status))
     if remote_status == "POSTPROCESSED":
-      session_color = "green"
+      if data_manager.get_session_gcs_status(session_prefix) == "UPLOADED":
+        session_color = "gray"
+      else:
+        session_color = "green"
     elif remote_status == "PREPROCESSED":
       session_color = "blue"
     else:
@@ -688,7 +762,9 @@ def _list_sessions(window,
   return session_prefixes
 
 
-def _get_base_session_prefix(session_prefix):
+def get_base_session_prefix(session_prefix):
+  if not session_prefix:
+    raise ValueError("session_prefix is empty or None")
   if session_prefix.endswith("/"):
     session_prefix = session_prefix[:-1]
   if "/" in session_prefix:
@@ -895,6 +971,7 @@ def main():
           sg.Button("Upload preprocessing data", key="UPLOAD_PREPROC"),
           sg.Button("Postprocess curation", key="POSTPROC_CURATION"),
           sg.Button("Upload postprocessed data", key="UPLOAD_POSTPROC"),
+          sg.Button("Upload to GCS", key="UPLOAD_TO_GCS"),
       ],
       [
           sg.Text("", size=(15, 2)),
@@ -940,6 +1017,7 @@ def main():
         }
         summary_text = json.dumps(report, indent=2)
         print("Summary of sessions:\n%s" % summary_text)
+        report["session_prefixes"] = session_prefixes
         report["start_time_table"] = start_time_table.tolist()
         report["weekdays"] = WEEKDAYS
         report["hour_ranges"] = HOUR_RANGES
@@ -969,7 +1047,8 @@ def main():
                    "UPLOAD_PREPROC",
                    "DOWNLOAD_PREPROCESS_UPLOAD_SESSIONS_BATCH",
                    "POSTPROC_CURATION",
-                   "UPLOAD_POSTPROC"):
+                   "UPLOAD_POSTPROC",
+                   "UPLOAD_TO_GCS"):
       if not session_prefixes:
         sg.Popup("Please list sessions first", modal=True)
         continue
@@ -1009,6 +1088,10 @@ def main():
         status_message = "Postprocessing curation results. Please wait..."
       elif event == "UPLOAD_POSTPROC":
         status_message = "Uploading session postprocessing results. Please wait..."
+      elif event == "UPLOAD_TO_GCS":
+        status_message = ("Uploading postprocessing results to GCS (%s). "
+                          "Please wait..." % data_manager.gcs_bucket_name)
+
       window.Element("STATUS_MESSAGE").Update(status_message)
       window.Element("STATUS_MESSAGE").Update(text_color="yellow")
       _disable_all_buttons(window)
@@ -1031,10 +1114,10 @@ def main():
       elif event == "POSTPROC_CURATION":
         (status_message,
          sessions_changed) = data_manager.postprocess_curation(session_prefix)
-      elif event == "UPLOAD_POSTPROC":
+      elif event in ("UPLOAD_POSTPROC", "UPLOAD_TO_GCS"):
         (status_message,
          sessions_changed) = data_manager.upload_session_postproc_results(
-            session_prefix)
+            session_prefix, to_gcs=(event == "UPLOAD_TO_GCS"))
       window.Element("STATUS_MESSAGE").Update(status_message)
       window.Element("STATUS_MESSAGE").Update(text_color="white")
       _enable_all_buttons(window)

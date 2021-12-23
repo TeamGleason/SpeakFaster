@@ -35,6 +35,9 @@ export interface AbbreviationSpec {
   // Key sequence used to trigger the abbreviation expansion request.
   readonly triggerKeys?: Array<string|VIRTUAL_KEY>,
 
+  // Preceding test as context, optional.
+  readonly precedingText?: string;
+
   // The sequence of keys that can erase the abbreviation and characters
   // that resulted from the trigger keys, which can be used for key
   // injection later.

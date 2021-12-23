@@ -88,11 +88,31 @@ fdescribe('ExternalEventsComponent', () => {
     expect(beginEvents.length).toEqual(1);
   });
 
-  for (const keyCodeSequence of [
-           [72, 65, 89, 32, 32],          // h, a, y, space, space
-           [32, 72, 65, 89, 32, 32],      // space, h, a, y, space, space
-           [65, 32, 72, 65, 89, 32, 32],  // a, space, h, a, y, space, space
-  ]) {
+  it('final event in textEntryEndSubject resets state', () => {
+    component.externalKeypressHook(65);  // 'a'
+    textEntryEndSubject.next({
+      text: 'hi',
+      timestampMillis: Date.now(),
+      isFinal: true,
+    });
+    expect(component.text).toEqual('');
+  });
+
+  it('non-final event in textEntryEndSubject does not reset state', () => {
+    component.externalKeypressHook(65);  // 'a'
+    textEntryEndSubject.next({
+      text: 'hi',
+      timestampMillis: Date.now(),
+      isFinal: false,
+    });
+    expect(component.text).toEqual('a');
+  });
+
+  for (const [keyCodeSequence, precedingText] of [
+           [[72, 65, 89, 32, 32], undefined],          // h, a, y, space, space
+           [[32, 72, 65, 89, 32, 32], undefined],      // space, h, a, y, space, space
+           [[65, 32, 72, 65, 89, 32, 32], 'a'],  // a, space, h, a, y, space, space
+  ] as Array<[number[], string|undefined]>) {
     it(`Double space triggers abbreviation expansion, key codes = ${
            keyCodeSequence}`,
        () => {
@@ -113,6 +133,7 @@ fdescribe('ExternalEventsComponent', () => {
                  isKeyword: false,
                }
              ],
+             precedingText,
              readableString: 'hay',
              eraserSequence: repeatVirtualKey(VIRTUAL_KEY.BACKSPACE, 5),
            },

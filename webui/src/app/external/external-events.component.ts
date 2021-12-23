@@ -210,16 +210,9 @@ function allItemsEqual(array1: string[], array2: string[]): boolean {
   return true;
 }
 
-/**
- * Get a sequence of backspace keys that erases the effect of the given key
- * sequence (i.e., delete the visible text that resulted from it).
- */
+/** Repeat a virtual key a given number of times. */
 export function repeatVirtualKey(key: VIRTUAL_KEY, num: number): VIRTUAL_KEY[] {
-  const keys: VIRTUAL_KEY[] = [];
-  for (let i = 0; i < num; ++i) {
-    keys.push(key);
-  }
-  return keys;
+  return Array(num).fill(key);
 }
 
 @Component({

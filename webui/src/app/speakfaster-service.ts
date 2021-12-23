@@ -48,8 +48,10 @@ export interface SpeakFasterServiceStub {
    * @returns Options for the expanded phrase.
    */
   expandAbbreviation(
-      speechContent: string, abbreviationSpec: AbbreviationSpec,
-      numSamples: number): Observable<AbbreviationExpansionRespnose>;
+      speechContent: string,
+      abbreviationSpec: AbbreviationSpec,
+      numSamples: number,
+      precedingText?: string): Observable<AbbreviationExpansionRespnose>;
 
   textPrediction(contextTurns: string[], textPrefix: string):
       Observable<TextPredictionResponse>;
@@ -96,8 +98,10 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
 
   // TODO(cais): Add other parameters.
   expandAbbreviation(
-      speechContent: string, abbreviationSpec: AbbreviationSpec,
-      numSamples: number) {
+      speechContent: string,
+      abbreviationSpec: AbbreviationSpec,
+      numSamples: number,
+      precedingText?: string) {
     const {endpoint, headers, withCredentials} = this.getServerCallParams();
     const keywordIndices: number[] = [];
     for (let i = 0; i < abbreviationSpec.tokens.length; ++i) {
@@ -111,6 +115,7 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
         acronym: abbreviationSpec.readableString,
         speechContent,
         keywordIndices: keywordIndices.join(','),
+        precedingText: precedingText || '',
         numSamples,
       },
       withCredentials,

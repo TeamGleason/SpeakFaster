@@ -48,11 +48,10 @@ describe('AbbreviationComponent', () => {
     expect(abbreviationOptions.length).toEqual(0);
   });
 
-  for (const [contextStrings, precedingText] of
-       [
-         [[], undefined],
-         [['hello'], 'hi'],
-       ] as Array<[string[], string|undefined]>) {
+  for (const [contextStrings, precedingText] of [
+           [[], undefined],
+           [['hello'], 'hi'],
+  ] as Array<[string[], string | undefined]>) {
     it('sends http request on trigger: ' +
            `contextStrings = ${JSON.stringify(contextStrings)}`,
        () => {

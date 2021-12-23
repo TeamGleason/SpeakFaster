@@ -45,11 +45,11 @@ export interface SpeakFasterServiceStub {
    *     characters and keywords (if any)
    * @param numSamples: How many samples to draw from he underlying language
    *     model (prior to filtering and sorting).
+   * @param precedingText the user-entered text that precedes the abbreviation.
    * @returns Options for the expanded phrase.
    */
   expandAbbreviation(
-      speechContent: string,
-      abbreviationSpec: AbbreviationSpec,
+      speechContent: string, abbreviationSpec: AbbreviationSpec,
       numSamples: number,
       precedingText?: string): Observable<AbbreviationExpansionRespnose>;
 
@@ -98,10 +98,8 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
 
   // TODO(cais): Add other parameters.
   expandAbbreviation(
-      speechContent: string,
-      abbreviationSpec: AbbreviationSpec,
-      numSamples: number,
-      precedingText?: string) {
+      speechContent: string, abbreviationSpec: AbbreviationSpec,
+      numSamples: number, precedingText?: string) {
     const {endpoint, headers, withCredentials} = this.getServerCallParams();
     const keywordIndices: number[] = [];
     for (let i = 0; i < abbreviationSpec.tokens.length; ++i) {

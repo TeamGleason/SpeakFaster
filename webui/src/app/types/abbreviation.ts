@@ -33,7 +33,7 @@ export interface AbbreviationSpec {
   readonly readableString: string;
 
   // Key sequence used to trigger the abbreviation expansion request.
-  readonly triggerKeys?: Array<string|VIRTUAL_KEY>,
+  readonly triggerKeys?: Array<string|VIRTUAL_KEY>;
 
   // Preceding test as context, optional.
   readonly precedingText?: string;
@@ -41,7 +41,7 @@ export interface AbbreviationSpec {
   // The sequence of keys that can erase the abbreviation and characters
   // that resulted from the trigger keys, which can be used for key
   // injection later.
-  readonly eraserSequence?: VIRTUAL_KEY[],
+  readonly eraserSequence?: VIRTUAL_KEY[];
 }
 
 /** An event that signifies the change in an input abbreviation */

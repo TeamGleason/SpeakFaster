@@ -335,7 +335,7 @@ export class ExternalEventsComponent implements OnInit {
       }
       let text = this._text.slice(spaceIndex + 1);
       let precedingText: string|undefined =
-          spaceIndex > 0 ? this._text.slice(0, spaceIndex).trim(): undefined;
+          spaceIndex > 0 ? this._text.slice(0, spaceIndex).trim() : undefined;
       if (precedingText === '') {
         precedingText = undefined;
       }

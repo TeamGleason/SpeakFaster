@@ -19,8 +19,10 @@ export interface SpeakFasterServiceStub {
   ping(): Observable<PingResponse>;
 
   expandAbbreviation(
-      speechContent: string, abbreviationSpec: AbbreviationSpec,
-      numSamples: number): Observable<AbbreviationExpansionRespnose>;
+      speechContent: string,
+      abbreviationSpec: AbbreviationSpec,
+      numSamples: number,
+      precedingText?: string): Observable<AbbreviationExpansionRespnose>;
 }
 
 export interface ServiceConfiguration {
@@ -49,8 +51,10 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
   }
 
   expandAbbreviation(
-      speechContent: string, abbreviationSpec: AbbreviationSpec,
-      numSamples: number) {
+      speechContent: string,
+      abbreviationSpec: AbbreviationSpec,
+      numSamples: number,
+      precedingText?: string) {
     const {endpoint, headers, withCredentials} = this.getServerCallParams();
     const keywordIndices: number[] = [];
     for (let i = 0; i < abbreviationSpec.tokens.length; ++i) {
@@ -64,6 +68,7 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
         acronym: abbreviationSpec.readableString,
         speechContent,
         keywordIndices: keywordIndices.join(','),
+        precedingText: precedingText || '',
         numSamples,
       },
       withCredentials,

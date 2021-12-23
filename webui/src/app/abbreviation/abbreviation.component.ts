@@ -141,7 +141,7 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
     this.responseError = null;
     const LIMIT_TURNS = 2;
     const LIMIT_CONTECT_TURN_LENGTH = 60
-    const usedContextStrings = [...this.contextStrings.map(
+    const usedContextStrings: string[] = [...this.contextStrings.map(
         contextString =>
             limitStringLength(contextString, LIMIT_CONTECT_TURN_LENGTH))];
     if (usedContextStrings.length > LIMIT_TURNS) {
@@ -152,10 +152,12 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
     const usedContextString = usedContextStrings.join('|');
     console.log(
         `Calling expandAbbreviation() (numSamples=${numSamples}):` +
-            `context='${usedContextString}'; abbreviation=`,
-        this.abbreviation);
+            `context='${usedContextString}'; ` +
+            `abbreviation=${JSON.stringify(this.abbreviation)}`);
     this.speakFasterService
-        .expandAbbreviation(usedContextString, this.abbreviation, numSamples)
+        .expandAbbreviation(
+            usedContextString, this.abbreviation, numSamples,
+            this.abbreviation.precedingText)
         .subscribe(
             data => {
               this.requestOngoing = false;

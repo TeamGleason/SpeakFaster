@@ -28,6 +28,36 @@ class DataManagerTest(tf.test.TestCase):
     self.assertEqual(data_manager.get_hour_index(21), 7)
     self.assertEqual(data_manager.get_hour_index(23), 7)
 
+  def testPostprocessingFilesToUpload(self):
+    self.assertIsInstance(data_manager.POSTPROCESSING_FILES_TO_UPLOAD, tuple)
+    self.assertTrue(data_manager.POSTPROCESSING_FILES_TO_UPLOAD)
+    self.assertLen(set(data_manager.POSTPROCESSING_FILES_TO_UPLOAD),
+                   len(data_manager.POSTPROCESSING_FILES_TO_UPLOAD))
+
+  def testGetBaseSessionPrefix_returnsCorrectValue(self):
+    self.assertEqual(
+        data_manager.get_base_session_prefix(
+            "observer_data/SPO-2011/Surface/eyetracker/abcd0123/session-20211117T202235498Z"),
+        "session-20211117T202235498Z")
+    self.assertEqual(
+        data_manager.get_base_session_prefix(
+            "observer_data/SPO-2011/Surface/eyetracker/abcd0123/session-20211117T202235498Z/"),
+        "session-20211117T202235498Z")
+    self.assertEqual(
+        data_manager.get_base_session_prefix("session-20211117T202235498Z"),
+        "session-20211117T202235498Z")
+    self.assertEqual(
+        data_manager.get_base_session_prefix("session-20211117T202235498Z/"),
+        "session-20211117T202235498Z")
+    self.assertEqual(
+        data_manager.get_base_session_prefix("/session-20211117T202235498Z/"),
+        "session-20211117T202235498Z")
+
+  def testGetBaseSessionPrefix_raisesValueErrorOnEmptyOrNone(self):
+    with self.assertRaisesRegex(ValueError, r"empty or None"):
+      data_manager.get_base_session_prefix("")
+    with self.assertRaisesRegex(ValueError, r"empty or None"):
+      data_manager.get_base_session_prefix(None)
 
 
 if __name__ == "__main__":

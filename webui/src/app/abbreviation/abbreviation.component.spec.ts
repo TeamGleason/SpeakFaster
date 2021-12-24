@@ -49,7 +49,10 @@ fdescribe('AbbreviationComponent', () => {
     expect(abbreviationOptions.length).toEqual(0);
   });
 
-  for (const contextStrings of [[], ['hello']]) {
+  for (const [contextStrings, precedingText] of [
+           [[], undefined],
+           [['hello'], 'hi'],
+  ] as Array<[string[], string | undefined]>) {
     it('sends http request on trigger: ' +
            `contextStrings = ${JSON.stringify(contextStrings)}`,
        () => {
@@ -76,13 +79,14 @@ fdescribe('AbbreviationComponent', () => {
              }
            ],
            readableString: 'ace',
+           precedingText,
          };
          abbreviationExpansionTriggers.next({
            abbreviationSpec,
            requestExpansion: true,
          });
          expect(spy).toHaveBeenCalledOnceWith(
-             contextStrings.join('|'), abbreviationSpec, 128);
+             contextStrings.join('|'), abbreviationSpec, 128, precedingText);
          expect(fixture.componentInstance.abbreviationOptions).toEqual([
            'how are you', 'how about you'
          ]);

@@ -51,9 +51,7 @@ export class AuthComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngAfterViewInit() {
-    setTimeout(() => {
-      this.showAuthButton = true;
-    }, 10);
+    updateButtonBoxesForElements(this.instanceId, this.clickableButtons);
     this.clickableButtons.changes.subscribe(
         (queryList: QueryList<ElementRef<HTMLElement>>) => {
           updateButtonBoxesForElements(this.instanceId, queryList);
@@ -62,7 +60,7 @@ export class AuthComponent implements OnInit, AfterViewInit, OnDestroy {
 
   ngOnDestroy() {
     KeyboardComponent.unregisterCallback(AuthComponent._NAME);
-    updateButtonBoxesToEmpty(AuthComponent._NAME);
+    updateButtonBoxesToEmpty(this.instanceId);
   }
 
   // Info related to limited-input device authentication.

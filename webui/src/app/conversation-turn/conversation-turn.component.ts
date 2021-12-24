@@ -53,7 +53,6 @@ export class ConversationTurnComponent implements AfterViewInit {
           0.45);
     }
     contentElement.style.fontSize = `${fontSizePx.toFixed(1)}px`;
-    updateButtonBoxesForElements(
-        ConversationTurnComponent._NAME + this.instanceId, this.buttons);
+    updateButtonBoxesForElements(this.instanceId, this.buttons);
   }
 }

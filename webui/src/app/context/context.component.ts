@@ -291,7 +291,6 @@ export class ContextComponent implements OnInit, AfterViewInit {
     }
   }
 
-
   private emitContextStringsSelected() {
     this.contextStringsSelected.emit(
         this.contextSignals

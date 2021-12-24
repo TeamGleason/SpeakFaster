@@ -53,7 +53,12 @@
 
   <div class="content" role="main">
     <div *ngIf="accessToken === ''">
-      <button (click)="authenticate()" id="authenticate">Authenticate</button>
+      <button
+          #clickableButton
+          (click)="authenticate()"
+          id="authenticate">
+        Authenticate
+      </button>
     </div>
 
     <div *ngIf="deviceCodeData !== null && accessToken === ''" class="auth-instruction">

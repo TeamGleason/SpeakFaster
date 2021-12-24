@@ -16,9 +16,10 @@
  * ```
  */
 
-import {Component, Input} from '@angular/core';
+import {Component, Input, OnInit} from '@angular/core';
 import {Subject} from 'rxjs';
 
+import {AbbreviationSpec, InputAbbreviationChangedEvent} from '../types/abbreviation';
 import {TextEntryBeginEvent, TextEntryEndEvent} from '../types/text-entry';
 
 // The minimum delay between a preceeding keypress and an eye-gaze-triggered
@@ -96,6 +97,13 @@ export const PUNCTUATION: VIRTUAL_KEY[] = [
 ];
 
 export const TTS_TRIGGER_COMBO_KEY: string[] = [VIRTUAL_KEY.LCTRL, 'q'];
+// Abbreviation expansion can be triggered by entering the abbreviation followed
+// by typing two consecutive spaces in the external app.
+// TODO(#49): This can be generalized and made configurable.
+// TODO(#49): Explore continuous AE without explicit trigger, perhaps
+// added by heuristics for detecting abbreviations vs. words.
+export const ABBRVIATION_EXPANSION_TRIGGER_COMBO_KEY: string[] =
+    [VIRTUAL_KEY.SPACE, VIRTUAL_KEY.SPACE];
 
 function getKeyFromVirtualKeyCode(vkCode: number): string|null {
   if (vkCode >= 48 && vkCode <= 57) {
@@ -202,13 +210,20 @@ function allItemsEqual(array1: string[], array2: string[]): boolean {
   return true;
 }
 
+/** Repeat a virtual key a given number of times. */
+export function repeatVirtualKey(key: VIRTUAL_KEY, num: number): VIRTUAL_KEY[] {
+  return Array(num).fill(key);
+}
+
 @Component({
   selector: 'app-external-events-component',
   templateUrl: './external-events.component.html',
 })
-export class ExternalEventsComponent {
+export class ExternalEventsComponent implements OnInit {
   @Input() textEntryBeginSubject!: Subject<TextEntryBeginEvent>;
   @Input() textEntryEndSubject!: Subject<TextEntryEndEvent>;
+  @Input()
+  abbreviationExpansionTriggers!: Subject<InputAbbreviationChangedEvent>;
 
   private previousKeypressTimeMillis: number|null = null;
   // Number of keypresses effected through eye gaze (as determiend by
@@ -218,11 +233,21 @@ export class ExternalEventsComponent {
   // the calculation of speed and keystroke saving rate (KSR).
   private readonly keySequence: string[] = [];
   // Millisecond timestamp (since epoch) for the previous keypress (if any)
-  private text: string = '';
+  private _text: string = '';
   private cursorPos: number = 0;
   private isShiftOn = false;
 
   ExternalEvewntsComponent() {}
+
+  ngOnInit() {
+    this.textEntryEndSubject.subscribe(event => {
+      // TODO(cais): Add unit test.
+      if (!event.isFinal) {
+        return;
+      }
+      this.reset();
+    });
+  }
 
   public externalKeypressHook(vkCode: number) {
     const virtualKey = getKeyFromVirtualKeyCode(vkCode);
@@ -237,23 +262,19 @@ export class ExternalEventsComponent {
       this.numGazeKeypresses++;
     }
     this.previousKeypressTimeMillis = nowMillis;
-    if (this.keySequence.length > TTS_TRIGGER_COMBO_KEY.length &&
-        allItemsEqual(
-            this.keySequence.slice(
-                this.keySequence.length - TTS_TRIGGER_COMBO_KEY.length),
-            TTS_TRIGGER_COMBO_KEY)) {
+    if (this.keySequenceEndsWith(TTS_TRIGGER_COMBO_KEY)) {
       // A TTS action has been triggered.
-      console.log(`TTS event: "${this.text}"`);
+      console.log(`TTS event: "${this._text}"`);
       this.textEntryEndSubject.next({
-        text: this.text,
+        text: this._text,
         timestampMillis: Date.now(),
         numHumanKeypresses: this.numGazeKeypresses,
         isFinal: true,
       });
-      this.reset();
       return;
     }
-    const originallyEmpty = this.text === '';
+
+    const originallyEmpty = this._text === '';
     if (virtualKey.length === 1 && (virtualKey >= 'a' && virtualKey <= 'z')) {
       this.insertCharAsCursorPos(virtualKey);
     } else if (
@@ -276,19 +297,19 @@ export class ExternalEventsComponent {
         this.cursorPos--;
       }
     } else if (virtualKey === VIRTUAL_KEY.RARROW) {
-      if (this.cursorPos < this.text.length) {
+      if (this.cursorPos < this._text.length) {
         this.cursorPos++;
       }
     } else if (virtualKey === VIRTUAL_KEY.BACKSPACE) {
       if (this.cursorPos > 0) {
-        this.text = this.text.slice(0, this.cursorPos - 1) +
-            this.text.slice(this.cursorPos);
+        this._text = this._text.slice(0, this.cursorPos - 1) +
+            this._text.slice(this.cursorPos);
         this.cursorPos--;
       }
     } else if (virtualKey === VIRTUAL_KEY.DELETE) {
-      if (this.cursorPos < this.text.length) {
-        this.text = this.text.slice(0, this.cursorPos) +
-            this.text.slice(this.cursorPos + 1);
+      if (this.cursorPos < this._text.length) {
+        this._text = this._text.slice(0, this.cursorPos) +
+            this._text.slice(this.cursorPos + 1);
       }
     } else if (
         virtualKey === VIRTUAL_KEY.LSHIFT ||
@@ -299,8 +320,45 @@ export class ExternalEventsComponent {
         virtualKey !== VIRTUAL_KEY.RSHIFT) {
       this.isShiftOn = false;
     }
-    if (originallyEmpty && this.text.length > 0) {
+    if (originallyEmpty && this._text.length > 0) {
       this.textEntryBeginSubject.next({timestampMillis: Date.now()});
+    }
+
+    if (this.keySequenceEndsWith(ABBRVIATION_EXPANSION_TRIGGER_COMBO_KEY) &&
+        this._text.trim().length > 0) {
+      let spaceIndex = this._text.length - 1;
+      while (this._text[spaceIndex] === ' ' && spaceIndex >= 0) {
+        spaceIndex--;
+      }
+      while (this._text[spaceIndex] !== ' ' && spaceIndex >= 0) {
+        spaceIndex--;
+      }
+      let text = this._text.slice(spaceIndex + 1);
+      let precedingText: string|undefined =
+          spaceIndex > 0 ? this._text.slice(0, spaceIndex).trim() : undefined;
+      if (precedingText === '') {
+        precedingText = undefined;
+      }
+      const eraserLength = text.length;
+      text = text.trim();
+      if (text.length > 0) {
+        // An abbreviation expansion has been triggered.
+        // TODO(#49): Support keywords in abbreviation (e.g.,
+        // "this event is going very well" --> "this e igvw")
+        const abbreviationSpec: AbbreviationSpec = {
+          tokens: text.split('').map(char => ({
+                                       value: char,
+                                       isKeyword: false,
+                                     })),
+          readableString: text,
+          eraserSequence: repeatVirtualKey(VIRTUAL_KEY.BACKSPACE, eraserLength),
+          precedingText,
+        };
+        console.log('Abbreviation expansion triggered:', abbreviationSpec);
+        this.abbreviationExpansionTriggers.next(
+            {abbreviationSpec, requestExpansion: true});
+        return;
+      }
     }
 
     // TODO(cais): Take care of the up and down arrow keys.
@@ -309,34 +367,45 @@ export class ExternalEventsComponent {
     // TODO(cais): Take care of Shift+Backspace and Shift+Delete.
     console.log(
         `externalKeypressHook(): virtualKey=${virtualKey}; ` +
-        `text="${this.text}"; cursorPos=${this.cursorPos}`);
+        `text="${this._text}"; cursorPos=${this.cursorPos}`);
+  }
+
+  private keySequenceEndsWith(suffix: string[]): boolean {
+    return this.keySequence.length > suffix.length &&
+        allItemsEqual(
+               this.keySequence.slice(this.keySequence.length - suffix.length),
+               suffix);
   }
 
   private insertCharAsCursorPos(char: string) {
-    if (this.cursorPos === this.text.length) {
-      this.text += char;
+    if (this.cursorPos === this._text.length) {
+      this._text += char;
     } else {
-      this.text = this.text.slice(0, this.cursorPos) + char +
-          this.text.slice(this.cursorPos);
+      this._text = this._text.slice(0, this.cursorPos) + char +
+          this._text.slice(this.cursorPos);
     }
     this.cursorPos += 1;
   }
 
   private getHomeKeyDestination(): number {
     let p = this.cursorPos;
-    const indexNewLine = this.text.lastIndexOf('\n', this.cursorPos);
+    const indexNewLine = this._text.lastIndexOf('\n', this.cursorPos);
     return indexNewLine === -1 ? 0 : indexNewLine + 1;
   }
 
   private getEndKeyDestination(): number {
-    const indexNewLine = this.text.indexOf('\n', this.cursorPos);
-    return indexNewLine === -1 ? this.text.length : indexNewLine - 1;
+    const indexNewLine = this._text.indexOf('\n', this.cursorPos);
+    return indexNewLine === -1 ? this._text.length : indexNewLine - 1;
+  }
+
+  get text(): string {
+    return this._text;
   }
 
   private reset() {
     this.previousKeypressTimeMillis = null;
     this.numGazeKeypresses = 0;
-    this.text = '';
+    this._text = '';
     this.cursorPos = 0;
     this.isShiftOn = false;
     this.keySequence.splice(0);

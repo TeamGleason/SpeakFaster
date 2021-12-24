@@ -1,0 +1,78 @@
+<style>
+
+:host {
+  white-space: pre-wrap
+}
+
+.context-add-button {
+  background: #333;
+  border: 2px solid #888;
+  border-radius: 5px;
+  color: #eee;
+  font-size: 20px;
+  height: 45px;
+  margin-left: 10px;
+  margin-bottom: 6px;
+  min-width: 50px;
+  padding: 5px;
+  vertical-align: middle;
+  width: fit-content;
+}
+
+.context-container {
+  display: inline-block;
+}
+
+.context-header-section {
+  display: inline-block;
+}
+
+.context-retrieval-error {
+  display: inline-block;
+  font-size: 28px;
+  margin-left: 6px;
+  color: red;
+}
+
+.context-tag {
+  display: inline-block;
+  color: #777;
+  font-size: 21px;
+  margin-left: 6px;
+}
+
+.conversation-turn {
+  display: inline-block;
+}
+
+.no-context-found {
+  display: inline-block;
+  font-size: 28px;
+  margin-left: 6px;
+  color: #777;
+}
+
+</style>
+
+<div class="context-header-section">
+  <div class="context-tag">
+    Context:
+  </div>
+</div>
+
+<div *ngIf="contextSignals.length > 0" class="context-container">
+  <div
+      *ngFor="let contextSignal of contextSignals; let i = index"
+      class="conversation-turn">
+    <app-conversation-turn-component
+      #contextItem
+      [turn]="contextSignal.conversationTurn!"
+    ></app-conversation-turn-component>
+  </div>
+</div>
+
+<div *ngIf="contextSignals.length === 0" class="no-context-found">
+  <div>
+    No context found
+  </div>
+</div>

@@ -1,0 +1,68 @@
+<style>
+
+:host {
+    box-sizing: border-box;
+    color: #EEE;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+    font-size: 32px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.conversation-turn {
+  background: #333;
+  border: 2px solid #888;
+  border-radius: 5px;
+  color: #eee;
+  display: flex;
+  font-size: 26px;
+  margin: 5px;
+  min-width: 250px;
+  max-width: 420px;
+  padding: 12px 5px;
+  text-align: left;
+  white-space: nowrap;
+  width: fit-content;
+}
+
+.speaker-tag {
+  background-color: green;
+  border: 2px solid #888;
+  color: gold;
+  border-radius: 5px;
+  display: inline-block;
+  font-size: 24px;
+  margin-right: 10px;
+  padding: 2px 5px;
+}
+
+.tts-tag {
+  background-color: rgb(84, 180, 84);
+  border: 2px solid #888;
+  color: black;
+  border-radius: 5px;
+  display: inline-block;
+  font-size: 24px;
+  margin-right: 10px;
+  padding: 2px 5px;
+}
+
+.turn-content {
+  display: inline-block;
+  flex: 1;
+  /* TODO(cais): avoid hardcoding this. */
+  max-width: 320px;
+  white-space: pre-wrap;
+}
+
+</style>
+
+<button #button class="conversation-turn">
+  <div *ngIf="turn.speakerId != null && turn.speakerId.length > 0" class="speaker-tag">
+    {{turn.speakerId}}
+  </div>
+  <div *ngIf="turn.isTts" class="tts-tag">
+    ⌨️
+  </div>
+  <div class="turn-content" #turnContent>{{contentString}}</div>
+</button>

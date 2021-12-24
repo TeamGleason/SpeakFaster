@@ -1,8 +1,10 @@
-import {Component, EventEmitter, OnInit, Output} from '@angular/core';
+import {Component, ElementRef, EventEmitter, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
 import {MatSnackBar, MatSnackBarConfig} from '@angular/material/snack-bar';
 import {ActivatedRoute} from '@angular/router';
+import {updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
+import {createUuid} from 'src/utils/uuid';
 
-import {DeviceCodeResponse, GoogleDeviceAuthService, GoogleDeviceAuthServiceStub, TokenResponse} from './google-device-auth-service';
+import {DeviceCodeResponse, GoogleDeviceAuthService, TokenResponse} from './google-device-auth-service';
 
 @Component({
   selector: 'app-auth-component',
@@ -10,15 +12,21 @@ import {DeviceCodeResponse, GoogleDeviceAuthService, GoogleDeviceAuthServiceStub
   providers: [GoogleDeviceAuthService],
 })
 export class AuthComponent implements OnInit {
+  private static readonly _NAME = 'AuthComponent';
+
   clientId = '';
   clientSecret = '';
   accessToken = '';
   refreshToken = '';
 
+  private readonly instanceId = AuthComponent._NAME + '_' + createUuid();
   private refreshTokenIntervalSeconds = 60 * 5;
   private shouldStopRefreshToken = false;
 
   @Output() newAccessToken: EventEmitter<string> = new EventEmitter();
+
+  @ViewChildren('clickableButton')
+  clickableButtons!: QueryList<ElementRef<HTMLElement>>;
 
   constructor(
       private route: ActivatedRoute,
@@ -34,6 +42,18 @@ export class AuthComponent implements OnInit {
         this.clientId = params['client_id'];
       }
     });
+  }
+
+  ngAfterViewInit() {
+    updateButtonBoxesForElements(this.instanceId, this.clickableButtons);
+    this.clickableButtons.changes.subscribe(
+        (queryList: QueryList<ElementRef<HTMLElement>>) => {
+          updateButtonBoxesForElements(this.instanceId, queryList);
+        });
+  }
+
+  ngOnDestroy() {
+    updateButtonBoxesToEmpty(this.instanceId);
   }
 
   // Info related to limited-input device authentication.

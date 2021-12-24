@@ -21,7 +21,6 @@ export async function bindCefSharpListener() {
       (window as any)[BOUND_LISTENER_NAME])
 }
 
-
 /**
  * Update the clickable buttons for a component instance.
  *

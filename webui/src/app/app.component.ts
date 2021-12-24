@@ -4,8 +4,9 @@ import {Subject} from 'rxjs';
 
 import {bindCefSharpListener, registerExternalKeypressHook} from '../utils/cefsharp';
 
-import {SpeakFasterService} from './speakfaster-service';
 import {ExternalEventsComponent} from './external/external-events.component';
+import {configureService, SpeakFasterService} from './speakfaster-service';
+import {InputAbbreviationChangedEvent} from './types/abbreviation';
 import {TextEntryBeginEvent, TextEntryEndEvent} from './types/text-entry';
 
 @Component({
@@ -26,9 +27,12 @@ export class AppComponent implements OnInit, AfterViewInit {
   private _endpoint: string = '';
   private _accessToken: string = '';
 
+  abbreviationExpansionTriggers: Subject<InputAbbreviationChangedEvent> =
+      new Subject();
   textEntryBeginSubject: Subject<TextEntryBeginEvent> =
       new Subject<TextEntryBeginEvent>();
   textEntryEndSubject: Subject<TextEntryEndEvent> = new Subject();
+  readonly contextStrings: string[] = [];
 
   constructor(
       private route: ActivatedRoute,
@@ -44,6 +48,17 @@ export class AppComponent implements OnInit, AfterViewInit {
       if (typeof useOauth === 'string' &&
           (useOauth.toLocaleLowerCase() === 'false' || useOauth === '0')) {
         this.useAccessToken = false;
+        configureService({
+          endpoint: this._endpoint,
+          accessToken: '',
+        })
+      }
+    });
+    this.textEntryEndSubject.subscribe(textEntryEndEvent => {
+      if (textEntryEndEvent.text.length > 0) {
+        // TODO(#59): Support multiple contexts, with timing information.
+        this.contextStrings.splice(0);
+        this.contextStrings.push(textEntryEndEvent.text);
       }
     });
   }
@@ -56,12 +71,10 @@ export class AppComponent implements OnInit, AfterViewInit {
 
   onNewAccessToken(accessToken: string) {
     this._accessToken = accessToken;
-    if (this.endpoint) {
-      this.speakFasterService.ping(this._endpoint, this._accessToken)
-          .subscribe(data => {
-            console.log('Ping response:', data);
-          });
-    }
+    configureService({
+      endpoint: this._endpoint,
+      accessToken,
+    });
   }
 
   hasAccessToken(): boolean {

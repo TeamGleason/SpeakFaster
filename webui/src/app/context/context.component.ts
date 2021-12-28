@@ -120,6 +120,7 @@ export class ContextComponent implements OnInit, AfterViewInit {
     this.contextSignals.push(addedContextSignal);
     this.focusContextIds.splice(0);
     this.focusContextIds.push(addedContextSignal.contextId!);
+    this.emitContextStringsSelected();
   }
 
   // NOTE: document:keydown can prevent the default tab-switching

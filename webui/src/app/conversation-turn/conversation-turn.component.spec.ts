@@ -7,8 +7,7 @@ import {TestListener} from '../test-utils/test-cefsharp-listener';
 import {ConversationTurnComponent} from './conversation-turn.component';
 import {ConversationTurnModule} from './conversation-turn.module';
 
-// TODO(cais): Remove fdescribe. DO NOT SUBMIT.
-fdescribe('ConversationTurnComponent', () => {
+describe('ConversationTurnComponent', () => {
   let fixture: ComponentFixture<ConversationTurnComponent>;
   let testListener: TestListener;
 

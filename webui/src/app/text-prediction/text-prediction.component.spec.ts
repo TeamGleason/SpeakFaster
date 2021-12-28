@@ -14,8 +14,7 @@ class SpeakFasterServiceForTest {
   // TODO(cais): Flesh out test implementations.
 }
 
-// TODO(cais): Remove fdescribe. DO NOT SUBMIT.
-fdescribe('TextPredictionCmponent', () => {
+describe('TextPredictionCmponent', () => {
   let fixture: ComponentFixture<TextPredictionComponent>;
   let component: TextPredictionComponent;
   let testListener: TestListener;

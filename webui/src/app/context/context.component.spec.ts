@@ -19,8 +19,7 @@ class SpeakFasterServiceForTest {
   }
 }
 
-// TODO(cais): Remove fdescribe. DO NOT SUBMIT.
-fdescribe('ContextComponent', () => {
+describe('ContextComponent', () => {
   let fixture: ComponentFixture<ContextComponent>;
   let textEntryEndSubject: Subject<TextEntryEndEvent>;
 

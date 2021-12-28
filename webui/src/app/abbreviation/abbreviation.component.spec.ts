@@ -14,8 +14,7 @@ import {TextEntryEndEvent} from '../types/text-entry';
 import {AbbreviationComponent} from './abbreviation.component';
 import {AbbreviationModule} from './abbreviation.module';
 
-// TODO(cais): Remove fdescribe. DO NOT SUBMIT.
-fdescribe('AbbreviationComponent', () => {
+describe('AbbreviationComponent', () => {
   let abbreviationExpansionTriggers: Subject<InputAbbreviationChangedEvent>;
   let textEntryEndSubject: Subject<TextEntryEndEvent>;
   let fixture: ComponentFixture<AbbreviationComponent>;

@@ -7,8 +7,7 @@ import {TextEntryBeginEvent, TextEntryEndEvent} from '../types/text-entry';
 import {ExternalEventsComponent, getPunctuationLiteral, getVirtualkeyCode, repeatVirtualKey, VIRTUAL_KEY, VKCODE_SPECIAL_KEYS} from './external-events.component';
 import {ExternalEventsModule} from './external-events.module';
 
-// TODO(cais): Remove fdescribe. DO NOT SUBMIT.
-fdescribe('ExternalEventsComponent', () => {
+describe('ExternalEventsComponent', () => {
   let textEntryBeginSubject: Subject<TextEntryBeginEvent>;
   let textEntryEndSubject: Subject<TextEntryEndEvent>;
   let abbreviationExpansionTriggers: Subject<InputAbbreviationChangedEvent>;

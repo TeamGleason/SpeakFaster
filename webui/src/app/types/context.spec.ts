@@ -2,8 +2,7 @@
 
 import {getConversationTurnContextSignal} from './context';
 
-// TODO(cais): Remove fdescribe. DO NOT SUBMIT.
-fdescribe('getConversationTurnContextSignal', () => {
+describe('getConversationTurnContextSignal', () => {
   it('creates ConversationTurnContextSignal correctly, populating timestamp',
      () => {
        const signal = getConversationTurnContextSignal('foo_user', {

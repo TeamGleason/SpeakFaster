@@ -1,6 +1,6 @@
 /** Component for in-app text-to-speech audio output. */
 import {HttpErrorResponse} from '@angular/common/http';
-import {Component, ElementRef, Input, OnInit, QueryList, ViewChildren} from '@angular/core';
+import {ChangeDetectorRef, Component, ElementRef, Input, OnInit, QueryList, ViewChildren} from '@angular/core';
 import {Subject} from 'rxjs';
 
 import {TextToSpeechErrorResponse, TextToSpeechService} from '../text-to-speech-service';
@@ -24,7 +24,9 @@ export class TextToSpeechComponent implements OnInit {
   errorMessage?: string|null = null;
   audioPlaying: boolean = false;
 
-  constructor(public textToSpeechService: TextToSpeechService) {}
+  constructor(
+      public textToSpeechService: TextToSpeechService,
+      private cdr: ChangeDetectorRef) {}
 
   ngOnInit() {
     this.textEntryEndSubject.subscribe(event => {
@@ -75,6 +77,7 @@ export class TextToSpeechComponent implements OnInit {
               ttsAudioElement.src =
                   'data:audio/wav;base64,' + data.audio_content;
               ttsAudioElement.play();
+              this.cdr.detectChanges();
             },
             (error: HttpErrorResponse) => {
               if (error.error &&
@@ -84,6 +87,7 @@ export class TextToSpeechComponent implements OnInit {
               } else {
                 this.errorMessage = `${error.statusText}`;
               }
+              this.cdr.detectChanges();
             });
   }
 }

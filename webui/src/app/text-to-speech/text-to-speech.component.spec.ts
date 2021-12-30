@@ -8,8 +8,7 @@ import {TextEntryEndEvent} from '../types/text-entry';
 import {TextToSpeechComponent} from './text-to-speech.component';
 import {TextToSpeechModule} from './text-to-speech.module';
 
-// TODO(cais): Remove. DO NOT SUBMIT.
-fdescribe('TextToSpeechCmponent', () => {
+describe('TextToSpeechCmponent', () => {
   let fixture: ComponentFixture<TextToSpeechComponent>;
   let component: TextToSpeechComponent;
   let textEntryEndSubject: Subject<TextEntryEndEvent>;

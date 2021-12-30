@@ -1,5 +1,7 @@
 /** Types related to text entry events. */
 
+import {TextToSpeechAudioConfig} from './text-to-speech';
+
 /**
  * An event that signifies the beginning of a text entry, i.e., when the
  * users starts typing to compose a message.
@@ -37,4 +39,9 @@ export interface TextEntryEndEvent {
 
   // Sequence of automatically injected keys;
   injectedKeys?: string[];
+
+  // If specified, will trigger in-app text-to-speech, i.e., text-to-speech
+  // output from this app per se, not text-to-speech output in another app like
+  // the text editor tethereed to this app.
+  inAppTextToSpeechAudioConfig?: TextToSpeechAudioConfig;
 }

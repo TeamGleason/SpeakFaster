@@ -33,6 +33,11 @@ app-context-component {
       [textEntryEndSubject]="textEntryEndSubject">
   </app-metrics-component>
 
+  <app-text-to-speech-component
+      [textEntryEndSubject]="textEntryEndSubject"
+      [accessToken]="accessToken">
+  </app-text-to-speech-component>
+
   <div *ngIf="hasAccessToken()">
 
     <app-context-component

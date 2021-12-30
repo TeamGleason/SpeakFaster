@@ -4,8 +4,8 @@ import {limitStringLength} from 'src/utils/text-utils';
 import {createUuid} from 'src/utils/uuid';
 
 import {injectKeys, updateButtonBoxesForElements} from '../../utils/cefsharp';
-import {VIRTUAL_KEY} from '../external/external-events.component';
 import {isPlainAlphanumericKey, isTextContentKey} from '../../utils/keyboard-utils';
+import {VIRTUAL_KEY} from '../external/external-events.component';
 import {KeyboardComponent} from '../keyboard/keyboard.component';
 import {SpeakFasterService} from '../speakfaster-service';
 import {AbbreviationSpec, InputAbbreviationChangedEvent} from '../types/abbreviation';
@@ -137,8 +137,12 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
   }
 
   onSpeakOptionButtonClicked(event: Event, index: number) {
-    throw new Error('Not implemented yet');
-    // TODO(#49): Implement key injection with TTS trigger.
+    if (this.state !== 'CHOOSING_EXPANSION') {
+      return;
+    }
+    this.selectExpansionOption(
+        index, /* toInjectKeys= */ true,
+        /* toTriggerInAppTextToSpeech= */ true);
   }
 
   onEditTokenButtonClicked(event: Event, index: number) {
@@ -222,7 +226,9 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
     setTimeout(() => this.resetState(), 1000);
   }
 
-  private selectExpansionOption(index: number, toInjectKeys: boolean) {
+  private selectExpansionOption(
+      index: number, toInjectKeys: boolean,
+      toTriggerInAppTextToSpeech: boolean = false) {
     if (this._selectedAbbreviationIndex === index || !this.abbreviation) {
       return;
     }
@@ -239,6 +245,8 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
       isFinal: true,
       numKeypresses,
       numHumanKeypresses: numKeypresses,
+      inAppTextToSpeechAudioConfig:
+          toTriggerInAppTextToSpeech ? {volume_gain_db: 0} : undefined,
     });
     if (toInjectKeys) {
       const injectedKeys: Array<string|VIRTUAL_KEY> =
@@ -289,8 +297,8 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
     const usedContextString = usedContextStrings.join('|');
     console.log(
         `Calling expandAbbreviation() (numSamples=${numSamples}):` +
-            `context='${usedContextString}'; ` +
-            `abbreviation=${JSON.stringify(this.abbreviation)}`);
+        `context='${usedContextString}'; ` +
+        `abbreviation=${JSON.stringify(this.abbreviation)}`);
     this.speakFasterService
         .expandAbbreviation(
             usedContextString, this.abbreviation, numSamples,

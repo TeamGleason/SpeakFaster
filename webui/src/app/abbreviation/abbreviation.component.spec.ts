@@ -193,10 +193,45 @@ describe('AbbreviationComponent', () => {
     expect(events[0].text).toEqual('we took it in');
     expect(events[0].isFinal).toBeTrue();
     expect(events[0].timestampMillis).toBeGreaterThan(0);
+    expect(events[0].inAppTextToSpeechAudioConfig).toBeUndefined();
     // "wtii" as a length 4; the trigger keys has a lenght 2; additionally,
     // there is the selection key at the end.
     const expectedNumKeypresses = 4 + 2 + 1;
     expect(events[0].numKeypresses).toEqual(expectedNumKeypresses);
     expect(events[0].numHumanKeypresses).toEqual(expectedNumKeypresses);
   });
+
+  it('clicking speak-button publishes to textEntryEndSubject, with audio config',
+     () => {
+       const events: TextEntryEndEvent[] = [];
+       textEntryEndSubject.subscribe(event => {
+         events.push(event);
+       });
+       fixture.componentInstance.abbreviation = {
+         tokens: ['w', 't', 'i', 'i'].map(char => ({
+                                            value: char,
+                                            isKeyword: false,
+                                          })),
+         readableString: 'wtii',
+         triggerKeys: [VIRTUAL_KEY.SPACE, VIRTUAL_KEY.SPACE]
+       };
+       fixture.componentInstance.abbreviationOptions =
+           ['what time is it', 'we took it in'];
+       fixture.detectChanges();
+       const selectButtons =
+           fixture.debugElement.queryAll(By.css('.speak-button'));
+       (selectButtons[1].nativeElement as HTMLButtonElement).click();
+       expect(events.length).toEqual(1);
+       expect(events[0].text).toEqual('we took it in');
+       expect(events[0].isFinal).toBeTrue();
+       expect(events[0].timestampMillis).toBeGreaterThan(0);
+       expect(events[0].inAppTextToSpeechAudioConfig).toEqual({
+         volume_gain_db: 0
+       });
+       // "wtii" as a length 4; the trigger keys has a lenght 2; additionally,
+       // there is the selection key at the end.
+       const expectedNumKeypresses = 4 + 2 + 1;
+       expect(events[0].numKeypresses).toEqual(expectedNumKeypresses);
+       expect(events[0].numHumanKeypresses).toEqual(expectedNumKeypresses);
+     });
 });

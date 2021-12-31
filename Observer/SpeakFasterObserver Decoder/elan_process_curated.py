@@ -300,9 +300,12 @@ def apply_speaker_map_and_redaction_masks(rows, realname_to_pseudonym):
     if is_speech_content_tier(tier):
       realname_tag, tag_type, realname = transcript_lib.extract_speaker_tag(
           content.strip())
-      if realname.lower() not in realname_to_pseudonym:
-        raise ValueError("Cannot find real name in speaker tag: %s" % realname)
-      pseudonym = realname_to_pseudonym[realname.lower()]
+      if realname.lower() == "redacted":
+        pseudonym = "redacted"
+      else:
+        if realname.lower() not in realname_to_pseudonym:
+          raise ValueError("Cannot find real name in speaker tag: %s" % realname)
+        pseudonym = realname_to_pseudonym[realname.lower()]
       pseudonym_tag = "[%s:%s]" % (tag_type, pseudonym)
       index = content.rindex(realname_tag)
       pseudonymized_content = content[:index] + pseudonym_tag

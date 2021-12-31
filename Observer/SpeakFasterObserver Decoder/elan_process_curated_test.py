@@ -374,6 +374,20 @@ class CalculuateSpeechCurationStatsTest(tf.test.TestCase):
       elan_process_curated.calculate_speech_curation_stats(
           self.merged_tsv_path, curated_rows, self.realname_to_pseudonym)
 
+  def testCalculateStats_redactedSpeakerId(self):
+    curated_rows = [
+        (10.0, 20.0, "SpeechTranscript", "<RedactedSpeaker>Hi</RedactedSpeaker> [U2] [Speaker:Redacted]"),
+    ]
+    stats = elan_process_curated.calculate_speech_curation_stats(
+        self.merged_tsv_path, curated_rows, self.realname_to_pseudonym)
+    self.assertEqual(stats["original_num_utterances"], 3)
+    self.assertEqual(stats["curated_num_utterances"], 1)
+    self.assertEqual(stats["curated_speaker_id_to_original_speaker_id"], [{
+        "utterance_id": "U2",
+        "original_speaker_id": "#2",
+        "curated_speaker_id": "redacted",
+    }])
+
   def testCalculateStats_raisesErrorForDuplicateUtteranceTimeSpans(self):
     curated_rows = [
         (1.0, 2.0, "SpeechTranscript", "When do you want to sleep [U1] [SpeakerTTS:Sean]"),

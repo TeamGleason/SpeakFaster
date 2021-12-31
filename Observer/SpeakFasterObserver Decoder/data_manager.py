@@ -565,12 +565,12 @@ class DataManager(object):
       message = "Postprocessing succeeded!"
       print(message)
       sg.Popup(message, modal=True)
-      return message
+      return message, False
     except Exception as e:
       failure_message = "Postprocessing failed with error message:\n\n%s" % e
       print(failure_message)
       sg.Popup(failure_message, title="Postprocessing failed", modal=True)
-      return "Postprocessing failed", True
+      return "Postprocessing failed", False
 
   def upload_session_postproc_results(self, session_prefix, to_gcs=False):
     """Upload post processing results to S3 or GCS."""

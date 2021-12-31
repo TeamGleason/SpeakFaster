@@ -81,11 +81,17 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
   }
 
   onSpeakOptionButtonClicked(event: Event, index: number) {
-    throw new Error('Not implemented yet');
-    // TODO(#49): Implement key injection with TTS trigger.
+    if (this.state !== 'CHOOSING_EXPANSION') {
+      return;
+    }
+    this.selectExpansionOption(
+        index, /* toInjectKeys= */ true,
+        /* toTriggerInAppTextToSpeech= */ true);
   }
 
-  private selectExpansionOption(index: number, toInjectKeys: boolean) {
+  private selectExpansionOption(
+      index: number, toInjectKeys: boolean,
+      toTriggerInAppTextToSpeech: boolean = false) {
     if (this._selectedAbbreviationIndex === index || !this.abbreviation) {
       return;
     }
@@ -102,6 +108,8 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
       isFinal: true,
       numKeypresses,
       numHumanKeypresses: numKeypresses,
+      inAppTextToSpeechAudioConfig:
+          toTriggerInAppTextToSpeech ? {volume_gain_db: 0} : undefined,
     });
     if (toInjectKeys) {
       const injectedKeys: Array<string|VIRTUAL_KEY> =

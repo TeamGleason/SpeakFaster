@@ -291,9 +291,7 @@ class DataManager(object):
     if not time_zone:
       # Time zone is not found. Ask for it with a PySimpleGUI get-text dialog.
       if not self._manual_timezone_name:
-        self._manual_timezone_name = sg.popup_get_text(
-            "Time zone is not available in the session's data files. "
-            "Please enter (will use default US/Central if empty): ")
+        self._manual_timezone_name = self._get_manual_timezone()
         if not self._manual_timezone_name:
           self._manual_timezone_name = DEFAULT_TIMEZONE_NAME
       tz = pytz.timezone(self._manual_timezone_name)
@@ -305,6 +303,13 @@ class DataManager(object):
     return (is_session_complete,
             str(tz), start_time, duration_s, num_keypresses, num_audio_files,
             num_screenshots, object_keys)
+
+  def _get_manual_timezone(self):
+    manual_timezone_name = sg.popup_get_text(
+        "Time zone is not available in the session's data files. "
+        "Please enter (will use default %s if empty): " %
+        DEFAULT_TIMEZONE_NAME)
+    return manual_timezone_name
 
   def get_sessions_stats(self,
                          container_prefix,
@@ -565,7 +570,7 @@ class DataManager(object):
       message = "Postprocessing succeeded!"
       print(message)
       sg.Popup(message, modal=True)
-      return message, False
+      return message, "session"
     except Exception as e:
       failure_message = "Postprocessing failed with error message:\n\n%s" % e
       print(failure_message)
@@ -612,7 +617,7 @@ class DataManager(object):
       gcloud_utils.upload_files_as_objects(
           local_session_dir, POSTPROCESSING_FILES_TO_UPLOAD,
           self.gcs_bucket_name, destination_blob_prefix)
-      return "Down uploading postprocessing results to GCS", False
+      return "Done uploading postprocessing results to GCS", False
     else:
       # Upload to S3.
       command_args = [
@@ -625,7 +630,7 @@ class DataManager(object):
       self._run_command_line(command_args)
       print("Done uploading the postprocessing results for session %s to S3" %
             session_prefix)
-      return "Down uploading postprocessing results to S3", True
+      return "Done uploading postprocessing results to S3", "session"
 
   def _run_command_line(self, command_args):
     print("Calling: %s" % (" ".join(command_args)))
@@ -1084,7 +1089,7 @@ def main():
         status_message = "Uploading session preprocessing results. Please wait..."
       elif event == "DOWNLOAD_PREPROCESS_UPLOAD_SESSIONS_BATCH":
         status_message = "Batch downloading, preprocessing and uploading sessions. Please wait..."
-      elif event == "POSTPROCESS_CURATION":
+      elif event == "POSTPROC_CURATION":
         status_message = "Postprocessing curation results. Please wait..."
       elif event == "UPLOAD_POSTPROC":
         status_message = "Uploading session postprocessing results. Please wait..."
@@ -1121,8 +1126,12 @@ def main():
       window.Element("STATUS_MESSAGE").Update(status_message)
       window.Element("STATUS_MESSAGE").Update(text_color="white")
       _enable_all_buttons(window)
-      # Refresh all sessions after the selected session has finished downloading.
-      if sessions_changed:
+      if sessions_changed == "session":
+        # The value of "session" means only refresh the selected session.
+        _show_session_info(window, data_manager, session_container_prefixes,
+                           session_prefixes)
+      elif sessions_changed == True:
+        # Refresh all sessions after the selected session has finished downloading.
         session_prefixes = _list_sessions(
             window,
             data_manager,

@@ -181,6 +181,18 @@ class ApplySpeakerMapGetKeypressRedactionsTest(tf.test.TestCase):
         rows[2],
         [25.2, 26.0, "SpeechTranscript", "I think [RedactedSensitive] [Speaker:Partner005]"])
 
+  def testAppliesRedactionMasksAndSpeakerPseudonyms_redactedSpeakerId(self):
+    rows = [
+        [5.2, 6.0, "SpeechTranscript",
+         "<RedactedSpeaker>Hello</RedactedSpeaker> [Speaker:redacted]"]]
+    ranges = elan_process_curated.apply_speaker_map_and_redaction_masks(
+        rows, self._realname_to_pseudonym)
+    self.assertEqual(ranges, [])
+    self.assertLen(rows, 1)
+    self.assertEqual(
+        rows[0],
+        [5.2, 6.0, "SpeechTranscript", "[RedactedSpeaker] [Speaker:redacted]"])
+
   def testExtractsRedactionTimeRangesCorrectly(self):
     rows = [
         [0.1, 1.3, "SpeechTranscript", "Good morning. [Speaker:Danielle] "],
@@ -371,6 +383,31 @@ class CalculuateSpeechCurationStatsTest(tf.test.TestCase):
     ]
     with self.assertRaisesRegex(
         ValueError, r"deleted or changed .* utterance ID .*\[U3\]"):
+      elan_process_curated.calculate_speech_curation_stats(
+          self.merged_tsv_path, curated_rows, self.realname_to_pseudonym)
+
+  def testCalculateCurationStats_redactedSpeakerId(self):
+    curated_rows = [
+        (10.0,
+         20.0,
+         "SpeechTranscript",
+         "<RedactedSpeaker>Hi</RedactedSpeaker> [U2] [Speaker:Redacted]"),
+    ]
+    stats = elan_process_curated.calculate_speech_curation_stats(
+        self.merged_tsv_path, curated_rows, self.realname_to_pseudonym)
+    self.assertEqual(stats["original_num_utterances"], 3)
+    self.assertEqual(stats["curated_num_utterances"], 1)
+    self.assertEqual(stats["curated_speaker_id_to_original_speaker_id"], [{
+        "utterance_id": "U2",
+        "original_speaker_id": "#2",
+        "curated_speaker_id": "redacted",
+    }])
+
+  def testCalculateCurationStats_invalidSpeakerIdRaisesValueError(self):
+    curated_rows = [
+        (10.0, 20.0, "SpeechTranscript", "Hi [U2] [Speaker:InvalidSpeaker]")]
+    with self.assertRaisesRegex(ValueError,
+                                "Cannot find speaker ID InvalidSpeaker"):
       elan_process_curated.calculate_speech_curation_stats(
           self.merged_tsv_path, curated_rows, self.realname_to_pseudonym)
 

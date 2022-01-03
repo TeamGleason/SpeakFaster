@@ -30,6 +30,7 @@ import tsv_data
 SPEAKER_MAP_DELIMITER = "\t"
 SPEKAER_MAP_COLUMN_HEADS = ("RealName", "Pseudonym")
 REDACTED_KEY = "[RedactedKey]"
+REDACTED_SPEKAER_ID = "redacted"
 _REDACT_TIME_RANGE_REGEX = re.compile("\[Redacted[A-Za-z]*?:.*?\]")
 
 
@@ -244,7 +245,8 @@ def calculate_speech_curation_stats(merged_tsv_path,
                   curated_transcript,
                   hypothesis_transcript=original_transcript),
       })
-      if curated_speaker_id.lower() not in realname_to_pseudonym:
+      if (curated_speaker_id.lower() != REDACTED_SPEKAER_ID and
+          curated_speaker_id.lower() not in realname_to_pseudonym):
         raise ValueError(
             "Cannot find speaker ID %s. Make sure you have entered "
             "the correct real name for the speaker in utterance: %s" %
@@ -255,7 +257,9 @@ def calculate_speech_curation_stats(merged_tsv_path,
               realname_to_pseudonym.get(original_speaker_id.lower(),
                                         original_speaker_id),
           "curated_speaker_id":
-              realname_to_pseudonym[curated_speaker_id.lower()],
+              (REDACTED_SPEKAER_ID
+               if curated_speaker_id.lower() == REDACTED_SPEKAER_ID
+               else realname_to_pseudonym[curated_speaker_id.lower()]),
       })
       print("\"%s\" - \"%s\": WER = %.3f" %
             (original_transcript, curated_transcript,
@@ -291,9 +295,12 @@ def apply_speaker_map_and_redaction_masks(rows, realname_to_pseudonym):
     if is_speech_content_tier(tier):
       realname_tag, tag_type, realname = transcript_lib.extract_speaker_tag(
           content.strip())
-      if realname.lower() not in realname_to_pseudonym:
-        raise ValueError("Cannot find real name in speaker tag: %s" % realname)
-      pseudonym = realname_to_pseudonym[realname.lower()]
+      if realname.lower() == REDACTED_SPEKAER_ID:
+        pseudonym = REDACTED_SPEKAER_ID
+      else:
+        if realname.lower() not in realname_to_pseudonym:
+          raise ValueError("Cannot find real name in speaker tag: %s" % realname)
+        pseudonym = realname_to_pseudonym[realname.lower()]
       pseudonym_tag = "[%s:%s]" % (tag_type, pseudonym)
       index = content.rindex(realname_tag)
       pseudonymized_content = content[:index] + pseudonym_tag

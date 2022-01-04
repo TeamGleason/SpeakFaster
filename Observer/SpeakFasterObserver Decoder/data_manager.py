@@ -381,6 +381,7 @@ class DataManager(object):
         "s3://" + self._s3_bucket_name + "/" + session_prefix, local_dest_dir]
     self._run_command_line(command_args)
     print("Download complete.")
+    return "Download complete.", "session"
 
   def get_local_session_folder_status(self, session_prefix):
     local_dest_dir = self.get_local_session_dir(session_prefix)
@@ -511,7 +512,7 @@ class DataManager(object):
     self._run_command_line(command_args)
     message = "Preprocessing complete."
     print(message)
-    return message, True
+    return message, "session"
 
   def upload_sesssion_preproc_results(self, session_prefix):
     if self.get_local_session_folder_status(session_prefix) not in  (
@@ -540,7 +541,7 @@ class DataManager(object):
     self._run_command_line(command_args)
     print("Done uploading the preprocessing results for session %s" %
           session_prefix)
-    return "Uploading of preprocessing results complete", True
+    return "Uploading of preprocessing results complete", "session"
 
   def postprocess_curation(self, session_prefix):
     local_dest_dir = self.get_local_session_dir(session_prefix)
@@ -1102,7 +1103,8 @@ def main():
       _disable_all_buttons(window)
       window.refresh()
       if event == "DOWNLOAD_SESSION_TO_LOCAL":
-        data_manager.sync_to_local(session_prefix)
+        (status_message,
+         sessions_changed) = data_manager.sync_to_local(session_prefix)
         status_message = "Session downloading complete."
       elif event == "PREPROCESS_SESSION":
         (status_message,

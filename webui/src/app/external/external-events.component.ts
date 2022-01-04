@@ -324,6 +324,8 @@ export class ExternalEventsComponent implements OnInit {
       this.textEntryBeginSubject.next({timestampMillis: Date.now()});
     }
 
+    // TODO(cais): Add callback register mechanism. Turn this into a registered
+    // callback.
     if (this.keySequenceEndsWith(ABBRVIATION_EXPANSION_TRIGGER_COMBO_KEY) &&
         this._text.trim().length > 0) {
       let spaceIndex = this._text.length - 1;

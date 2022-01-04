@@ -7,6 +7,12 @@ import {isPlainAlphanumericKey, isTextContentKey} from '../../utils/keyboard-uti
 import {KeyboardComponent} from '../keyboard/keyboard.component';
 import {AbbreviationSpec, AbbreviationToken, StartSpellingEvent} from '../types/abbreviation';
 
+// TODO(cais): Support workflow: enter initial-only abbreviation, get no
+// matching AE option, continue to type out any word of the phrase, and
+// hit enter to perform AE with keyword. Can enter more keywords if still has
+// no match.
+// TODO(cais): Support workflow, same as above, but before entering the
+// keyword, first click a button to indicate which word is being spelled out.
 enum SpellingState {
   NOT_STARTED = 'NOT_STARTED',
   CHOOSING_TOKEN = 'CHOOSING_TOKEN',

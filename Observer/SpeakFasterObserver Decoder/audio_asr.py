@@ -85,8 +85,11 @@ def concatenate_audio_files(input_paths,
       elif gaps_sec[i] < -timestamp_error_tolerance_sec:
         raise ValueError(
             "Timestamp of audio file %s is too early compared to the "
-            "end timestamp of the previous audio file %s." %
-            (input_path, input_paths[i - 1]))
+            "end timestamp of the previous audio file %s. Debug info: "
+            "i=%d; gaps_sec=%s; gaps_sec[i]=%.6f; "
+            "timestamp_error_tolerance_sec=%.6f" %
+            (input_path, input_paths[i], i, gaps_sec, gaps_sec[i],
+             timestamp_error_tolerance_sec))
     pure_path = pathlib.PurePath(input_path)
     new_audio_seg = pydub.AudioSegment.from_file(pure_path, pure_path.suffix[1:])
     assert new_audio_seg.channels == num_channels, "Channel count mismatch"

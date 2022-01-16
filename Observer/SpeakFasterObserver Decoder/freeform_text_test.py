@@ -4,11 +4,6 @@ import tensorflow as tf
 import freeform_text
 
 
-# def _load_freeform_text_for_test():
-  # with open("testdata/freeform_text_1.txt", "r") as f:
-  #   return f.read()
-
-
 class FreeFormTextTest(tf.test.TestCase):
 
   def testProcessCuratedFreeFormText_withRedaction(self):

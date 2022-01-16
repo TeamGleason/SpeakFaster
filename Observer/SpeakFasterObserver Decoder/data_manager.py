@@ -901,13 +901,15 @@ def upload_curated_freeform_text(window,
   """Process and upload curated free-form txt files."""
   container_prefix = _get_container_prefix(window,
                                            session_container_prefixes)
-  file_dialog_event, file_dialog_values = sg.Window(
+  file_dialog = sg.Window(
       "Choose txt file").Layout(
           [[sg.Input(key="_FILES_"),
             sg.FilesBrowse(file_types=(("Text files", "*.txt"),))],
-          [sg.OK()]]).Read()
+          [sg.OK()]])
+  file_dialog_event, file_dialog_values = file_dialog.Read()
   if not file_dialog_values["_FILES_"]:
     raise ValueError("No file is chosen")
+  file_dialog.Close()
   freeform_txt_path = file_dialog_values["_FILES_"].split(';')[0]
   with open(freeform_txt_path, "r") as f:
     content = f.read()

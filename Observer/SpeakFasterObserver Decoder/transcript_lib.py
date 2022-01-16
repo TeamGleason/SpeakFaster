@@ -165,8 +165,9 @@ def summarize_speech_content(transcript, hypothesis_transcript=None):
       (curated.tsv), and does *not* contain redaction masks. It can
       contain utterance IDs (e.g., "[U23]") and speaker IDs
       (e.g., "[Speaker:Sean]"), which are ignored during the summarization.
-    ground_truth: The hypothesis truth phrase as a string (e.g., from ASR).
-      If provided, will cause the "wer" field to be populated in the output.
+    hypothesis_transcript: The hypothesis truth phrase as a string (e.g.,
+      from ASR). If provided, will cause the "wer" field to be populated in the
+      output.
 
   Returns:
     Summaries about the speech content of the transcript as a dict.

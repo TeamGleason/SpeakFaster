@@ -25,25 +25,43 @@ import tsv_data
 
 GCLOUD_SPEECH_STREAMING_LENGTH_LIMIT_SEC = 240
 AUDIO_UPLOAD_BUCKET_NAME_PREFIX = "speakfaster_audio_uploads"
+# Tolerance for misalignment in the beginning timestamp of an audio file and
+# the ending timestamp of the previous audio file.
+DEFAULT_TIMESTAMP_ERROR_TOLERANCE_SEC = 0.5
+# If an audio file has a beginning timestamp that is too early (< ending
+# timestamp of previous file - TIMESTAMP_ERROR_TOLERANCE_SEC) but not earlier
+# than (ending timestamp of previous file - MAX_AUDIO_HEAD_ADJUSTMENT_SEC),
+# then we cut the head of the audio file by (ending timestamp of previous
+# audio file - beginning timestamp of current audio file).
+DEFAULT_MAX_AUDIO_HEAD_ADJUSTMENT_SEC = 2.0
 
 
-def concatenate_audio_files(input_paths,
-                            output_path,
-                            fill_gaps=False,
-                            timestamp_error_tolerance_sec=0.5):
+def concatenate_audio_files(
+    input_paths,
+    output_path,
+    fill_gaps=False,
+    timestamp_error_tolerance_sec=DEFAULT_TIMESTAMP_ERROR_TOLERANCE_SEC,
+    max_audio_head_adjustment_sec=DEFAULT_MAX_AUDIO_HEAD_ADJUSTMENT_SEC):
   """Concatenate audio files into one file.
 
   Args:
     input_paths: Paths to the input audio files.
     output_path: Path to the output file.
     fill_gaps: Whether the gaps between the consecutive audio files
-      will be filled with all-zero samples.
+      will be filled with all-zero samples. Setting this to True also
+      enables cutting the head of audio files to account for negative
+      gaps in the interval [-max_audio_head_adjustment_sec,
+      -timestamp_error_tolerance_sec]. See below.
     timestamp_error_tolerance_sec: Maximum tolerated error for timestamp
       errors. This applies only if fill_gaps is True, in which case
       the "negative gaps" (where the timestamp of an audio file happens
       before the end time of the previous audio file) are asserted to be
       less than this tolerance. If the tolerance is exceeded, an error will
       be thrown.
+    max_audio_head_adjustment_sec: If the gap error is negative and the
+      absolute value exceeds `timestamp_error_tolerance_sec` but is less than
+      this argument value, cut the head of the audio file to compensate.
+      This compensation is performed only if fill_gaps is True.
 
   Returns:
     Duration of the concatenation result, in seconds.
@@ -71,7 +89,15 @@ def concatenate_audio_files(input_paths,
   sample_width = audio_seg.sample_width
   for i, input_path in enumerate(input_paths[1:]):
     if fill_gaps:
-      if gaps_sec[i] > 0:
+      if gaps_sec[i] < -max_audio_head_adjustment_sec:
+        raise ValueError(
+            "Timestamp of audio file %s is too early compared to the "
+            "end timestamp of the previous audio file %s. Debug info: "
+            "i=%d; gaps_sec=%s; gaps_sec[i]=%.6f; "
+            "max_audio_head_adjustment_sec=%.6f" %
+            (input_path, input_paths[i], i, gaps_sec, gaps_sec[i],
+            max_audio_head_adjustment_sec))
+      elif gaps_sec[i] > 0:
         temp_wav_path = tempfile.mktemp(suffix=".wav")
         create_all_zeros_wav_file(
             temp_wav_path,
@@ -82,16 +108,14 @@ def concatenate_audio_files(input_paths,
         audio_seg += pydub.AudioSegment.from_file(temp_wav_path, "wav")
         print("Filled a gap between audio files of length %.3f s" % gaps_sec[i])
         os.remove(temp_wav_path)
-      elif gaps_sec[i] < -timestamp_error_tolerance_sec:
-        raise ValueError(
-            "Timestamp of audio file %s is too early compared to the "
-            "end timestamp of the previous audio file %s. Debug info: "
-            "i=%d; gaps_sec=%s; gaps_sec[i]=%.6f; "
-            "timestamp_error_tolerance_sec=%.6f" %
-            (input_path, input_paths[i], i, gaps_sec, gaps_sec[i],
-             timestamp_error_tolerance_sec))
     pure_path = pathlib.PurePath(input_path)
-    new_audio_seg = pydub.AudioSegment.from_file(pure_path, pure_path.suffix[1:])
+    new_audio_seg = pydub.AudioSegment.from_file(pure_path,
+                                                 pure_path.suffix[1:])
+    if fill_gaps and gaps_sec[i] < -timestamp_error_tolerance_sec:
+      gap_millis = int(-gaps_sec[i] * 1e3)
+      new_audio_seg = new_audio_seg[gap_millis:]
+      print("Adjusting audio file %s by truncating %d milliseconds at head " %
+            (input_path, gap_millis))
     assert new_audio_seg.channels == num_channels, "Channel count mismatch"
     assert new_audio_seg.sample_width == sample_width, "Sample width mismatch"
     audio_seg += new_audio_seg
@@ -101,7 +125,6 @@ def concatenate_audio_files(input_paths,
   if output_format != "wav":
     audio_seg.export(pure_path.with_suffix(".wav"), "wav")
   return len(audio_seg) / 1e3
-
 
 
 def get_sample_rate(audio_file_path):

@@ -10,12 +10,10 @@ import {ExternalEventsModule} from './external-events.module';
 describe('ExternalEventsComponent', () => {
   let textEntryBeginSubject: Subject<TextEntryBeginEvent>;
   let textEntryEndSubject: Subject<TextEntryEndEvent>;
-  let abbreviationExpansionTriggers: Subject<InputAbbreviationChangedEvent>;
   let fixture: ComponentFixture<ExternalEventsComponent>;
   let component: ExternalEventsComponent;
   let beginEvents: TextEntryBeginEvent[];
   let endEvents: TextEntryEndEvent[];
-  let abbreviationChangeEvents: InputAbbreviationChangedEvent[];
 
   beforeEach(async () => {
     await TestBed
@@ -26,20 +24,14 @@ describe('ExternalEventsComponent', () => {
         .compileComponents();
     textEntryBeginSubject = new Subject();
     textEntryEndSubject = new Subject();
-    abbreviationExpansionTriggers = new Subject();
     beginEvents = [];
     endEvents = [];
-    abbreviationChangeEvents = [];
     textEntryBeginSubject.subscribe((event) => beginEvents.push(event));
     textEntryEndSubject.subscribe((event) => endEvents.push(event));
-    abbreviationExpansionTriggers.subscribe(
-        (event) => abbreviationChangeEvents.push(event));
     fixture = TestBed.createComponent(ExternalEventsComponent);
     component = fixture.componentInstance;
     fixture.componentInstance.textEntryBeginSubject = textEntryBeginSubject;
     fixture.componentInstance.textEntryEndSubject = textEntryEndSubject;
-    fixture.componentInstance.abbreviationExpansionTriggers =
-        abbreviationExpansionTriggers;
     fixture.detectChanges();
     jasmine.getEnv().allowRespy(true);
   });
@@ -107,40 +99,19 @@ describe('ExternalEventsComponent', () => {
     expect(component.text).toEqual('a');
   });
 
-  for (const [keyCodeSequence, precedingText] of [
-           [[72, 65, 89, 32, 32], undefined],          // h, a, y, space, space
-           [[32, 72, 65, 89, 32, 32], undefined],      // space, h, a, y, space, space
-           [[65, 32, 72, 65, 89, 32, 32], 'a'],  // a, space, h, a, y, space, space
-  ] as Array<[number[], string|undefined]>) {
-    it(`Double space triggers abbreviation expansion, key codes = ${
-           keyCodeSequence}`,
-       () => {
-         keyCodeSequence.forEach(code => component.externalKeypressHook(code));
-         const expected: InputAbbreviationChangedEvent = {
-           abbreviationSpec: {
-             tokens: [
-               {
-                 value: 'h',
-                 isKeyword: false,
-               },
-               {
-                 value: 'a',
-                 isKeyword: false,
-               },
-               {
-                 value: 'y',
-                 isKeyword: false,
-               }
-             ],
-             precedingText,
-             readableString: 'hay',
-             eraserSequence: repeatVirtualKey(VIRTUAL_KEY.BACKSPACE, 5),
-           },
-           requestExpansion: true,
-         };
-         expect(abbreviationChangeEvents).toEqual([expected]);
-       });
-  }
+  it('Registering keypress listener causes listener to be called', () => {
+    const keySequences: string[][] = [];
+    const reconstructedTexts: string[] = [];
+    ExternalEventsComponent.registerKeypressListener(
+        (keySequence: string[], reconstructedText: string) => {
+          keySequences.push(keySequence.slice());
+          reconstructedTexts.push(reconstructedText);
+        });
+    component.externalKeypressHook(65);  // 'a'
+    component.externalKeypressHook(32);  // Space
+    expect(keySequences).toEqual([['a'], ['a', ' ']]);
+    expect(reconstructedTexts).toEqual(['a', 'a ']);
+  });
 
   const vkCodesAndExpectedTextWithTestDescription:
       Array<[string, number[], string]> = [

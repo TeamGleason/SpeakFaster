@@ -19,6 +19,7 @@ import json
 import os
 import pathlib
 import pytz
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -30,6 +31,7 @@ import PySimpleGUI as sg
 
 import elan_process_curated
 import file_naming
+import freeform_text
 import gcloud_utils
 import metadata_pb2
 import process_keypresses
@@ -52,6 +54,7 @@ WEEKDAYS = ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
 
 DEFAULT_GCS_BUCKET_NAME = "speak-faster-curated-data-shared"
 GCS_SUMMARY_PREFIX = "summary"
+GCS_CURATED_FREEFORM_UPLOAD_PREFIX = "curated_freeform"
 GCS_POSTPROCESSED_UPLOAD_PREFIX = "postprocessed"
 
 # The set of files to upload to shared GCS folder. Must only include
@@ -892,6 +895,48 @@ def _open_folder(dir_path):
     subprocess.Popen(["xdg-open", dir_path])
 
 
+def upload_curated_freeform_text(window,
+                                 session_container_prefixes,
+                                 gcs_bucket_name):
+  """Process and upload curated free-form txt files."""
+  container_prefix = _get_container_prefix(window,
+                                           session_container_prefixes)
+  file_dialog = sg.Window(
+      "Choose txt file").Layout(
+          [[sg.Input(key="_FILES_"),
+            sg.FilesBrowse(file_types=(("Text files", "*.txt"),))],
+          [sg.OK()]])
+  file_dialog_event, file_dialog_values = file_dialog.Read()
+  if not file_dialog_values["_FILES_"]:
+    raise ValueError("No file is chosen")
+  file_dialog.Close()
+  freeform_txt_path = file_dialog_values["_FILES_"].split(';')[0]
+  with open(freeform_txt_path, "r") as f:
+    content = f.read()
+    freeform_txt_summary, redacted_freeform_txt = (
+        freeform_text.process_curated_freeform_text(content))
+  tmp_dir = tempfile.mkdtemp()
+  metadata_json_path = os.path.join(tmp_dir, "metadata.json")
+  redacted_txt_path = os.path.join(tmp_dir, "redacted.txt")
+  with open(metadata_json_path, "w") as f:
+    f.write(json.dumps(freeform_txt_summary))
+  with open(redacted_txt_path, "w") as f:
+    f.write(redacted_freeform_txt)
+  destination_blob_prefix = "/".join(
+      [GCS_CURATED_FREEFORM_UPLOAD_PREFIX] +
+      [item for item in container_prefix.split("/") if item] +
+      ["freeform_text_%s" % datetime.datetime.now().isoformat()])
+  uploaded_file_names = [
+      os.path.relpath(metadata_json_path, tmp_dir),
+      os.path.relpath(redacted_txt_path, tmp_dir),
+  ]
+  gcloud_utils.upload_files_as_objects(
+      tmp_dir, uploaded_file_names, gcs_bucket_name, destination_blob_prefix)
+  shutil.rmtree(tmp_dir)
+  print("Uploaded files to gs://%s/%s:\n%s" % (
+      gcs_bucket_name, destination_blob_prefix, uploaded_file_names))
+
+
 LIST_BOX_WIDTH = 100
 
 
@@ -983,6 +1028,8 @@ def main():
           sg.Text("", size=(15, 2)),
           sg.Button("Preprocess and upload sessions from here on",
                     key="DOWNLOAD_PREPROCESS_UPLOAD_SESSIONS_BATCH"),
+          sg.Button("Upload curated free-form text",
+                    key="UPLOAD_CURATED_FREEFORM_TEXT"),
       ],
   ]
   session_prefixes = None
@@ -1139,6 +1186,10 @@ def main():
             data_manager,
             session_container_prefixes,
             restore_session_selection=True)
+    elif event == "UPLOAD_CURATED_FREEFORM_TEXT":
+      upload_curated_freeform_text(window,
+                                   session_container_prefixes,
+                                   args.gcs_bucket_name)
     else:
       raise ValueError("Invalid event: %s" % event)
 

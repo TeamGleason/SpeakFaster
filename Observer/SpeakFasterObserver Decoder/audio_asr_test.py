@@ -110,14 +110,35 @@ class ConcatenateAudioFilesTest(tf.test.TestCase):
     wav_path_1 = os.path.join(
         self.get_temp_dir(), "20210710T080000000Z-MicWavIn.wav")
     wavfile.write(wav_path_1, 16000, np.zeros(16000 * 10, dtype=np.int16))
-    # There is a 1-second "negative gap".
+    # There is a 3-second "negative gap".
     wav_path_2 = os.path.join(
-        self.get_temp_dir(), "20210710T080009000Z-MicWavIn.wav")
+        self.get_temp_dir(), "20210710T080007000Z-MicWavIn.wav")
     wavfile.write(wav_path_2, 16000, 12 * np.ones(16000 * 5, dtype=np.int16))
     concat_path = os.path.join(self.get_temp_dir(), "concatenated.wav")
     with self.assertRaisesRegexp(ValueError, "too early"):
       audio_asr.concatenate_audio_files(
           [wav_path_1, wav_path_2], concat_path, fill_gaps=True)
+
+  def testConcatenateTwoWavFilesWithNegativeGapNegativeButNotTooLarge_leadsToHeadAdjustment(self):
+    wav_path_1 = os.path.join(
+        self.get_temp_dir(), "20210710T080000000Z-MicWavIn.wav")
+    wavfile.write(wav_path_1, 16000, np.zeros(16000 * 10, dtype=np.int16))
+    # There is a 1.5-second "negative gap" (> 0.5 s buto < 2.0 s).
+    wav_path_2 = os.path.join(
+        self.get_temp_dir(), "20210710T080008500Z-MicWavIn.wav")
+    wavfile.write(
+        wav_path_2,
+        16000,
+        np.concatenate([12 * np.ones(int(16000 * 1.5), dtype=np.int16),
+                        24 * np.ones(16000 * 5, dtype=np.int16)]))
+    concat_path = os.path.join(self.get_temp_dir(), "concatenated.wav")
+    audio_asr.concatenate_audio_files(
+        [wav_path_1, wav_path_2], concat_path, fill_gaps=True)
+    fs, xs = wavfile.read(concat_path)
+    self.assertEqual(fs, 16000)
+    self.assertAllEqual(xs, np.concatenate([
+        np.zeros(16000 * 10, dtype=np.int16),
+        24 * np.ones(16000 * 5, dtype=np.int16)]))
 
   def testConcatenateTwoWavFilesWithGapFilling_singleFileEdgeCase(self):
     concat_path = os.path.join(self.get_temp_dir(), "concatenated.wav")

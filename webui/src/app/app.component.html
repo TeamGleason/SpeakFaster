@@ -44,8 +44,7 @@ app-text-to-speech-component {
   <app-external-events-component
       #externalEvents
       [textEntryBeginSubject]="textEntryBeginSubject"
-      [textEntryEndSubject]="textEntryEndSubject"
-      [abbreviationExpansionTriggers]="abbreviationExpansionTriggers">
+      [textEntryEndSubject]="textEntryEndSubject">
   </app-external-events-component>
 
   <app-metrics-component
@@ -82,7 +81,6 @@ app-text-to-speech-component {
       [contextStrings]="contextStrings"
       [abbreviationExpansionTriggers]="abbreviationExpansionTriggers"
       [textEntryEndSubject]="textEntryEndSubject"
-      [isSpelling]="isSpelling"
     ></app-abbreviation-component>
 
   </div>

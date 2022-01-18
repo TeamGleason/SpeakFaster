@@ -18,6 +18,7 @@
 
 import {Component, Input, OnInit} from '@angular/core';
 import {Subject} from 'rxjs';
+import {keySequenceEndsWith} from 'src/utils/text-utils';
 
 import {AbbreviationSpec, InputAbbreviationChangedEvent} from '../types/abbreviation';
 import {TextEntryBeginEvent, TextEntryEndEvent} from '../types/text-entry';
@@ -96,14 +97,9 @@ export const PUNCTUATION: VIRTUAL_KEY[] = [
   VIRTUAL_KEY.SLASH_QUESTION_MARK,
 ];
 
+
+// TODO(cais): Move to tts component. DO NOT SUBMIT.
 export const TTS_TRIGGER_COMBO_KEY: string[] = [VIRTUAL_KEY.LCTRL, 'q'];
-// Abbreviation expansion can be triggered by entering the abbreviation followed
-// by typing two consecutive spaces in the external app.
-// TODO(#49): This can be generalized and made configurable.
-// TODO(#49): Explore continuous AE without explicit trigger, perhaps
-// added by heuristics for detecting abbreviations vs. words.
-export const ABBRVIATION_EXPANSION_TRIGGER_COMBO_KEY: string[] =
-    [VIRTUAL_KEY.SPACE, VIRTUAL_KEY.SPACE];
 
 function getKeyFromVirtualKeyCode(vkCode: number): string|null {
   if (vkCode >= 48 && vkCode <= 57) {
@@ -198,22 +194,14 @@ export function getNumOrPunctuationLiteral(
   }
 }
 
-function allItemsEqual(array1: string[], array2: string[]): boolean {
-  if (array1.length !== array2.length) {
-    return false;
-  }
-  for (let i = 0; i < array1.length; ++i) {
-    if (array1[i] !== array2[i]) {
-      return false;
-    }
-  }
-  return true;
-}
-
 /** Repeat a virtual key a given number of times. */
 export function repeatVirtualKey(key: VIRTUAL_KEY, num: number): VIRTUAL_KEY[] {
   return Array(num).fill(key);
 }
+
+
+export type KeypressListener =
+    (keySequence: string[], reconstructedText: string) => void;
 
 @Component({
   selector: 'app-external-events-component',
@@ -222,8 +210,8 @@ export function repeatVirtualKey(key: VIRTUAL_KEY, num: number): VIRTUAL_KEY[] {
 export class ExternalEventsComponent implements OnInit {
   @Input() textEntryBeginSubject!: Subject<TextEntryBeginEvent>;
   @Input() textEntryEndSubject!: Subject<TextEntryEndEvent>;
-  @Input()
-  abbreviationExpansionTriggers!: Subject<InputAbbreviationChangedEvent>;
+
+  private static keypressListeners: KeypressListener[] = [];
 
   private previousKeypressTimeMillis: number|null = null;
   // Number of keypresses effected through eye gaze (as determiend by
@@ -249,6 +237,24 @@ export class ExternalEventsComponent implements OnInit {
     });
   }
 
+  /**
+   * Register a listener for keypresses.
+   * Repeated registrations of the same listener function are ignored.
+   * @param listener
+   */
+  public static registerKeypressListener(listener: KeypressListener) {
+    if (ExternalEventsComponent.keypressListeners.indexOf(listener) !== -1) {
+      // Ignore repeated registration.
+      return;
+    }
+    ExternalEventsComponent.keypressListeners.push(listener);
+  }
+
+  /** Clear all registered keypress listeners. */
+  public static clearKeypressListeners() {
+    ExternalEventsComponent.keypressListeners.splice(0);
+  }
+
   public externalKeypressHook(vkCode: number) {
     const virtualKey = getKeyFromVirtualKeyCode(vkCode);
     if (virtualKey === null) {
@@ -262,7 +268,7 @@ export class ExternalEventsComponent implements OnInit {
       this.numGazeKeypresses++;
     }
     this.previousKeypressTimeMillis = nowMillis;
-    if (this.keySequenceEndsWith(TTS_TRIGGER_COMBO_KEY)) {
+    if (keySequenceEndsWith(this.keySequence, TTS_TRIGGER_COMBO_KEY)) {
       // A TTS action has been triggered.
       console.log(`TTS event: "${this._text}"`);
       this.textEntryEndSubject.next({
@@ -324,43 +330,8 @@ export class ExternalEventsComponent implements OnInit {
       this.textEntryBeginSubject.next({timestampMillis: Date.now()});
     }
 
-    // TODO(cais): Add callback register mechanism. Turn this into a registered
-    // callback.
-    if (this.keySequenceEndsWith(ABBRVIATION_EXPANSION_TRIGGER_COMBO_KEY) &&
-        this._text.trim().length > 0) {
-      let spaceIndex = this._text.length - 1;
-      while (this._text[spaceIndex] === ' ' && spaceIndex >= 0) {
-        spaceIndex--;
-      }
-      while (this._text[spaceIndex] !== ' ' && spaceIndex >= 0) {
-        spaceIndex--;
-      }
-      let text = this._text.slice(spaceIndex + 1);
-      let precedingText: string|undefined =
-          spaceIndex > 0 ? this._text.slice(0, spaceIndex).trim() : undefined;
-      if (precedingText === '') {
-        precedingText = undefined;
-      }
-      const eraserLength = text.length;
-      text = text.trim();
-      if (text.length > 0) {
-        // An abbreviation expansion has been triggered.
-        // TODO(#49): Support keywords in abbreviation (e.g.,
-        // "this event is going very well" --> "this e igvw")
-        const abbreviationSpec: AbbreviationSpec = {
-          tokens: text.split('').map(char => ({
-                                       value: char,
-                                       isKeyword: false,
-                                     })),
-          readableString: text,
-          eraserSequence: repeatVirtualKey(VIRTUAL_KEY.BACKSPACE, eraserLength),
-          precedingText,
-        };
-        console.log('Abbreviation expansion triggered:', abbreviationSpec);
-        this.abbreviationExpansionTriggers.next(
-            {abbreviationSpec, requestExpansion: true});
-        return;
-      }
+    for (const listener of ExternalEventsComponent.keypressListeners) {
+      listener(this.keySequence, this._text);
     }
 
     // TODO(cais): Take care of the up and down arrow keys.
@@ -370,13 +341,6 @@ export class ExternalEventsComponent implements OnInit {
     console.log(
         `externalKeypressHook(): virtualKey=${virtualKey}; ` +
         `text="${this._text}"; cursorPos=${this.cursorPos}`);
-  }
-
-  private keySequenceEndsWith(suffix: string[]): boolean {
-    return this.keySequence.length > suffix.length &&
-        allItemsEqual(
-               this.keySequence.slice(this.keySequence.length - suffix.length),
-               suffix);
   }
 
   private insertCharAsCursorPos(char: string) {

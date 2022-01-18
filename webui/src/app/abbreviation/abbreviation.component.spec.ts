@@ -19,6 +19,7 @@ describe('AbbreviationComponent', () => {
   let textEntryEndSubject: Subject<TextEntryEndEvent>;
   let fixture: ComponentFixture<AbbreviationComponent>;
   let testListener: TestListener;
+  let abbreviationChangeEvents: InputAbbreviationChangedEvent[];
 
   beforeEach(async () => {
     testListener = new TestListener();
@@ -30,6 +31,9 @@ describe('AbbreviationComponent', () => {
         })
         .compileComponents();
     abbreviationExpansionTriggers = new Subject();
+    abbreviationChangeEvents = [];
+    abbreviationExpansionTriggers.subscribe(
+        (event) => abbreviationChangeEvents.push(event));
     textEntryEndSubject = new Subject();
     fixture = TestBed.createComponent(AbbreviationComponent);
     fixture.componentInstance.abbreviationExpansionTriggers =
@@ -39,7 +43,9 @@ describe('AbbreviationComponent', () => {
   });
 
   afterAll(async () => {
-    delete (window as any)[cefSharp.BOUND_LISTENER_NAME];
+    if (cefSharp.BOUND_LISTENER_NAME in (window as any)) {
+      delete (window as any)[cefSharp.BOUND_LISTENER_NAME];
+    }
   });
 
   it('initially displays no abbreviation options', () => {
@@ -234,4 +240,46 @@ describe('AbbreviationComponent', () => {
        expect(events[0].numKeypresses).toEqual(expectedNumKeypresses);
        expect(events[0].numHumanKeypresses).toEqual(expectedNumKeypresses);
      });
+
+  for (const [keySequence, precedingText] of [
+           [['h', 'a', 'y', ' ', ' '], undefined],
+           [[' ', 'h', 'a', 'y', ' ', ' '], undefined],
+           [['a', ' ', 'h', 'a', 'y', ' ', ' '], 'a'],
+  ] as Array<[string[], string | undefined]>) {
+    it(`Double space triggers abbreviation expansion, key codes = ${
+           keySequence}`,
+       () => {
+         spyOn(
+             fixture.componentInstance.speakFasterService, 'expandAbbreviation')
+             .and.returnValue(of({
+               exactMatches: ['how are you', 'how about you'],
+             }));
+         fixture.componentInstance.contextStrings = ['hello'];
+         fixture.componentInstance.listenToKeypress(
+             keySequence, keySequence.join(''));
+         const expected: InputAbbreviationChangedEvent = {
+           abbreviationSpec: {
+             tokens: [
+               {
+                 value: 'h',
+                 isKeyword: false,
+               },
+               {
+                 value: 'a',
+                 isKeyword: false,
+               },
+               {
+                 value: 'y',
+                 isKeyword: false,
+               }
+             ],
+             precedingText,
+             readableString: 'hay',
+             eraserSequence: repeatVirtualKey(VIRTUAL_KEY.BACKSPACE, 5),
+           },
+           requestExpansion: true,
+         };
+         expect(abbreviationChangeEvents).toEqual([expected]);
+       });
+  }
 });

@@ -1,11 +1,11 @@
 import {AfterViewInit, ChangeDetectorRef, Component, ElementRef, Input, OnInit, QueryList, ViewChildren} from '@angular/core';
 import {Subject} from 'rxjs';
-import {limitStringLength} from 'src/utils/text-utils';
+import {keySequenceEndsWith, limitStringLength} from 'src/utils/text-utils';
 import {createUuid} from 'src/utils/uuid';
 
 import {injectKeys, updateButtonBoxesForElements} from '../../utils/cefsharp';
 import {isPlainAlphanumericKey, isTextContentKey} from '../../utils/keyboard-utils';
-import {VIRTUAL_KEY} from '../external/external-events.component';
+import {ExternalEventsComponent, repeatVirtualKey, VIRTUAL_KEY} from '../external/external-events.component';
 import {KeyboardComponent} from '../keyboard/keyboard.component';
 import {SpeakFasterService} from '../speakfaster-service';
 import {AbbreviationSpec, InputAbbreviationChangedEvent} from '../types/abbreviation';
@@ -17,6 +17,14 @@ enum State {
   CHOOSING_TOKEN = 'CHOOSING_TOKEN',
   CHOOSING_TOKEN_REPLACEMENT = 'CHOOSING_TOKEN_REPLACEMENT',
 }
+
+// Abbreviation expansion can be triggered by entering the abbreviation followed
+// by typing two consecutive spaces in the external app.
+// TODO(#49): This can be generalized and made configurable.
+// TODO(#49): Explore continuous AE without explicit trigger, perhaps
+// added by heuristics for detecting abbreviations vs. words.
+export const ABBRVIATION_EXPANSION_TRIGGER_COMBO_KEY: string[] =
+    [VIRTUAL_KEY.SPACE, VIRTUAL_KEY.SPACE];
 
 @Component({
   selector: 'app-abbreviation-component',
@@ -65,6 +73,8 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
       private cdr: ChangeDetectorRef) {}
 
   ngOnInit() {
+    ExternalEventsComponent.registerKeypressListener(
+        this.listenToKeypress.bind(this));
     KeyboardComponent.registerCallback(
         AbbreviationComponent._NAME, this.baseKeyboardHandler.bind(this));
     this.abbreviationExpansionTriggers.subscribe(
@@ -115,6 +125,50 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
       return true;
     }
     return false;
+  }
+
+  public listenToKeypress(keySequence: string[], reconstructedText: string):
+      void {
+    if (keySequenceEndsWith(
+            keySequence, ABBRVIATION_EXPANSION_TRIGGER_COMBO_KEY) &&
+        reconstructedText.trim().length > 0) {
+      let spaceIndex = reconstructedText.length - 1;
+      while (reconstructedText[spaceIndex] === ' ' && spaceIndex >= 0) {
+        spaceIndex--;
+      }
+      while (reconstructedText[spaceIndex] !== ' ' && spaceIndex >= 0) {
+        spaceIndex--;
+      }
+      let text = reconstructedText.slice(spaceIndex + 1);
+      let precedingText: string|undefined = spaceIndex > 0 ?
+          reconstructedText.slice(0, spaceIndex).trim() :
+          undefined;
+      if (precedingText === '') {
+        precedingText = undefined;
+      }
+      const eraserLength = text.length;
+      text = text.trim();
+      if (text.length > 0) {
+        // An abbreviation expansion has been triggered.
+        // TODO(#49): Support keywords in abbreviation (e.g.,
+        // "this event is going very well" --> "this e igvw")
+        const abbreviationSpec: AbbreviationSpec = {
+          tokens: text.split('').map(char => ({
+                                       value: char,
+                                       isKeyword: false,
+                                     })),
+          readableString: text,
+          eraserSequence: repeatVirtualKey(VIRTUAL_KEY.BACKSPACE, eraserLength),
+          precedingText,
+        };
+        console.log('Abbreviation expansion triggered:', abbreviationSpec);
+        this.abbreviationExpansionTriggers.next(
+            {abbreviationSpec, requestExpansion: true});
+        return;
+      }
+    }
+
+    // TODO(cais): Add logic for spelling words after failure.
   }
 
   get selectedAbbreviationIndex() {

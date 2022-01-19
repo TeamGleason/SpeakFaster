@@ -49,6 +49,7 @@ export class ContextComponent implements OnInit {
             isTts: true,
             isHardcoded: false,
           }));
+      this.emitContextStringsSelected();
     });
   }
 

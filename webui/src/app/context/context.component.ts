@@ -43,8 +43,9 @@ export class ContextComponent implements OnInit, AfterViewInit {
       private cdr: ChangeDetectorRef) {}
 
   ngOnInit() {
-    KeyboardComponent.registerCallback(
-        ContextComponent._NAME, this.handleKeyboardEvent.bind(this));
+    // KeyboardComponent.registerCallback(
+    //     ContextComponent._NAME, this.handleKeyboardEvent.bind(this));
+    // TODO(cais): Clean up.
     this.focusContextIds.splice(0);
     this.textEntryEndSubject.subscribe((textInjection: TextEntryEndEvent) => {
       if (!textInjection.isFinal) {

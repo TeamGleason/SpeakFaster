@@ -48,9 +48,10 @@ export class AbbreviationEditingComponent implements OnInit, AfterViewInit {
         this.inputAbbreviation = textInjection.text;
       }
     });
-    KeyboardComponent.registerCallback(
-        AbbreviationEditingComponent._NAME,
-        this.handleKeyboardEvent.bind(this));
+    // KeyboardComponent.registerCallback(
+    //     AbbreviationEditingComponent._NAME,
+    //     this.handleKeyboardEvent.bind(this));
+    // TODO(cais): Clean up.
   }
 
   ngAfterViewInit() {

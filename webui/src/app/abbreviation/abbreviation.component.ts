@@ -6,7 +6,6 @@ import {createUuid} from 'src/utils/uuid';
 import {injectKeys, updateButtonBoxesForElements} from '../../utils/cefsharp';
 import {isPlainAlphanumericKey, isTextContentKey} from '../../utils/keyboard-utils';
 import {ExternalEventsComponent, repeatVirtualKey, VIRTUAL_KEY} from '../external/external-events.component';
-import {KeyboardComponent} from '../keyboard/keyboard.component';
 import {SpeakFasterService} from '../speakfaster-service';
 import {AbbreviationSpec, InputAbbreviationChangedEvent} from '../types/abbreviation';
 import {TextEntryEndEvent} from '../types/text-entry';
@@ -92,11 +91,6 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
           updateButtonBoxesForElements(
               AbbreviationComponent._NAME + this.instanceId, queryList);
         });
-    // console.log(this.tokenInputElements);  // DEBUG
-    // for (const element of this.tokenInputElements) {
-    //   console.log('element:', element);
-    // }
-    // console.log('tokenInput=', this.tokenInput);  // DEBUG
   }
 
   public listenToKeypress(keySequence: string[], reconstructedText: string):
@@ -142,9 +136,9 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
         }
       }
     } else if (this.state === State.CHOOSING_EXPANSION) {
+      // TODO(cais): Add unit test.
       // TODO(cais): Guard against irrelevant keys.
       this.state = State.SPELLING;
-      console.log('** listenToKeypress(): entered SPELLING state');  // DEBUG
     }
   }
 
@@ -202,10 +196,11 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
                     AbbreviationComponent._MAX_NUM_REPLACEMENT_TOKENS);
               }
               this.state = State.CHOOSING_TOKEN_REPLACEMENT;
-              KeyboardComponent.registerCallback(
-                  AbbreviationComponent
-                      ._TOKEN_REPLACEMENT_KEYBOARD_CALLBACK_NAME,
-                  this.handleKeyboardEventForReplacemenToken.bind(this));
+              // KeyboardComponent.registerCallback(
+              //     AbbreviationComponent
+              //         ._TOKEN_REPLACEMENT_KEYBOARD_CALLBACK_NAME,
+              //     this.handleKeyboardEventForReplacemenToken.bind(this));
+              // TODO(cais): Clean up.
             },
             error => {
                 // TODO(cais): Handle fill mask error.
@@ -261,8 +256,9 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
       timestampMillis: Date.now(),
       isFinal: true,
     });
-    KeyboardComponent.unregisterCallback(
-        AbbreviationComponent._TOKEN_REPLACEMENT_KEYBOARD_CALLBACK_NAME);
+    // KeyboardComponent.unregisterCallback(
+    //     AbbreviationComponent._TOKEN_REPLACEMENT_KEYBOARD_CALLBACK_NAME);
+    // TODO(cais): Clean up.
     // TODO(cais): Prevent selection in gap state.
     setTimeout(() => this.resetState(), 1000);
   }

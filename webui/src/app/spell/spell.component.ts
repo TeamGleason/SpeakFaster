@@ -1,13 +1,9 @@
 import {AfterViewInit, Component, ElementRef, EventEmitter, Input, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
-import {Subject} from 'rxjs';
 import {updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
-import {isAlphanumericChar} from 'src/utils/text-utils';
 import {createUuid} from 'src/utils/uuid';
 
-import {isPlainAlphanumericKey, isTextContentKey} from '../../utils/keyboard-utils';
 import {ExternalEventsComponent, repeatVirtualKey, VIRTUAL_KEY} from '../external/external-events.component';
-import {KeyboardComponent} from '../keyboard/keyboard.component';
-import {AbbreviationSpec, AbbreviationToken, StartSpellingEvent} from '../types/abbreviation';
+import {AbbreviationSpec, AbbreviationToken} from '../types/abbreviation';
 
 // TODO(cais): Support workflow: enter initial-only abbreviation, get no
 // matching AE option, continue to type out any word of the phrase, and
@@ -15,8 +11,7 @@ import {AbbreviationSpec, AbbreviationToken, StartSpellingEvent} from '../types/
 // no match.
 // TODO(cais): Support workflow, same as above, but before entering the
 // keyword, first click a button to indicate which word is being spelled out.
-enum SpellingState {
-  // NOT_STARTED = 'NOT_STARTED',
+export enum SpellingState {
   CHOOSING_TOKEN = 'CHOOSING_TOKEN',
   SPELLING_TOKEN = 'SPELLING_TOKEN',
   DONE = 'DONE',
@@ -29,10 +24,8 @@ enum SpellingState {
 export class SpellComponent implements OnInit, AfterViewInit {
   private static readonly _NAME = 'SpellComponent';
   private readonly instanceId = SpellComponent._NAME + '_' + createUuid();
-  // @Input() spellIndex: number|null = null; // TODO(cais): Clean up.
+
   @Input() originalAbbreviationSpec!: AbbreviationSpec;
-  // TODO(cais): Decide: DO NOT SUBMIT.
-  // @Input() startSpellingSubject!: Subject<StartSpellingEvent>;
   @Output()
   newAbbreviationSpec: EventEmitter<AbbreviationSpec> = new EventEmitter();
 
@@ -44,21 +37,25 @@ export class SpellComponent implements OnInit, AfterViewInit {
   spellIndex: number|null = null;
   state: SpellingState = SpellingState.CHOOSING_TOKEN;
   tokenSpellingInput: string = '';
+  private originalReconText: string = '';
 
   // Words that have already been spelled out so far. This supports
   // incremental spelling out of multiple words in an abbreviation.
   readonly spelledWords: Array<string|null> = [];
 
   ngOnInit() {
+    console.log('ngOnInit()');  // DEBUG
     ExternalEventsComponent.registerKeypressListener(
         this.listenToKeypress.bind(this));
     this.originalAbbreviationChars.splice(0);
-    this.spelledWords.splice(0);
     this.originalAbbreviationSpec.tokens.forEach(token => {
       this.originalAbbreviationChars.push(token.value);
-      this.spelledWords.push(null);
     });
-    // TODO(cais): Ensure repeated usability.
+    if (this.spelledWords.length === 0) {
+      this.originalAbbreviationSpec.tokens.forEach(token => {
+        this.spelledWords.push(null);
+      });
+    }
     // TODO(cais): Fix keyboard - hook discrepancy.
   }
 
@@ -71,10 +68,10 @@ export class SpellComponent implements OnInit, AfterViewInit {
         });
   }
 
-  // TODO(cais): Add unit tests. DO NOT SUBMIT.
   listenToKeypress(keySequence: string[], reconstructedText: string): void {
-    const lastKey = keySequence[keySequence.length - 1].toLowerCase();
-    if (this.state === SpellingState.CHOOSING_TOKEN) {
+    const lastKey = keySequence[keySequence.length - 1];
+    if (this.state === SpellingState.CHOOSING_TOKEN ||
+        this.state === SpellingState.DONE) {
       const spellIndices: number[] = [];
       this.originalAbbreviationSpec.tokens.forEach((abbreviationToken, i) => {
         if (abbreviationToken.value.toLowerCase() === lastKey) {
@@ -85,19 +82,20 @@ export class SpellComponent implements OnInit, AfterViewInit {
         // There is a unique matching token.
         this.spellIndex = spellIndices[0];
         this.state = SpellingState.SPELLING_TOKEN;
-        this.tokenSpellingInput = lastKey;
-        console.log('*** New state:', this.state);  // DEBUG
+        this.originalReconText =
+            reconstructedText.slice(0, reconstructedText.length - 1);
+        this.tokenSpellingInput =
+            reconstructedText.slice(this.originalReconText.length);
         // TODO(cais): Disallow punctuation?
       }
     } else if (this.state === SpellingState.SPELLING_TOKEN) {
-      if (lastKey === ' ' ||
-          lastKey == VIRTUAL_KEY.ENTER) {  // TODO(cais): Add unit test.
+      if (lastKey === ' ' || lastKey == VIRTUAL_KEY.ENTER) {
         // Use a space to terminate the spelling and trigger anothe remote AE
         // call.
         this.endSpelling();
-      } else if (isAlphanumericChar(lastKey)) {
-        // TODO(cais): Refactor into helper method. DO NOT SUBMIT.
-        this.tokenSpellingInput += lastKey;
+      } else {
+        this.tokenSpellingInput =
+            reconstructedText.slice(this.originalReconText.length);
       }
     }
   }
@@ -132,25 +130,18 @@ export class SpellComponent implements OnInit, AfterViewInit {
 
   private endSpelling() {
     this.state = SpellingState.DONE;
-    this.newAbbreviationSpec.emit(this.reconstructAbbreviation());
+    const abbreviationSpec = this.reconstructAbbreviation();
+    this.originalAbbreviationSpec = abbreviationSpec;
+    this.newAbbreviationSpec.emit(abbreviationSpec);
     this.spellIndex = null;
     updateButtonBoxesToEmpty(SpellComponent._NAME);
   }
 
   private reconstructAbbreviation(): AbbreviationSpec {
-    // TODO(cais): Add tests. DO NOT
     this.spelledWords[this.spellIndex!] = this.tokenSpellingInput.trim();
-    console.log(
-        'reconstructAbbreviation(): this.spelledWords=',
-        this.spelledWords);  // DEBUG
-    console.log(
-        'reconstructAbbreviation(): this.originalAbbreviationChars=',
-        this.originalAbbreviationChars);  // DEBUG
-    // let currentToken: AbbreviationToken = {value: '', isKeyword: false};
+    console.log('recon:',this.spelledWords);  // DEBUG
     const tokens: AbbreviationToken[] = [];
     for (let i = 0; i < this.originalAbbreviationChars.length; ++i) {
-      console.log(
-          'reconstructAbbreviation(): i=', i, this.spelledWords[i]);  // DEBUG
       if (this.spelledWords[i] !== null) {
         tokens.push({
           value: this.spelledWords[i] as string,
@@ -164,10 +155,6 @@ export class SpellComponent implements OnInit, AfterViewInit {
         });
       }
     }
-    // if (currentToken.value.length > 0) {
-    //   tokens.push(currentToken);
-    // }
-    // TODO(cais): Add eraser sequence.
     let newAbbreviationSpec: AbbreviationSpec = {
       tokens,
       readableString: tokens.map(token => token.value).join(' '),
@@ -181,8 +168,7 @@ export class SpellComponent implements OnInit, AfterViewInit {
               VIRTUAL_KEY.BACKSPACE, this.tokenSpellingInput.length + 1),
         ],
       };
-      // TODO(cais): Add unit test.
     }
-    return newAbbreviationSpec
+    return newAbbreviationSpec;
   }
 }

@@ -1,5 +1,7 @@
 import {Component, HostListener} from '@angular/core';
 
+import {getVirtualkeyCode} from '../external/external-events.component';
+
 // The return value indicates whether the event has been handled.
 export type KeyboardCallback = (event: KeyboardEvent) => boolean;
 
@@ -46,6 +48,15 @@ export class KeyboardComponent {
 
   @HostListener('document:keydown', ['$event'])
   onKeydown(event: KeyboardEvent) {
+    // First, call externalKeypressHook().
+    if ((window as any).externalKeypressHook !== undefined) {
+      try {
+        const vkCode = getVirtualkeyCode(event.key);
+        (window as any).externalKeypressHook(vkCode);
+      } catch (error) {
+      }
+    }
+    // Then, call registered callbacks.
     const length = callbackStack.length;
     if (length === 0) {
       return;

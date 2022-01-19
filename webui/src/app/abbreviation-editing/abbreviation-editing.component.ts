@@ -4,6 +4,7 @@ import {updateButtonBoxesForElements} from 'src/utils/cefsharp';
 import {createUuid} from 'src/utils/uuid';
 
 import {isTextContentKey} from '../../utils/keyboard-utils';
+import {ExternalEventsComponent} from '../external/external-events.component';
 import {AbbreviationSpec, AbbreviationToken, InputAbbreviationChangedEvent, StartSpellingEvent} from '../types/abbreviation';
 import {TextEntryBeginEvent, TextEntryEndEvent} from '../types/text-entry';
 
@@ -47,6 +48,8 @@ export class AbbreviationEditingComponent implements OnInit, AfterViewInit {
         this.inputAbbreviation = textInjection.text;
       }
     });
+    ExternalEventsComponent.registerKeypressListener(
+        this.listenToKeypress.bind(this));
     // KeyboardComponent.registerCallback(
     //     AbbreviationEditingComponent._NAME,
     //     this.handleKeyboardEvent.bind(this));
@@ -61,41 +64,47 @@ export class AbbreviationEditingComponent implements OnInit, AfterViewInit {
         });
   }
 
-  handleKeyboardEvent(event: KeyboardEvent): boolean {
-    if (this.state !== State.ENTERING_ABBREVIATION) {
-      return false;
-    }
-    if (event.ctrlKey && event.key.toLocaleLowerCase() == 'x') {
-      // Ctrl X clears the input box.
-      this.resetState();
-      return true;
-    }
-    if (event.ctrlKey && event.key.toLocaleLowerCase() == 's') {
-      // Ctrl S opens the spelling UI.
-      this.startSpelling();
-      return true;
-    }
-    if (event.altKey || event.metaKey || event.shiftKey || event.ctrlKey) {
-      return false;
-    } else if (event.key === 'Backspace') {
-      if (this.inputAbbreviation.length > 0) {
-        this.inputAbbreviation = this.inputAbbreviation.substring(
-            0, this.inputAbbreviation.length - 1);
-        this.setInputString(event);
-      }
-      return true;
-    } else if (isTextContentKey(event)) {
-      if (this.inputAbbreviation === '') {
-        this.textEntryBeginSubject.next({
-          timestampMillis: Date.now(),
-        });
-      }
-      this.inputAbbreviation += event.key;
-      this.setInputString(event);
-      return true;
-    }
-    return false;
+  public listenToKeypress(keySequence: string[], reconstructedText: string):
+      void {
+    this.inputAbbreviation = reconstructedText;
   }
+
+  // TODO(cais): Clean up.
+  // handleKeyboardEvent(event: KeyboardEvent): boolean {
+  //   if (this.state !== State.ENTERING_ABBREVIATION) {
+  //     return false;
+  //   }
+  //   if (event.ctrlKey && event.key.toLocaleLowerCase() == 'x') {
+  //     // Ctrl X clears the input box.
+  //     this.resetState();
+  //     return true;
+  //   }
+  //   if (event.ctrlKey && event.key.toLocaleLowerCase() == 's') {
+  //     // Ctrl S opens the spelling UI.
+  //     this.startSpelling();
+  //     return true;
+  //   }
+  //   if (event.altKey || event.metaKey || event.shiftKey || event.ctrlKey) {
+  //     return false;
+  //   } else if (event.key === 'Backspace') {
+  //     if (this.inputAbbreviation.length > 0) {
+  //       this.inputAbbreviation = this.inputAbbreviation.substring(
+  //           0, this.inputAbbreviation.length - 1);
+  //       this.setInputString(event);
+  //     }
+  //     return true;
+  //   } else if (isTextContentKey(event)) {
+  //     if (this.inputAbbreviation === '') {
+  //       this.textEntryBeginSubject.next({
+  //         timestampMillis: Date.now(),
+  //       });
+  //     }
+  //     this.inputAbbreviation += event.key;
+  //     this.setInputString(event);
+  //     return true;
+  //   }
+  //   return false;
+  // }
 
   private startSpelling() {
     if (this.state != State.ENTERING_ABBREVIATION ||

@@ -1,4 +1,4 @@
-import {AfterViewInit, Component, ElementRef, EventEmitter, Input, OnChanges, OnInit, Output, QueryList, SimpleChanges, ViewChildren} from '@angular/core';
+import {AfterViewInit, ChangeDetectorRef, Component, ElementRef, EventEmitter, Input, OnChanges, OnInit, Output, QueryList, SimpleChanges, ViewChildren} from '@angular/core';
 import {updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
 import {createUuid} from 'src/utils/uuid';
 
@@ -42,6 +42,8 @@ export class SpellComponent implements OnInit, OnChanges {
   // Words that have already been spelled out so far. This supports
   // incremental spelling out of multiple words in an abbreviation.
   readonly spelledWords: Array<string|null> = [];
+
+  constructor(private cdr: ChangeDetectorRef) {}
 
   ngOnInit() {
     ExternalEventsComponent.registerKeypressListener(
@@ -98,6 +100,7 @@ export class SpellComponent implements OnInit, OnChanges {
             reconstructedText.slice(0, reconstructedText.length - 1);
         this.tokenSpellingInput =
             reconstructedText.slice(this.originalReconText.length);
+        this.cdr.detectChanges();
         // TODO(cais): Disallow punctuation?
       }
     } else if (this.state === SpellingState.SPELLING_TOKEN) {
@@ -107,6 +110,7 @@ export class SpellComponent implements OnInit, OnChanges {
       } else {
         this.tokenSpellingInput =
             reconstructedText.slice(this.originalReconText.length);
+        this.cdr.detectChanges();
       }
     }
   }
@@ -136,7 +140,7 @@ export class SpellComponent implements OnInit, OnChanges {
     this.newAbbreviationSpec.emit(abbreviationSpec);
     this.tokenSpellingInput = '';
     this.spellIndex = null;
-    updateButtonBoxesToEmpty(SpellComponent._NAME);
+    this.cdr.detectChanges();
   }
 
   private recreateAbbreviation(): AbbreviationSpec {

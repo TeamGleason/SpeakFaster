@@ -4,7 +4,6 @@ import {AfterViewInit, ChangeDetectorRef, Component, EventEmitter, Input, OnInit
 import {Subject, Subscription, timer} from 'rxjs';
 
 import {ConversationTurnComponent} from '../conversation-turn/conversation-turn.component';
-import {KeyboardComponent} from '../keyboard/keyboard.component';
 import {SpeakFasterService} from '../speakfaster-service';
 import {ConversationTurnContextSignal, getConversationTurnContextSignal} from '../types/context';
 import {TextEntryEndEvent} from '../types/text-entry';
@@ -43,9 +42,6 @@ export class ContextComponent implements OnInit, AfterViewInit {
       private cdr: ChangeDetectorRef) {}
 
   ngOnInit() {
-    // KeyboardComponent.registerCallback(
-    //     ContextComponent._NAME, this.handleKeyboardEvent.bind(this));
-    // TODO(cais): Clean up.
     this.focusContextIds.splice(0);
     this.textEntryEndSubject.subscribe((textInjection: TextEntryEndEvent) => {
       if (!textInjection.isFinal) {
@@ -60,6 +56,7 @@ export class ContextComponent implements OnInit, AfterViewInit {
             isTts: true,
             isHardcoded: false,
           }));
+      this.emitContextStringsSelected();
       // TODO(cais): Limit length of textInjections?
     });
   }
@@ -275,7 +272,7 @@ export class ContextComponent implements OnInit, AfterViewInit {
     this.focusContextIds.splice(0);
     this.focusContextIds.push(...contextIdsAndIndices.map(item => item[0]));
     // If still has room, add latest turn, if and only if it is self TTS.
-    if (this.contextSignals.length > 1) {
+    if (this.contextSignals.length > 0) {
       const latestSignal = this.contextSignals[this.contextSignals.length - 1];
       const latestContextId = latestSignal.contextId!;
       if (this.focusContextIds.indexOf(latestContextId) === -1 &&
@@ -289,6 +286,9 @@ export class ContextComponent implements OnInit, AfterViewInit {
             0,
             this.focusContextIds.length -
                 ContextComponent.MAX_FOCUS_CONTEXT_SIGNALS);
+      } else if (this.focusContextIds.length === 0) {
+        this.focusContextIds.push(
+            this.contextSignals[this.contextSignals.length - 1].contextId);
       }
     }
   }

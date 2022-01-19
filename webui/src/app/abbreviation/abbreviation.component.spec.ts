@@ -100,7 +100,7 @@ describe('AbbreviationComponent', () => {
        });
   }
 
-  it('displays expansion options and spelling component when available', () => {
+  it('displays expansion options when available', () => {
     fixture.componentInstance.abbreviationOptions =
         ['what time is it', 'we took it in'];
     fixture.componentInstance.state = State.CHOOSING_EXPANSION;

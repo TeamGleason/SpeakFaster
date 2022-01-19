@@ -239,11 +239,6 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
   }
 
   onNewAbbreviationSpec(abbreviationSpec: AbbreviationSpec) {
-    // TODO(cais): Decide.
-    // this.inputAbbreviation = abbreviationSpec.readableString;
-    // this.state = State.ENTERING_ABBREVIATION;
-    // this.spellingStateChanged.emit('END');
-    console.log('Triggering AE after spelling:', abbreviationSpec);  // DEBUG
     this.abbreviationExpansionTriggers.next(
         {abbreviationSpec, requestExpansion: true});
   }
@@ -323,10 +318,10 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
     this.requestOngoing = true;
     this.responseError = null;
     const LIMIT_TURNS = 2;
-    const LIMIT_CONTECT_TURN_LENGTH = 60
+    const LIMIT_CONTEXT_TURN_LENGTH = 60
     const usedContextStrings: string[] = [...this.contextStrings.map(
         contextString =>
-            limitStringLength(contextString, LIMIT_CONTECT_TURN_LENGTH))];
+            limitStringLength(contextString, LIMIT_CONTEXT_TURN_LENGTH))];
     if (usedContextStrings.length > LIMIT_TURNS) {
       usedContextStrings.splice(0, usedContextStrings.length - LIMIT_TURNS);
     }
@@ -346,9 +341,9 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
               this.requestOngoing = false;
               if (data.exactMatches != null) {
                 this.abbreviationOptions = data.exactMatches;
+                this.state = State.CHOOSING_EXPANSION;
                 this.cdr.detectChanges();
               }
-              this.state = State.CHOOSING_EXPANSION;
             },
             error => {
               this.requestOngoing = false;

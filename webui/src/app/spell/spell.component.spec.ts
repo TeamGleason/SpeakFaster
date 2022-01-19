@@ -275,11 +275,9 @@ describe('SpellComponent', () => {
     expect(tokenButtons[0].nativeElement.innerText).toEqual('a');
     expect(tokenButtons[1].nativeElement.innerText).toEqual('bit');
     expect(tokenButtons[2].nativeElement.innerText).toEqual('cold');
-    // console.log('=== TEST ENDS');  // DEBUG
   });
 
   it('supports 2nd spelling after 1st one', () => {
-    console.log('=== BEGIN');  // DEBUG
     const emittedAbbreviationSpecs: AbbreviationSpec[] = [];
 
     fixture.componentInstance.newAbbreviationSpec.subscribe(
@@ -347,7 +345,6 @@ describe('SpellComponent', () => {
   });
 
   it('Clicking token button starts spelling', () => {
-    //   console.log('==== TEST BEGINS');  // DEUBG
     const keyCodeValues: number[][] = [];
     (window as any).externalKeypressHook = (keyCode: number[]) => {
       keyCodeValues.push(keyCode);
@@ -360,7 +357,6 @@ describe('SpellComponent', () => {
     const tokenButtons =
         fixture.debugElement.queryAll(By.css('.abbreviated-token'));
     (tokenButtons[1].nativeElement as HTMLButtonElement).click();
-    console.log('keyCodeValues:', keyCodeValues);  // DEBUG
     expect(keyCodeValues).toEqual([getVirtualkeyCode('b')]);
   });
 });

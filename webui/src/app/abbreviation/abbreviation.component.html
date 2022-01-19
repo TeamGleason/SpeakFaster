@@ -146,3 +146,10 @@
     </div>
   </div>
 </div>
+
+<app-spell-component
+    *ngIf="abbreviation !== null && (state === 'SPELLING' || state === 'CHOOSING_EXPANSION')"
+    class="spell-component"
+    [originalAbbreviationSpec]="abbreviation!"
+    (newAbbreviationSpec)="onNewAbbreviationSpec($event)"
+></app-spell-component>

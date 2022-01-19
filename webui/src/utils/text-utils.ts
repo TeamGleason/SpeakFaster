@@ -44,3 +44,12 @@ function allItemsEqual(array1: string[], array2: string[]): boolean {
   }
   return true;
 }
+
+/** Determine whether a string is a single alphanumeric character. */
+export function isAlphanumericChar(str: string): boolean {
+  if (str.length !== 1) {
+    return false;
+  }
+  str = str.toLowerCase();
+  return str >= 'a' && str <= 'z' || str >= '0' && str <= '9';
+}

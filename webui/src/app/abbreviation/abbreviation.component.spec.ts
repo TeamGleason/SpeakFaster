@@ -4,6 +4,7 @@ import {HttpClientModule} from '@angular/common/http';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {By} from '@angular/platform-browser';
 import {of, Subject} from 'rxjs';
+import {createUuid} from 'src/utils/uuid';
 
 import * as cefSharp from '../../utils/cefsharp';
 import {repeatVirtualKey, VIRTUAL_KEY} from '../external/external-events.component';
@@ -11,7 +12,7 @@ import {TestListener} from '../test-utils/test-cefsharp-listener';
 import {AbbreviationSpec, InputAbbreviationChangedEvent} from '../types/abbreviation';
 import {TextEntryEndEvent} from '../types/text-entry';
 
-import {AbbreviationComponent} from './abbreviation.component';
+import {AbbreviationComponent, State} from './abbreviation.component';
 import {AbbreviationModule} from './abbreviation.module';
 
 describe('AbbreviationComponent', () => {
@@ -85,6 +86,7 @@ describe('AbbreviationComponent', () => {
            ],
            readableString: 'ace',
            precedingText,
+           lineageId: createUuid(),
          };
          abbreviationExpansionTriggers.next({
            abbreviationSpec,
@@ -101,6 +103,7 @@ describe('AbbreviationComponent', () => {
   it('displays expansion options when available', () => {
     fixture.componentInstance.abbreviationOptions =
         ['what time is it', 'we took it in'];
+    fixture.componentInstance.state = State.CHOOSING_EXPANSION;
     fixture.detectChanges();
     const expansions =
         fixture.debugElement.queryAll(By.css('.abbreviation-expansion'));
@@ -117,6 +120,7 @@ describe('AbbreviationComponent', () => {
   it('calls updateButtonBoxes when expansion options become available',
      async () => {
        fixture.componentInstance.abbreviationOptions = ['what time is it'];
+       fixture.componentInstance.state = State.CHOOSING_EXPANSION;
        fixture.detectChanges();
        await fixture.whenStable();
        const calls = testListener.updateButtonBoxesCalls;
@@ -137,9 +141,11 @@ describe('AbbreviationComponent', () => {
                                             isKeyword: false,
                                           })),
          readableString: 'wtii',
-         triggerKeys: [VIRTUAL_KEY.SPACE, VIRTUAL_KEY.SPACE]
+         triggerKeys: [VIRTUAL_KEY.SPACE, VIRTUAL_KEY.SPACE],
+         lineageId: createUuid(),
        };
        fixture.componentInstance.abbreviationOptions = ['what time is it'];
+       fixture.componentInstance.state = State.CHOOSING_EXPANSION;
        fixture.detectChanges();
        const selectButtons =
            fixture.debugElement.queryAll(By.css('.select-button'));
@@ -160,8 +166,10 @@ describe('AbbreviationComponent', () => {
       readableString: 'wtii',
       triggerKeys: [VIRTUAL_KEY.SPACE, VIRTUAL_KEY.SPACE],
       eraserSequence: repeatVirtualKey(VIRTUAL_KEY.BACKSPACE, 8),
+      lineageId: createUuid(),
     };
     fixture.componentInstance.abbreviationOptions = ['what time is it'];
+    fixture.componentInstance.state = State.CHOOSING_EXPANSION;
     fixture.detectChanges();
     const selectButtons =
         fixture.debugElement.queryAll(By.css('.select-button'));
@@ -187,10 +195,12 @@ describe('AbbreviationComponent', () => {
                                          isKeyword: false,
                                        })),
       readableString: 'wtii',
-      triggerKeys: [VIRTUAL_KEY.SPACE, VIRTUAL_KEY.SPACE]
+      triggerKeys: [VIRTUAL_KEY.SPACE, VIRTUAL_KEY.SPACE],
+      lineageId: createUuid(),
     };
     fixture.componentInstance.abbreviationOptions =
         ['what time is it', 'we took it in'];
+    fixture.componentInstance.state = State.CHOOSING_EXPANSION;
     fixture.detectChanges();
     const selectButtons =
         fixture.debugElement.queryAll(By.css('.select-button'));
@@ -199,6 +209,7 @@ describe('AbbreviationComponent', () => {
     expect(events[0].text).toEqual('we took it in');
     expect(events[0].isFinal).toBeTrue();
     expect(events[0].timestampMillis).toBeGreaterThan(0);
+    expect(events[0].inAppTextToSpeechAudioConfig).toBeUndefined();
     // "wtii" as a length 4; the trigger keys has a lenght 2; additionally,
     // there is the selection key at the end.
     const expectedNumKeypresses = 4 + 2 + 1;
@@ -241,10 +252,48 @@ describe('AbbreviationComponent', () => {
              precedingText,
              readableString: 'hay',
              eraserSequence: repeatVirtualKey(VIRTUAL_KEY.BACKSPACE, 5),
+             lineageId: abbreviationChangeEvents[0].abbreviationSpec.lineageId,
            },
            requestExpansion: true,
          };
          expect(abbreviationChangeEvents).toEqual([expected]);
        });
   }
+
+  it('does not display SpellComponent initially', () => {
+    const spellComponents =
+        fixture.debugElement.queryAll(By.css('app-spell-component'));
+    expect(spellComponents).toEqual([]);
+  });
+
+  it('displays SpellComponent given abbreviaton and state', () => {
+    const abbreviationSpec: AbbreviationSpec = {
+      tokens: [
+        {
+          value: 'h',
+          isKeyword: false,
+        },
+        {
+          value: 'a',
+          isKeyword: false,
+        },
+        {
+          value: 'y',
+          isKeyword: false,
+        }
+      ],
+      readableString: 'hay',
+      lineageId: createUuid(),
+    };
+    abbreviationExpansionTriggers.next({
+      abbreviationSpec,
+      requestExpansion: true,
+    });
+    fixture.componentInstance.state = State.CHOOSING_EXPANSION;
+    fixture.detectChanges();
+
+    const spellComponents =
+        fixture.debugElement.queryAll(By.css('app-spell-component'));
+    expect(spellComponents.length).toEqual(1);
+  });
 });

@@ -72,19 +72,13 @@
 <div
     *ngFor="let abbreviationChar of originalAbbreviationChars; let i = index"
     class="spell-item-container">
-
   <button
       *ngIf="!(spellIndex !== null && i === spellIndex)"
       #clickableButton
       class="abbreviated-token"
       (click)="onTokenButtonClicked($event, i)">
-    <div class="abbreviated-token-text">{{abbreviationChar}}</div>
+    <div class="abbreviated-token-text">{{stringAtIndex(i)}}</div>
   </button>
-
-  <input
-      *ngIf="spelledWords.length > 0 && spelledWords[i] !== null"
-      class="spell-input"
-      [value]="spelledWords[i]" />
 
   <input
       *ngIf="spellIndex !== null && i === spellIndex"

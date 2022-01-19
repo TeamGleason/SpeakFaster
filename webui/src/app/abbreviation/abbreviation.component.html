@@ -48,6 +48,10 @@
     "b b b b d d d d f f f f";
 }
 
+/* .hidden {
+  display: none;
+} */ /* TODO(cais): Clean up. DO NOT SUBMIT. */
+
 .item1 {
   grid-area: a;
 }
@@ -176,76 +180,80 @@
 
 </style>
 
-<div *ngIf="!isSpelling">
-  <div *ngIf="requestOngoing" class="info request-ongoing">
-    Getting abbrevaition expansions...
-  </div>
-  <div *ngIf="responseError !== null" class="info response-error">
-    Error: {{responseError}}
-  </div>
-  <div
-      *ngIf="state === 'CHOOSING_EXPANSION' || state === 'CHOOSING_EDIT_TARGET'"
-      class="expansions">
-    <button
-        #clickableButton
-        *ngIf="abbreviationOptions.length > 0"
-        class="option-button"
-        (click)="onEditButtonClicked($event)">
-      ✏️
-    </button>
-    <div class="abbreviation-options-container">
-      <div class="abbreviation-options-grid">
-        <div
-            *ngFor="let abbreviationOption of abbreviationOptions; let i = index"
-            #abbreviationOption
-            class="abbreviation-option item{{i + 1}}"
-            [ngClass]="{'candidate-for-edit': state === 'CHOOSING_EDIT_TARGET'}">
-          <div class="abbreviation-expansion">{{abbreviationOption}}</div>
-          <button
-              #clickableButton
-              class="action-button select-button"
-              [ngClass]="{'is-selected': i === selectedAbbreviationIndex}"
-              (click)="onExpansionOptionButtonClicked($event, i)">
-            Shift-{{i + 1}}
-          </button>
-          <button
-              #clickableButton
-              class="action-button speak-button"
-              (click)="onSpeakOptionButtonClicked($event, i)">
-            🔊
-          </button>
-        </div>
+<div *ngIf="requestOngoing" class="info request-ongoing">
+  Getting abbrevaition expansions...
+</div>
+<div *ngIf="responseError !== null" class="info response-error">
+  Error: {{responseError}}
+</div>
+<div
+    *ngIf="state === 'CHOOSING_EXPANSION' || state === 'CHOOSING_EDIT_TARGET'"
+    class="expansions">
+  <button
+      #clickableButton
+      *ngIf="abbreviationOptions.length > 0"
+      class="option-button"
+      (click)="onEditButtonClicked($event)">
+    ✏️
+  </button>
+  <div class="abbreviation-options-container">
+    <div class="abbreviation-options-grid">
+      <div
+          *ngFor="let abbreviationOption of abbreviationOptions; let i = index"
+          #abbreviationOption
+          class="abbreviation-option item{{i + 1}}"
+          [ngClass]="{'candidate-for-edit': state === 'CHOOSING_EDIT_TARGET'}">
+        <div class="abbreviation-expansion">{{abbreviationOption}}</div>
+        <button
+            #clickableButton
+            class="action-button select-button"
+            [ngClass]="{'is-selected': i === selectedAbbreviationIndex}"
+            (click)="onExpansionOptionButtonClicked($event, i)">
+          Shift-{{i + 1}}
+        </button>
+        <button
+            #clickableButton
+            class="action-button speak-button"
+            (click)="onSpeakOptionButtonClicked($event, i)">
+          🔊
+        </button>
       </div>
     </div>
   </div>
-
-  <div
-      *ngIf="state === 'CHOOSING_TOKEN' || state === 'CHOOSING_TOKEN_REPLACEMENT'">
-    <button
-        *ngFor="let editToken of editTokens; let i = index"
-        #clickableButton
-        class="edit-token"
-        [ngClass]="{'is-token-selected': i === selectedTokenIndex}"
-        (click)="onEditTokenButtonClicked($event, i)">
-      <div class="edit-token-text">{{editToken}}</div>
-    </button>
-  </div>
-
-  <div
-      *ngIf="state === 'CHOOSING_TOKEN_REPLACEMENT'">
-    <button
-        *ngFor="let replacementToken of replacementTokens; let i = index"
-        #clickableButton
-        class="replacement-token"
-        (click)="onReplacementTokenButtonClicked($event, i)">
-      <div class="replacement-token-text">{{replacementToken}}</div>
-    </button>
-
-    <input
-        #tokenInput
-        class="token-input"
-        type="text"
-        value="{{manualTokenString}}" />
-
-  </div>
 </div>
+
+<div
+    *ngIf="state === 'CHOOSING_TOKEN' || state === 'CHOOSING_TOKEN_REPLACEMENT'">
+  <button
+      *ngFor="let editToken of editTokens; let i = index"
+      #clickableButton
+      class="edit-token"
+      [ngClass]="{'is-token-selected': i === selectedTokenIndex}"
+      (click)="onEditTokenButtonClicked($event, i)">
+    <div class="edit-token-text">{{editToken}}</div>
+  </button>
+</div>
+
+<div
+    *ngIf="state === 'CHOOSING_TOKEN_REPLACEMENT'">
+  <button
+      *ngFor="let replacementToken of replacementTokens; let i = index"
+      #clickableButton
+      class="replacement-token"
+      (click)="onReplacementTokenButtonClicked($event, i)">
+    <div class="replacement-token-text">{{replacementToken}}</div>
+  </button>
+
+  <input
+      #tokenInput
+      class="token-input"
+      type="text"
+      value="{{manualTokenString}}" />
+
+</div>
+
+<app-spell-component
+    *ngIf="abbreviation !== null && (state === 'SPELLING' || state === 'CHOOSING_EXPANSION')"
+    [originalAbbreviationSpec]="abbreviation!"
+    (newAbbreviationSpec)="onNewAbbreviationSpec($event)"
+></app-spell-component>

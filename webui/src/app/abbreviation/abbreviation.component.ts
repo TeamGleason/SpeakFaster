@@ -11,8 +11,10 @@ import {SpeakFasterService} from '../speakfaster-service';
 import {AbbreviationSpec, InputAbbreviationChangedEvent} from '../types/abbreviation';
 import {TextEntryEndEvent} from '../types/text-entry';
 
-enum State {
+export enum State {
+  PRE_CHOOSING_EXPANSION = 'PRE_CHOOSING_EXPANSION',
   CHOOSING_EXPANSION = 'CHOOSING_EXPANSION',
+  SPELLING = 'SPELLING',
   CHOOSING_EDIT_TARGET = 'CHOOSING_EDIT_TARGET',
   CHOOSING_TOKEN = 'CHOOSING_TOKEN',
   CHOOSING_TOKEN_REPLACEMENT = 'CHOOSING_TOKEN_REPLACEMENT',
@@ -44,7 +46,6 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
   @Input()
   abbreviationExpansionTriggers!: Subject<InputAbbreviationChangedEvent>;
   @Input() abbreviationExpansionEditingTrigger!: Subject<boolean>;
-  @Input() isSpelling: boolean = false;
 
   @ViewChildren('clickableButton')
   clickableButtons!: QueryList<ElementRef<HTMLElement>>;
@@ -56,7 +57,7 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
   tokenInputElements!: QueryList<ElementRef<HTMLElement>>;
   private tokenInput: HTMLInputElement|null = null;
 
-  state = State.CHOOSING_EXPANSION;
+  state = State.PRE_CHOOSING_EXPANSION;
   readonly editTokens: string[] = [];
   readonly replacementTokens: string[] = [];
   selectedTokenIndex: number|null = null;
@@ -75,8 +76,6 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
   ngOnInit() {
     ExternalEventsComponent.registerKeypressListener(
         this.listenToKeypress.bind(this));
-    KeyboardComponent.registerCallback(
-        AbbreviationComponent._NAME, this.baseKeyboardHandler.bind(this));
     this.abbreviationExpansionTriggers.subscribe(
         (event: InputAbbreviationChangedEvent) => {
           if (!event.requestExpansion) {
@@ -100,75 +99,53 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
     // console.log('tokenInput=', this.tokenInput);  // DEBUG
   }
 
-  baseKeyboardHandler(event: KeyboardEvent): boolean {
-    if (event.altKey || event.metaKey) {
-      return false;
-    }
-    const keyIndex = event.keyCode - 49;
-    // Ctrl E or Enter activates AE.
-    // Ctrl Q clears all the expansion options (if any).
-    // if ((event.ctrlKey && event.key.toLocaleLowerCase() === 'e') ||
-    //     (isPlainAlphanumericKey(event, 'Enter', false))) {
-    //   console.log(this.tokenInputElements);  // DEBUG
-    //   this.expandAbbreviation();
-    //   return true;
-    // }
-    // TODO(cais): Move this logic to abbreviation-editing-component.
-
-    if (event.ctrlKey && event.key.toLocaleLowerCase() === 'q') {
-      this.abbreviationOptions.splice(0);
-      return true;
-    } else if (
-        event.shiftKey && keyIndex >= 0 &&
-        keyIndex < this.abbreviationOptions.length) {
-      this.selectExpansionOption(keyIndex, /* toInjectKeys= */ true);
-      return true;
-    }
-    return false;
-  }
-
   public listenToKeypress(keySequence: string[], reconstructedText: string):
       void {
-    if (keySequenceEndsWith(
-            keySequence, ABBRVIATION_EXPANSION_TRIGGER_COMBO_KEY) &&
-        reconstructedText.trim().length > 0) {
-      let spaceIndex = reconstructedText.length - 1;
-      while (reconstructedText[spaceIndex] === ' ' && spaceIndex >= 0) {
-        spaceIndex--;
+    if (this.state === State.PRE_CHOOSING_EXPANSION) {
+      if (keySequenceEndsWith(
+              keySequence, ABBRVIATION_EXPANSION_TRIGGER_COMBO_KEY) &&
+          reconstructedText.trim().length > 0) {
+        let spaceIndex = reconstructedText.length - 1;
+        while (reconstructedText[spaceIndex] === ' ' && spaceIndex >= 0) {
+          spaceIndex--;
+        }
+        while (reconstructedText[spaceIndex] !== ' ' && spaceIndex >= 0) {
+          spaceIndex--;
+        }
+        let text = reconstructedText.slice(spaceIndex + 1);
+        let precedingText: string|undefined = spaceIndex > 0 ?
+            reconstructedText.slice(0, spaceIndex).trim() :
+            undefined;
+        if (precedingText === '') {
+          precedingText = undefined;
+        }
+        const eraserLength = text.length;
+        text = text.trim();
+        if (text.length > 0) {
+          // An abbreviation expansion has been triggered.
+          // TODO(#49): Support keywords in abbreviation (e.g.,
+          // "this event is going very well" --> "this e igvw")
+          const abbreviationSpec: AbbreviationSpec = {
+            tokens: text.split('').map(char => ({
+                                         value: char,
+                                         isKeyword: false,
+                                       })),
+            readableString: text,
+            eraserSequence:
+                repeatVirtualKey(VIRTUAL_KEY.BACKSPACE, eraserLength),
+            precedingText,
+          };
+          console.log('Abbreviation expansion triggered:', abbreviationSpec);
+          this.abbreviationExpansionTriggers.next(
+              {abbreviationSpec, requestExpansion: true});
+          return;
+        }
       }
-      while (reconstructedText[spaceIndex] !== ' ' && spaceIndex >= 0) {
-        spaceIndex--;
-      }
-      let text = reconstructedText.slice(spaceIndex + 1);
-      let precedingText: string|undefined = spaceIndex > 0 ?
-          reconstructedText.slice(0, spaceIndex).trim() :
-          undefined;
-      if (precedingText === '') {
-        precedingText = undefined;
-      }
-      const eraserLength = text.length;
-      text = text.trim();
-      if (text.length > 0) {
-        // An abbreviation expansion has been triggered.
-        // TODO(#49): Support keywords in abbreviation (e.g.,
-        // "this event is going very well" --> "this e igvw")
-        const abbreviationSpec: AbbreviationSpec = {
-          tokens: text.split('').map(char => ({
-                                       value: char,
-                                       isKeyword: false,
-                                     })),
-          readableString: text,
-          eraserSequence: repeatVirtualKey(VIRTUAL_KEY.BACKSPACE, eraserLength),
-          precedingText,
-        };
-        console.log('Abbreviation expansion triggered:', abbreviationSpec);
-        this.abbreviationExpansionTriggers.next(
-            {abbreviationSpec, requestExpansion: true});
-        return;
-      }
+    } else if (this.state === State.CHOOSING_EXPANSION) {
+      // TODO(cais): Guard against irrelevant keys.
+      this.state = State.SPELLING;
+      console.log('** listenToKeypress(): entered SPELLING state');  // DEBUG
     }
-
-    // TODO(cais): Add logic for spelling words after failure.
   }
 
   get selectedAbbreviationIndex() {
@@ -180,9 +157,9 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
   }
 
   onExpansionOptionButtonClicked(event: Event, index: number) {
-    if (this.state === 'CHOOSING_EXPANSION') {
+    if (this.state === State.CHOOSING_EXPANSION) {
       this.selectExpansionOption(index, /* toInjectKeys= */ true);
-    } else if (this.state === 'CHOOSING_EDIT_TARGET') {
+    } else if (this.state === State.CHOOSING_EDIT_TARGET) {
       this.editTokens.splice(0);
       this.editTokens.push(...this.abbreviationOptions[index].split(' '));
       this.selectedTokenIndex = null;
@@ -191,7 +168,7 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
   }
 
   onSpeakOptionButtonClicked(event: Event, index: number) {
-    if (this.state !== 'CHOOSING_EXPANSION') {
+    if (this.state !== State.CHOOSING_EXPANSION) {
       return;
     }
     this.selectExpansionOption(
@@ -265,6 +242,16 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
     this.emitExpansionWithTokenReplacement(this.replacementTokens[index]);
   }
 
+  onNewAbbreviationSpec(abbreviationSpec: AbbreviationSpec) {
+    // TODO(cais): Decide.
+    // this.inputAbbreviation = abbreviationSpec.readableString;
+    // this.state = State.ENTERING_ABBREVIATION;
+    // this.spellingStateChanged.emit('END');
+    console.log('Triggering AE after spelling:', abbreviationSpec);  // DEBUG
+    this.abbreviationExpansionTriggers.next(
+        {abbreviationSpec, requestExpansion: true});
+  }
+
   private emitExpansionWithTokenReplacement(replacementToken: string) {
     // Reconstruct the phrase with the replacement.
     const tokens: string[] = this.editTokens.slice();
@@ -326,7 +313,7 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
     this.editTokens.splice(0);
     this.replacementTokens.splice(0);
     this.manualTokenString = '';
-    this.state = State.CHOOSING_EXPANSION;
+    this.state = State.PRE_CHOOSING_EXPANSION;
     this.cdr.detectChanges();
   }
 
@@ -364,6 +351,7 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
                 this.abbreviationOptions = data.exactMatches;
                 this.cdr.detectChanges();
               }
+              this.state = State.CHOOSING_EXPANSION;
             },
             error => {
               this.requestOngoing = false;

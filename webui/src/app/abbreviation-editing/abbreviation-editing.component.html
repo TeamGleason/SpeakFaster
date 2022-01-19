@@ -73,9 +73,3 @@
     (click)="onEnterAsIsButtonClicked($event)">
   Enter as is
 </button>
-
-<app-spell-component
-    [ngClass]="{'hidden': state !== 'SPELLING'}"
-    [startSpellingSubject]="startSpellingSubject"
-    (newAbbreviationSpec)="onNewAbbreviationSpec($event)"
-></app-spell-component>

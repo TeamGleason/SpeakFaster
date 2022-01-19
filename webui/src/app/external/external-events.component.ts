@@ -97,8 +97,6 @@ export const PUNCTUATION: VIRTUAL_KEY[] = [
   VIRTUAL_KEY.SLASH_QUESTION_MARK,
 ];
 
-
-// TODO(cais): Move to tts component. DO NOT SUBMIT.
 export const TTS_TRIGGER_COMBO_KEY: string[] = [VIRTUAL_KEY.LCTRL, 'q'];
 
 function getKeyFromVirtualKeyCode(vkCode: number): string|null {

@@ -148,14 +148,6 @@ export class AbbreviationEditingComponent implements OnInit, AfterViewInit {
     this.startAbbreviationExpansionEditing();
   }
 
-  onNewAbbreviationSpec(abbreviationSpec: AbbreviationSpec) {
-    this.inputAbbreviation = abbreviationSpec.readableString;
-    this.state = State.ENTERING_ABBREVIATION;
-    this.spellingStateChanged.emit('END');
-    this.inputAbbreviationChanged.emit(
-        {abbreviationSpec, requestExpansion: true});
-  }
-
   private resetState() {
     this.inputAbbreviation = '';
     this.isSpellingTaskIsNew = true;

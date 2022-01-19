@@ -292,6 +292,8 @@ export class ContextComponent implements OnInit, AfterViewInit {
     }
   }
 
+  // TODO(cais): Fix bug: Context from selected AE option is not included in
+  // later AE.
   private emitContextStringsSelected() {
     this.contextStringsSelected.emit(
         this.contextSignals

@@ -11,7 +11,7 @@ import {TestListener} from '../test-utils/test-cefsharp-listener';
 import {AbbreviationSpec, InputAbbreviationChangedEvent} from '../types/abbreviation';
 import {TextEntryEndEvent} from '../types/text-entry';
 
-import {AbbreviationComponent} from './abbreviation.component';
+import {AbbreviationComponent, State} from './abbreviation.component';
 import {AbbreviationModule} from './abbreviation.module';
 
 describe('AbbreviationComponent', () => {
@@ -101,6 +101,7 @@ describe('AbbreviationComponent', () => {
   it('displays expansion options when available', () => {
     fixture.componentInstance.abbreviationOptions =
         ['what time is it', 'we took it in'];
+    fixture.componentInstance.state = State.CHOOSING_EXPANSION;
     fixture.detectChanges();
     const expansions =
         fixture.debugElement.queryAll(By.css('.abbreviation-expansion'));
@@ -117,6 +118,7 @@ describe('AbbreviationComponent', () => {
   it('calls updateButtonBoxes when expansion options become available',
      async () => {
        fixture.componentInstance.abbreviationOptions = ['what time is it'];
+       fixture.componentInstance.state = State.CHOOSING_EXPANSION;
        fixture.detectChanges();
        await fixture.whenStable();
        const calls = testListener.updateButtonBoxesCalls;
@@ -140,6 +142,7 @@ describe('AbbreviationComponent', () => {
          triggerKeys: [VIRTUAL_KEY.SPACE, VIRTUAL_KEY.SPACE]
        };
        fixture.componentInstance.abbreviationOptions = ['what time is it'];
+       fixture.componentInstance.state = State.CHOOSING_EXPANSION;
        fixture.detectChanges();
        const selectButtons =
            fixture.debugElement.queryAll(By.css('.select-button'));
@@ -162,6 +165,7 @@ describe('AbbreviationComponent', () => {
       eraserSequence: repeatVirtualKey(VIRTUAL_KEY.BACKSPACE, 8),
     };
     fixture.componentInstance.abbreviationOptions = ['what time is it'];
+    fixture.componentInstance.state = State.CHOOSING_EXPANSION;
     fixture.detectChanges();
     const selectButtons =
         fixture.debugElement.queryAll(By.css('.select-button'));
@@ -191,6 +195,7 @@ describe('AbbreviationComponent', () => {
     };
     fixture.componentInstance.abbreviationOptions =
         ['what time is it', 'we took it in'];
+    fixture.componentInstance.state = State.CHOOSING_EXPANSION;
     fixture.detectChanges();
     const selectButtons =
         fixture.debugElement.queryAll(By.css('.select-button'));
@@ -223,6 +228,7 @@ describe('AbbreviationComponent', () => {
        };
        fixture.componentInstance.abbreviationOptions =
            ['what time is it', 'we took it in'];
+       fixture.componentInstance.state = State.CHOOSING_EXPANSION;
        fixture.detectChanges();
        const selectButtons =
            fixture.debugElement.queryAll(By.css('.speak-button'));

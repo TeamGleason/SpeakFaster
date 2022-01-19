@@ -128,6 +128,7 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
             eraserSequence:
                 repeatVirtualKey(VIRTUAL_KEY.BACKSPACE, eraserLength),
             precedingText,
+            lineageId: createUuid(),
           };
           console.log('Abbreviation expansion triggered:', abbreviationSpec);
           this.abbreviationExpansionTriggers.next(

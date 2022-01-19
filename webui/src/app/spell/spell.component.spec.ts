@@ -1,8 +1,10 @@
 /** Unit tests for the SpellComponent. */
 import {HttpClientModule} from '@angular/common/http';
+import {SimpleChange} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {By} from '@angular/platform-browser';
 import {of, Subject} from 'rxjs';
+import { createUuid } from 'src/utils/uuid';
 
 import * as cefSharp from '../../utils/cefsharp';
 import {repeatVirtualKey, VIRTUAL_KEY} from '../external/external-events.component';
@@ -52,6 +54,7 @@ fdescribe('SpellComponent', () => {
       readableString: initialLetters.join(''),
       eraserSequence:
           repeatVirtualKey(VIRTUAL_KEY.BACKSPACE, initialLetters.length + 2),
+      lineageId: createUuid(),
     };
   }
 
@@ -63,6 +66,8 @@ fdescribe('SpellComponent', () => {
   it('displays initial letters given original abbreviaton spec', () => {
     fixture.componentInstance.originalAbbreviationSpec =
         getAbbreviationSpecForTest(['a', 'b', 'c']);
+    fixture.componentInstance.spellIndex = 1;
+    fixture.detectChanges();
     fixture.componentInstance.listenToKeypress(
         ['a', 'b', 'c', ' ', ' ', 'b'], 'abc  b');
     fixture.detectChanges();
@@ -84,6 +89,8 @@ fdescribe('SpellComponent', () => {
   it('typing letters for spelled word populates spell input', () => {
     fixture.componentInstance.originalAbbreviationSpec =
         getAbbreviationSpecForTest(['a', 'b', 'c']);
+    fixture.componentInstance.spellIndex = 1;
+    fixture.detectChanges();
     fixture.componentInstance.listenToKeypress(
         ['a', 'b', 'c', ' ', ' ', 'b'], 'abc  b');
     fixture.componentInstance.listenToKeypress(
@@ -99,6 +106,8 @@ fdescribe('SpellComponent', () => {
   it('typing with Backspace for spelled word populates spell input', () => {
     fixture.componentInstance.originalAbbreviationSpec =
         getAbbreviationSpecForTest(['a', 'b', 'c']);
+    fixture.componentInstance.spellIndex = 1;
+    fixture.detectChanges();
     fixture.componentInstance.listenToKeypress(
         ['a', 'b', 'c', ' ', ' ', 'b'], 'abc  b');
     fixture.componentInstance.listenToKeypress(
@@ -124,7 +133,7 @@ fdescribe('SpellComponent', () => {
          fixture.componentInstance.originalAbbreviationSpec =
              getAbbreviationSpecForTest(['a', 'b', 'c']);
          fixture.componentInstance.spellIndex = 1;
-         fixture.componentInstance.ngOnInit();
+         fixture.detectChanges();
          fixture.componentInstance.listenToKeypress(
              ['a', 'b', 'c', ' ', ' ', 'b'], 'abc  b');
          fixture.componentInstance.listenToKeypress(
@@ -168,13 +177,14 @@ fdescribe('SpellComponent', () => {
   }
 
   it(`supports spelling 2nd word after spelling the first`, () => {
+    console.log('=== TEST BEGINS');  // DEBUG
     const emittedAbbreviationSpecs: AbbreviationSpec[] = [];
     fixture.componentInstance.newAbbreviationSpec.subscribe(
         spec => emittedAbbreviationSpecs.push(spec));
     fixture.componentInstance.originalAbbreviationSpec =
         getAbbreviationSpecForTest(['a', 'b', 'c']);
     fixture.componentInstance.spellIndex = 1;
-    fixture.componentInstance.ngOnInit();
+    fixture.detectChanges();
     fixture.componentInstance.listenToKeypress(
         ['a', 'b', 'c', ' ', ' ', 'b'], 'abc  b');
     fixture.componentInstance.listenToKeypress(
@@ -225,5 +235,60 @@ fdescribe('SpellComponent', () => {
     expect(tokenButtons[0].nativeElement.innerText).toEqual('a');
     expect(tokenButtons[1].nativeElement.innerText).toEqual('bit');
     expect(tokenButtons[2].nativeElement.innerText).toEqual('cold');
+    // console.log('=== TEST ENDS');  // DEBUG
   });
+
+  it('supports 2nd spelling after 1st one', () => {
+    console.log('=== BEGIN');  // DEBUG
+    const emittedAbbreviationSpecs: AbbreviationSpec[] = [];
+
+    fixture.componentInstance.newAbbreviationSpec.subscribe(
+        spec => emittedAbbreviationSpecs.push(spec));
+    const oldAbbreviationSpec = getAbbreviationSpecForTest(['a', 'b'])
+    fixture.componentInstance.originalAbbreviationSpec = oldAbbreviationSpec;
+    fixture.componentInstance.spellIndex = 0;
+    fixture.componentInstance.ngOnInit();
+    fixture.componentInstance.listenToKeypress(
+        ['a', 'b', 'c', ' ', ' ', 'a'], 'abc  a');
+    fixture.componentInstance.listenToKeypress(
+        ['a', 'b', 'c', ' ', ' ', 'a', 'l'], 'abc  al');
+    fixture.componentInstance.listenToKeypress(
+        ['a', 'b', 'c', ' ', ' ', 'a', 'l', 'l'], 'abc  all');
+    fixture.componentInstance.listenToKeypress(
+        ['a', 'b', 'c', ' ', ' ', 'a', 'l', 'l', ' '], 'abc  all ');
+    fixture.detectChanges();
+    // Set up the second AE spelling.
+    console.log('=== New AE');  // DEBUG
+    const newAbbreviationSpec = getAbbreviationSpecForTest(['s', 'c'])
+    fixture.componentInstance.originalAbbreviationSpec = newAbbreviationSpec;
+    fixture.componentInstance.spellIndex = 1;
+    fixture.detectChanges();
+    fixture.componentInstance.ngOnChanges({
+      originalAbbreviationSpec: new SimpleChange(
+          oldAbbreviationSpec, newAbbreviationSpec, /* firstChange= */ true),
+    });
+    fixture.componentInstance.listenToKeypress(
+        ['a', 'b', 'c', ' ', ' ', 'a', 'l', 'l', ' ', 's', 'c', ' ', ' '],
+        'abc  all sc  ');
+    fixture.componentInstance.listenToKeypress(
+        ['a', 'b', 'c', ' ', ' ', 'a', 'l', 'l', ' ', 's', 'c', ' ', ' ', 'c'],
+        'abc  all sc  c');
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.state)
+        .toEqual(SpellingState.SPELLING_TOKEN);
+    const tokenButtons =
+        fixture.debugElement.queryAll(By.css('.abbreviated-token'));
+    // Spelling has started on 'c' (the 2nd letter). There should be one button
+    // for the 1st letter ('s').
+    expect(tokenButtons.length).toEqual(1);
+    expect(tokenButtons[0].nativeElement.innerText).toEqual('s');
+    const spellInputs = fixture.debugElement.queryAll(By.css('.spell-input'));
+    expect(spellInputs.length).toEqual(1);
+    expect(spellInputs[0].nativeElement.value).toEqual('c');
+    console.log('=== END');  // DEBUG
+  });
+
+  // TODO(cais): Test spelling a new abbreviation.
+  // TODO(cais): Verify that KSR is correct.
 });

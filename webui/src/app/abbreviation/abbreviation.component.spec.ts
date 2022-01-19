@@ -4,6 +4,7 @@ import {HttpClientModule} from '@angular/common/http';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {By} from '@angular/platform-browser';
 import {of, Subject} from 'rxjs';
+import {createUuid} from 'src/utils/uuid';
 
 import * as cefSharp from '../../utils/cefsharp';
 import {repeatVirtualKey, VIRTUAL_KEY} from '../external/external-events.component';
@@ -85,6 +86,7 @@ describe('AbbreviationComponent', () => {
            ],
            readableString: 'ace',
            precedingText,
+           lineageId: createUuid(),
          };
          abbreviationExpansionTriggers.next({
            abbreviationSpec,
@@ -139,7 +141,8 @@ describe('AbbreviationComponent', () => {
                                             isKeyword: false,
                                           })),
          readableString: 'wtii',
-         triggerKeys: [VIRTUAL_KEY.SPACE, VIRTUAL_KEY.SPACE]
+         triggerKeys: [VIRTUAL_KEY.SPACE, VIRTUAL_KEY.SPACE],
+         lineageId: createUuid(),
        };
        fixture.componentInstance.abbreviationOptions = ['what time is it'];
        fixture.componentInstance.state = State.CHOOSING_EXPANSION;
@@ -163,6 +166,7 @@ describe('AbbreviationComponent', () => {
       readableString: 'wtii',
       triggerKeys: [VIRTUAL_KEY.SPACE, VIRTUAL_KEY.SPACE],
       eraserSequence: repeatVirtualKey(VIRTUAL_KEY.BACKSPACE, 8),
+      lineageId: createUuid(),
     };
     fixture.componentInstance.abbreviationOptions = ['what time is it'];
     fixture.componentInstance.state = State.CHOOSING_EXPANSION;
@@ -191,7 +195,8 @@ describe('AbbreviationComponent', () => {
                                          isKeyword: false,
                                        })),
       readableString: 'wtii',
-      triggerKeys: [VIRTUAL_KEY.SPACE, VIRTUAL_KEY.SPACE]
+      triggerKeys: [VIRTUAL_KEY.SPACE, VIRTUAL_KEY.SPACE],
+      lineageId: createUuid(),
     };
     fixture.componentInstance.abbreviationOptions =
         ['what time is it', 'we took it in'];
@@ -224,7 +229,8 @@ describe('AbbreviationComponent', () => {
                                             isKeyword: false,
                                           })),
          readableString: 'wtii',
-         triggerKeys: [VIRTUAL_KEY.SPACE, VIRTUAL_KEY.SPACE]
+         triggerKeys: [VIRTUAL_KEY.SPACE, VIRTUAL_KEY.SPACE],
+         lineageId: createUuid(),
        };
        fixture.componentInstance.abbreviationOptions =
            ['what time is it', 'we took it in'];
@@ -282,6 +288,7 @@ describe('AbbreviationComponent', () => {
              precedingText,
              readableString: 'hay',
              eraserSequence: repeatVirtualKey(VIRTUAL_KEY.BACKSPACE, 5),
+             lineageId: createUuid(),
            },
            requestExpansion: true,
          };

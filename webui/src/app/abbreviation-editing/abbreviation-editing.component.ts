@@ -4,7 +4,6 @@ import {updateButtonBoxesForElements} from 'src/utils/cefsharp';
 import {createUuid} from 'src/utils/uuid';
 
 import {isTextContentKey} from '../../utils/keyboard-utils';
-import {KeyboardComponent} from '../keyboard/keyboard.component';
 import {AbbreviationSpec, AbbreviationToken, InputAbbreviationChangedEvent, StartSpellingEvent} from '../types/abbreviation';
 import {TextEntryBeginEvent, TextEntryEndEvent} from '../types/text-entry';
 
@@ -127,6 +126,7 @@ export class AbbreviationEditingComponent implements OnInit, AfterViewInit {
         isKeyword: false,
       }],
       readableString: this.inputAbbreviation,
+      lineageId: createUuid(),
     };
     this.inputAbbreviationChanged.emit(
         {abbreviationSpec, requestExpansion: true});
@@ -157,6 +157,7 @@ export class AbbreviationEditingComponent implements OnInit, AfterViewInit {
       abbreviationSpec: {
         tokens: [],
         readableString: '',
+        lineageId: createUuid(),
       },
       requestExpansion: false,
     });
@@ -167,7 +168,8 @@ export class AbbreviationEditingComponent implements OnInit, AfterViewInit {
         AbbreviationToken = {value: this.inputAbbreviation, isKeyword: false};
     const abbreviationSpec: AbbreviationSpec = {
       tokens: [abbreviationToken],
-      readableString: abbreviationToken.value
+      readableString: abbreviationToken.value,
+      lineageId: createUuid(),
     };
     this.inputAbbreviationChanged.emit(
         {abbreviationSpec, requestExpansion: false});

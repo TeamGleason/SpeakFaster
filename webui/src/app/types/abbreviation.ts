@@ -42,6 +42,10 @@ export interface AbbreviationSpec {
   // that resulted from the trigger keys, which can be used for key
   // injection later.
   readonly eraserSequence?: VIRTUAL_KEY[];
+
+  // Unique ID for the lineage of abbreviatoins.
+  // Derived abbreviations will share the same ID as the original one.
+  readonly lineageId: string;
 }
 
 /** An event that signifies the change in an input abbreviation */

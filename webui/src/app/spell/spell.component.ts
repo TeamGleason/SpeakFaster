@@ -2,7 +2,7 @@ import {AfterViewInit, Component, ElementRef, EventEmitter, Input, OnChanges, On
 import {updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
 import {createUuid} from 'src/utils/uuid';
 
-import {ExternalEventsComponent, repeatVirtualKey, VIRTUAL_KEY} from '../external/external-events.component';
+import {ExternalEventsComponent, getVirtualkeyCode, repeatVirtualKey, VIRTUAL_KEY} from '../external/external-events.component';
 import {AbbreviationSpec, AbbreviationToken} from '../types/abbreviation';
 
 // TODO(cais): Support workflow: enter initial-only abbreviation, get no
@@ -21,7 +21,7 @@ export enum SpellingState {
   selector: 'app-spell-component',
   templateUrl: './spell.component.html',
 })
-export class SpellComponent implements OnInit, AfterViewInit, OnChanges {
+export class SpellComponent implements OnInit, OnChanges {
   private static readonly _NAME = 'SpellComponent';
   private readonly instanceId = SpellComponent._NAME + '_' + createUuid();
 
@@ -44,10 +44,6 @@ export class SpellComponent implements OnInit, AfterViewInit, OnChanges {
   readonly spelledWords: Array<string|null> = [];
 
   ngOnInit() {
-    console.log('ngOnInit(): this.spellIndex=', this.spellIndex);  // DEBUG
-    console.log(
-        'ngOnInit(): this.originalReconText=',
-        this.originalReconText);  // DEBUG
     ExternalEventsComponent.registerKeypressListener(
         this.listenToKeypress.bind(this));
     if (this.originalReconText === '') {
@@ -56,8 +52,10 @@ export class SpellComponent implements OnInit, AfterViewInit, OnChanges {
   }
 
   ngAfterViewInit() {
-    // TODO(cais): Ensure button box registration.
-    // TODO(cais): Add unit tests. DO NOT SUBMIT.
+    if (this.clickableButtons === undefined) {
+      return;
+    }
+    updateButtonBoxesForElements(this.instanceId, this.clickableButtons);
     this.clickableButtons.changes.subscribe(
         (queryList: QueryList<ElementRef<HTMLButtonElement>>) => {
           updateButtonBoxesForElements(this.instanceId, queryList);
@@ -69,16 +67,11 @@ export class SpellComponent implements OnInit, AfterViewInit, OnChanges {
         changes.originalAbbreviationSpec.previousValue &&
         changes.originalAbbreviationSpec.previousValue.lineageId !==
             changes.originalAbbreviationSpec.currentValue.lineageId) {
-      console.log(
-          'prev:', changes.originalAbbreviationSpec.previousValue);  // DEBUG
-      console.log(
-          'curr:', changes.originalAbbreviationSpec.currentValue);  // DEBUG
       this.resetState();
     }
   }
 
   private resetState() {
-    console.log('********************* resetState()');  // DEBUG
     this.originalAbbreviationChars.splice(0);
     this.spelledWords.splice(0);
     this.originalAbbreviationSpec.tokens.forEach(token => {
@@ -103,43 +96,29 @@ export class SpellComponent implements OnInit, AfterViewInit, OnChanges {
         this.state = SpellingState.SPELLING_TOKEN;
         this.originalReconText =
             reconstructedText.slice(0, reconstructedText.length - 1);
-        console.log(
-            '###Updated original recon text:',
-            this.originalReconText);  // DEBUG
         this.tokenSpellingInput =
             reconstructedText.slice(this.originalReconText.length);
         // TODO(cais): Disallow punctuation?
       }
     } else if (this.state === SpellingState.SPELLING_TOKEN) {
       if (lastKey === ' ' || lastKey == VIRTUAL_KEY.ENTER) {
-        // Use a space to terminate the spelling and trigger anothe remote AE
-        // call.
+        // Space or Enter terminates the spelling and trigger a new AE call.
         this.endSpelling();
       } else {
-        console.log(
-            'Type: recon text=', reconstructedText,
-            ', originalReconText=', this.originalReconText);  // DEBUG
         this.tokenSpellingInput =
             reconstructedText.slice(this.originalReconText.length);
       }
     }
   }
 
-  onDoneButtonClicked(event: Event) {
-    this.endSpelling();
+  onTokenButtonClicked(event: Event, i: number) {
+    (window as any)
+        .externalKeypressHook(
+            getVirtualkeyCode(this.originalAbbreviationChars[i]));
   }
 
-  onTokenButtonClicked(event: Event, i: number) {
-    // TODO(cais): Add test. Test manually. DO NOT SUBMIT.
-    this.spellIndex = i;
-    this.tokenSpellingInput = this.originalAbbreviationChars[i];
-    this.state = SpellingState.SPELLING_TOKEN;
-    if (this.spelledWords.length !== this.originalAbbreviationChars.length) {
-      this.spelledWords.splice(0);
-      for (let i = 0; i < this.originalAbbreviationChars.length; ++i) {
-        this.spelledWords.push(null);
-      }
-    }
+  onDoneButtonClicked(event: Event) {
+    this.endSpelling();
   }
 
   stringAtIndex(i: number): string {
@@ -162,7 +141,6 @@ export class SpellComponent implements OnInit, AfterViewInit, OnChanges {
 
   private recreateAbbreviation(): AbbreviationSpec {
     this.spelledWords[this.spellIndex!] = this.tokenSpellingInput.trim();
-    console.log('recon:', this.spelledWords);  // DEBUG
     const tokens: AbbreviationToken[] = [];
     for (let i = 0; i < this.originalAbbreviationChars.length; ++i) {
       if (this.spelledWords[i] !== null) {

@@ -3,22 +3,19 @@ import {HttpClientModule} from '@angular/common/http';
 import {SimpleChange} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {By} from '@angular/platform-browser';
-import {of, Subject} from 'rxjs';
-import { createUuid } from 'src/utils/uuid';
+import {Subject} from 'rxjs';
+import {createUuid} from 'src/utils/uuid';
 
 import * as cefSharp from '../../utils/cefsharp';
-import {repeatVirtualKey, VIRTUAL_KEY} from '../external/external-events.component';
+import {getVirtualkeyCode, repeatVirtualKey, VIRTUAL_KEY} from '../external/external-events.component';
 import {TestListener} from '../test-utils/test-cefsharp-listener';
 import {AbbreviationSpec, AbbreviationToken, InputAbbreviationChangedEvent} from '../types/abbreviation';
-import {TextEntryEndEvent} from '../types/text-entry';
 
 import {SpellComponent, SpellingState} from './spell.component';
 import {SpellModule} from './spell.module';
 
-// TODO(cais): Removeo fdescribe. DO NOT SUBMIT.
-fdescribe('SpellComponent', () => {
+describe('SpellComponent', () => {
   let abbreviationExpansionTriggers: Subject<InputAbbreviationChangedEvent>;
-  let textEntryEndSubject: Subject<TextEntryEndEvent>;
   let fixture: ComponentFixture<SpellComponent>;
   let testListener: TestListener;
   let abbreviationChangeEvents: InputAbbreviationChangedEvent[];
@@ -36,8 +33,13 @@ fdescribe('SpellComponent', () => {
     abbreviationChangeEvents = [];
     abbreviationExpansionTriggers.subscribe(
         (event) => abbreviationChangeEvents.push(event));
-    textEntryEndSubject = new Subject();
     fixture = TestBed.createComponent(SpellComponent);
+  });
+
+  afterEach(() => {
+    if ((window as any).externalKeypressHook !== undefined) {
+      delete (window as any).externalKeypressHook;
+    }
   });
 
   function getAbbreviationSpecForTest(initialLetters: string[]):
@@ -176,8 +178,46 @@ fdescribe('SpellComponent', () => {
        });
   }
 
+  it('Clicking done button triggers AE', () => {
+    const emittedAbbreviationSpecs: AbbreviationSpec[] = [];
+    fixture.componentInstance.newAbbreviationSpec.subscribe(
+        spec => emittedAbbreviationSpecs.push(spec));
+    fixture.componentInstance.originalAbbreviationSpec =
+        getAbbreviationSpecForTest(['a', 'b', 'c']);
+    fixture.componentInstance.spellIndex = 1;
+    fixture.detectChanges();
+    fixture.componentInstance.listenToKeypress(
+        ['a', 'b', 'c', ' ', ' ', 'b'], 'abc  b');
+    fixture.componentInstance.listenToKeypress(
+        ['a', 'b', 'c', ' ', ' ', 'b', 'i'], 'abc  bi');
+    fixture.componentInstance.listenToKeypress(
+        ['a', 'b', 'c', ' ', ' ', 'b', 'i', 't'], 'abc  bit');
+    const doneButton = fixture.debugElement.query(By.css('.done-button'));
+    (doneButton.nativeElement as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.state).toEqual(SpellingState.DONE);
+    expect(fixture.componentInstance.spelledWords).toEqual([null, 'bit', null]);
+    expect(emittedAbbreviationSpecs.length).toEqual(1);
+    expect(emittedAbbreviationSpecs[0].tokens.length).toEqual(3);
+    expect(emittedAbbreviationSpecs[0].tokens[0]).toEqual({
+      value: 'a',
+      isKeyword: false,
+    });
+    expect(emittedAbbreviationSpecs[0].tokens[1]).toEqual({
+      value: 'bit',
+      isKeyword: true,
+    });
+    expect(emittedAbbreviationSpecs[0].tokens[2]).toEqual({
+      value: 'c',
+      isKeyword: false,
+    });
+    expect(emittedAbbreviationSpecs[0].readableString).toEqual('a bit c');
+    expect(emittedAbbreviationSpecs[0].eraserSequence)
+        .toEqual(repeatVirtualKey(VIRTUAL_KEY.BACKSPACE, 5 + 4));
+  });
+
   it(`supports spelling 2nd word after spelling the first`, () => {
-    console.log('=== TEST BEGINS');  // DEBUG
     const emittedAbbreviationSpecs: AbbreviationSpec[] = [];
     fixture.componentInstance.newAbbreviationSpec.subscribe(
         spec => emittedAbbreviationSpecs.push(spec));
@@ -258,7 +298,6 @@ fdescribe('SpellComponent', () => {
         ['a', 'b', 'c', ' ', ' ', 'a', 'l', 'l', ' '], 'abc  all ');
     fixture.detectChanges();
     // Set up the second AE spelling.
-    console.log('=== New AE');  // DEBUG
     const newAbbreviationSpec = getAbbreviationSpecForTest(['s', 'c'])
     fixture.componentInstance.originalAbbreviationSpec = newAbbreviationSpec;
     fixture.componentInstance.spellIndex = 1;
@@ -286,9 +325,42 @@ fdescribe('SpellComponent', () => {
     const spellInputs = fixture.debugElement.queryAll(By.css('.spell-input'));
     expect(spellInputs.length).toEqual(1);
     expect(spellInputs[0].nativeElement.value).toEqual('c');
-    console.log('=== END');  // DEBUG
   });
 
-  // TODO(cais): Test spelling a new abbreviation.
-  // TODO(cais): Verify that KSR is correct.
+  it('registers buttons on spelling', async () => {
+    fixture.componentInstance.originalAbbreviationSpec =
+        getAbbreviationSpecForTest(['a', 'b', 'c']);
+    fixture.componentInstance.spellIndex = 1;
+    fixture.detectChanges();
+    fixture.componentInstance.listenToKeypress(
+        ['a', 'b', 'c', ' ', ' ', 'b'], 'abc  b');
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(testListener.updateButtonBoxesCalls.length)
+        .toBeGreaterThanOrEqual(1);
+    const lastCall =
+        testListener
+            .updateButtonBoxesCalls[testListener.updateButtonBoxesCalls.length - 1];
+    expect(lastCall[0].indexOf('SpellComponent_')).toEqual(0);
+    expect(lastCall[1].length).toEqual(3);
+  });
+
+  it('Clicking token button starts spelling', () => {
+    //   console.log('==== TEST BEGINS');  // DEUBG
+    const keyCodeValues: number[][] = [];
+    (window as any).externalKeypressHook = (keyCode: number[]) => {
+      keyCodeValues.push(keyCode);
+    };
+    fixture.componentInstance.originalAbbreviationSpec =
+        getAbbreviationSpecForTest(['a', 'b', 'c']);
+    fixture.componentInstance.state = SpellingState.SPELLING_TOKEN;
+    fixture.detectChanges();
+
+    const tokenButtons =
+        fixture.debugElement.queryAll(By.css('.abbreviated-token'));
+    (tokenButtons[1].nativeElement as HTMLButtonElement).click();
+    console.log('keyCodeValues:', keyCodeValues);  // DEBUG
+    expect(keyCodeValues).toEqual([getVirtualkeyCode('b')]);
+  });
 });

@@ -100,7 +100,7 @@ describe('AbbreviationComponent', () => {
        });
   }
 
-  it('displays expansion options when available', () => {
+  it('displays expansion options and spelling component when available', () => {
     fixture.componentInstance.abbreviationOptions =
         ['what time is it', 'we took it in'];
     fixture.componentInstance.state = State.CHOOSING_EXPANSION;
@@ -288,11 +288,48 @@ describe('AbbreviationComponent', () => {
              precedingText,
              readableString: 'hay',
              eraserSequence: repeatVirtualKey(VIRTUAL_KEY.BACKSPACE, 5),
-             lineageId: createUuid(),
+             lineageId: abbreviationChangeEvents[0].abbreviationSpec.lineageId,
            },
            requestExpansion: true,
          };
          expect(abbreviationChangeEvents).toEqual([expected]);
        });
   }
+
+  it('does not display SpellComponent initially', () => {
+    const spellComponents =
+        fixture.debugElement.queryAll(By.css('app-spell-component'));
+    expect(spellComponents).toEqual([]);
+  });
+
+  it('displays SpellComponent given abbreviaton and state', () => {
+    const abbreviationSpec: AbbreviationSpec = {
+      tokens: [
+        {
+          value: 'h',
+          isKeyword: false,
+        },
+        {
+          value: 'a',
+          isKeyword: false,
+        },
+        {
+          value: 'y',
+          isKeyword: false,
+        }
+      ],
+      readableString: 'hay',
+      lineageId: createUuid(),
+    };
+    abbreviationExpansionTriggers.next({
+      abbreviationSpec,
+      requestExpansion: true,
+    });
+    fixture.componentInstance.state = State.CHOOSING_EXPANSION;
+    fixture.detectChanges();
+
+    const spellComponents =
+        fixture.debugElement.queryAll(By.css('app-spell-component'));
+    expect(spellComponents.length).toEqual(1);
+  });
 });

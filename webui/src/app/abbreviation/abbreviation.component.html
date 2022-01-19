@@ -48,10 +48,6 @@
     "b b b b d d d d f f f f";
 }
 
-/* .hidden {
-  display: none;
-} */ /* TODO(cais): Clean up. DO NOT SUBMIT. */
-
 .item1 {
   grid-area: a;
 }
@@ -254,6 +250,7 @@
 
 <app-spell-component
     *ngIf="abbreviation !== null && (state === 'SPELLING' || state === 'CHOOSING_EXPANSION')"
+    class="spell-component"
     [originalAbbreviationSpec]="abbreviation!"
     (newAbbreviationSpec)="onNewAbbreviationSpec($event)"
 ></app-spell-component>

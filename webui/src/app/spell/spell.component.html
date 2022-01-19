@@ -30,7 +30,7 @@
   color: #888;
 }
 
-.control-button {
+.done-button {
   background: #333;
   border: 2px solid #888;
   border-radius: 5px;
@@ -63,6 +63,7 @@
 .spell-label {
   display: inline-block;
   margin-left: 8px;
+  width: 78px;
 }
 
 </style>
@@ -90,7 +91,7 @@
 <button
     *ngIf="spellIndex !== null"
     #clickableButton
-    class="control-button"
+    class="done-button"
     (click)="onDoneButtonClicked($event)">
   Done
   <span>(Ctrl+s)</span>

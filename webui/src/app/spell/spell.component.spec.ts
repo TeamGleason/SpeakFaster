@@ -7,7 +7,7 @@ import {Subject} from 'rxjs';
 import {createUuid} from 'src/utils/uuid';
 
 import * as cefSharp from '../../utils/cefsharp';
-import {getVirtualkeyCode, repeatVirtualKey, VIRTUAL_KEY} from '../external/external-events.component';
+import {repeatVirtualKey, VIRTUAL_KEY} from '../external/external-events.component';
 import {TestListener} from '../test-utils/test-cefsharp-listener';
 import {AbbreviationSpec, AbbreviationToken, InputAbbreviationChangedEvent} from '../types/abbreviation';
 
@@ -214,7 +214,7 @@ describe('SpellComponent', () => {
     });
     expect(emittedAbbreviationSpecs[0].readableString).toEqual('a bit c');
     expect(emittedAbbreviationSpecs[0].eraserSequence)
-        .toEqual(repeatVirtualKey(VIRTUAL_KEY.BACKSPACE, 5 + 4));
+        .toEqual(repeatVirtualKey(VIRTUAL_KEY.BACKSPACE, 5 + 3));
   });
 
   it(`supports spelling 2nd word after spelling the first`, () => {
@@ -277,7 +277,7 @@ describe('SpellComponent', () => {
     expect(tokenButtons[2].nativeElement.innerText).toEqual('cold');
   });
 
-  it('supports 2nd spelling after 1st one', () => {
+  it('supports 2nd spelling after 1st one: different letters', () => {
     const emittedAbbreviationSpecs: AbbreviationSpec[] = [];
 
     fixture.componentInstance.newAbbreviationSpec.subscribe(
@@ -325,6 +325,53 @@ describe('SpellComponent', () => {
     expect(spellInputs[0].nativeElement.value).toEqual('c');
   });
 
+  it('supports 2nd spelling after 1st one: same letter twice', () => {
+    const emittedAbbreviationSpecs: AbbreviationSpec[] = [];
+    fixture.componentInstance.newAbbreviationSpec.subscribe(
+        spec => emittedAbbreviationSpecs.push(spec));
+    const oldAbbreviationSpec = getAbbreviationSpecForTest(['a', 'b'])
+    fixture.componentInstance.originalAbbreviationSpec = oldAbbreviationSpec;
+    fixture.componentInstance.spellIndex = 0;
+    fixture.componentInstance.ngOnInit();
+    fixture.componentInstance.listenToKeypress(
+        ['a', 'b', 'c', ' ', ' ', 'a'], 'abc  a');
+    fixture.componentInstance.listenToKeypress(
+        ['a', 'b', 'c', ' ', ' ', 'a', 'l'], 'abc  al');
+    fixture.componentInstance.listenToKeypress(
+        ['a', 'b', 'c', ' ', ' ', 'a', 'l', 'l'], 'abc  all');
+    fixture.componentInstance.listenToKeypress(
+        ['a', 'b', 'c', ' ', ' ', 'a', 'l', 'l', ' '], 'abc  all ');
+    fixture.detectChanges();
+    // Set up the second AE spelling.
+    fixture.componentInstance.listenToKeypress(
+        ['a', 'b', 'c', ' ', ' ', 'a', 'l', 'l', ' ', 'a'], 'abc  all a');
+    fixture.componentInstance.listenToKeypress(
+        ['a', 'b', 'c', ' ', ' ', 'a', 'l', 'l', ' ', 'a', 't'], 'abc  all at');
+    fixture.componentInstance.listenToKeypress(
+        ['a', 'b', 'c', ' ', ' ', 'a', 'l', 'l', ' ', 'a', 't', ' '],
+        'abc  all at ');
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.state).toEqual(SpellingState.DONE);
+    expect(fixture.componentInstance.spelledWords).toEqual([
+      'at',
+      null,
+    ]);
+    expect(emittedAbbreviationSpecs.length).toEqual(2);
+    expect(emittedAbbreviationSpecs[1].tokens.length).toEqual(2);
+    expect(emittedAbbreviationSpecs[1].tokens[0]).toEqual({
+      value: 'at',
+      isKeyword: true,
+    });
+    expect(emittedAbbreviationSpecs[1].tokens[1]).toEqual({
+      value: 'b',
+      isKeyword: false,
+    });
+    expect(emittedAbbreviationSpecs[1].readableString).toEqual('at b');
+    expect(emittedAbbreviationSpecs[1].eraserSequence)
+        .toEqual(repeatVirtualKey(VIRTUAL_KEY.BACKSPACE, 11));
+  });
+
   it('registers buttons on spelling', async () => {
     fixture.componentInstance.originalAbbreviationSpec =
         getAbbreviationSpecForTest(['a', 'b', 'c']);
@@ -344,7 +391,7 @@ describe('SpellComponent', () => {
     expect(lastCall[1].length).toEqual(3);
   });
 
-  it('Clicking token button starts spelling', () => {
+  it('clicking token button starts spelling: no duplicate letters', () => {
     const keyCodeValues: number[][] = [];
     (window as any).externalKeypressHook = (keyCode: number[]) => {
       keyCodeValues.push(keyCode);
@@ -357,6 +404,28 @@ describe('SpellComponent', () => {
     const tokenButtons =
         fixture.debugElement.queryAll(By.css('.abbreviated-token'));
     (tokenButtons[1].nativeElement as HTMLButtonElement).click();
-    expect(keyCodeValues).toEqual([getVirtualkeyCode('b')]);
+    expect(fixture.componentInstance.spellIndex).toEqual(1);
+    expect(fixture.componentInstance.tokenSpellingInput).toEqual('b');
+    // Clicking the button shouldn't trigger programmatic keystrokes.
+    expect(keyCodeValues).toEqual([]);
+  });
+
+  it('clicking token button starts spelling: no duplicate letters', () => {
+    const keyCodeValues: number[][] = [];
+    (window as any).externalKeypressHook = (keyCode: number[]) => {
+      keyCodeValues.push(keyCode);
+    };
+    fixture.componentInstance.originalAbbreviationSpec =
+        getAbbreviationSpecForTest(['a', 'b', 'c', 'a']);
+    fixture.componentInstance.state = SpellingState.SPELLING_TOKEN;
+    fixture.detectChanges();
+
+    const tokenButtons =
+        fixture.debugElement.queryAll(By.css('.abbreviated-token'));
+    (tokenButtons[3].nativeElement as HTMLButtonElement).click();
+    expect(fixture.componentInstance.spellIndex).toEqual(3);
+    expect(fixture.componentInstance.tokenSpellingInput).toEqual('a');
+    // Clicking the button shouldn't trigger programmatic keystrokes.
+    expect(keyCodeValues).toEqual([]);
   });
 });

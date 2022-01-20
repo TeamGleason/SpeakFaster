@@ -89,10 +89,10 @@ export class AbbreviationEditingComponent implements OnInit, AfterViewInit {
       return;
     }
     const abbreviationSpec: AbbreviationSpec = {
-      tokens: [{
-        value: this.inputAbbreviation,
-        isKeyword: false,
-      }],
+      tokens: this.inputAbbreviation.trim().split('').map(letter => ({
+                                                            value: letter,
+                                                            isKeyword: false,
+                                                          })),
       readableString: this.inputAbbreviation,
       lineageId: createUuid(),
     };

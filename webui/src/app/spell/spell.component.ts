@@ -1,5 +1,6 @@
 import {AfterViewInit, ChangeDetectorRef, Component, ElementRef, EventEmitter, Input, OnChanges, OnInit, Output, QueryList, SimpleChanges, ViewChildren} from '@angular/core';
 import {updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
+import {isAlphanumericChar} from 'src/utils/text-utils';
 import {createUuid} from 'src/utils/uuid';
 
 import {ExternalEventsComponent, getVirtualkeyCode, repeatVirtualKey, VIRTUAL_KEY} from '../external/external-events.component';
@@ -37,7 +38,7 @@ export class SpellComponent implements OnInit, OnChanges {
   spellIndex: number|null = null;
   state: SpellingState = SpellingState.CHOOSING_TOKEN;
   tokenSpellingInput: string = '';
-  private originalReconText: string = '';
+  private eraserSequence: string[] = [];
 
   // Words that have already been spelled out so far. This supports
   // incremental spelling out of multiple words in an abbreviation.
@@ -48,7 +49,7 @@ export class SpellComponent implements OnInit, OnChanges {
   ngOnInit() {
     ExternalEventsComponent.registerKeypressListener(
         this.listenToKeypress.bind(this));
-    if (this.originalReconText === '') {
+    if (this.eraserSequence.length === 0) {
       this.resetState();
     }
   }
@@ -88,7 +89,7 @@ export class SpellComponent implements OnInit, OnChanges {
         this.state === SpellingState.DONE) {
       const spellIndices: number[] = [];
       this.originalAbbreviationSpec.tokens.forEach((abbreviationToken, i) => {
-        if (abbreviationToken.value.toLowerCase() === lastKey) {
+        if (abbreviationToken.value.toLowerCase().slice(0, 1) === lastKey) {
           spellIndices.push(i);
         }
       });
@@ -96,29 +97,40 @@ export class SpellComponent implements OnInit, OnChanges {
         // There is a unique matching token.
         this.spellIndex = spellIndices[0];
         this.state = SpellingState.SPELLING_TOKEN;
-        this.originalReconText =
-            reconstructedText.slice(0, reconstructedText.length - 1);
-        this.tokenSpellingInput =
-            reconstructedText.slice(this.originalReconText.length);
+        this.tokenSpellingInput = lastKey;
+        this.eraserSequence.splice(0);
+        this.eraserSequence.push(lastKey);
         this.cdr.detectChanges();
         // TODO(cais): Disallow punctuation?
       }
     } else if (this.state === SpellingState.SPELLING_TOKEN) {
-      if (lastKey === ' ' || lastKey == VIRTUAL_KEY.ENTER) {
-        // Space or Enter terminates the spelling and trigger a new AE call.
-        this.endSpelling();
-      } else {
-        this.tokenSpellingInput =
-            reconstructedText.slice(this.originalReconText.length);
+      if (isAlphanumericChar(lastKey)) {
+        this.tokenSpellingInput += lastKey;
+        this.eraserSequence.push(lastKey);
         this.cdr.detectChanges();
+      } else if (lastKey === VIRTUAL_KEY.BACKSPACE) {
+        if (this.tokenSpellingInput.length > 0) {
+          this.tokenSpellingInput = this.tokenSpellingInput.slice(
+              0, this.tokenSpellingInput.length - 1);
+          this.eraserSequence.splice(this.eraserSequence.length - 1);
+        }
+      } else {
+        // Any keys other than alphanumeric or backspace terminates the spelling
+        // and trigger a new AE call. this.spellingKeys.push(lastKey);
+        this.eraserSequence.push(lastKey);
+        this.endSpelling();
       }
     }
   }
 
   onTokenButtonClicked(event: Event, i: number) {
-    (window as any)
-        .externalKeypressHook(
-            getVirtualkeyCode(this.originalAbbreviationChars[i]));
+    // Clicking a token button is the way to specify the word being spelled out
+    // when there are duplicate letters.
+    this.spellIndex = i;
+    this.tokenSpellingInput = this.originalAbbreviationChars[i];
+    this.eraserSequence.splice(0);
+    this.state = SpellingState.SPELLING_TOKEN;
+    this.cdr.detectChanges();
   }
 
   onDoneButtonClicked(event: Event) {
@@ -172,7 +184,7 @@ export class SpellComponent implements OnInit, OnChanges {
         eraserSequence: [
           ...this.originalAbbreviationSpec.eraserSequence,
           ...repeatVirtualKey(
-              VIRTUAL_KEY.BACKSPACE, this.tokenSpellingInput.length + 1),
+              VIRTUAL_KEY.BACKSPACE, this.eraserSequence.length),
         ],
       };
     }

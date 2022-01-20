@@ -197,11 +197,6 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
                     AbbreviationComponent._MAX_NUM_REPLACEMENT_TOKENS);
               }
               this.state = State.CHOOSING_TOKEN_REPLACEMENT;
-              // KeyboardComponent.registerCallback(
-              //     AbbreviationComponent
-              //         ._TOKEN_REPLACEMENT_KEYBOARD_CALLBACK_NAME,
-              //     this.handleKeyboardEventForReplacemenToken.bind(this));
-              // TODO(cais): Clean up.
             },
             error => {
                 // TODO(cais): Handle fill mask error.
@@ -252,9 +247,6 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
       timestampMillis: Date.now(),
       isFinal: true,
     });
-    // KeyboardComponent.unregisterCallback(
-    //     AbbreviationComponent._TOKEN_REPLACEMENT_KEYBOARD_CALLBACK_NAME);
-    // TODO(cais): Clean up.
     // TODO(cais): Prevent selection in gap state.
     setTimeout(() => this.resetState(), 1000);
   }

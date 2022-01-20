@@ -86,16 +86,12 @@ describe('ContextComponent', () => {
     }
     const turnComponents = fixture.debugElement.queryAll(
         By.css('app-conversation-turn-component'));
-    expect(turnComponents.length).toEqual(3);
+    expect(turnComponents.length).toEqual(2);
     expect(turnComponents[0]
                .query(By.css('.turn-content'))
                .nativeElement.innerText)
-        .toEqual('Hello, #2');
-    expect(turnComponents[1]
-               .query(By.css('.turn-content'))
-               .nativeElement.innerText)
         .toEqual('Hello, #3');
-    expect(turnComponents[2]
+    expect(turnComponents[1]
                .query(By.css('.turn-content'))
                .nativeElement.innerText)
         .toEqual('Hello, #4');

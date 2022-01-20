@@ -410,7 +410,7 @@ describe('SpellComponent', () => {
     expect(keyCodeValues).toEqual([]);
   });
 
-  it('clicking token button starts spelling: no duplicate letters', () => {
+  it('clicking token button starts spelling: has duplicate letters', () => {
     const keyCodeValues: number[][] = [];
     (window as any).externalKeypressHook = (keyCode: number[]) => {
       keyCodeValues.push(keyCode);

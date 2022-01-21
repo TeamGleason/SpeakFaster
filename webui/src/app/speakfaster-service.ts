@@ -96,7 +96,6 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
     });
   }
 
-  // TODO(cais): Add other parameters.
   expandAbbreviation(
       speechContent: string, abbreviationSpec: AbbreviationSpec,
       numSamples: number, precedingText?: string) {

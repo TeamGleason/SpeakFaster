@@ -157,21 +157,32 @@ export class SpellComponent implements OnInit, OnChanges {
 
   private recreateAbbreviation(): AbbreviationSpec {
     this.spelledWords[this.spellIndex!] = this.tokenSpellingInput.trim();
+    let pendingChars = '';
     const tokens: AbbreviationToken[] = [];
     for (let i = 0; i < this.originalAbbreviationChars.length; ++i) {
-      if (this.spelledWords[i] !== null) {
+      if (this.spelledWords[i] === null) {
+        // Word not spelled out.
+        pendingChars += this.originalAbbreviationChars[i];
+      } else {
+        // The word has been spelled out.
+        if (pendingChars) {
+          tokens.push({
+            value: pendingChars,
+            isKeyword: false,
+          });
+          pendingChars = '';
+        }
         tokens.push({
-          value: this.spelledWords[i] as string,
+          value: this.spelledWords[i]!,
           isKeyword: true,
         });
-      } else {
-        const char = this.originalAbbreviationChars[i];
-        tokens.push({
-          value: char,
-          isKeyword: false,
-        });
       }
-      this.spelledWords
+    }
+    if (pendingChars) {
+      tokens.push({
+        value: pendingChars,
+        isKeyword: false,
+      });
     }
     let newAbbreviationSpec: AbbreviationSpec = {
       tokens,

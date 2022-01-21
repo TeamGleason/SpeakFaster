@@ -14,7 +14,7 @@ import {AbbreviationSpec, AbbreviationToken, InputAbbreviationChangedEvent} from
 import {SpellComponent, SpellingState} from './spell.component';
 import {SpellModule} from './spell.module';
 
-describe('SpellComponent', () => {
+fdescribe('SpellComponent', () => {
   let abbreviationExpansionTriggers: Subject<InputAbbreviationChangedEvent>;
   let fixture: ComponentFixture<SpellComponent>;
   let testListener: TestListener;
@@ -187,34 +187,35 @@ describe('SpellComponent', () => {
     fixture.componentInstance.spellIndex = 1;
     fixture.detectChanges();
     fixture.componentInstance.listenToKeypress(
-        ['a', 'b', 'c', ' ', ' ', 'b'], 'abc  b');
+        ['a', 'b', 'c', ' ', ' ', 'c'], 'abc  c');
     fixture.componentInstance.listenToKeypress(
-        ['a', 'b', 'c', ' ', ' ', 'b', 'i'], 'abc  bi');
+        ['a', 'b', 'c', ' ', ' ', 'c', 'o'], 'abc  co');
     fixture.componentInstance.listenToKeypress(
-        ['a', 'b', 'c', ' ', ' ', 'b', 'i', 't'], 'abc  bit');
+        ['a', 'b', 'c', ' ', ' ', 'c', 'o', 'l'], 'abc  col');
+    fixture.componentInstance.listenToKeypress(
+        ['a', 'b', 'c', ' ', ' ', 'c', 'o', 'l', 'd'], 'abc  cold');
     const doneButton = fixture.debugElement.query(By.css('.done-button'));
     (doneButton.nativeElement as HTMLButtonElement).click();
     fixture.detectChanges();
 
     expect(fixture.componentInstance.state).toEqual(SpellingState.DONE);
-    expect(fixture.componentInstance.spelledWords).toEqual([null, 'bit', null]);
+    expect(fixture.componentInstance.spelledWords).toEqual([
+      null, null, 'cold'
+    ]);
     expect(emittedAbbreviationSpecs.length).toEqual(1);
-    expect(emittedAbbreviationSpecs[0].tokens.length).toEqual(3);
-    expect(emittedAbbreviationSpecs[0].tokens[0]).toEqual({
-      value: 'a',
-      isKeyword: false,
-    });
-    expect(emittedAbbreviationSpecs[0].tokens[1]).toEqual({
-      value: 'bit',
-      isKeyword: true,
-    });
-    expect(emittedAbbreviationSpecs[0].tokens[2]).toEqual({
-      value: 'c',
-      isKeyword: false,
-    });
-    expect(emittedAbbreviationSpecs[0].readableString).toEqual('a bit c');
+    expect(emittedAbbreviationSpecs[0].tokens).toEqual([
+      {
+        value: 'ab',
+        isKeyword: false,
+      },
+      {
+        value: 'cold',
+        isKeyword: true,
+      }
+    ]);
+    expect(emittedAbbreviationSpecs[0].readableString).toEqual('ab cold');
     expect(emittedAbbreviationSpecs[0].eraserSequence)
-        .toEqual(repeatVirtualKey(VIRTUAL_KEY.BACKSPACE, 5 + 3));
+        .toEqual(repeatVirtualKey(VIRTUAL_KEY.BACKSPACE, 5 + 4));
   });
 
   it(`supports spelling 2nd word after spelling the first`, () => {
@@ -253,19 +254,20 @@ describe('SpellComponent', () => {
       null, 'bit', 'cold'
     ]);
     expect(emittedAbbreviationSpecs.length).toEqual(2);
-    expect(emittedAbbreviationSpecs[1].tokens.length).toEqual(3);
-    expect(emittedAbbreviationSpecs[1].tokens[0]).toEqual({
-      value: 'a',
-      isKeyword: false,
-    });
-    expect(emittedAbbreviationSpecs[1].tokens[1]).toEqual({
-      value: 'bit',
-      isKeyword: true,
-    });
-    expect(emittedAbbreviationSpecs[1].tokens[2]).toEqual({
-      value: 'cold',
-      isKeyword: true,
-    });
+    expect(emittedAbbreviationSpecs[1].tokens).toEqual([
+      {
+        value: 'a',
+        isKeyword: false,
+      },
+      {
+        value: 'bit',
+        isKeyword: true,
+      },
+      {
+        value: 'cold',
+        isKeyword: true,
+      }
+    ]);
     expect(emittedAbbreviationSpecs[1].readableString).toEqual('a bit cold');
     expect(emittedAbbreviationSpecs[1].eraserSequence)
         .toEqual(repeatVirtualKey(VIRTUAL_KEY.BACKSPACE, 5 + 4 + 5));
@@ -358,15 +360,16 @@ describe('SpellComponent', () => {
       null,
     ]);
     expect(emittedAbbreviationSpecs.length).toEqual(2);
-    expect(emittedAbbreviationSpecs[1].tokens.length).toEqual(2);
-    expect(emittedAbbreviationSpecs[1].tokens[0]).toEqual({
-      value: 'at',
-      isKeyword: true,
-    });
-    expect(emittedAbbreviationSpecs[1].tokens[1]).toEqual({
-      value: 'b',
-      isKeyword: false,
-    });
+    expect(emittedAbbreviationSpecs[1].tokens).toEqual([
+      {
+        value: 'at',
+        isKeyword: true,
+      },
+      {
+        value: 'b',
+        isKeyword: false,
+      }
+    ]);
     expect(emittedAbbreviationSpecs[1].readableString).toEqual('at b');
     expect(emittedAbbreviationSpecs[1].eraserSequence)
         .toEqual(repeatVirtualKey(VIRTUAL_KEY.BACKSPACE, 11));

@@ -14,7 +14,7 @@ import {AbbreviationSpec, AbbreviationToken, InputAbbreviationChangedEvent} from
 import {SpellComponent, SpellingState} from './spell.component';
 import {SpellModule} from './spell.module';
 
-fdescribe('SpellComponent', () => {
+describe('SpellComponent', () => {
   let abbreviationExpansionTriggers: Subject<InputAbbreviationChangedEvent>;
   let fixture: ComponentFixture<SpellComponent>;
   let testListener: TestListener;

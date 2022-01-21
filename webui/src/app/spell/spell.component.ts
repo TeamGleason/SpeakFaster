@@ -88,8 +88,8 @@ export class SpellComponent implements OnInit, OnChanges {
     if (this.state === SpellingState.CHOOSING_TOKEN ||
         this.state === SpellingState.DONE) {
       const spellIndices: number[] = [];
-      this.originalAbbreviationSpec.tokens.forEach((abbreviationToken, i) => {
-        if (abbreviationToken.value.toLowerCase().slice(0, 1) === lastKey) {
+      this.originalAbbreviationChars.forEach((abbreviationChar, i) => {
+        if (abbreviationChar.toLowerCase().slice(0, 1) === lastKey) {
           spellIndices.push(i);
         }
       });

@@ -48,3 +48,41 @@ ng lint
 In VSCode, you can auto format the .ts file by using the shortcut key
 `Ctrl + Shift + I` (or the equivalent shortcut key on operatings systems
 other than Linux).
+
+## Interface between WebUI and hosting app
+
+The API between the JavaScript/TypeScript code in the WebUI and the hosting Windows
+app allows the WebUI to listen to keystrokes outside the WebUI (e.g., in Balabolka)
+and to inject keystrokes programmatically into the external applications. It is
+also an abstraction that allows the WebUI to potentiall talk to a different hosting
+environment (e.g., a container web app).
+
+### 1. Keystroke listening API
+
+The WebUI provides a function attached to the global `window` object, namely
+`window.registerExternalKeypress()`, which has the following signature:
+
+```typescript
+function registerExternalKeypress(virualKeyCode: number): void;
+```
+
+wherein the `virtualKeyCode` argument obeys the
+[Win32 Virtual Key Codes standard](https://docs.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes).
+This allows the WebUI to be informed of all alphanumeric and functional keypresses.
+
+The function `getVirtualkeyCode()` in `external-events-component.ts` can
+translate strings into virtual key code values.
+
+### 2. Keystroke injection API
+
+The WebUI assumes that the global object `window.boundListener` exists and has
+the following interface:
+
+```typescript
+interface BoundObject {
+   function injectKey(virtualKeys: number[]);
+}
+```
+
+The contract of the `injectKeys()` function is it will issue the keys in `virtualKeys`
+programmatically in the specified order.

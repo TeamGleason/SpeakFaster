@@ -80,7 +80,7 @@ the following interface:
 
 ```typescript
 interface BoundObject {
-   function injectKey(virtualKeys: number[]);
+   function injectKey(virtualKeys: number[]): void;
 }
 ```
 

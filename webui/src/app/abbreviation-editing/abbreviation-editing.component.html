@@ -9,6 +9,11 @@
     -moz-osx-font-smoothing: grayscale;
 }
 
+input[type="text"]:disabled{
+  background-color: #eee;
+  color: #111;
+}
+
 .abbreviation-input {
   border: 2px solid #888;
   border-radius: 3px;
@@ -46,6 +51,7 @@
 <input
     class="abbreviation-input"
     type="text"
+    disabled="true"
     value="{{inputAbbreviation}}" />
 
 <button

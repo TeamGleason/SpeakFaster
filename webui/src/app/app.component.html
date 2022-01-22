@@ -28,6 +28,13 @@ app-text-to-speech-component {
   padding: 10px;
 }
 
+.content {
+  height: fit-content;
+  margin: 0;
+  width: fit-content;
+  /* TODO(cais): Add max-width and max-height. */
+}
+
 .main-area {
   border: 2px solid green;
   border-radius: 7px;
@@ -35,7 +42,7 @@ app-text-to-speech-component {
 
 </style>
 
-<div class="content" role="main">
+<div #contentWrapper class="content" role="main">
 
   <!-- This is a "virtual" component without any UI. It is purely for
        handling keyboard events. -->

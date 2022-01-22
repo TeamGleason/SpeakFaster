@@ -1,8 +1,8 @@
-import {AfterViewInit, Component, OnInit, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, ElementRef, OnInit, ViewChild} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
 import {Subject} from 'rxjs';
 
-import {bindCefSharpListener, registerExternalKeypressHook} from '../utils/cefsharp';
+import {bindCefSharpListener, registerExternalKeypressHook, resizeWindow} from '../utils/cefsharp';
 
 import {ExternalEventsComponent} from './external/external-events.component';
 import {configureService, SpeakFasterService} from './speakfaster-service';
@@ -19,6 +19,8 @@ export class AppComponent implements OnInit, AfterViewInit {
 
   @ViewChild('externalEvents')
   externalEventsComponent!: ExternalEventsComponent;
+
+  @ViewChild('contentWrapper') contentWrapper!: ElementRef<HTMLDivElement>;
 
   // Set this to `false` to skip using access token (e.g., developing with
   // an automatically authorized browser context.)
@@ -63,6 +65,13 @@ export class AppComponent implements OnInit, AfterViewInit {
     registerExternalKeypressHook(
         this.externalEventsComponent.externalKeypressHook.bind(
             this.externalEventsComponent));
+    const resizeObserver = new ResizeObserver(entries => {
+      for (const entry of entries) {
+        const contentRect = entry.contentRect;
+        resizeWindow(contentRect.height, contentRect.width);
+      }
+    });
+    resizeObserver.observe(this.contentWrapper.nativeElement);
   }
 
   onNewAccessToken(accessToken: string) {

@@ -31,6 +31,7 @@ SPEAKER_MAP_DELIMITER = "\t"
 SPEKAER_MAP_COLUMN_HEADS = ("RealName", "Pseudonym")
 REDACTED_KEY = "[RedactedKey]"
 REDACTED_SPEKAER_ID = "redacted"
+EXPECTED_BACKGROUND_SPEECH_KEY = "[BackgroundSpeech]"
 _REDACT_TIME_RANGE_REGEX = re.compile("\[Redacted[A-Za-z]*?:.*?\]")
 
 
@@ -304,6 +305,20 @@ def apply_speaker_map_and_redaction_masks(rows, realname_to_pseudonym):
       pseudonym_tag = "[%s:%s]" % (tag_type, pseudonym)
       index = content.rindex(realname_tag)
       pseudonymized_content = content[:index] + pseudonym_tag
+
+      # If the content starts with "[", make sure that it contains only
+      # recognized items inside.
+      if pseudonymized_content.strip().startswith("["):
+        if "]" not in pseudonymized_content.strip()[1:]:
+          raise ValueError(
+              "Found unpaired square bracket ('[') in transcript: %s" %
+              pseudonymized_content)
+        label = pseudonymized_content.strip()[
+            :pseudonymized_content.strip().index("]") + 1]
+        if label not in (EXPECTED_BACKGROUND_SPEECH_KEY,):
+          raise ValueError(
+              "Found unrecognized label at the beginning of: %s" %
+              pseudonymized_content)
 
       # Check for redaction tags with time ranges, replace the redacted spans
       # with tags like "[RedactedSenitive]"

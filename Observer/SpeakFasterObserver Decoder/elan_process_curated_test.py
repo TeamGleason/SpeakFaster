@@ -216,6 +216,30 @@ class ApplySpeakerMapGetKeypressRedactionsTest(tf.test.TestCase):
         "I have [RedactedSensitive time=\"21.500-23.600\"] [SpeakerTTS:User001]")
     self.assertEqual(ranges, [(1.5, 4.0), (21.5, 23.6)])
 
+  def testHandlingValidBackgroundSpeechLabel(self):
+    rows = [
+        [5.2, 6.0, "SpeechTranscript",
+         "[BackgroundSpeech] Random content [Speaker:Danielle]"]]
+    ranges = elan_process_curated.apply_speaker_map_and_redaction_masks(
+        rows, self._realname_to_pseudonym)
+    self.assertEqual(ranges, [])
+    self.assertLen(rows, 1)
+    self.assertEqual(
+        rows[0],
+        [5.2, 6.0, "SpeechTranscript",
+        "[BackgroundSpeech] Random content [Speaker:Partner005]"])
+
+  def testCatchesUnpairedSquareBracket(self):
+    rows = [
+        [5.2, 6.0, "SpeechTranscript",
+        # Notice the typo here.
+         "[BackgroundSpeehc] Random content [Speaker:Danielle]"]]
+    with self.assertRaisesRegex(
+        ValueError,
+        r"Found unrecognized label at the beginning of: \[BackgroundSpeehc\]"):
+      elan_process_curated.apply_speaker_map_and_redaction_masks(
+          rows, self._realname_to_pseudonym)
+
 
 class RedactKeypressesTest(tf.test.TestCase):
 

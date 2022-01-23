@@ -115,6 +115,7 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
         }
         const eraserLength = text.length;
         text = text.trim();
+        text = text.replace(/\n/g, '');
         if (text.length > 0) {
           // An abbreviation expansion has been triggered.
           // TODO(#49): Support keywords in abbreviation (e.g.,

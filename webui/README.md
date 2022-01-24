@@ -86,3 +86,33 @@ interface BoundObject {
 
 The contract of the `injectKeys()` function is it will issue the keys in `virtualKeys`
 programmatically in the specified order.
+
+### 3. Registeration of gaze-clickable areas
+
+The WebUI is meant to be used with an eye tracker. The hosting app provides
+two methods in the `window.boundListener` object to allow the WebUI to register
+and update its clickable regions such as buttons.
+
+The `updateButtonBoxes()` method has the following signature:
+
+```typescript
+function updateButtonBoxes(componentName: string,
+                           boxes: Array<[number, number, number, number]>);
+```
+
+The argument `componentName` specifies the (Agnular) component that the
+clickable regions belong to. The argument `boxes` contain the
+`[left, top, right, bottom]` coordinates of all clickable regions that belong
+to the component. The host app keeps track of the coordinates, so that
+repeated calls to `updateButtonBoxes()` with the same component name will erase
+clickable regions that have disappeared since the last call and create
+new clickable regions that have appeared since the last call.
+Calling `updateButtonBoxes()` n times with n different `componentName`s will
+cause n sets of clickable regions to be registered.
+
+The `updateButtonBoxesToEmpty()` is a convenient method that erases the latest
+registered clickable regions of the specified component:
+
+```typescript
+function updateButtonBoxesToEmpty(componentName: string);
+```

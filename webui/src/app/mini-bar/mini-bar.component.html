@@ -11,6 +11,9 @@
   color: #eee;
   font-size: 18px;
   height: 40px;
+  line-height: 36px;
+  text-align: center;
+  vertical-align: middle;
   width: 125px;
 }
 
@@ -21,10 +24,13 @@
 
 </style>
 
-<button
+<!-- NOTE: We avoid using a button for this to avoid
+    the button stealing focus and interfere with 
+    keyboard events. -->
+<div
     #clickableButton
     class="main-button"
     [ngClass]="{'minimized': appState === 'MINIBAR'}"
     (click)="onButtonClicked($event)">
     {{buttonText}}
-</button>
+</div>

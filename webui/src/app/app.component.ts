@@ -10,6 +10,8 @@ import {InputAbbreviationChangedEvent} from './types/abbreviation';
 import {AppState} from './types/app-state';
 import {TextEntryBeginEvent, TextEntryEndEvent} from './types/text-entry';
 
+export type AppResizeCallback = (height: number, width: number) => void;
+
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
@@ -17,6 +19,8 @@ import {TextEntryBeginEvent, TextEntryEndEvent} from './types/text-entry';
 })
 export class AppComponent implements OnInit, AfterViewInit {
   title = 'SpeakFasterApp';
+
+  private static readonly appResizeCallbacks: AppResizeCallback[] = [];
 
   @ViewChild('externalEvents')
   externalEventsComponent!: ExternalEventsComponent;
@@ -69,9 +73,12 @@ export class AppComponent implements OnInit, AfterViewInit {
         this.externalEventsComponent.externalKeypressHook.bind(
             this.externalEventsComponent));
     const resizeObserver = new ResizeObserver(entries => {
-      for (const entry of entries) {
-        const contentRect = entry.contentRect;
-        resizeWindow(contentRect.height, contentRect.width);
+      const entry = entries[0];
+      const contentRect = entry.contentRect;
+      const {height, width} = contentRect;
+      resizeWindow(height, width);
+      for (const callback of AppComponent.appResizeCallbacks) {
+        callback(height, width);
       }
     });
     resizeObserver.observe(this.contentWrapper.nativeElement);
@@ -118,5 +125,12 @@ export class AppComponent implements OnInit, AfterViewInit {
 
   onSpellingStateChanged(state: 'START'|'END') {
     this.isSpelling = state === 'START';
+  }
+
+  public static registerAppResizeCallback(callback: AppResizeCallback) {
+    // TODO(cais): Add unit test.
+    if (AppComponent.appResizeCallbacks.indexOf(callback) === -1) {
+      AppComponent.appResizeCallbacks.push(callback);
+    }
   }
 }

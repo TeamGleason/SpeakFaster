@@ -7,6 +7,7 @@ import {bindCefSharpListener, registerExternalKeypressHook, resizeWindow} from '
 import {ExternalEventsComponent} from './external/external-events.component';
 import {configureService, SpeakFasterService} from './speakfaster-service';
 import {InputAbbreviationChangedEvent} from './types/abbreviation';
+import {AppState} from './types/app-state';
 import {TextEntryBeginEvent, TextEntryEndEvent} from './types/text-entry';
 
 @Component({
@@ -21,6 +22,8 @@ export class AppComponent implements OnInit, AfterViewInit {
   externalEventsComponent!: ExternalEventsComponent;
 
   @ViewChild('contentWrapper') contentWrapper!: ElementRef<HTMLDivElement>;
+
+  appState: AppState = AppState.EXPANDED;
 
   // Set this to `false` to skip using access token (e.g., developing with
   // an automatically authorized browser context.)
@@ -72,6 +75,13 @@ export class AppComponent implements OnInit, AfterViewInit {
       }
     });
     resizeObserver.observe(this.contentWrapper.nativeElement);
+  }
+
+  onAppStateChanged(arg: {appState: AppState}) {
+    if (arg.appState === this.appState) {
+      return;
+    }
+    this.appState = arg.appState;
   }
 
   onNewAccessToken(accessToken: string) {

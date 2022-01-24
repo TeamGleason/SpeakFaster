@@ -10,6 +10,7 @@ import {ContextModule} from './context/context.module';
 import {ExternalEventsModule} from './external/external-events.module';
 import {KeyboardModule} from './keyboard/keyboard.module';
 import {MetricsModule} from './metrics/metrics.module';
+import {MiniBarModule} from './mini-bar/mini-bar.module';
 import {TextPredictionModule} from './text-prediction/text-prediction.module';
 import {TextToSpeechModule} from './text-to-speech/text-to-speech.module';
 
@@ -25,6 +26,7 @@ import {TextToSpeechModule} from './text-to-speech/text-to-speech.module';
     ExternalEventsModule,
     KeyboardModule,
     MetricsModule,
+    MiniBarModule,
     TextPredictionModule,
     TextToSpeechModule,
   ],

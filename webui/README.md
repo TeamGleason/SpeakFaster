@@ -48,3 +48,71 @@ ng lint
 In VSCode, you can auto format the .ts file by using the shortcut key
 `Ctrl + Shift + I` (or the equivalent shortcut key on operatings systems
 other than Linux).
+
+## Interface between WebUI and hosting app
+
+The API between the JavaScript/TypeScript code in the WebUI and the hosting Windows
+app allows the WebUI to listen to keystrokes outside the WebUI (e.g., in Balabolka)
+and to inject keystrokes programmatically into the external applications. It is
+also an abstraction that allows the WebUI to potentiall talk to a different hosting
+environment (e.g., a container web app).
+
+### 1. Keystroke listening API
+
+The WebUI provides a function attached to the global `window` object, namely
+`window.registerExternalKeypress()`, which has the following signature:
+
+```typescript
+function registerExternalKeypress(virualKeyCode: number): void;
+```
+
+wherein the `virtualKeyCode` argument obeys the
+[Win32 Virtual Key Codes standard](https://docs.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes).
+This allows the WebUI to be informed of all alphanumeric and functional keypresses.
+
+The function `getVirtualkeyCode()` in `external-events-component.ts` can
+translate strings into virtual key code values.
+
+### 2. Keystroke injection API
+
+The WebUI assumes that the global object `window.boundListener` exists and has
+the following interface:
+
+```typescript
+interface BoundObject {
+   function injectKey(virtualKeys: number[]): void;
+}
+```
+
+The contract of the `injectKeys()` function is it will issue the keys in `virtualKeys`
+programmatically in the specified order.
+
+### 3. Registeration of gaze-clickable areas
+
+The WebUI is meant to be used with an eye tracker. The hosting app provides
+two methods in the `window.boundListener` object to allow the WebUI to register
+and update its clickable regions such as buttons.
+
+The `updateButtonBoxes()` method has the following signature:
+
+```typescript
+function updateButtonBoxes(componentName: string,
+                           boxes: Array<[number, number, number, number]>);
+```
+
+The argument `componentName` specifies the (Agnular) component that the
+clickable regions belong to. The argument `boxes` contain the
+`[left, top, right, bottom]` coordinates of all clickable regions that belong
+to the component. The host app keeps track of the coordinates, so that
+repeated calls to `updateButtonBoxes()` with the same component name will erase
+clickable regions that have disappeared since the last call and create
+new clickable regions that have appeared since the last call.
+Calling `updateButtonBoxes()` n times with n different `componentName`s will
+cause n sets of clickable regions to be registered.
+
+The `updateButtonBoxesToEmpty()` is a convenient method that erases the latest
+registered clickable regions of the specified component:
+
+```typescript
+function updateButtonBoxesToEmpty(componentName: string);
+```

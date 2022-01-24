@@ -24,3 +24,32 @@ export function limitStringLength(
   }
   return output;
 }
+
+/** Determines if an array of strings ends with the specified suffix. */
+export function keySequenceEndsWith(
+    keySequence: string[], suffix: string[]): boolean {
+  return keySequence.length > suffix.length &&
+      allItemsEqual(
+             keySequence.slice(keySequence.length - suffix.length), suffix);
+}
+
+function allItemsEqual(array1: string[], array2: string[]): boolean {
+  if (array1.length !== array2.length) {
+    return false;
+  }
+  for (let i = 0; i < array1.length; ++i) {
+    if (array1[i] !== array2[i]) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/** Determine whether a string is a single alphanumeric character. */
+export function isAlphanumericChar(str: string): boolean {
+  if (str.length !== 1) {
+    return false;
+  }
+  str = str.toLowerCase();
+  return str >= 'a' && str <= 'z' || str >= '0' && str <= '9';
+}

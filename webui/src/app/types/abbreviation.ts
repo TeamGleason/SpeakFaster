@@ -42,6 +42,17 @@ export interface AbbreviationSpec {
   // that resulted from the trigger keys, which can be used for key
   // injection later.
   readonly eraserSequence?: VIRTUAL_KEY[];
+
+  // Unique ID for the lineage of abbreviations.
+  // Derived abbreviations will share the same ID as the original one.
+  // A lineage of abbreviations is generated when the user incrementally
+  // spells words out in the intended phrase in order to overcome possible
+  // initial abbreviation expansion failure. E.g., the intended phrase is "I
+  // feel grumpy", which is initially abbreviated as "ifg". But suppose the
+  // initially expansion call fails to find the phrase, the user types out the
+  // word "grumpy", which leads to a second abbreviation in the lineage: "if
+  // grumpy".
+  readonly lineageId: string;
 }
 
 /** An event that signifies the change in an input abbreviation */
@@ -58,4 +69,3 @@ export interface StartSpellingEvent {
   readonly originalAbbreviationChars: string[];
   readonly isNewSpellingTask: boolean;
 }
-

@@ -131,6 +131,16 @@ app-text-to-speech-component {
         <button
             #clickableButton
             class="side-pane-button"
+            (click)="onQuickPhrasesCareButtonClicked($event, 'QUICK_PHRASES_PARTNERS')">
+          <img
+              class="button-image"
+              src="/assets/images/quick-phrases-partners-inactive.png"
+              alt="quick phrases - partners" />
+        </button>
+
+        <button
+            #clickableButton
+            class="side-pane-button"
             (click)="onQuickPhrasesCareButtonClicked($event, 'QUICK_PHRASES_CARE')">
           <img
               class="button-image"
@@ -149,8 +159,10 @@ app-text-to-speech-component {
 
     <div
         class="main-right-pane mode-quick-pharses"
-        *ngIf="hasAccessToken() && appState === 'QUICK_PHRASES_CARE'">
+        *ngIf="hasAccessToken() && isQuickPhrasesAppState()">
       <app-quick-phrases-component
+          [phrases]="getQuickPhrases()"
+          [color]="getQuickPhrasesColor()"
           [textEntryBeginSubject]="textEntryBeginSubject"
           [textEntryEndSubject]="textEntryEndSubject"
       ></app-quick-phrases-component>

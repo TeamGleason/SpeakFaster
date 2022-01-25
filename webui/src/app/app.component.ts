@@ -145,6 +145,9 @@ export class AppComponent implements OnInit, AfterViewInit {
 
   onQuickPhrasesCareButtonClicked(event: Event, appState: string) {
     switch (appState) {
+      case 'QUICK_PHRASES_PARTNERS':
+        this.changeAppState(AppState.QUICK_PHRASES_PARTNERS);
+        break;
       case 'QUICK_PHRASES_CARE':
         this.changeAppState(AppState.QUICK_PHRASES_CARE);
         break;
@@ -173,6 +176,46 @@ export class AppComponent implements OnInit, AfterViewInit {
     // TODO(cais): Add unit test.
     if (AppComponent.appResizeCallbacks.indexOf(callback) === -1) {
       AppComponent.appResizeCallbacks.push(callback);
+    }
+  }
+
+  isQuickPhrasesAppState() {
+    return this.appState == AppState.QUICK_PHRASES_PARTNERS ||
+        this.appState == AppState.QUICK_PHRASES_CARE;
+  }
+
+  // TODO(cais): Do not hardcode.
+  getQuickPhrases(): string[] {
+    switch (this.appState) {
+      case AppState.QUICK_PHRASES_PARTNERS:
+        return [
+          'Alice', 'Bob', 'Charlie', 'Danielle', 'Elly', 'Frank', 'George',
+          'Heather'
+        ];
+      case AppState.QUICK_PHRASES_CARE:
+        return [
+          'Good morning',
+          'Thank you very much',
+          'Hi there brother',
+          'You make me smile easy',
+          'I need to think about that',
+          'Have a wonderfully wonderful Tuesday',
+          'Let\'s go for a walk',
+        ];
+      default:
+        throw new Error(`Invalid app state: ${this.appState}`);
+    }
+  }
+
+  // TODO(cais): Do not hardcode.
+  getQuickPhrasesColor(): string {
+    switch (this.appState) {
+      case AppState.QUICK_PHRASES_PARTNERS:
+        return '#3F0909';
+      case AppState.QUICK_PHRASES_CARE:
+        return '#093F3A';
+      default:
+        throw new Error(`Invalid app state: ${this.appState}`);
     }
   }
 }

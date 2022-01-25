@@ -23,16 +23,8 @@ export class QuickPhrasesComponent implements AfterViewInit, OnDestroy {
 
   @Input() textEntryBeginSubject!: Subject<TextEntryBeginEvent>;
   @Input() textEntryEndSubject!: Subject<TextEntryEndEvent>;
-  @Input()
-  phrases: string[] = [
-    'Good morning',
-    'Thank you very much',
-    'Hi there brother',
-    'You make me smile easy',
-    'I need to think about that',
-    'Have a wonderfully wonderful Tuesday',
-    'Let\'s go for a walk',
-  ];
+  @Input() phrases: string[] = [];
+  @Input() color: string = 'gray';
   // TODO: Do not hardcode.
 
   ngAfterViewInit() {

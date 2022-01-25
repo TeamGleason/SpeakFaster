@@ -184,6 +184,29 @@ export class AppComponent implements OnInit, AfterViewInit {
         this.appState == AppState.QUICK_PHRASES_CARE;
   }
 
+  get quickPhrasesStatesAppStates(): AppState[] {
+    // return [{
+    //   appState: AppState.QUICK_PHRASES_CARE,
+    //   imgSrc: '/assets/images/quick-phrases-care-inactive.png',
+    // } , {
+    //   appState: AppState.QUICK_PHRASES_PARTNERS,
+    //   imgSrc: '/assets/images/quick-phrases-partners-inactive.png',
+    // }];
+    return [AppState.QUICK_PHRASES_PARTNERS, AppState.QUICK_PHRASES_CARE];
+  }
+
+  getQuickPhrasesImgSrc(appState: AppState, isActive: boolean): string {
+    const activeStateString = isActive ? 'active' : 'inactive';
+    switch (appState) {
+      case AppState.QUICK_PHRASES_PARTNERS:
+        return `/assets/images/quick-phrases-partners-${activeStateString}.png`;
+      case AppState.QUICK_PHRASES_CARE:
+        return `/assets/images/quick-phrases-care-${activeStateString}.png`;
+      default:
+        throw new Error(`Invalid app state: ${this.appState}`);
+    }
+  }
+
   // TODO(cais): Do not hardcode.
   getQuickPhrases(): string[] {
     switch (this.appState) {

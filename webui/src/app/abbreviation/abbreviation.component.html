@@ -9,14 +9,6 @@
     -moz-osx-font-smoothing: grayscale;
 }
 
-.abbreviation-expansion {
-  align-self: center;
-  display: inline;
-  flex: 5;
-  white-space: pre-wrap;
-  vertical-align: middle;
-}
-
 .abbreviation-option {
   background: #333;
   border-radius: 5px;
@@ -148,23 +140,6 @@
   color: orange;
 }
 
-.action-button {
-  background-color: grey;
-  border-radius: 5px;
-  color: #111;
-  display: inline;
-  float: right;
-  height: 64px;
-  font-size: 20px;
-  margin-left: 5px;
-  width: 80px;
-  padding: 2px 5px;
-}
-
-.speak-button {
-  width: 70px;
-}
-
 .token-input {
   border: 2px solid #888;
   border-radius: 3px;
@@ -194,26 +169,16 @@
   </button>
   <div class="abbreviation-options-container">
     <div class="abbreviation-options-grid">
-      <div
+      <app-phrase-component
           *ngFor="let abbreviationOption of abbreviationOptions; let i = index"
           #abbreviationOption
-          class="abbreviation-option item{{i + 1}}"
-          [ngClass]="{'candidate-for-edit': state === 'CHOOSING_EDIT_TARGET'}">
-        <div class="abbreviation-expansion">{{abbreviationOption}}</div>
-        <button
-            #clickableButton
-            class="action-button select-button"
-            [ngClass]="{'is-selected': i === selectedAbbreviationIndex}"
-            (click)="onExpansionOptionButtonClicked($event, i)">
-          Shift-{{i + 1}}
-        </button>
-        <button
-            #clickableButton
-            class="action-button speak-button"
-            (click)="onSpeakOptionButtonClicked($event, i)">
-          🔊
-        </button>
-      </div>
+          class="item{{i + 1}}"
+          [ngClass]="{'candidate-for-edit': state === 'CHOOSING_EDIT_TARGET'}"
+          [phraseText]="abbreviationOption"
+          [phraseIndex]="i"
+          (speakButtonClicked)="onSpeakOptionButtonClicked($event)"
+          (injectButtonClicked)="onExpansionOptionButtonClicked($event)">
+      </app-phrase-component>
     </div>
   </div>
 </div>

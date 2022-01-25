@@ -152,23 +152,26 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
     this.state = State.CHOOSING_EDIT_TARGET;
   }
 
-  onExpansionOptionButtonClicked(event: Event, index: number) {
+  onExpansionOptionButtonClicked(event: {
+    phraseText: string; phraseIndex: number
+  }) {
     if (this.state === State.CHOOSING_EXPANSION) {
-      this.selectExpansionOption(index, /* toInjectKeys= */ true);
+      this.selectExpansionOption(event.phraseIndex, /* toInjectKeys= */ true);
     } else if (this.state === State.CHOOSING_EDIT_TARGET) {
       this.editTokens.splice(0);
-      this.editTokens.push(...this.abbreviationOptions[index].split(' '));
+      this.editTokens.push(
+          ...this.abbreviationOptions[event.phraseIndex].split(' '));
       this.selectedTokenIndex = null;
       this.state = State.CHOOSING_TOKEN;
     }
   }
 
-  onSpeakOptionButtonClicked(event: Event, index: number) {
+  onSpeakOptionButtonClicked(event: {phraseText: string, phraseIndex: number}) {
     if (this.state !== State.CHOOSING_EXPANSION) {
       return;
     }
     this.selectExpansionOption(
-        index, /* toInjectKeys= */ true,
+        event.phraseIndex, /* toInjectKeys= */ true,
         /* toTriggerInAppTextToSpeech= */ true);
   }
 

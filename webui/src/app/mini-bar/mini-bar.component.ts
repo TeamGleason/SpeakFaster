@@ -29,12 +29,12 @@ export class MiniBarComponent implements AfterViewInit {
 
   onButtonClicked(event: Event) {
     this.appStateChanged.emit({
-      appState: this.appState === AppState.EXPANDED ? AppState.MINIBAR :
-                                                      AppState.EXPANDED,
+      appState: this.appState === AppState.MINIBAR ? AppState.ABBREVIATION_EXPANSION :
+                                                      AppState.MINIBAR,
     });
   }
 
   get buttonText(): string {
-    return this.appState === AppState.EXPANDED ? 'Hide' : 'SpeakFaster';
+    return this.appState === AppState.MINIBAR ? 'SpeakFaster' : 'Hide' ;
   }
 }

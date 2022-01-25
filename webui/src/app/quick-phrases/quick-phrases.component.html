@@ -1,0 +1,28 @@
+<style>
+
+:host {
+  box-sizing: border-box;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+}
+
+app-phrase-component {
+  display: inline-block;
+  margin: 3px 5px;
+}
+
+</style>
+
+<div class="quick-phrases-container">
+
+<app-phrase-component
+    *ngFor="let phrase of phrases; let i = index"
+    #phraseOption
+    class="item{{i + 1}}"
+    [phraseText]="phrase"
+    [phraseIndex]="i"
+    [color]="'#3F0909'"
+    (speakButtonClicked)="onSpeakOptionButtonClicked($event)"
+    (injectButtonClicked)="onInjectionOptionButtonClicked($event)">
+</app-phrase-component>
+
+</div>

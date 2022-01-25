@@ -31,7 +31,8 @@ export class AppComponent implements OnInit, AfterViewInit {
 
   @ViewChild('contentWrapper') contentWrapper!: ElementRef<HTMLDivElement>;
 
-  appState: AppState = AppState.EXPANDED;
+  appState: AppState = AppState.ABBREVIATION_EXPANSION;
+  // TODO(cais): Remember previous non-minibar state and restore it.
 
   // Set this to `false` to skip using access token (e.g., developing with
   // an automatically authorized browser context.)
@@ -125,6 +126,16 @@ export class AppComponent implements OnInit, AfterViewInit {
 
   onMinimizeButtonClicked(event: Event) {
     this.appState = AppState.MINIBAR;
+  }
+
+  onQuickPhrasesCareButtonClicked(event: Event, appState: string) {
+    switch (appState) {
+      case 'QUICK_PHRASES_CARE':
+        this.appState = AppState.QUICK_PHRASES_CARE;
+        break;
+      default:
+        break;
+    }
   }
 
   onContextStringsSelected(contextStrings: string[]) {

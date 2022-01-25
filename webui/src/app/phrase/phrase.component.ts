@@ -11,8 +11,7 @@ export class PhraseComponent implements AfterViewInit, OnDestroy {
   private static readonly _NAME = 'PhraseComponent';
 
   private readonly instanceId = PhraseComponent._NAME + '_' + createUuid();
-  @Input()
-  color: string = '#093F3A';
+  @Input() color: string = '#093F3A';
   @Input() phraseText!: string;
   @Input() phraseIndex!: number;
   @Output()

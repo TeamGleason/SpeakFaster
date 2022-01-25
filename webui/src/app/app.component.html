@@ -33,7 +33,6 @@ app-text-to-speech-component {
   height: fit-content;
   margin: 0;
   width: fit-content;
-  /* TODO(cais): Add max-width and max-height. */
 }
 
 .bottom-area {
@@ -49,27 +48,41 @@ app-text-to-speech-component {
 
 .main-area {
   display: flex;
+  height: fit-content;
   overflow: hidden;
   position: relative;
   width: 1200px;
-  height: 380px;
 }
 
 .main-left-pane {
-  align-items: flex-end;
+  align-items:flex-end;
   box-sizing: border-box;
   display: flex;
-  height: 100%;
+  min-height: 100%;
   justify-content: flex-end;
   padding-bottom: 10px;
   width: fit-content;
 }
 
+.mode-abbreviation-expansion {
+  height: 360px;
+}
+
+.mode-quick-phrases {
+  height: 240px;
+}
+
 .side-pane-button {
   background: transparent;
   border: none;
+  display: block;
   height: 50px;
+  margin: 10px 0 0;
   width: 50px;
+}
+
+.side-pane-button-container {
+  display: table-column;
 }
 
 </style>
@@ -104,23 +117,48 @@ app-text-to-speech-component {
     </app-mini-bar-component>
   </div>
 
+  <app-metrics-component
+      *ngIf="hasAccessToken() && appState !== 'MINIBAR'"
+      [textEntryBeginSubject]="textEntryBeginSubject"
+      [textEntryEndSubject]="textEntryEndSubject">
+  </app-metrics-component>
+
   <div
       class="main-area"
-      *ngIf="hasAccessToken() && appState === 'EXPANDED'">
+      *ngIf="hasAccessToken() && appState !== 'MINIBAR'">
     <div class="main-left-pane">
-      <button
-          #clickableButton
-          class="side-pane-button"
-          (click)="onMinimizeButtonClicked($event)">
-        <img class="button-image" src="/assets/images/minimize.png" alt="minimize" />
-      </button>
+      <div class="side-pane-button-container">
+        <button
+            #clickableButton
+            class="side-pane-button"
+            (click)="onQuickPhrasesCareButtonClicked($event, 'QUICK_PHRASES_CARE')">
+          <img
+              class="button-image"
+              src="/assets/images/quick-phrases-care-inactive.png"
+              alt="quick phrases - care" />
+        </button>
+
+        <button
+            #clickableButton
+            class="side-pane-button"
+            (click)="onMinimizeButtonClicked($event)">
+          <img class="button-image" src="/assets/images/minimize.png" alt="minimize" />
+        </button>
+      </div>
     </div>
 
-    <div class="main-right-pane">
-      <app-metrics-component
+    <div
+        class="main-right-pane mode-quick-pharses"
+        *ngIf="hasAccessToken() && appState === 'QUICK_PHRASES_CARE'">
+      <app-quick-phrases-component
           [textEntryBeginSubject]="textEntryBeginSubject"
-          [textEntryEndSubject]="textEntryEndSubject">
-      </app-metrics-component>
+          [textEntryEndSubject]="textEntryEndSubject"
+      ></app-quick-phrases-component>
+    </div>
+
+    <div
+        class="main-right-pane mode-abbreviation-expansion"
+        *ngIf="hasAccessToken() && appState === 'ABBREVIATION_EXPANSION'">
 
       <app-context-component
         [textEntryEndSubject]="textEntryEndSubject"

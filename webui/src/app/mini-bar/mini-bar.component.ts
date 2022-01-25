@@ -14,7 +14,7 @@ export class MiniBarComponent implements AfterViewInit {
   private readonly instanceId = MiniBarComponent._NAME + '_' + createUuid();
   @Input() appState!: AppState;
   @Output()
-  appStateChanged: EventEmitter<{appState: AppState}> = new EventEmitter();
+  appStateDeminimized: EventEmitter<void> = new EventEmitter();
 
   @ViewChildren('clickableButton')
   clickableButtons!: QueryList<ElementRef<HTMLElement>>;
@@ -28,10 +28,7 @@ export class MiniBarComponent implements AfterViewInit {
   }
 
   onButtonClicked(event: Event) {
-    this.appStateChanged.emit({
-      appState: this.appState === AppState.MINIBAR ? AppState.ABBREVIATION_EXPANSION :
-                                                      AppState.MINIBAR,
-    });
+    this.appStateDeminimized.emit();
   }
 
   get buttonText(): string {

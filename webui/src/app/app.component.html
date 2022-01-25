@@ -113,7 +113,7 @@ app-text-to-speech-component {
       *ngIf="hasAccessToken() && appState === 'MINIBAR'">
     <app-mini-bar-component
       [appState]="appState"
-      (appStateChanged)="onAppStateChanged($event)">
+      (appStateDeminimized)="onAppStateDeminimized()">
     </app-mini-bar-component>
   </div>
 

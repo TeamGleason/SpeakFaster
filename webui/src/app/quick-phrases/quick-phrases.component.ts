@@ -4,6 +4,7 @@ import {Subject} from 'rxjs';
 import {injectKeys, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
 import {createUuid} from 'src/utils/uuid';
 
+import {AppComponent} from '../app.component';
 import {VIRTUAL_KEY} from '../external/external-events.component';
 import {TextEntryBeginEvent, TextEntryEndEvent} from '../types/text-entry';
 
@@ -40,6 +41,7 @@ export class QuickPhrasesComponent implements AfterViewInit, OnDestroy {
         (queryList: QueryList<ElementRef>) => {
           updateButtonBoxesForElements(this.instanceId, queryList);
         });
+    AppComponent.registerAppResizeCallback(this.appResizeCallback.bind(this));
   }
 
   ngOnDestroy() {
@@ -84,6 +86,12 @@ export class QuickPhrasesComponent implements AfterViewInit, OnDestroy {
       injectKeys(injectedKeys);
     }
     // TODO(cais): Prevent selection in gap state.
+  }
+
+  private appResizeCallback() {
+    if (this.clickableButtons.length > 0) {
+      updateButtonBoxesForElements(this.instanceId, this.clickableButtons);
+    }
   }
 
   // TODO(cais): Add unit tests.

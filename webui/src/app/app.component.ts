@@ -95,6 +95,13 @@ export class AppComponent implements OnInit, AfterViewInit {
         (queryList: QueryList<ElementRef>) => {
           updateButtonBoxesForElements(this.instanceId, queryList);
         });
+    AppComponent.registerAppResizeCallback(this.appResizeCallback.bind(this));
+  }
+
+  private appResizeCallback() {
+    if (this.clickableButtons.length > 0) {
+      updateButtonBoxesForElements(this.instanceId, this.clickableButtons);
+    }
   }
 
   onAppStateChanged(arg: {appState: AppState}) {

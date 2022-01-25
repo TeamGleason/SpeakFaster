@@ -1,8 +1,9 @@
-import {AfterViewInit, Component, ElementRef, OnInit, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, ElementRef, OnInit, QueryList, ViewChild, ViewChildren} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
 import {Subject} from 'rxjs';
+import {createUuid} from 'src/utils/uuid';
 
-import {bindCefSharpListener, registerExternalKeypressHook, resizeWindow} from '../utils/cefsharp';
+import {bindCefSharpListener, registerExternalKeypressHook, resizeWindow, updateButtonBoxesForElements} from '../utils/cefsharp';
 
 import {ExternalEventsComponent} from './external/external-events.component';
 import {configureService, SpeakFasterService} from './speakfaster-service';
@@ -19,6 +20,9 @@ export type AppResizeCallback = (height: number, width: number) => void;
 })
 export class AppComponent implements OnInit, AfterViewInit {
   title = 'SpeakFasterApp';
+  private static readonly _NAME = 'AppComponent';
+
+  private readonly instanceId = AppComponent._NAME + '_' + createUuid();
 
   private static readonly appResizeCallbacks: AppResizeCallback[] = [];
 
@@ -45,6 +49,9 @@ export class AppComponent implements OnInit, AfterViewInit {
   // Context speech content used for AE and other text predictions.
   inputAbbreviation: string = '';
   readonly contextStrings: string[] = [];
+
+  @ViewChildren('clickableButton')
+  clickableButtons!: QueryList<ElementRef<HTMLElement>>;
 
   constructor(
       private route: ActivatedRoute,
@@ -82,6 +89,11 @@ export class AppComponent implements OnInit, AfterViewInit {
       }
     });
     resizeObserver.observe(this.contentWrapper.nativeElement);
+    updateButtonBoxesForElements(this.instanceId, this.clickableButtons);
+    this.clickableButtons.changes.subscribe(
+        (queryList: QueryList<ElementRef>) => {
+          updateButtonBoxesForElements(this.instanceId, queryList);
+        });
   }
 
   onAppStateChanged(arg: {appState: AppState}) {
@@ -109,6 +121,10 @@ export class AppComponent implements OnInit, AfterViewInit {
 
   get accessToken() {
     return this._accessToken;
+  }
+
+  onMinimizeButtonClicked(event: Event) {
+    this.appState = AppState.MINIBAR;
   }
 
   onContextStringsSelected(contextStrings: string[]) {

@@ -36,10 +36,17 @@ app-text-to-speech-component {
   /* TODO(cais): Add max-width and max-height. */
 }
 
+.bottom-area {
+  position: absolute;
+  top: 100%;
+  transform: translateY(-100%);
+}
+
 .main-area {
   overflow: hidden;
+  position: relative;
   width: 1140px;
-  height: fit-content;
+  height: 380px;
 }
 
 </style>
@@ -85,26 +92,30 @@ app-text-to-speech-component {
       (contextStringsSelected)="onContextStringsSelected($event)"
     ></app-context-component>
 
-    <app-abbreviation-editing-component
-      [textEntryBeginSubject]="textEntryBeginSubject"
-      [textInjectionSubject]="textEntryEndSubject"
-      (inputAbbreviationChanged)="onAbbreviationInputChanged($event)"
-      (spellingStateChanged)="onSpellingStateChanged($event)"
-    ></app-abbreviation-editing-component>
-
-    <app-text-prediction-component
-      [contextStrings]="contextStrings"
-      [textPrefix]=(inputAbbreviation)
-      [textInjectionSubject]="textEntryEndSubject"
-    ></app-text-prediction-component>
-
     <app-abbreviation-component
       [contextStrings]="contextStrings"
       [abbreviationExpansionTriggers]="abbreviationExpansionTriggers"
       [textEntryEndSubject]="textEntryEndSubject"
     ></app-abbreviation-component>
 
+    <div class="bottom-area">
+      <app-abbreviation-editing-component
+        [textEntryBeginSubject]="textEntryBeginSubject"
+        [textInjectionSubject]="textEntryEndSubject"
+        (inputAbbreviationChanged)="onAbbreviationInputChanged($event)"
+        (spellingStateChanged)="onSpellingStateChanged($event)"
+      ></app-abbreviation-editing-component>
+
+      <app-text-prediction-component
+        [contextStrings]="contextStrings"
+        [textPrefix]=(inputAbbreviation)
+        [textInjectionSubject]="textEntryEndSubject"
+      ></app-text-prediction-component>
+    </div>
+
   </div>
+
+
 </div>
 
 <router-outlet></router-outlet>

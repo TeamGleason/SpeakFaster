@@ -60,10 +60,10 @@ environment (e.g., a container web app).
 ### 1. Keystroke listening API
 
 The WebUI provides a function attached to the global `window` object, namely
-`window.registerExternalKeypress()`, which has the following signature:
+`window.externalKeypressHook()`, which has the following signature:
 
 ```typescript
-function registerExternalKeypress(virualKeyCode: number): void;
+function externalKeypressHook(virualKeyCode: number): void;
 ```
 
 wherein the `virtualKeyCode` argument obeys the
@@ -73,31 +73,52 @@ This allows the WebUI to be informed of all alphanumeric and functional keypress
 The function `getVirtualkeyCode()` in `external-events-component.ts` can
 translate strings into virtual key code values.
 
-### 2. Keystroke injection API
+### 2. Bound listner for WebUI-to-host information flow
 
-The WebUI assumes that the global object `window.boundListener` exists and has
-the following interface:
+The WebUI looks for the global `window.boundListener` object and expects
+it to have the following interface.
 
 ```typescript
 interface BoundObject {
-   function injectKey(virtualKeys: number[]): void;
+  function injectKey(virtualKeys: number[]): void;
+
+  function resizeWindow(height: number, width: number);
+
+  function updateButtonBoxes(componentName: string,
+                             boxes: Array<[number, number, number, number]>);
+
+
 }
 ```
+
+The three interface methods, `injectKey()`, `updateButtonBoxes()`, and
+`resizeWindow()` allow the WebUI to send different types of information to the
+host. Below we describe their use respectively.
+
+#### 2.1. Keystroke injection API
 
 The contract of the `injectKeys()` function is it will issue the keys in `virtualKeys`
 programmatically in the specified order.
 
-### 3. Registeration of gaze-clickable areas
+#### 2.2. Window resizing
+
+The contract of the `resizedWindow()` function is that it will request the host
+app to resize the window that contains the WebView to the specified height and
+width.
+
+### 2.3. Registeration of gaze-clickable areas
 
 The WebUI is meant to be used with an eye tracker. The hosting app provides
 two methods in the `window.boundListener` object to allow the WebUI to register
 and update its clickable regions such as buttons.
 
-The `updateButtonBoxes()` method has the following signature:
+As mentioed above, the `updateButtonBoxes()` method has the following signature:
 
 ```typescript
-function updateButtonBoxes(componentName: string,
-                           boxes: Array<[number, number, number, number]>);
+function updateButtonBoxes(
+  componentName: string,
+  boxes: Array<[number, number, number, number]>
+);
 ```
 
 The argument `componentName` specifies the (Agnular) component that the
@@ -110,9 +131,3 @@ new clickable regions that have appeared since the last call.
 Calling `updateButtonBoxes()` n times with n different `componentName`s will
 cause n sets of clickable regions to be registered.
 
-The `updateButtonBoxesToEmpty()` is a convenient method that erases the latest
-registered clickable regions of the specified component:
-
-```typescript
-function updateButtonBoxesToEmpty(componentName: string);
-```

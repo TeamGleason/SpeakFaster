@@ -124,25 +124,15 @@
     class="expansions">
   <div class="abbreviation-options-container">
     <div class="abbreviation-options-grid">
-      <div
+      <app-phrase-component
           *ngFor="let abbreviationOption of abbreviationOptions; let i = index"
           #abbreviationOption
-          class="abbreviation-option item{{i + 1}}">
-        <div class="abbreviation-expansion">{{abbreviationOption}}</div>
-        <button
-            #clickableButton
-            class="action-button select-button"
-            [ngClass]="{'is-selected': i === selectedAbbreviationIndex}"
-            (click)="onExpansionOptionButtonClicked($event, i)">
-          Select
-        </button>
-        <button
-            #clickableButton
-            class="action-button speak-button"
-            (click)="onSpeakOptionButtonClicked($event, i)">
-          🔊
-        </button>
-      </div>
+          class="item{{i + 1}}"
+          [phraseText]="abbreviationOption"
+          [phraseIndex]="i"
+          (speakButtonClicked)="onSpeakOptionButtonClicked($event)"
+          (injectButtonClicked)="onExpansionOptionButtonClicked($event)">
+      </app-phrase-component>
     </div>
   </div>
 </div>

@@ -106,56 +106,16 @@ describe('AbbreviationComponent', () => {
     fixture.componentInstance.state = State.CHOOSING_EXPANSION;
     fixture.detectChanges();
     const expansions =
-        fixture.debugElement.queryAll(By.css('.abbreviation-expansion'));
+        fixture.debugElement.queryAll(By.css('app-phrase-component'));
     expect(expansions.length).toEqual(2);
     expect(expansions[0].nativeElement.innerText).toEqual('what time is it');
     expect(expansions[1].nativeElement.innerText).toEqual('we took it in');
     const selectButtons =
-        fixture.debugElement.queryAll(By.css('.select-button'));
+        fixture.debugElement.queryAll(By.css('app-phrase-component'));
     expect(selectButtons.length).toEqual(2);
     const speakButtons = fixture.debugElement.queryAll(By.css('.speak-button'));
     expect(speakButtons.length).toEqual(2);
   });
-
-  it('calls updateButtonBoxes when expansion options become available',
-     async () => {
-       fixture.componentInstance.abbreviationOptions = ['what time is it'];
-       fixture.componentInstance.state = State.CHOOSING_EXPANSION;
-       fixture.detectChanges();
-       await fixture.whenStable();
-       const calls = testListener.updateButtonBoxesCalls;
-       expect(calls.length).toEqual(1);
-       expect(calls[0][0].indexOf('AbbreviationComponent')).toEqual(0);
-       expect(calls[0][1].length).toEqual(2);
-     });
-
-  it('calls updateButtonBoxes with empty arg when option is selcted',
-     async () => {
-       const events: TextEntryEndEvent[] = [];
-       textEntryEndSubject.subscribe(event => {
-         events.push(event);
-       });
-       fixture.componentInstance.abbreviation = {
-         tokens: ['w', 't', 'i', 'i'].map(char => ({
-                                            value: char,
-                                            isKeyword: false,
-                                          })),
-         readableString: 'wtii',
-         triggerKeys: [VIRTUAL_KEY.SPACE, VIRTUAL_KEY.SPACE],
-         lineageId: createUuid(),
-       };
-       fixture.componentInstance.abbreviationOptions = ['what time is it'];
-       fixture.componentInstance.state = State.CHOOSING_EXPANSION;
-       fixture.detectChanges();
-       const selectButtons =
-           fixture.debugElement.queryAll(By.css('.select-button'));
-       (selectButtons[0].nativeElement as HTMLButtonElement).click();
-       await fixture.whenStable();
-       const calls = testListener.updateButtonBoxesCalls;
-       expect(calls[calls.length - 1][0].indexOf('AbbreviationComponent'))
-           .toEqual(0);
-       expect(calls[calls.length - 1][1]).toEqual([]);
-     });
 
   it('Calls injectKeys when option is selected', async () => {
     fixture.componentInstance.abbreviation = {
@@ -172,7 +132,7 @@ describe('AbbreviationComponent', () => {
     fixture.componentInstance.state = State.CHOOSING_EXPANSION;
     fixture.detectChanges();
     const selectButtons =
-        fixture.debugElement.queryAll(By.css('.select-button'));
+        fixture.debugElement.queryAll(By.css('.inject-button'));
     (selectButtons[0].nativeElement as HTMLButtonElement).click();
     await fixture.whenStable();
     const calls = testListener.injectedKeysCalls;
@@ -184,7 +144,7 @@ describe('AbbreviationComponent', () => {
     ]);
   });
 
-  it('clicking select-button publishes to textEntryEndSubject', () => {
+  it('clicking inject-button publishes to textEntryEndSubject', () => {
     const events: TextEntryEndEvent[] = [];
     textEntryEndSubject.subscribe(event => {
       events.push(event);
@@ -203,7 +163,7 @@ describe('AbbreviationComponent', () => {
     fixture.componentInstance.state = State.CHOOSING_EXPANSION;
     fixture.detectChanges();
     const selectButtons =
-        fixture.debugElement.queryAll(By.css('.select-button'));
+        fixture.debugElement.queryAll(By.css('.inject-button'));
     (selectButtons[1].nativeElement as HTMLButtonElement).click();
     expect(events.length).toEqual(1);
     expect(events[0].text).toEqual('we took it in');
@@ -289,6 +249,7 @@ describe('AbbreviationComponent', () => {
       abbreviationSpec,
       requestExpansion: true,
     });
+    fixture.componentInstance.contextStrings = ['hello'];
     fixture.componentInstance.state = State.CHOOSING_EXPANSION;
     fixture.detectChanges();
 

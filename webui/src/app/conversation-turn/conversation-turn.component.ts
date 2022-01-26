@@ -1,7 +1,7 @@
-import {AfterViewInit, Component, ElementRef, Input, QueryList, ViewChild, ViewChildren} from '@angular/core';
+import {AfterViewInit, Component, ElementRef, Input, OnDestroy, QueryList, ViewChild, ViewChildren} from '@angular/core';
 import {createUuid} from 'src/utils/uuid';
 
-import {updateButtonBoxesForElements} from '../../utils/cefsharp';
+import {updateButtonBoxesForElements, updateButtonBoxesToEmpty} from '../../utils/cefsharp';
 import {getAgoString} from '../../utils/datetime-utils';
 import {limitStringLength} from '../../utils/text-utils';
 import {ConversationTurn} from '../types/conversation';
@@ -11,7 +11,7 @@ import {ConversationTurn} from '../types/conversation';
   templateUrl: './conversation-turn.component.html',
   providers: [],
 })
-export class ConversationTurnComponent implements AfterViewInit {
+export class ConversationTurnComponent implements AfterViewInit, OnDestroy {
   private static readonly _NAME = 'ConversationTurnComponent';
   private readonly instanceId =
       ConversationTurnComponent._NAME + '_' + createUuid();
@@ -54,5 +54,9 @@ export class ConversationTurnComponent implements AfterViewInit {
     }
     contentElement.style.fontSize = `${fontSizePx.toFixed(1)}px`;
     updateButtonBoxesForElements(this.instanceId, this.buttons);
+  }
+
+  ngOnDestroy() {
+    updateButtonBoxesToEmpty(this.instanceId);
   }
 }

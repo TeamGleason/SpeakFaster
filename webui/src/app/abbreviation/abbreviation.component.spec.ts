@@ -106,28 +106,16 @@ describe('AbbreviationComponent', () => {
     fixture.componentInstance.state = State.CHOOSING_EXPANSION;
     fixture.detectChanges();
     const expansions =
-        fixture.debugElement.queryAll(By.css('.abbreviation-expansion'));
+        fixture.debugElement.queryAll(By.css('app-phrase-component'));
     expect(expansions.length).toEqual(2);
     expect(expansions[0].nativeElement.innerText).toEqual('what time is it');
     expect(expansions[1].nativeElement.innerText).toEqual('we took it in');
     const selectButtons =
-        fixture.debugElement.queryAll(By.css('.select-button'));
+        fixture.debugElement.queryAll(By.css('app-phrase-component'));
     expect(selectButtons.length).toEqual(2);
     const speakButtons = fixture.debugElement.queryAll(By.css('.speak-button'));
     expect(speakButtons.length).toEqual(2);
   });
-
-  it('calls updateButtonBoxes when expansion options become available',
-     async () => {
-       fixture.componentInstance.abbreviationOptions = ['what time is it'];
-       fixture.componentInstance.state = State.CHOOSING_EXPANSION;
-       fixture.detectChanges();
-       await fixture.whenStable();
-       const calls = testListener.updateButtonBoxesCalls;
-       expect(calls.length).toEqual(1);
-       expect(calls[0][0].indexOf('AbbreviationComponent')).toEqual(0);
-       expect(calls[0][1].length).toEqual(3);
-     });
 
   it('calls updateButtonBoxes with empty arg when option is selcted',
      async () => {

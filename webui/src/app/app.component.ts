@@ -1,9 +1,9 @@
 import {AfterViewInit, Component, ElementRef, OnInit, QueryList, ViewChild, ViewChildren} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
 import {Subject} from 'rxjs';
-import {createUuid} from 'src/utils/uuid';
 
 import {bindCefSharpListener, registerExternalKeypressHook, resizeWindow, updateButtonBoxesForElements} from '../utils/cefsharp';
+import {createUuid} from '../utils/uuid';
 
 import {ExternalEventsComponent} from './external/external-events.component';
 import {configureService, SpeakFasterService} from './speakfaster-service';
@@ -11,6 +11,8 @@ import {InputAbbreviationChangedEvent} from './types/abbreviation';
 import {AppState} from './types/app-state';
 import {TextEntryBeginEvent, TextEntryEndEvent} from './types/text-entry';
 
+
+// Type signature of callback functions that listen to resizing of an element.
 export type AppResizeCallback = (height: number, width: number) => void;
 
 @Component({
@@ -21,7 +23,6 @@ export type AppResizeCallback = (height: number, width: number) => void;
 export class AppComponent implements OnInit, AfterViewInit {
   title = 'SpeakFasterApp';
   private static readonly _NAME = 'AppComponent';
-
   private readonly instanceId = AppComponent._NAME + '_' + createUuid();
 
   private static readonly appResizeCallbacks: AppResizeCallback[] = [];
@@ -82,6 +83,11 @@ export class AppComponent implements OnInit, AfterViewInit {
         this.externalEventsComponent.externalKeypressHook.bind(
             this.externalEventsComponent));
     const resizeObserver = new ResizeObserver(entries => {
+      if (entries.length > 1) {
+        throw new Error(
+            `Expected ResizeObserver to observe at most 1 entry, ` +
+            `but instead got ${entries.length} entries`);
+      }
       const entry = entries[0];
       const contentRect = entry.contentRect;
       const {height, width} = contentRect;
@@ -172,11 +178,24 @@ export class AppComponent implements OnInit, AfterViewInit {
     this.isSpelling = state === 'START';
   }
 
+  /**
+   * Register callback for app resizeing.
+   * This registered callbacks are invoked when the container for the entire
+   * app resizes (e.g., due to changes in its content). Other components can
+   * use this callback mechanism to get notified when the app container's size
+   * changes. Repeated registering of the same callback function is no-op.
+   */
   public static registerAppResizeCallback(callback: AppResizeCallback) {
     // TODO(cais): Add unit test.
     if (AppComponent.appResizeCallbacks.indexOf(callback) === -1) {
       AppComponent.appResizeCallbacks.push(callback);
     }
+  }
+
+
+  /** Clear all reigstered app-resize callbacks. */
+  public static clearAppResizeCallback() {
+    AppComponent.appResizeCallbacks.splice(0);
   }
 
   isQuickPhrasesAppState() {
@@ -185,13 +204,6 @@ export class AppComponent implements OnInit, AfterViewInit {
   }
 
   get quickPhrasesStatesAppStates(): AppState[] {
-    // return [{
-    //   appState: AppState.QUICK_PHRASES_CARE,
-    //   imgSrc: '/assets/images/quick-phrases-care-inactive.png',
-    // } , {
-    //   appState: AppState.QUICK_PHRASES_PARTNERS,
-    //   imgSrc: '/assets/images/quick-phrases-partners-inactive.png',
-    // }];
     return [AppState.QUICK_PHRASES_PARTNERS, AppState.QUICK_PHRASES_CARE];
   }
 

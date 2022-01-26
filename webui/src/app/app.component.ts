@@ -1,13 +1,18 @@
-import {AfterViewInit, Component, OnInit, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, ElementRef, OnInit, QueryList, ViewChild, ViewChildren} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
 import {Subject} from 'rxjs';
 
-import {bindCefSharpListener, registerExternalKeypressHook} from '../utils/cefsharp';
+import {bindCefSharpListener, registerExternalKeypressHook, resizeWindow, updateButtonBoxesForElements} from '../utils/cefsharp';
+import {createUuid} from '../utils/uuid';
 
 import {ExternalEventsComponent} from './external/external-events.component';
 import {configureService, SpeakFasterService} from './speakfaster-service';
 import {InputAbbreviationChangedEvent} from './types/abbreviation';
 import {TextEntryBeginEvent, TextEntryEndEvent} from './types/text-entry';
+
+
+// Type signature of callback functions that listen to resizing of an element.
+export type AppResizeCallback = (height: number, width: number) => void;
 
 @Component({
   selector: 'app-root',
@@ -16,9 +21,15 @@ import {TextEntryBeginEvent, TextEntryEndEvent} from './types/text-entry';
 })
 export class AppComponent implements OnInit, AfterViewInit {
   title = 'SpeakFasterApp';
+  private static readonly _NAME = 'AppComponent';
+  private readonly instanceId = AppComponent._NAME + '_' + createUuid();
+
+  private static readonly appResizeCallbacks: AppResizeCallback[] = [];
 
   @ViewChild('externalEvents')
   externalEventsComponent!: ExternalEventsComponent;
+
+  @ViewChild('contentWrapper') contentWrapper!: ElementRef<HTMLDivElement>;
 
   // Set this to `false` to skip using access token (e.g., developing with
   // an automatically authorized browser context.)
@@ -67,6 +78,21 @@ export class AppComponent implements OnInit, AfterViewInit {
     registerExternalKeypressHook(
         this.externalEventsComponent.externalKeypressHook.bind(
             this.externalEventsComponent));
+    const resizeObserver = new ResizeObserver(entries => {
+      if (entries.length > 1) {
+        throw new Error(
+            `Expected ResizeObserver to observe at most 1 entry, ` +
+            `but instead got ${entries.length} entries`);
+      }
+      const entry = entries[0];
+      const contentRect = entry.contentRect;
+      const {height, width} = contentRect;
+      resizeWindow(height, width);
+      for (const callback of AppComponent.appResizeCallbacks) {
+        callback(height, width);
+      }
+    });
+    resizeObserver.observe(this.contentWrapper.nativeElement);
   }
 
   onNewAccessToken(accessToken: string) {
@@ -87,5 +113,25 @@ export class AppComponent implements OnInit, AfterViewInit {
 
   get accessToken() {
     return this._accessToken;
+  }
+
+  /**
+   * Register callback for app resizeing.
+   * This registered callbacks are invoked when the container for the entire
+   * app resizes (e.g., due to changes in its content). Other components can
+   * use this callback mechanism to get notified when the app container's size
+   * changes. Repeated registering of the same callback function is no-op.
+   */
+  public static registerAppResizeCallback(callback: AppResizeCallback) {
+    // TODO(cais): Add unit test.
+    if (AppComponent.appResizeCallbacks.indexOf(callback) === -1) {
+      AppComponent.appResizeCallbacks.push(callback);
+    }
+  }
+
+
+  /** Clear all reigstered app-resize callbacks. */
+  public static clearAppResizeCallback() {
+    AppComponent.appResizeCallbacks.splice(0);
   }
 }

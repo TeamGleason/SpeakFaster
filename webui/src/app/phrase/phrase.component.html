@@ -1,0 +1,81 @@
+<style>
+
+:host {
+  box-sizing: border-box;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+}
+
+.action-button {
+  background-color: transparent;
+  border: none;
+  color: #111;
+  display: inline;
+  float: right;
+  height: 64px;
+  font-size: 20px;
+  margin-left: 5px;
+  width: 75px;
+  padding: 2px 5px;
+}
+
+.button-image {
+  max-width: 45%;
+  max-height: 45%;
+}
+
+.phrase {
+  align-self: center;
+  display: inline;
+  flex: 5;
+  white-space: pre-wrap;
+  vertical-align: middle;
+}
+
+.phrase-container {
+  background: #333;
+  border: 1px solid #999;
+  border-radius: 8px;
+  color: #eee;
+  display: flex;
+  font-size: 22px;
+  height: 63px;
+  line-height: 32px;
+  margin: 3px 3px;
+  min-width: 300px;
+  padding-left: 10px;
+  white-space: nowrap;
+}
+
+.speak-button {
+  width: 70px;
+}
+
+</style>
+
+<div class="phrase-container"
+  style="background-color: {{color}}">
+
+  <div class="phrase">{{phraseText}}</div>
+  <button
+      #clickableButton
+      class="action-button speak-button"
+      (click)="onSpeakButtonClicked($event)">
+    <img class="button-image" src="/assets/images/speak.png" alt="speak phrase" />
+  </button>
+
+  <button
+      #clickableButton
+      class="action-button inject-button"
+      (click)="onInjectButtonClicked($event)">
+    <img class="button-image" src="/assets/images/inject.png" alt="inject phrase" />
+  </button>
+
+  <button
+      #clickableButton
+      *ngIf="showFavoriteButton"
+      class="action-button favorite-button"
+      (click)="onFavoriteButtonClicked($event)">
+    <img class="button-image" src="/assets/images/favorite.png" alt="favorite phrase" />
+  </button>
+
+</div>

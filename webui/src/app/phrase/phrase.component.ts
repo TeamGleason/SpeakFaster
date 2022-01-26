@@ -14,12 +14,17 @@ export class PhraseComponent implements AfterViewInit, OnDestroy {
   @Input() color: string = '#093F3A';
   @Input() phraseText!: string;
   @Input() phraseIndex!: number;
+  @Input() showFavoriteButton: boolean = false;
   @Output()
   speakButtonClicked: EventEmitter<{phraseText: string, phraseIndex: number}> =
       new EventEmitter();
   @Output()
   injectButtonClicked: EventEmitter<{phraseText: string, phraseIndex: number}> =
       new EventEmitter();
+  @Output()
+  favoriteButtonClicked:
+      EventEmitter<{phraseText: string, phraseIndex: number}> =
+          new EventEmitter();
 
   @ViewChildren('clickableButton')
   clickableButtons!: QueryList<ElementRef<HTMLElement>>;
@@ -46,5 +51,8 @@ export class PhraseComponent implements AfterViewInit, OnDestroy {
         {phraseText: this.phraseText, phraseIndex: this.phraseIndex});
   }
 
-  // TODO(cais): Add unit tests.
+  onFavoriteButtonClicked(event: Event) {
+    this.favoriteButtonClicked.emit(
+        {phraseText: this.phraseText, phraseIndex: this.phraseIndex});
+  }
 }

@@ -20,6 +20,7 @@ app-phrase-component {
     class="item{{i + 1}}"
     [phraseText]="phrase"
     [phraseIndex]="i"
+    [showFavoriteButton]="true"
     [color]="color"
     (speakButtonClicked)="onSpeakOptionButtonClicked($event)"
     (injectButtonClicked)="onInjectionOptionButtonClicked($event)">

@@ -82,6 +82,20 @@ export function injectKeys(virtualKeys: Array<string|VIRTUAL_KEY>) {
   ((window as any)[BOUND_LISTENER_NAME] as any).injectKeys(virtualKeyCodes);
 }
 
+/**
+ * Request hosting app to resize the window that contains the web view.
+ * @param height new window height
+ * @param width new window width
+ */
+export function resizeWindow(height: number, width: number): void {
+  if ((window as any)[BOUND_LISTENER_NAME] == null) {
+    console.warn(`Cannot call resizeWindow(${height}, ${
+        width}), because object ${BOUND_LISTENER_NAME} is not found`);
+    return;
+  }
+  ((window as any)[BOUND_LISTENER_NAME] as any).resizeWindow(height, width);
+}
+
 export type ExternalKeypressHook = (vkCode: number) => void;
 
 export function registerExternalKeypressHook(callback: ExternalKeypressHook) {

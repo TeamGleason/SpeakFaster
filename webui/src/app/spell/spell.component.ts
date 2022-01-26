@@ -3,6 +3,7 @@ import {updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/
 import {isAlphanumericChar} from 'src/utils/text-utils';
 import {createUuid} from 'src/utils/uuid';
 
+import {AppComponent} from '../app.component';
 import {ExternalEventsComponent, getVirtualkeyCode, repeatVirtualKey, VIRTUAL_KEY} from '../external/external-events.component';
 import {AbbreviationSpec, AbbreviationToken} from '../types/abbreviation';
 
@@ -52,6 +53,7 @@ export class SpellComponent implements OnInit, OnChanges {
     if (this.eraserSequence.length === 0) {
       this.resetState();
     }
+    AppComponent.registerAppResizeCallback(this.appResizeCallback.bind(this));
   }
 
   ngAfterViewInit() {
@@ -71,6 +73,12 @@ export class SpellComponent implements OnInit, OnChanges {
         changes.originalAbbreviationSpec.previousValue.lineageId !==
             changes.originalAbbreviationSpec.currentValue.lineageId) {
       this.resetState();
+    }
+  }
+
+  private appResizeCallback() {
+    if (this.clickableButtons.length > 0) {
+      updateButtonBoxesForElements(this.instanceId, this.clickableButtons);
     }
   }
 

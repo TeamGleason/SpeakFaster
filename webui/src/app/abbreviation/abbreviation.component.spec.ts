@@ -287,6 +287,7 @@ describe('AbbreviationComponent', () => {
       abbreviationSpec,
       requestExpansion: true,
     });
+    fixture.componentInstance.contextStrings = ['hello'];
     fixture.componentInstance.state = State.CHOOSING_EXPANSION;
     fixture.detectChanges();
 

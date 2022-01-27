@@ -185,4 +185,18 @@ describe('AuthComponent', () => {
       }, refreshTokenInterval * 1e3);
     }, interval * 1e3);
   });
+
+  it('including access_token parameter in route fires newAccessToken', () => {
+    const seenAccessTokens: string[] = [];
+    component.newAccessToken.subscribe(accessToken => {
+      seenAccessTokens.push(accessToken);
+      component.stopRefreshTokenForTest();
+    });
+    mockActivatedRoute.testParams = {
+      access_token: 'foo-access-token'
+    };
+    fixture.detectChanges();
+
+    expect(seenAccessTokens).toEqual(['foo-access-token']);
+  });
 });

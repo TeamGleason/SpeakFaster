@@ -35,6 +35,10 @@ export class AuthComponent implements OnInit {
 
   ngOnInit() {
     this.route.queryParams.subscribe(params => {
+      if (params['access_token']) {
+        this.newAccessToken.emit(params['access_token']);
+        return;
+      }
       if (params['client_secret'] && this.clientSecret === '') {
         this.clientSecret = params['client_secret'];
       }

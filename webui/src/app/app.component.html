@@ -129,13 +129,13 @@ app-text-to-speech-component {
     <div class="main-left-pane">
       <div class="side-pane-button-container">
         <button
-            *ngFor="let quickPhrasesAppState of quickPhrasesStatesAppStates"
+            *ngFor="let quickPhrasesAppState of nonMinimizedStatesAppStates"
             #clickableButton
             class="side-pane-button"
             (click)="onQuickPhrasesCareButtonClicked($event, quickPhrasesAppState)">
           <img
               class="button-image"
-              src="{{getQuickPhrasesImgSrc(quickPhrasesAppState, appState === quickPhrasesAppState)}}"
+              src="{{getNonMinimizedStateImgSrc(quickPhrasesAppState, appState === quickPhrasesAppState)}}"
               alt="quick phrases" />
         </button>
 

@@ -145,21 +145,32 @@ export class AppComponent implements OnInit, AfterViewInit {
     return this._accessToken;
   }
 
-  onMinimizeButtonClicked(event: Event) {
-    this.changeAppState(AppState.MINIBAR);
-  }
-
   onQuickPhrasesCareButtonClicked(event: Event, appState: string) {
     switch (appState) {
+      case 'QUICK_PHRASES_FAVORITE':
+        this.changeAppState(AppState.QUICK_PHRASES_FAVORITE);
+        break;
+      case 'QUICK_PHRASES_TEMPORAL':
+        this.changeAppState(AppState.QUICK_PHRASES_TEMPORAL);
+        break;
       case 'QUICK_PHRASES_PARTNERS':
         this.changeAppState(AppState.QUICK_PHRASES_PARTNERS);
         break;
       case 'QUICK_PHRASES_CARE':
         this.changeAppState(AppState.QUICK_PHRASES_CARE);
         break;
+      case 'ABBREVIATION_EXPANSION':
+        this.changeAppState(AppState.ABBREVIATION_EXPANSION);
+        break;
       default:
         break;
     }
+  }
+
+  onAbbreviationExpansionButtonClicked(event: Event) {}
+
+  onMinimizeButtonClicked(event: Event) {
+    this.changeAppState(AppState.MINIBAR);
   }
 
   onContextStringsSelected(contextStrings: string[]) {
@@ -199,21 +210,33 @@ export class AppComponent implements OnInit, AfterViewInit {
   }
 
   isQuickPhrasesAppState() {
-    return this.appState == AppState.QUICK_PHRASES_PARTNERS ||
-        this.appState == AppState.QUICK_PHRASES_CARE;
+    return this.appState === AppState.QUICK_PHRASES_FAVORITE ||
+        this.appState === AppState.QUICK_PHRASES_TEMPORAL ||
+        this.appState === AppState.QUICK_PHRASES_PARTNERS ||
+        this.appState === AppState.QUICK_PHRASES_CARE;
   }
 
-  get quickPhrasesStatesAppStates(): AppState[] {
-    return [AppState.QUICK_PHRASES_PARTNERS, AppState.QUICK_PHRASES_CARE];
+  get nonMinimizedStatesAppStates(): AppState[] {
+    return [
+      AppState.QUICK_PHRASES_FAVORITE, AppState.QUICK_PHRASES_TEMPORAL,
+      AppState.QUICK_PHRASES_PARTNERS, AppState.QUICK_PHRASES_CARE,
+      AppState.ABBREVIATION_EXPANSION
+    ];
   }
 
-  getQuickPhrasesImgSrc(appState: AppState, isActive: boolean): string {
+  getNonMinimizedStateImgSrc(appState: AppState, isActive: boolean): string {
     const activeStateString = isActive ? 'active' : 'inactive';
     switch (appState) {
+      case AppState.QUICK_PHRASES_FAVORITE:
+        return `/assets/images/quick-phrases-favorite-${activeStateString}.png`;
+      case AppState.QUICK_PHRASES_TEMPORAL:
+        return `/assets/images/quick-phrases-temporal-${activeStateString}.png`;
       case AppState.QUICK_PHRASES_PARTNERS:
         return `/assets/images/quick-phrases-partners-${activeStateString}.png`;
       case AppState.QUICK_PHRASES_CARE:
         return `/assets/images/quick-phrases-care-${activeStateString}.png`;
+      case AppState.ABBREVIATION_EXPANSION:
+        return `/assets/images/abbreviation-expansion-${activeStateString}.png`;
       default:
         throw new Error(`Invalid app state: ${this.appState}`);
     }
@@ -222,19 +245,25 @@ export class AppComponent implements OnInit, AfterViewInit {
   // TODO(cais): Do not hardcode.
   getQuickPhrases(): string[] {
     switch (this.appState) {
+      case AppState.QUICK_PHRASES_FAVORITE:
+        return [];
+      case AppState.QUICK_PHRASES_TEMPORAL:
+        return [
+          'Good morning',
+          'Have a wonderfully wonderful Tuesday',
+        ];
       case AppState.QUICK_PHRASES_PARTNERS:
         return [
           'Alice', 'Bob', 'Charlie', 'Danielle', 'Elly', 'Frank', 'George',
-          'Heather'
+          'Heather', 'Irine', 'John', 'Kevin', 'Lana', 'Mike', 'Nick', 'Olaf',
+          'Peter'
         ];
       case AppState.QUICK_PHRASES_CARE:
         return [
-          'Good morning',
           'Thank you very much',
           'Hi there brother',
           'You make me smile easy',
           'I need to think about that',
-          'Have a wonderfully wonderful Tuesday',
           'Let\'s go for a walk',
         ];
       default:
@@ -245,6 +274,10 @@ export class AppComponent implements OnInit, AfterViewInit {
   // TODO(cais): Do not hardcode.
   getQuickPhrasesColor(): string {
     switch (this.appState) {
+      case AppState.QUICK_PHRASES_FAVORITE:
+        return '#473261';
+      case AppState.QUICK_PHRASES_TEMPORAL:
+        return '#603819';
       case AppState.QUICK_PHRASES_PARTNERS:
         return '#3F0909';
       case AppState.QUICK_PHRASES_CARE:

@@ -25,7 +25,6 @@ export class QuickPhrasesComponent implements AfterViewInit, OnDestroy {
   @Input() textEntryEndSubject!: Subject<TextEntryEndEvent>;
   @Input() phrases: string[] = [];
   @Input() color: string = 'gray';
-  // TODO: Do not hardcode.
 
   ngAfterViewInit() {
     updateButtonBoxesForElements(this.instanceId, this.clickableButtons);

@@ -1,5 +1,5 @@
 import {AfterViewInit, ChangeDetectorRef, Component, ElementRef, Input, OnDestroy, OnInit, QueryList, ViewChildren} from '@angular/core';
-import {Subject} from 'rxjs';
+import {Subject, Subscription} from 'rxjs';
 import {keySequenceEndsWith, limitStringLength} from 'src/utils/text-utils';
 import {createUuid} from 'src/utils/uuid';
 
@@ -68,6 +68,7 @@ export class AbbreviationComponent implements OnDestroy, OnInit, AfterViewInit {
   responseError: string|null = null;
   abbreviationOptions: string[] = [];
   private _selectedAbbreviationIndex: number = -1;
+  private abbreviationExpansionTriggersSubscription?: Subscription;
 
   constructor(
       public speakFasterService: SpeakFasterService,
@@ -75,14 +76,15 @@ export class AbbreviationComponent implements OnDestroy, OnInit, AfterViewInit {
 
   ngOnInit() {
     ExternalEventsComponent.registerKeypressListener(this.keypressListener);
-    this.abbreviationExpansionTriggers.subscribe(
-        (event: InputAbbreviationChangedEvent) => {
-          if (!event.requestExpansion) {
-            return;
-          }
-          this.abbreviation = event.abbreviationSpec;
-          this.expandAbbreviation();
-        });
+    this.abbreviationExpansionTriggersSubscription =
+        this.abbreviationExpansionTriggers.subscribe(
+            (event: InputAbbreviationChangedEvent) => {
+              if (!event.requestExpansion) {
+                return;
+              }
+              this.abbreviation = event.abbreviationSpec;
+              this.expandAbbreviation();
+            });
   }
 
   ngAfterViewInit() {
@@ -96,6 +98,9 @@ export class AbbreviationComponent implements OnDestroy, OnInit, AfterViewInit {
   ngOnDestroy() {
     // TODO(cais): Add unit test. DO NOT SUBMIT.
     ExternalEventsComponent.unregisterKeypressListener(this.keypressListener);
+    if (this.abbreviationExpansionTriggersSubscription) {
+      this.abbreviationExpansionTriggersSubscription.unsubscribe();
+    }
   }
 
   public listenToKeypress(keySequence: string[], reconstructedText: string):

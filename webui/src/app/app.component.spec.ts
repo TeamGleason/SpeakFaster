@@ -2,18 +2,24 @@ import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {By} from '@angular/platform-browser';
 import {RouterTestingModule} from '@angular/router/testing';
 
+import * as cefSharp from '../utils/cefsharp';
+
 import {AppComponent} from './app.component';
 import {AuthModule} from './auth/auth.module';
 import {ExternalEventsModule} from './external/external-events.module';
 import {MetricsModule} from './metrics/metrics.module';
 import {MiniBarModule} from './mini-bar/mini-bar.module';
 import {QuickPhrasesModule} from './quick-phrases/quick-phrases.module';
+import {TestListener} from './test-utils/test-cefsharp-listener';
 import {AppState} from './types/app-state';
 
 describe('AppComponent', () => {
   let fixture: ComponentFixture<AppComponent>;
+  let testListener: TestListener;
 
   beforeEach(async () => {
+    testListener = new TestListener();
+    (window as any)[cefSharp.BOUND_LISTENER_NAME] = testListener;
     await TestBed
         .configureTestingModule({
           imports: [
@@ -78,6 +84,24 @@ describe('AppComponent', () => {
     const leftNavButtons =
         fixture.debugElement.queryAll(By.css('.side-pane-button'));
     expect(leftNavButtons.length).toEqual(6);
+  });
+
+  it('registers button boxes with AppState is AE', async () => {
+    fixture.componentInstance.onNewAccessToken('foo-access-token');
+    fixture.componentInstance.appState = AppState.ABBREVIATION_EXPANSION;
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(testListener.updateButtonBoxesCalls.length).toBeGreaterThan(0);
+    const lastCall =
+        testListener
+            .updateButtonBoxesCalls[testListener.updateButtonBoxesCalls.length - 1];
+    expect(lastCall[0].startsWith('AppComponent_')).toBeTrue();
+    expect(lastCall[1].length)
+        .toEqual(6);  // Harcoding he number of expected buttons.
+    lastCall[1].forEach(buttonBox => {
+      expect(buttonBox.length).toEqual(4);
+    });
   });
 
   for (const appState

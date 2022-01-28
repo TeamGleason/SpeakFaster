@@ -1,8 +1,8 @@
-import {AfterViewInit, Component, ElementRef, OnInit, QueryList, ViewChild, ViewChildren} from '@angular/core';
+import {AfterViewInit, Component, ElementRef, OnDestroy, OnInit, QueryList, ViewChild, ViewChildren} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
 import {Subject} from 'rxjs';
 
-import {bindCefSharpListener, registerExternalKeypressHook, resizeWindow, updateButtonBoxesForElements} from '../utils/cefsharp';
+import {bindCefSharpListener, registerExternalKeypressHook, resizeWindow, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from '../utils/cefsharp';
 import {createUuid} from '../utils/uuid';
 
 import {ExternalEventsComponent} from './external/external-events.component';
@@ -20,7 +20,7 @@ export type AppResizeCallback = (height: number, width: number) => void;
   templateUrl: './app.component.html',
   providers: [SpeakFasterService],
 })
-export class AppComponent implements OnInit, AfterViewInit {
+export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   title = 'SpeakFasterApp';
   private static readonly _NAME = 'AppComponent';
   private readonly instanceId = AppComponent._NAME + '_' + createUuid();
@@ -100,6 +100,16 @@ export class AppComponent implements OnInit, AfterViewInit {
       }
     });
     resizeObserver.observe(this.contentWrapper.nativeElement);
+    updateButtonBoxesForElements(this.instanceId, this.clickableButtons);
+    this.clickableButtons.changes.subscribe(
+        (queryList: QueryList<ElementRef>) => {
+          updateButtonBoxesForElements(this.instanceId, queryList);
+        });
+    AppComponent.registerAppResizeCallback(this.appResizeCallback.bind(this));
+  }
+
+  ngOnDestroy() {
+    updateButtonBoxesToEmpty(this.instanceId);
   }
 
   private appResizeCallback() {

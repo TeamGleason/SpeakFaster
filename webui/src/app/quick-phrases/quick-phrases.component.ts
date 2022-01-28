@@ -151,6 +151,4 @@ export class QuickPhrasesComponent implements AfterViewInit, OnChanges,
       updateButtonBoxesForElements(this.instanceId, this.clickableButtons);
     }
   }
-
-  // TODO(cais): Add unit tests.
 }

@@ -248,6 +248,16 @@ export class ExternalEventsComponent implements OnInit {
     ExternalEventsComponent.keypressListeners.push(listener);
   }
 
+  /** Unregister a registered listener. */
+  public static unregisterKeypressListener(listener: KeypressListener) {
+    // TODO(cais): Add unit test.
+    const index = ExternalEventsComponent.keypressListeners.indexOf(listener);
+    console.warn('index=', index);  // DEBU
+    if (index !== -1) {
+      ExternalEventsComponent.keypressListeners.splice(index, 1);
+    }
+  }
+
   /** Clear all registered keypress listeners. */
   public static clearKeypressListeners() {
     ExternalEventsComponent.keypressListeners.splice(0);

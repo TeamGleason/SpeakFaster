@@ -33,7 +33,7 @@ export function keySequenceEndsWith(
              keySequence.slice(keySequence.length - suffix.length), suffix);
 }
 
-function allItemsEqual(array1: string[], array2: string[]): boolean {
+export function allItemsEqual(array1: string[], array2: string[]): boolean {
   if (array1.length !== array2.length) {
     return false;
   }

@@ -42,7 +42,8 @@ export function registerNewAccessToken(accessToken: string) {
  * @param elements The list of clickable buttons to register.
  */
 export function updateButtonBoxesForElements(
-    instanceId: string, elements: QueryList<ElementRef<any>>) {
+    instanceId: string, elements: QueryList<ElementRef<any>>,
+    containerRect?: DOMRect) {
   // Use setTimeout() to execute the logic asynchronously, so the elements'
   // positions may have a chance to stabilize. In some cases, the positions of
   // the elements need time to stop updating since the call to this function.
@@ -50,10 +51,18 @@ export function updateButtonBoxesForElements(
     const boxes: Array<[number, number, number, number]> = [];
     elements.forEach(elementRef => {
       const box = elementRef.nativeElement.getBoundingClientRect();
-      boxes.push([box.left, box.top, box.right, box.bottom]);
+      if (containerRect == null || isRectVisibleInsideContainer(box, containerRect)) {
+        boxes.push([box.left, box.top, box.right, box.bottom]);
+      }
     });
     updateButtonBoxes(instanceId, boxes);
   }, 0);
+}
+
+function isRectVisibleInsideContainer(rect: DOMRect, containerRect: DOMRect) {
+  const {bottom, height, top} = rect;
+  return top <= containerRect.top ? containerRect.top - top <= height :
+                                    bottom - containerRect.bottom <= height;
 }
 
 /** Remove the clickable buttons of a given instance to an empty array. */

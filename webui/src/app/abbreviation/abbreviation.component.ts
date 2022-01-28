@@ -1,11 +1,11 @@
-import {AfterViewInit, ChangeDetectorRef, Component, ElementRef, Input, OnInit, QueryList, ViewChildren} from '@angular/core';
+import {AfterViewInit, ChangeDetectorRef, Component, ElementRef, Input, OnDestroy, OnInit, QueryList, ViewChildren} from '@angular/core';
 import {Subject} from 'rxjs';
 import {keySequenceEndsWith, limitStringLength} from 'src/utils/text-utils';
 import {createUuid} from 'src/utils/uuid';
 
 import {injectKeys, updateButtonBoxesForElements} from '../../utils/cefsharp';
 import {isPlainAlphanumericKey, isTextContentKey} from '../../utils/keyboard-utils';
-import {ExternalEventsComponent, repeatVirtualKey, VIRTUAL_KEY} from '../external/external-events.component';
+import {ExternalEventsComponent, KeypressListener, repeatVirtualKey, VIRTUAL_KEY} from '../external/external-events.component';
 import {SpeakFasterService} from '../speakfaster-service';
 import {AbbreviationSpec, InputAbbreviationChangedEvent} from '../types/abbreviation';
 import {TextEntryEndEvent} from '../types/text-entry';
@@ -32,7 +32,7 @@ export const ABBRVIATION_EXPANSION_TRIGGER_COMBO_KEY: string[] =
   templateUrl: './abbreviation.component.html',
   providers: [SpeakFasterService],
 })
-export class AbbreviationComponent implements OnInit, AfterViewInit {
+export class AbbreviationComponent implements OnDestroy, OnInit, AfterViewInit {
   private static readonly _NAME = 'AbbreviationComponent';
   private static readonly _POST_SELECTION_DELAY_MILLIS = 500;
   private static readonly _TOKEN_REPLACEMENT_KEYBOARD_CALLBACK_NAME =
@@ -40,6 +40,7 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
   private static readonly _MAX_NUM_REPLACEMENT_TOKENS = 6;
   private readonly instanceId =
       AbbreviationComponent._NAME + '_' + createUuid();
+  private keypressListener: KeypressListener = this.listenToKeypress.bind(this);
   @Input() contextStrings!: string[];
   @Input() textEntryEndSubject!: Subject<TextEntryEndEvent>;
   @Input()
@@ -73,8 +74,7 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
       private cdr: ChangeDetectorRef) {}
 
   ngOnInit() {
-    ExternalEventsComponent.registerKeypressListener(
-        this.listenToKeypress.bind(this));
+    ExternalEventsComponent.registerKeypressListener(this.keypressListener);
     this.abbreviationExpansionTriggers.subscribe(
         (event: InputAbbreviationChangedEvent) => {
           if (!event.requestExpansion) {
@@ -91,6 +91,11 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
           updateButtonBoxesForElements(
               AbbreviationComponent._NAME + this.instanceId, queryList);
         });
+  }
+
+  ngOnDestroy() {
+    // TODO(cais): Add unit test. DO NOT SUBMIT.
+    ExternalEventsComponent.unregisterKeypressListener(this.keypressListener);
   }
 
   public listenToKeypress(keySequence: string[], reconstructedText: string):

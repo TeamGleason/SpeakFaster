@@ -242,7 +242,8 @@ export class AppComponent implements OnInit, AfterViewInit {
     }
   }
 
-  // TODO(cais): Do not hardcode.
+  // TODO(cais): Do not hardcode. Query these from the SpeakFasterService
+  // instead.
   getQuickPhrases(): string[] {
     switch (this.appState) {
       case AppState.QUICK_PHRASES_FAVORITE:
@@ -250,19 +251,18 @@ export class AppComponent implements OnInit, AfterViewInit {
       case AppState.QUICK_PHRASES_TEMPORAL:
         return [
           'Good morning',
-          'Have a wonderfully wonderful Tuesday',
+          'Have a wonderful Tuesday',
         ];
       case AppState.QUICK_PHRASES_PARTNERS:
         return [
           'Alice', 'Bob', 'Charlie', 'Danielle', 'Elly', 'Frank', 'George',
-          'Heather', 'Irine', 'John', 'Kevin', 'Lana', 'Mike', 'Nick', 'Olaf',
-          'Peter'
+          'Heather', 'Irine', 'John', 'Kevin', 'Lana', 'Mike', 'Nick', 'Oscar',
+          'Peter', 'Quentin', 'Rene', 'Sherry', 'Tom', 'Ulysses', 'Vivian',
+          'William', 'Xavier', 'Yasmin', 'Zachary'
         ];
       case AppState.QUICK_PHRASES_CARE:
         return [
           'Thank you very much',
-          'Hi there brother',
-          'You make me smile easy',
           'I need to think about that',
           'Let\'s go for a walk',
         ];
@@ -271,7 +271,6 @@ export class AppComponent implements OnInit, AfterViewInit {
     }
   }
 
-  // TODO(cais): Do not hardcode.
   getQuickPhrasesColor(): string {
     switch (this.appState) {
       case AppState.QUICK_PHRASES_FAVORITE:

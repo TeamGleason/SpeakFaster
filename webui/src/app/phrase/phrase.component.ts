@@ -26,6 +26,11 @@ export class PhraseComponent implements AfterViewInit, OnDestroy {
       EventEmitter<{phraseText: string, phraseIndex: number}> =
           new EventEmitter();
 
+  public updateButtonBoxesWithContainerRect(containerRect: DOMRect) {
+    updateButtonBoxesForElements(
+        this.instanceId, this.clickableButtons, containerRect);
+  }
+
   @ViewChildren('clickableButton')
   clickableButtons!: QueryList<ElementRef<HTMLElement>>;
 

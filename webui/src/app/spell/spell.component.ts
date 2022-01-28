@@ -1,10 +1,10 @@
-import {AfterViewInit, ChangeDetectorRef, Component, ElementRef, EventEmitter, Input, OnChanges, OnInit, Output, QueryList, SimpleChanges, ViewChildren} from '@angular/core';
+import {AfterViewInit, ChangeDetectorRef, Component, ElementRef, EventEmitter, Input, OnChanges, OnDestroy, OnInit, Output, QueryList, SimpleChanges, ViewChildren} from '@angular/core';
 import {updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
 import {isAlphanumericChar} from 'src/utils/text-utils';
 import {createUuid} from 'src/utils/uuid';
 
 import {AppComponent} from '../app.component';
-import {ExternalEventsComponent, getVirtualkeyCode, repeatVirtualKey, VIRTUAL_KEY} from '../external/external-events.component';
+import {ExternalEventsComponent, getVirtualkeyCode, KeypressListener, repeatVirtualKey, VIRTUAL_KEY} from '../external/external-events.component';
 import {AbbreviationSpec, AbbreviationToken} from '../types/abbreviation';
 
 // TODO(cais): Support workflow: enter initial-only abbreviation, get no
@@ -23,7 +23,7 @@ export enum SpellingState {
   selector: 'app-spell-component',
   templateUrl: './spell.component.html',
 })
-export class SpellComponent implements OnInit, OnChanges {
+export class SpellComponent implements OnInit, OnChanges, OnDestroy {
   private static readonly _NAME = 'SpellComponent';
   private readonly instanceId = SpellComponent._NAME + '_' + createUuid();
 
@@ -40,6 +40,7 @@ export class SpellComponent implements OnInit, OnChanges {
   state: SpellingState = SpellingState.CHOOSING_TOKEN;
   tokenSpellingInput: string = '';
   private eraserSequence: string[] = [];
+  private keypressListener: KeypressListener = this.listenToKeypress.bind(this);
 
   // Words that have already been spelled out so far. This supports
   // incremental spelling out of multiple words in an abbreviation.
@@ -48,12 +49,16 @@ export class SpellComponent implements OnInit, OnChanges {
   constructor(private cdr: ChangeDetectorRef) {}
 
   ngOnInit() {
-    ExternalEventsComponent.registerKeypressListener(
-        this.listenToKeypress.bind(this));
+    ExternalEventsComponent.registerKeypressListener(this.keypressListener);
     if (this.eraserSequence.length === 0) {
       this.resetState();
     }
     AppComponent.registerAppResizeCallback(this.appResizeCallback.bind(this));
+  }
+
+  ngOnDestroy() {
+    // TODO(cais): Add unit test.
+    ExternalEventsComponent.unregisterKeypressListener(this.keypressListener);
   }
 
   ngAfterViewInit() {

@@ -1,0 +1,100 @@
+<style>
+
+:host {
+  box-sizing: border-box;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+}
+
+app-phrase-component {
+  display: inline-block;
+  margin: 3px 5px;
+}
+
+.container {
+  display: flex;
+  flex-direction: row;
+}
+
+.no-quick-phrases {
+  color: #aaa;
+  font-size: 22px;
+  margin: 8px;
+  text-align: center;
+}
+
+.quick-phrases-container {
+  height: 365px;
+  max-height: 365px;
+  overflow-y: hidden;
+}
+
+.scroll-button {
+  background: #484747;
+  border: 1px #eee solid;
+  border-radius: 5px;
+  box-sizing: border-box;
+  color: white;
+  flex: 1;
+  font-weight: bold;
+  font-size: 30px;
+  margin: 5px;
+  width: 60px;
+}
+
+.scroll-button-disabled {
+  color: #888;
+  font-weight: normal;
+}
+
+.scroll-buttons-container {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  width: fit-content;
+}
+
+</style>
+
+<div class="container">
+  <div
+      #quickPhrasesContainer
+      class="quick-phrases-container">
+
+    <app-phrase-component
+        *ngFor="let phrase of phrases; let i = index"
+        #phraseOption
+        class="item{{i + 1}}"
+        [phraseText]="phrase"
+        [phraseIndex]="i"
+        [showFavoriteButton]="true"
+        [color]="color"
+        (speakButtonClicked)="onSpeakOptionButtonClicked($event)"
+        (injectButtonClicked)="onInjectionOptionButtonClicked($event)">
+    </app-phrase-component>
+
+    <div
+        *ngIf="phrases.length === 0"
+        class="no-quick-phrases">
+        No quick phrases found
+    </div>
+  </div>
+
+  <div
+      class="scroll-buttons-container"
+      *ngIf="checkPhraseOverflow()">
+    <button
+        #clickableButton
+        class="scroll-button"
+        [ngClass]="{'scroll-button-disabled': isScrollButtonDisabled('up')}"
+        (click)="onScrollButtonClicked($event, 'up')">
+      ↑
+    </button>
+    <button
+        #clickableButton
+        class="scroll-button"
+        [ngClass]="{'scroll-button-disabled': isScrollButtonDisabled('down')}"
+        (click)="onScrollButtonClicked($event, 'down')">
+      ↓
+    </button>
+  </div>
+</div>

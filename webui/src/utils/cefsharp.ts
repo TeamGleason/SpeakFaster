@@ -29,9 +29,15 @@ export async function bindCefSharpListener() {
  * @param instanceId Unique identifier for the component instance. Different
  *   instances of the same component type must have different `instanceId`s.
  * @param elements The list of clickable buttons to register.
+ * @param containerRect Optional DOMRect object that specifies the container
+ *   rectangle. If provided, it will cause only the elements that are
+ *   partially or entirely visible in the containerRect to be registered.
+ *   If not provided (default), all elements will be reigstered regardless
+ *   of location.
  */
 export function updateButtonBoxesForElements(
-    instanceId: string, elements: QueryList<ElementRef<any>>) {
+    instanceId: string, elements: QueryList<ElementRef<any>>,
+    containerRect?: DOMRect) {
   // Use setTimeout() to execute the logic asynchronously, so the elements'
   // positions may have a chance to stabilize. In some cases, the positions of
   // the elements need time to stop updating since the call to this function.
@@ -39,10 +45,18 @@ export function updateButtonBoxesForElements(
     const boxes: Array<[number, number, number, number]> = [];
     elements.forEach(elementRef => {
       const box = elementRef.nativeElement.getBoundingClientRect();
-      boxes.push([box.left, box.top, box.right, box.bottom]);
+      if (containerRect == null || isRectVisibleInsideContainer(box, containerRect)) {
+        boxes.push([box.left, box.top, box.right, box.bottom]);
+      }
     });
     updateButtonBoxes(instanceId, boxes);
   }, 0);
+}
+
+function isRectVisibleInsideContainer(rect: DOMRect, containerRect: DOMRect) {
+  const {bottom, height, top} = rect;
+  return top <= containerRect.top ? containerRect.top - top <= height :
+                                    bottom - containerRect.bottom <= height;
 }
 
 /** Remove the clickable buttons of a given instance to an empty array. */

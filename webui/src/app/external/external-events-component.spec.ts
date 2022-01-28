@@ -34,6 +34,7 @@ describe('ExternalEventsComponent', () => {
     fixture.componentInstance.textEntryEndSubject = textEntryEndSubject;
     fixture.detectChanges();
     jasmine.getEnv().allowRespy(true);
+    ExternalEventsComponent.clearKeypressListeners();
   });
 
   it('Virtual key codes map has no duplicate values', () => {
@@ -111,6 +112,26 @@ describe('ExternalEventsComponent', () => {
     component.externalKeypressHook(32);  // Space
     expect(keySequences).toEqual([['a'], ['a', ' ']]);
     expect(reconstructedTexts).toEqual(['a', 'a ']);
+  });
+
+  it('Reistering keypress listener updates listener count', () => {
+    ExternalEventsComponent.registerKeypressListener(
+        (keySequence: string[], reconstructedText: string) => {});
+    expect(ExternalEventsComponent.getNumKeypressListeners()).toEqual(1);
+  });
+
+  it('Unregistering keypress listener', () => {
+    const keySequences: string[][] = [];
+    const listener = (keySequence: string[], reconstructedText: string) => {
+      keySequences.push(keySequence.slice());
+    };
+    ExternalEventsComponent.registerKeypressListener(listener);
+    ExternalEventsComponent.unregisterKeypressListener(listener);
+    component.externalKeypressHook(65);  // 'a'
+    component.externalKeypressHook(32);  // Space
+
+    expect(ExternalEventsComponent.getNumKeypressListeners()).toEqual(0);
+    expect(keySequences).toEqual([]);
   });
 
   const vkCodesAndExpectedTextWithTestDescription:

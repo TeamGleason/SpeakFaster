@@ -1,10 +1,10 @@
-import {AfterViewInit, ChangeDetectorRef, Component, ElementRef, EventEmitter, Input, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
-import {Subject} from 'rxjs';
+import {AfterViewInit, ChangeDetectorRef, Component, ElementRef, EventEmitter, Input, OnDestroy, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
+import {Subject, Subscription} from 'rxjs';
 import {keySequenceEndsWith, limitStringLength} from 'src/utils/text-utils';
 import {createUuid} from 'src/utils/uuid';
 
 import {injectKeys, updateButtonBoxesForElements} from '../../utils/cefsharp';
-import {ExternalEventsComponent, repeatVirtualKey, VIRTUAL_KEY} from '../external/external-events.component';
+import {ExternalEventsComponent, KeypressListener, repeatVirtualKey, VIRTUAL_KEY} from '../external/external-events.component';
 import {SpeakFasterService} from '../speakfaster-service';
 import {AbbreviationSpec, InputAbbreviationChangedEvent} from '../types/abbreviation';
 import {TextEntryEndEvent} from '../types/text-entry';
@@ -28,11 +28,12 @@ export const ABBRVIATION_EXPANSION_TRIGGER_COMBO_KEY: string[] =
   templateUrl: './abbreviation.component.html',
   providers: [SpeakFasterService],
 })
-export class AbbreviationComponent implements OnInit, AfterViewInit {
+export class AbbreviationComponent implements OnDestroy, OnInit, AfterViewInit {
   private static readonly _NAME = 'AbbreviationComponent';
   private static readonly _POST_SELECTION_DELAY_MILLIS = 500;
   private readonly instanceId =
       AbbreviationComponent._NAME + '_' + createUuid();
+  private keypressListener: KeypressListener = this.listenToKeypress.bind(this);
   @Input() contextStrings!: string[];
   @Input()
   abbreviationExpansionTriggers!: Subject<InputAbbreviationChangedEvent>;
@@ -56,22 +57,23 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
   responseError: string|null = null;
   abbreviationOptions: string[] = [];
   private _selectedAbbreviationIndex: number = -1;
+  private abbreviationExpansionTriggersSubscription?: Subscription;
 
   constructor(
       public speakFasterService: SpeakFasterService,
       private cdr: ChangeDetectorRef) {}
 
   ngOnInit() {
-    ExternalEventsComponent.registerKeypressListener(
-        this.listenToKeypress.bind(this));
-    this.abbreviationExpansionTriggers.subscribe(
-        (event: InputAbbreviationChangedEvent) => {
-          if (!event.requestExpansion) {
-            return;
-          }
-          this.abbreviation = event.abbreviationSpec;
-          this.expandAbbreviation();
-        });
+    ExternalEventsComponent.registerKeypressListener(this.keypressListener);
+    this.abbreviationExpansionTriggersSubscription =
+        this.abbreviationExpansionTriggers.subscribe(
+            (event: InputAbbreviationChangedEvent) => {
+              if (!event.requestExpansion) {
+                return;
+              }
+              this.abbreviation = event.abbreviationSpec;
+              this.expandAbbreviation();
+            });
   }
 
   ngAfterViewInit() {
@@ -80,6 +82,13 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
           updateButtonBoxesForElements(
               AbbreviationComponent._NAME + this.instanceId, queryList);
         });
+  }
+
+  ngOnDestroy() {
+    ExternalEventsComponent.unregisterKeypressListener(this.keypressListener);
+    if (this.abbreviationExpansionTriggersSubscription) {
+      this.abbreviationExpansionTriggersSubscription.unsubscribe();
+    }
   }
 
   public listenToKeypress(keySequence: string[], reconstructedText: string):
@@ -217,10 +226,10 @@ export class AbbreviationComponent implements OnInit, AfterViewInit {
     this.requestOngoing = true;
     this.responseError = null;
     const LIMIT_TURNS = 2;
-    const LIMIT_CONTECT_TURN_LENGTH = 60
+    const LIMIT_CONTEXT_TURN_LENGTH = 60
     const usedContextStrings: string[] = [...this.contextStrings.map(
         contextString =>
-            limitStringLength(contextString, LIMIT_CONTECT_TURN_LENGTH))];
+            limitStringLength(contextString, LIMIT_CONTEXT_TURN_LENGTH))];
     if (usedContextStrings.length > LIMIT_TURNS) {
       usedContextStrings.splice(0, usedContextStrings.length - LIMIT_TURNS);
     }

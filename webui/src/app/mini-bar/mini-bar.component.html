@@ -26,9 +26,6 @@
   width: 50px;
 }
 
-.minimized {
-}
-
 </style>
 
 <!-- NOTE: We avoid using a button for this to avoid
@@ -37,7 +34,6 @@
 <div
     #clickableButton
     class="main-button"
-    [ngClass]="{'minimized': appState === 'MINIBAR'}"
     (click)="onButtonClicked($event)">
   <img class="button-image" src="/assets/images/minibar-icon.png" alt="Speak Faster" />
 </div>

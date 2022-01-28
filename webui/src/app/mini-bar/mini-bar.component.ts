@@ -1,5 +1,5 @@
-import {AfterViewInit, Component, ElementRef, EventEmitter, Input, Output, QueryList, ViewChildren} from '@angular/core';
-import {updateButtonBoxesForElements} from 'src/utils/cefsharp';
+import {AfterViewInit, Component, ElementRef, EventEmitter, Input, OnDestroy, Output, QueryList, ViewChildren} from '@angular/core';
+import {updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
 import {createUuid} from 'src/utils/uuid';
 
 import {AppState} from '../types/app-state';
@@ -8,8 +8,8 @@ import {AppState} from '../types/app-state';
   selector: 'app-mini-bar-component',
   templateUrl: './mini-bar.component.html',
 })
-export class MiniBarComponent implements AfterViewInit {
-  private static readonly _NAME = 'MiniBar';
+export class MiniBarComponent implements AfterViewInit, OnDestroy {
+  private static readonly _NAME = 'MiniBarComponent';
 
   private readonly instanceId = MiniBarComponent._NAME + '_' + createUuid();
   @Input() appState!: AppState;
@@ -24,6 +24,10 @@ export class MiniBarComponent implements AfterViewInit {
         (queryList: QueryList<ElementRef>) => {
           updateButtonBoxesForElements(this.instanceId, queryList);
         });
+  }
+
+  ngOnDestroy() {
+    updateButtonBoxesToEmpty(this.instanceId);
   }
 
   onButtonClicked(event: Event) {

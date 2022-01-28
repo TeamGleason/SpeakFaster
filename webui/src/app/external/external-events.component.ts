@@ -253,7 +253,6 @@ export class ExternalEventsComponent implements OnInit {
    * unregistered, this call is a no-op.
    */
   public static unregisterKeypressListener(listener: KeypressListener) {
-    // TODO(cais): Add unit test.
     const index = ExternalEventsComponent.keypressListeners.indexOf(listener);
     if (index !== -1) {
       ExternalEventsComponent.keypressListeners.splice(index, 1);

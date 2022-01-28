@@ -40,6 +40,11 @@ export function registerNewAccessToken(accessToken: string) {
  * @param instanceId Unique identifier for the component instance. Different
  *   instances of the same component type must have different `instanceId`s.
  * @param elements The list of clickable buttons to register.
+ * @param containerRect Optional DOMRect object that specifies the container
+ *   rectangle. If provided, it will cause only the elements that are
+ *   partially or entirely visible in the containerRect to be registered.
+ *   If not provided (default), all elements will be reigstered regardless
+ *   of location.
  */
 export function updateButtonBoxesForElements(
     instanceId: string, elements: QueryList<ElementRef<any>>,

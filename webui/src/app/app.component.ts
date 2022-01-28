@@ -8,6 +8,7 @@ import {createUuid} from '../utils/uuid';
 import {ExternalEventsComponent} from './external/external-events.component';
 import {configureService, SpeakFasterService} from './speakfaster-service';
 import {InputAbbreviationChangedEvent} from './types/abbreviation';
+import {AppState} from './types/app-state';
 import {TextEntryBeginEvent, TextEntryEndEvent} from './types/text-entry';
 
 
@@ -31,6 +32,9 @@ export class AppComponent implements OnInit, AfterViewInit {
 
   @ViewChild('contentWrapper') contentWrapper!: ElementRef<HTMLDivElement>;
 
+  appState: AppState = AppState.ABBREVIATION_EXPANSION;
+  private previousNonMinimizedAppState: AppState = this.appState;
+
   // Set this to `false` to skip using access token (e.g., developing with
   // an automatically authorized browser context.)
   private useAccessToken = true;
@@ -44,6 +48,9 @@ export class AppComponent implements OnInit, AfterViewInit {
       new Subject<TextEntryBeginEvent>();
   textEntryEndSubject: Subject<TextEntryEndEvent> = new Subject();
   readonly contextStrings: string[] = [];
+
+  @ViewChildren('clickableButton')
+  clickableButtons!: QueryList<ElementRef<HTMLElement>>;
 
   constructor(
       private route: ActivatedRoute,
@@ -95,6 +102,26 @@ export class AppComponent implements OnInit, AfterViewInit {
     resizeObserver.observe(this.contentWrapper.nativeElement);
   }
 
+  private appResizeCallback() {
+    if (this.clickableButtons.length > 0) {
+      updateButtonBoxesForElements(this.instanceId, this.clickableButtons);
+    }
+  }
+
+  onAppStateDeminimized() {
+    if (this.appState !== AppState.MINIBAR) {
+      return;
+    }
+    this.changeAppState(this.previousNonMinimizedAppState);
+  }
+
+  private changeAppState(newState: AppState) {
+    this.appState = newState;
+    if (this.appState !== AppState.MINIBAR) {
+      this.previousNonMinimizedAppState = this.appState;
+    }
+  }
+
   onNewAccessToken(accessToken: string) {
     this._accessToken = accessToken;
     configureService({
@@ -115,6 +142,32 @@ export class AppComponent implements OnInit, AfterViewInit {
     return this._accessToken;
   }
 
+  onQuickPhrasesCareButtonClicked(event: Event, appState: string) {
+    switch (appState) {
+      case 'QUICK_PHRASES_FAVORITE':
+        this.changeAppState(AppState.QUICK_PHRASES_FAVORITE);
+        break;
+      case 'QUICK_PHRASES_TEMPORAL':
+        this.changeAppState(AppState.QUICK_PHRASES_TEMPORAL);
+        break;
+      case 'QUICK_PHRASES_PARTNERS':
+        this.changeAppState(AppState.QUICK_PHRASES_PARTNERS);
+        break;
+      case 'QUICK_PHRASES_CARE':
+        this.changeAppState(AppState.QUICK_PHRASES_CARE);
+        break;
+      case 'ABBREVIATION_EXPANSION':
+        this.changeAppState(AppState.ABBREVIATION_EXPANSION);
+        break;
+      default:
+        break;
+    }
+  }
+
+  onMinimizeButtonClicked(event: Event) {
+    this.changeAppState(AppState.MINIBAR);
+  }
+
   /**
    * Register callback for app resizeing.
    * This registered callbacks are invoked when the container for the entire
@@ -133,5 +186,82 @@ export class AppComponent implements OnInit, AfterViewInit {
   /** Clear all reigstered app-resize callbacks. */
   public static clearAppResizeCallback() {
     AppComponent.appResizeCallbacks.splice(0);
+  }
+
+  isQuickPhrasesAppState() {
+    return this.appState === AppState.QUICK_PHRASES_FAVORITE ||
+        this.appState === AppState.QUICK_PHRASES_TEMPORAL ||
+        this.appState === AppState.QUICK_PHRASES_PARTNERS ||
+        this.appState === AppState.QUICK_PHRASES_CARE;
+  }
+
+  get nonMinimizedStatesAppStates(): AppState[] {
+    return [
+      AppState.QUICK_PHRASES_FAVORITE, AppState.QUICK_PHRASES_TEMPORAL,
+      AppState.QUICK_PHRASES_PARTNERS, AppState.QUICK_PHRASES_CARE,
+      AppState.ABBREVIATION_EXPANSION
+    ];
+  }
+
+  getNonMinimizedStateImgSrc(appState: AppState, isActive: boolean): string {
+    const activeStateString = isActive ? 'active' : 'inactive';
+    switch (appState) {
+      case AppState.QUICK_PHRASES_FAVORITE:
+        return `/assets/images/quick-phrases-favorite-${activeStateString}.png`;
+      case AppState.QUICK_PHRASES_TEMPORAL:
+        return `/assets/images/quick-phrases-temporal-${activeStateString}.png`;
+      case AppState.QUICK_PHRASES_PARTNERS:
+        return `/assets/images/quick-phrases-partners-${activeStateString}.png`;
+      case AppState.QUICK_PHRASES_CARE:
+        return `/assets/images/quick-phrases-care-${activeStateString}.png`;
+      case AppState.ABBREVIATION_EXPANSION:
+        return `/assets/images/abbreviation-expansion-${activeStateString}.png`;
+      default:
+        throw new Error(`Invalid app state: ${this.appState}`);
+    }
+  }
+
+  // TODO(cais): Do not hardcode. Query these from the SpeakFasterService
+  // instead.
+  getQuickPhrases(): string[] {
+    switch (this.appState) {
+      case AppState.QUICK_PHRASES_FAVORITE:
+        return [];
+      case AppState.QUICK_PHRASES_TEMPORAL:
+        return [
+          'Good morning',
+          'Have a wonderful Tuesday',
+        ];
+      case AppState.QUICK_PHRASES_PARTNERS:
+        return [
+          'Alice', 'Bob', 'Charlie', 'Danielle', 'Elly', 'Frank', 'George',
+          'Heather', 'Irine', 'John', 'Kevin', 'Lana', 'Mike', 'Nick', 'Oscar',
+          'Peter', 'Quentin', 'Rene', 'Sherry', 'Tom', 'Ulysses', 'Vivian',
+          'William', 'Xavier', 'Yasmin', 'Zachary'
+        ];
+      case AppState.QUICK_PHRASES_CARE:
+        return [
+          'Thank you very much',
+          'I need to think about that',
+          'Let\'s go for a walk',
+        ];
+      default:
+        throw new Error(`Invalid app state: ${this.appState}`);
+    }
+  }
+
+  getQuickPhrasesColor(): string {
+    switch (this.appState) {
+      case AppState.QUICK_PHRASES_FAVORITE:
+        return '#473261';
+      case AppState.QUICK_PHRASES_TEMPORAL:
+        return '#603819';
+      case AppState.QUICK_PHRASES_PARTNERS:
+        return '#3F0909';
+      case AppState.QUICK_PHRASES_CARE:
+        return '#093F3A';
+      default:
+        throw new Error(`Invalid app state: ${this.appState}`);
+    }
   }
 }

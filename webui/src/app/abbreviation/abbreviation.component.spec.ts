@@ -7,7 +7,7 @@ import {of, Subject} from 'rxjs';
 import {createUuid} from 'src/utils/uuid';
 
 import * as cefSharp from '../../utils/cefsharp';
-import {repeatVirtualKey, VIRTUAL_KEY} from '../external/external-events.component';
+import {ExternalEventsComponent, repeatVirtualKey, VIRTUAL_KEY} from '../external/external-events.component';
 import {TestListener} from '../test-utils/test-cefsharp-listener';
 import {AbbreviationSpec, InputAbbreviationChangedEvent} from '../types/abbreviation';
 import {TextEntryEndEvent} from '../types/text-entry';
@@ -294,5 +294,14 @@ describe('AbbreviationComponent', () => {
     const spellComponents =
         fixture.debugElement.queryAll(By.css('app-spell-component'));
     expect(spellComponents.length).toEqual(1);
+  });
+
+  it('unsubscribes from textEntryEndSubject on destroy', () => {
+    fixture.detectChanges();
+    const prevNumListeners = ExternalEventsComponent.getNumKeypressListeners();
+    fixture.componentInstance.ngOnDestroy();
+
+    expect(ExternalEventsComponent.getNumKeypressListeners())
+        .toEqual(prevNumListeners - 1);
   });
 });

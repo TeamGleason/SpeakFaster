@@ -46,7 +46,8 @@ export class QuickPhrasesComponent implements AfterViewInit, OnChanges,
     if (!changes.phrases) {
       return;
     }
-    if (changes.phrases.previousValue && allItemsEqual(
+    if (changes.phrases.previousValue &&
+        allItemsEqual(
             changes.phrases.previousValue, changes.phrases.currentValue)) {
       return;
     }
@@ -67,7 +68,7 @@ export class QuickPhrasesComponent implements AfterViewInit, OnChanges,
 
   onSpeakOptionButtonClicked(event: {phraseText: string, phraseIndex: number}) {
     this.selectPhrase(
-        event.phraseIndex, /* toInjectKeys= */ true,
+        event.phraseIndex, /* toInjectKeys= */ false,
         /* toTriggerInAppTextToSpeech= */ true);
   }
 
@@ -79,7 +80,6 @@ export class QuickPhrasesComponent implements AfterViewInit, OnChanges,
     return phrasesContainer.scrollHeight > phrasesContainer.clientHeight;
   }
 
-  // TODO(cais): Register button boxes.
   onScrollButtonClicked(event: Event, direction: 'up'|'down') {
     const phrasesContainer = this.quickPhrasesContainer.nativeElement;
     if (direction === 'down') {

@@ -96,7 +96,6 @@ export class AbbreviationComponent implements OnDestroy, OnInit, AfterViewInit {
   }
 
   ngOnDestroy() {
-    // TODO(cais): Add unit test. DO NOT SUBMIT.
     ExternalEventsComponent.unregisterKeypressListener(this.keypressListener);
     if (this.abbreviationExpansionTriggersSubscription) {
       this.abbreviationExpansionTriggersSubscription.unsubscribe();

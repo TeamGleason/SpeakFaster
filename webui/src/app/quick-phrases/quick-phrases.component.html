@@ -15,6 +15,13 @@ app-phrase-component {
   flex-direction: row;
 }
 
+.no-quick-phrases {
+  color: #aaa;
+  font-size: 22px;
+  margin: 8px;
+  text-align: center;
+}
+
 .quick-phrases-container {
   height: 365px;
   max-height: 365px;
@@ -64,6 +71,12 @@ app-phrase-component {
         (speakButtonClicked)="onSpeakOptionButtonClicked($event)"
         (injectButtonClicked)="onInjectionOptionButtonClicked($event)">
     </app-phrase-component>
+
+    <div
+        *ngIf="phrases.length === 0"
+        class="no-quick-phrases">
+        No quick phrases found
+    </div>
   </div>
 
   <div

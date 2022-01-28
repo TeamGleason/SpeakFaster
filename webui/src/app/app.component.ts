@@ -34,7 +34,6 @@ export class AppComponent implements OnInit, AfterViewInit {
 
   appState: AppState = AppState.ABBREVIATION_EXPANSION;
   private previousNonMinimizedAppState: AppState = this.appState;
-  // TODO(cais): Remember previous non-minibar state and restore it.
 
   // Set this to `false` to skip using access token (e.g., developing with
   // an automatically authorized browser context.)
@@ -145,28 +144,6 @@ export class AppComponent implements OnInit, AfterViewInit {
     return this._accessToken;
   }
 
-  onQuickPhrasesCareButtonClicked(event: Event, appState: string) {
-    switch (appState) {
-      case 'QUICK_PHRASES_FAVORITE':
-        this.changeAppState(AppState.QUICK_PHRASES_FAVORITE);
-        break;
-      case 'QUICK_PHRASES_TEMPORAL':
-        this.changeAppState(AppState.QUICK_PHRASES_TEMPORAL);
-        break;
-      case 'QUICK_PHRASES_PARTNERS':
-        this.changeAppState(AppState.QUICK_PHRASES_PARTNERS);
-        break;
-      case 'QUICK_PHRASES_CARE':
-        this.changeAppState(AppState.QUICK_PHRASES_CARE);
-        break;
-      case 'ABBREVIATION_EXPANSION':
-        this.changeAppState(AppState.ABBREVIATION_EXPANSION);
-        break;
-      default:
-        break;
-    }
-  }
-
   onAbbreviationExpansionButtonClicked(event: Event) {}
 
   onMinimizeButtonClicked(event: Event) {
@@ -207,6 +184,28 @@ export class AppComponent implements OnInit, AfterViewInit {
   /** Clear all reigstered app-resize callbacks. */
   public static clearAppResizeCallback() {
     AppComponent.appResizeCallbacks.splice(0);
+  }
+
+  onQuickPhrasesCareButtonClicked(event: Event, appState: string) {
+    switch (appState) {
+      case 'QUICK_PHRASES_FAVORITE':
+        this.changeAppState(AppState.QUICK_PHRASES_FAVORITE);
+        break;
+      case 'QUICK_PHRASES_TEMPORAL':
+        this.changeAppState(AppState.QUICK_PHRASES_TEMPORAL);
+        break;
+      case 'QUICK_PHRASES_PARTNERS':
+        this.changeAppState(AppState.QUICK_PHRASES_PARTNERS);
+        break;
+      case 'QUICK_PHRASES_CARE':
+        this.changeAppState(AppState.QUICK_PHRASES_CARE);
+        break;
+      case 'ABBREVIATION_EXPANSION':
+        this.changeAppState(AppState.ABBREVIATION_EXPANSION);
+        break;
+      default:
+        break;
+    }
   }
 
   isQuickPhrasesAppState() {

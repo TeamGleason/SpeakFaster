@@ -28,13 +28,6 @@ app-text-to-speech-component {
   padding: 10px;
 }
 
-.content {
-  box-sizing: border-box;
-  height: fit-content;
-  margin: 0;
-  width: fit-content;
-}
-
 .bottom-area {
   position: absolute;
   top: 100%;
@@ -44,6 +37,13 @@ app-text-to-speech-component {
 .button-image {
   max-width: 65%;
   max-height: 65%;
+}
+
+.content {
+  box-sizing: border-box;
+  height: fit-content;
+  margin: 0;
+  width: fit-content;
 }
 
 .main-area {
@@ -135,13 +135,12 @@ app-text-to-speech-component {
             (click)="onQuickPhrasesCareButtonClicked($event, quickPhrasesAppState)">
           <img
               class="button-image"
-              src="{{getNonMinimizedStateImgSrc(quickPhrasesAppState, appState === quickPhrasesAppState)}}"
-              alt="quick phrases" />
+              src="{{getNonMinimizedStateImgSrc(quickPhrasesAppState, appState === quickPhrasesAppState)}}" />
         </button>
 
         <button
             #clickableButton
-            class="side-pane-button"
+            class="side-pane-button minimize-button"
             (click)="onMinimizeButtonClicked($event)">
           <img class="button-image" src="/assets/images/minimize.png" alt="minimize" />
         </button>
@@ -191,7 +190,6 @@ app-text-to-speech-component {
     </div>
 
   </div>
-
 
 </div>
 

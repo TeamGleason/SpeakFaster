@@ -22,12 +22,21 @@ export interface RetrieveContextResponse {
   contextSignals?: ContextSignal[];
 }
 
+export interface RegisterContextResponse {
+  result: 'UNKNOWN'|'SUCCESS';
+  contextId: string;
+}
+
 export interface TextPredictionResponse {
   outputs: string[],
 }
 
 export interface FillMaskResponse {
   results: string[];
+}
+
+export interface PartnerUsersResponse {
+  user_ids: string[];
 }
 
 /** Abstract interface for SpeakFaster service backend. */
@@ -61,6 +70,15 @@ export interface SpeakFasterServiceStub {
 
   // TODO(cais): Add other parameters.
   retrieveContext(userId: string): Observable<RetrieveContextResponse>;
+
+  registerContext(userId: string, speechContent: string):
+      Observable<RegisterContextResponse>;
+
+  /**
+   * Given partner identity, retrieve list of AAC users associated with the
+   * partner.
+   */
+  getPartnerUsers(partnerEmail: string): Observable<PartnerUsersResponse>;
 }
 
 /** Configuration for remote service. */
@@ -160,6 +178,31 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
       withCredentials,
       headers,
     });
+  }
+
+  registerContext(userId: string, speechContent: string):
+      Observable<RegisterContextResponse> {
+    const {endpoint, headers, withCredentials} = this.getServerCallParams();
+    return this.http.get<RegisterContextResponse>(endpoint, {
+      params: {
+        mode: 'register_context',
+        userId: userId,
+        speechContent: speechContent,
+      },
+      withCredentials,
+      headers,
+    });
+  }
+
+  getPartnerUsers(partnerEmail: string): Observable<PartnerUsersResponse> {
+    const {headers, withCredentials} = this.getServerCallParams();
+    return this.http.get<PartnerUsersResponse>('/partner_users', {
+      params: {
+        partner_email: partnerEmail,
+      },
+      withCredentials,
+      headers,
+    })
   }
 
   private getServerCallParams(): {

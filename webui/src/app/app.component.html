@@ -87,7 +87,11 @@ app-text-to-speech-component {
 
 </style>
 
-<div #contentWrapper class="content" role="main">
+<div
+    #contentWrapper
+    *ngIf="getUserRole() === 'AAC_USER' else partnerBlock"
+    class="content"
+    role="main">
 
   <!-- This is a "virtual" component without any UI. It is purely for
        handling keyboard events. -->
@@ -192,5 +196,11 @@ app-text-to-speech-component {
   </div>
 
 </div>
+
+<ng-template #partnerBlock>
+  <app-partner-component
+      (newAccessToken)="onNewAccessToken($event)">
+  </app-partner-component>
+</ng-template>
 
 <router-outlet></router-outlet>

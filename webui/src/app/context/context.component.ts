@@ -168,11 +168,14 @@ export class ContextComponent implements OnInit, AfterViewInit {
    * Clean ups all the context signals that are not manually entered.
    */
   private cleanUpContextSignals() {
+    // console.log('cleanUpContextSignals(): A100');  // DEBUG
     for (let i = this.contextSignals.length - 1; i >= 0; --i) {
       if (this.contextSignals[i].isHardcoded) {
         this.contextSignals.splice(i, 1);
       }
     }
+    // console.log('cleanUpContextSignals(): A200', this.contextSignals);  //
+    // DEBUG
   }
 
   private retrieveContext() {
@@ -192,8 +195,18 @@ export class ContextComponent implements OnInit, AfterViewInit {
               }
               this.cleanUpContextSignals();
               for (const contextSignal of data.contextSignals) {
-                if (contextSignal.contextType !== 'ConversationTurn' ||
+                // TOOD(cais): Fix typing.
+                if ((contextSignal as ConversationTurnContextSignal)
+                            .conversationTurn == null ||
                     contextSignal.timestamp === undefined) {
+                  continue;
+                }
+                // console.log(
+                //     'RetrieveContext(): pushing', contextSignal);  // DEBUG
+                if (this.contextSignals.find(
+                        signal =>
+                            contextSignal.contextId === signal.contextId)) {
+                  // Avoid adding duplicate context signals.
                   continue;
                 }
                 this.contextSignals.push(
@@ -202,6 +215,7 @@ export class ContextComponent implements OnInit, AfterViewInit {
               this.limitContextItemsCount();
               this.cleanUpAndSortFocusContextIds();
               // TODO(cais): Discard obsolete context IDs.
+              // console.log('A100:', this.focusContextIds);  // DEBUG
               if (this.focusContextIds.length === 0 &&
                   this.contextSignals.length > 0) {
                 this.focusContextIds.push(
@@ -210,6 +224,7 @@ export class ContextComponent implements OnInit, AfterViewInit {
                 this.cleanUpAndSortFocusContextIds();
               }
               this.emitContextStringsSelected();
+              // console.log('A200:', this.contextSignals);  // DEBUG
               this.contextRetrievalError = null;
             },
             error => {
@@ -250,6 +265,7 @@ export class ContextComponent implements OnInit, AfterViewInit {
           0,
           this.contextSignals.length -
               ContextComponent.MAX_DISPLAYED_CONTEXT_COUNT);
+      console.log('L100:', this.contextSignals);  // DEBUG
     }
   }
 

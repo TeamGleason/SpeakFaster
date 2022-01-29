@@ -15,6 +15,11 @@ import {TextEntryBeginEvent, TextEntryEndEvent} from './types/text-entry';
 // Type signature of callback functions that listen to resizing of an element.
 export type AppResizeCallback = (height: number, width: number) => void;
 
+export enum UserRole {
+  AAC_USER = 'AAC_USER',
+  PARTNER = 'PARTNER',
+}
+
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
@@ -35,6 +40,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   appState: AppState = AppState.ABBREVIATION_EXPANSION;
   private previousNonMinimizedAppState: AppState = this.appState;
 
+  private _isPartner = false;
   // Set this to `false` to skip using access token (e.g., developing with
   // an automatically authorized browser context.)
   private useAccessToken = true;
@@ -62,6 +68,11 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   ngOnInit() {
     bindCefSharpListener();
     this.route.queryParams.subscribe(params => {
+      if (params['partner']) {
+        const partnerFlag = params['partner'].toLocaleLowerCase();
+        this._isPartner = partnerFlag === 'true' || partnerFlag === '1' ||
+            partnerFlag === 't';
+      }
       if (params['endpoint'] && this.endpoint === '') {
         this._endpoint = params['endpoint'];
       }
@@ -126,6 +137,10 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     if (this.appState !== AppState.MINIBAR) {
       this.previousNonMinimizedAppState = this.appState;
     }
+  }
+
+  getUserRole(): UserRole {
+    return this._isPartner ? UserRole.PARTNER : UserRole.AAC_USER;
   }
 
   onNewAccessToken(accessToken: string) {

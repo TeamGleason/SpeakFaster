@@ -1,0 +1,185 @@
+<style>
+
+:host {
+  box-sizing: border-box;
+  color: #EEE;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  font-size: 32px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+button {
+  border: 2px solid #888;
+  border-radius: 5px;
+  font-size: 32px;
+}
+
+.message {
+  font-size: 18px;
+  margin-top: 5px;
+}
+
+.message-info {
+  color: #ddd;
+}
+
+.message-error {
+  color: red;
+}
+
+.partner-given-name {
+  margin-left: 6px;
+}
+
+.partner-profile-section {
+  color: #ccc;
+  display: flex;
+  margin: 5px;
+  font-size: 20px;
+  line-height: 48px;
+  vertical-align: middle;
+}
+
+.profile-image {
+  border-radius: 50%;
+  height: 45px;
+  width: 45px;
+}
+
+.send-button {
+  display: inline-block;
+  flex: 1;
+  font-size: 26px;
+  height: 42px;
+  margin-top: 2px;
+  min-width: 100px;
+  vertical-align: middle;
+}
+
+.sign-in-out-button {
+  background-color: black;
+  color: #EEE;
+  cursor: pointer;
+  margin-bottom: 10px;
+  min-height: 100px;
+  min-width: 400px;
+  padding-left: 20px;
+}
+
+.sign-in-out-button:hover {
+  background-color: #222;
+}
+
+.sign-in-out-button-content {
+  display: flex;
+  line-height: 40px;
+  vertical-align: middle;
+}
+
+.sign-in-out-button-image {
+  vertical-align: middle;
+}
+
+.sign-in-out-button-text {
+  vertical-align: middle;
+}
+
+.turn-input {
+  border-radius: 4px;
+  font-size: 32px;
+  height: 36px;
+  margin: 2px 5px;
+  padding: 1px;
+  width: 100%;
+}
+
+.turn-input-form {
+  display: flex;
+  flex-direction: row;
+  line-height: 34px;
+  margin-top: 10px;
+  position: relative;
+  vertical-align: middle;
+}
+
+.user-ids {
+  font-size: 22px;
+  margin-left: 8px;
+  min-width: 80px;
+  padding: 5px;
+}
+
+.user-ids-container {
+  font-size: 22px;
+  margin-top: 6px;
+}
+
+</style>
+
+<div class="content">
+
+  <button
+      id="sign-in-out-button"
+      class="sign-in-out-button"
+      (click)="partnerAuthenticate()">
+    <div class="sign-in-out-button-content">
+      <img
+          class="sign-in-out-button-image"
+          src={{signInOutButtonImgSrc}}
+          referrerpolicy="no-referrer" />
+      <span class=".sign-in-out-button-text">
+        {{signInOutButtonCaption}}
+      </span>
+    </div>
+  </button>
+
+  <div *ngIf="isPartnerSignedIn">
+    <div class="partner-profile-section">
+        <img
+            *ngIf="partnerProfileImageUrl !== null"
+            class="profile-image"
+            src="{{partnerProfileImageUrl}}" />
+        <span class="partner-given-name">{{partnerGivenName}}</span>
+    </div>
+
+    <div *ngIf="userIds.length > 0" class="user-ids-container">
+      <span>Choose AAC users:</span>
+      <select class="user-ids" #userIdsSelect>
+        <option
+            *ngFor="let userId of userIds"
+            [value]="userId">
+          {{userId}}
+        </option>
+      </select>
+    </div>
+
+    <div class="turn-input-form">
+      <input
+          class="turn-input"
+          type="text"
+          [autofocus]="true"
+          [value]="turnText"
+          (change)="onTurnTextChanged($event)" />
+      <button
+          class="send-button"
+          (click)="onSendButtonClicked($event)">
+        Send
+      </button>
+    </div>
+  </div>
+
+  <div>
+    <div
+        *ngIf="infoMessage !== null"
+        class="message message-info">
+      {{infoMessage}}
+    </div>
+    <div
+        *ngIf="errorMessage !== null"
+        class="message message-error">
+      {{errorMessage}}
+    </div>
+  </div>
+
+</div>

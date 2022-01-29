@@ -85,7 +85,7 @@
       class="conversation-turn">
     <app-conversation-turn-component
       #contextItem
-      *ngIf="contextSignal.contextType === 'ConversationTurn'"
+      *ngIf="contextSignal.conversationTurn"
       [turn]="contextSignal.conversationTurn!"
       [isFocus]="isContextInFocus(contextSignal.contextId!)"
       (click)="onTurnClicked($event, contextSignal.contextId!)"

@@ -47,12 +47,13 @@ button {
   width: 45px;
 }
 
-.send-button {
+.text-input-button {
   display: inline-block;
   flex: 1;
   font-size: 26px;
   height: 42px;
   margin-top: 2px;
+  margin-right: 5px;
   min-width: 100px;
   vertical-align: middle;
 }
@@ -156,13 +157,19 @@ button {
 
     <div class="turn-input-form">
       <input
+          #turnTextInput
           class="turn-input"
           type="text"
-          [autofocus]="true"
-          [value]="turnText"
           (change)="onTurnTextChanged($event)" />
       <button
-          class="send-button"
+          class="text-input-button"
+          [disabled]="sendRequestPending || asrPending"
+          (click)="onSpeakButtonClicked($event)">
+        Speak
+      </button>
+      <button
+          class="text-input-button"
+          [disabled]="sendRequestPending || asrPending"
           (click)="onSendButtonClicked($event)">
         Send
       </button>

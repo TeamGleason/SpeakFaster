@@ -168,14 +168,11 @@ export class ContextComponent implements OnInit, AfterViewInit {
    * Clean ups all the context signals that are not manually entered.
    */
   private cleanUpContextSignals() {
-    // console.log('cleanUpContextSignals(): A100');  // DEBUG
     for (let i = this.contextSignals.length - 1; i >= 0; --i) {
       if (this.contextSignals[i].isHardcoded) {
         this.contextSignals.splice(i, 1);
       }
     }
-    // console.log('cleanUpContextSignals(): A200', this.contextSignals);  //
-    // DEBUG
   }
 
   private retrieveContext() {
@@ -194,21 +191,20 @@ export class ContextComponent implements OnInit, AfterViewInit {
                 return;
               }
               this.cleanUpContextSignals();
-              for (const contextSignal of data.contextSignals) {
+              for (let contextSignal of data.contextSignals) {
                 // TOOD(cais): Fix typing.
                 if ((contextSignal as ConversationTurnContextSignal)
                             .conversationTurn == null ||
                     contextSignal.timestamp === undefined) {
                   continue;
                 }
-                // console.log(
-                //     'RetrieveContext(): pushing', contextSignal);  // DEBUG
                 if (this.contextSignals.find(
                         signal =>
                             contextSignal.contextId === signal.contextId)) {
                   // Avoid adding duplicate context signals.
                   continue;
                 }
+                console.log('Pushing:', contextSignal);  // DEBUG
                 this.contextSignals.push(
                     contextSignal as ConversationTurnContextSignal);
               }
@@ -239,6 +235,13 @@ export class ContextComponent implements OnInit, AfterViewInit {
     // Also add the latest user entered text.
     this.contextSignals.push(turnSignal);
     // Sort context turns in asecnding order of timestamp.
+    this.sortContextSignals();
+    this.limitContextItemsCount();
+    this.cleanUpAndSortFocusContextIds();
+    this.cdr.detectChanges();
+  }
+
+  private sortContextSignals(): void {
     this.contextSignals.sort((turn0, turn1) => {
       // Hardcoded ones always go to the first.
       if (turn0.conversationTurn!.isHardcoded &&
@@ -249,23 +252,21 @@ export class ContextComponent implements OnInit, AfterViewInit {
           turn1.conversationTurn!.isHardcoded) {
         return 1;
       } else {
-        return new Date(turn0.conversationTurn!.startTimestamp!).getTime() -
-            new Date(turn1.conversationTurn!.startTimestamp!).getTime();
+        // TODO(cais): startTimestamp is often unavailable.
+        return new Date(turn0.timestamp).getTime() -
+            new Date(turn1.timestamp).getTime();
       }
     });
-    this.limitContextItemsCount();
-    this.cleanUpAndSortFocusContextIds();
-    this.cdr.detectChanges();
   }
 
   private limitContextItemsCount() {
+    this.sortContextSignals();
     if (this.contextSignals.length >
         ContextComponent.MAX_DISPLAYED_CONTEXT_COUNT) {
+      const numExtra = this.contextSignals.length -
+          ContextComponent.MAX_DISPLAYED_CONTEXT_COUNT;
       this.contextSignals.splice(
-          0,
-          this.contextSignals.length -
-              ContextComponent.MAX_DISPLAYED_CONTEXT_COUNT);
-      console.log('L100:', this.contextSignals);  // DEBUG
+          this.contextSignals.length - numExtra, numExtra);
     }
   }
 

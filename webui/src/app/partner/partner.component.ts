@@ -1,6 +1,6 @@
 /** Component that supports partner sign-in and sending of context turns. */
 import {ChangeDetectorRef, Component, ElementRef, EventEmitter, OnInit, Output, QueryList, ViewChild, ViewChildren} from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import {ActivatedRoute} from '@angular/router';
 import {} from 'gapi.auth2';
 
 import {PartnerUsersResponse, SpeakFasterService} from '../speakfaster-service';
@@ -19,7 +19,7 @@ export class PartnerComponent implements OnInit {
 
   private clientId: string = '';
 
-  private googleAuth: any;  // TODO(cais): Use typing.
+  private googleAuth?: gapi.auth2.GoogleAuth;
   private user?: gapi.auth2.GoogleUser;
   private _accessToken: string|null = null;
   private _partnerEmail: string|null = null;
@@ -27,18 +27,20 @@ export class PartnerComponent implements OnInit {
   private _partnerProfileImageUrl: string|null = null;
   private _infoMessage: string|null = null;
   private _errorMessage: string|null = null;
+  private _asrPending: boolean = false;
+  private _sendRequestPendng: boolean = false;
 
   @Output() newAccessToken: EventEmitter<string> = new EventEmitter();
 
   @ViewChild('userIdsSelect') userIdsSelect!: ElementRef<HTMLSelectElement>;
   private _userIds: string[] = [];
+  @ViewChild('turnTextInput') turnTextInput!: ElementRef<HTMLInputElement>;
 
   turnText: string = '';
 
   constructor(
       public speakFasterService: SpeakFasterService,
-      private route: ActivatedRoute,
-      private cdr: ChangeDetectorRef) {}
+      private route: ActivatedRoute, private cdr: ChangeDetectorRef) {}
 
   ngOnInit() {
     this.route.queryParams.subscribe(params => {
@@ -48,7 +50,7 @@ export class PartnerComponent implements OnInit {
     });
     gapi.load('client:auth2', () => {
       if (!this.clientId) {
-        this._errorMessage = 'Missing client ID. Check URL.'
+        this._errorMessage = 'Missing client ID. Check URL.';
         this.cdr.detectChanges();
         return;
       }
@@ -70,7 +72,7 @@ export class PartnerComponent implements OnInit {
 
   private getUserInfo(): void {
     if (!this.user) {
-      this.user = this.googleAuth.currentUser.get();
+      this.user = this.googleAuth!.currentUser.get();
     }
     if (!this.user) {
       this._errorMessage = 'Failed to get current user';
@@ -104,6 +106,9 @@ export class PartnerComponent implements OnInit {
                   this._userIds);
             });
     this._errorMessage = null;
+    if (this.turnTextInput) {
+      setTimeout(() => this.turnTextInput.nativeElement.focus());
+    }
     this.cdr.detectChanges();
   }
 
@@ -118,9 +123,9 @@ export class PartnerComponent implements OnInit {
 
   partnerAuthenticate() {
     if (this.isPartnerSignedIn) {
-      this.googleAuth.signOut();
+      this.googleAuth!.signOut();
     } else {
-      this.googleAuth.signIn();
+      this.googleAuth!.signIn();
     }
   }
 
@@ -128,29 +133,72 @@ export class PartnerComponent implements OnInit {
     this.turnText = (event.target as HTMLInputElement).value;
   }
 
+  onSpeakButtonClicked(event: Event) {
+    const speechRecog = (window as any).SpeechRecognition ||
+        (window as any).webkitSpeechRecognition;
+    const recog = new speechRecog();
+
+    recog.onstart = () => {
+      this._infoMessage = 'Listening. Please start speaking...';
+      this._errorMessage = null;
+      this._asrPending = true;
+      this.cdr.detectChanges();
+    };
+
+    recog.onspeechend = () => {
+      recog.stop();
+      this._infoMessage = null;
+      this._errorMessage = null;
+      this._asrPending = false;
+      this.cdr.detectChanges();
+    };
+
+    //     // This runs when the speech recognition service returns result
+    recog.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      this.turnTextInput.nativeElement.value = transcript.trim();
+      this.turnText = transcript.trim();
+      this.cdr.detectChanges();
+    };
+
+    recog.start();
+  }
+
   onSendButtonClicked(event: Event) {
     const speechContent = this.turnText.trim();
     if (!speechContent) {
+      this._infoMessage = null;
+      this._errorMessage = 'Message is empty!';
+      this.cdr.detectChanges();
       return;
     }
     const userId = this.userIdsSelect.nativeElement.value;
     if (!userId) {
+      this._infoMessage = null;
       this._errorMessage = 'Cannot find user ID';
+      this.cdr.detectChanges();
       return;
     }
+    this._sendRequestPendng = true;
     this.speakFasterService.registerContext(userId, speechContent)
         .subscribe(
             registerContextResponse => {
               console.log('reponse:', registerContextResponse);
               if (registerContextResponse.result === 'SUCCESS') {
-                this._infoMessage = 'Message sent';
-                this.turnText = '';
+                this._errorMessage = null;
+                this._infoMessage = `Message sent: ${speechContent}`;
+                if (this.turnTextInput) {
+                  this.turnTextInput.nativeElement.value = '';
+                }
               } else {
                 this._errorMessage = 'Message not sent. There was an error.';
               }
+              this._sendRequestPendng = false;
               this.cdr.detectChanges();
-            }, error => {
+            },
+            error => {
               this._errorMessage = 'Message not sent. There was an error.';
+              this._sendRequestPendng = false;
               this.cdr.detectChanges();
             });
   }
@@ -181,6 +229,14 @@ export class PartnerComponent implements OnInit {
 
   get userIds(): string[] {
     return this._userIds;
+  }
+
+  get asrPending(): boolean {
+    return this._asrPending;
+  }
+
+  get sendRequestPending(): boolean {
+    return this._sendRequestPendng;
   }
 
   get infoMessage(): string|null {

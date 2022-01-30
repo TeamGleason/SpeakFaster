@@ -5,6 +5,7 @@
   color: #EEE;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
   font-size: 32px;
+  margin: 2px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -17,7 +18,8 @@ button {
 
 .message {
   font-size: 18px;
-  margin-top: 5px;
+  margin-left: 6px;
+  margin-top: 20px;
 }
 
 .message-info {
@@ -51,9 +53,10 @@ button {
   display: inline-block;
   flex: 1;
   font-size: 26px;
-  height: 42px;
-  margin-top: 2px;
-  margin-right: 5px;
+  height: 48px;
+  margin-left: 4px;
+  margin-top: 6px;
+  margin-right: 2px;
   min-width: 100px;
   vertical-align: middle;
 }
@@ -87,21 +90,26 @@ button {
 }
 
 .turn-input {
+  box-sizing: border-box;
   border-radius: 4px;
-  font-size: 32px;
-  height: 36px;
-  margin: 2px 5px;
+  font-size: 26px;
+  margin: 2px 4px;
   padding: 1px;
   width: 100%;
 }
 
-.turn-input-form {
+.turn-input-buttons-container {
+  align-items: stretch;
   display: flex;
   flex-direction: row;
+}
+
+.turn-input-form {
+  display: block;
   line-height: 34px;
   margin-top: 10px;
+  padding-right: 6px;
   position: relative;
-  vertical-align: middle;
 }
 
 .user-ids {
@@ -156,23 +164,26 @@ button {
     </div>
 
     <div class="turn-input-form">
-      <input
+      <textarea
           #turnTextInput
+          row="3"
           class="turn-input"
-          type="text"
-          (change)="onTurnTextChanged($event)" />
-      <button
-          class="text-input-button"
-          [disabled]="sendRequestPending || asrPending"
-          (click)="onSpeakButtonClicked($event)">
-        Speak
-      </button>
-      <button
-          class="text-input-button"
-          [disabled]="sendRequestPending || asrPending"
-          (click)="onSendButtonClicked($event)">
-        Send
-      </button>
+          (change)="onTurnTextChanged($event)"></textarea>
+
+      <div class="turn-input-buttons-container">
+        <button
+            class="text-input-button"
+            [disabled]="sendRequestPending || asrPending"
+            (click)="onSpeakButtonClicked($event)">
+          🎤 Speak
+        </button>
+        <button
+            class="text-input-button"
+            [disabled]="sendRequestPending || asrPending"
+            (click)="onSendButtonClicked($event)">
+          Send
+        </button>
+      </div>
     </div>
   </div>
 

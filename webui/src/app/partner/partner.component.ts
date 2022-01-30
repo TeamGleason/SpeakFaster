@@ -34,7 +34,7 @@ export class PartnerComponent implements OnInit {
 
   @ViewChild('userIdsSelect') userIdsSelect!: ElementRef<HTMLSelectElement>;
   private _userIds: string[] = [];
-  @ViewChild('turnTextInput') turnTextInput!: ElementRef<HTMLInputElement>;
+  @ViewChild('turnTextInput') turnTextInput!: ElementRef<HTMLTextAreaElement>;
 
   turnText: string = '';
 
@@ -180,6 +180,9 @@ export class PartnerComponent implements OnInit {
       return;
     }
     this._sendRequestPendng = true;
+    this._infoMessage = 'Sending...';
+    this._errorMessage = null;
+    this.cdr.detectChanges();
     this.speakFasterService.registerContext(userId, speechContent)
         .subscribe(
             registerContextResponse => {

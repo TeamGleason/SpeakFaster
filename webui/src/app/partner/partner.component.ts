@@ -91,6 +91,7 @@ export class PartnerComponent implements OnInit {
     this._accessToken = this.user.getAuthResponse().access_token;
     this.newAccessToken.emit(this._accessToken);
     const userProfile = this.user.getBasicProfile();
+    this._partnerEmail = userProfile.getEmail();
     this._partnerGivenName = userProfile.getGivenName();
     this._partnerProfileImageUrl = userProfile.getImageUrl();
     this.speakFasterService.getPartnerUsers(this._partnerEmail!)

@@ -33,7 +33,7 @@ export class PartnerComponent implements OnInit {
   @Output() newAccessToken: EventEmitter<string> = new EventEmitter();
 
   @ViewChild('userIdsSelect') userIdsSelect!: ElementRef<HTMLSelectElement>;
-  private _userIds: string[] = [];
+  private readonly _userIds: string[] = [];
   @ViewChild('turnTextInput') turnTextInput!: ElementRef<HTMLTextAreaElement>;
 
   turnText: string = '';
@@ -97,10 +97,14 @@ export class PartnerComponent implements OnInit {
     this.speakFasterService.getPartnerUsers(this._partnerEmail!)
         .subscribe(
             (partnerUsersResonse: PartnerUsersResponse) => {
-              console.log('user list:', partnerUsersResonse.user_ids);
+              this._userIds.splice(0);
+              this._userIds.push(...partnerUsersResonse.user_ids);
+              console.log('Added user IDs:', this._userIds);
+              this.cdr.detectChanges();
             },
             (error) => {
-              this._userIds = DEFAULT_USER_IDS;
+              this._userIds.splice(0);
+              this._userIds.push(...DEFAULT_USER_IDS);
               this.cdr.detectChanges();
               console.warn(
                   'Retrieving partner user IDs failed, using default user IDs:',

@@ -188,6 +188,7 @@ export class PartnerComponent implements OnInit {
             registerContextResponse => {
               console.log('reponse:', registerContextResponse);
               if (registerContextResponse.result === 'SUCCESS') {
+                this.turnText = '';
                 this._errorMessage = null;
                 this._infoMessage = `Message sent: ${speechContent}`;
                 if (this.turnTextInput) {

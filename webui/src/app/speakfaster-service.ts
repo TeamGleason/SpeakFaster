@@ -71,8 +71,19 @@ export interface SpeakFasterServiceStub {
   // TODO(cais): Add other parameters.
   retrieveContext(userId: string): Observable<RetrieveContextResponse>;
 
-  registerContext(userId: string, speechContent: string):
-      Observable<RegisterContextResponse>;
+  /**
+   * Register a conversation turn as a context signal.
+   * @param userId the ID of the user to whom this conversation turn is
+   *     addressed.
+   * @param speechContent content of the conversation turn.
+   * @param startTimestamp the timestamp for the start of the conversation turn.
+   * @param timezone name of the timezone in which the sender of the
+   *     conversation turn is located,
+   * @returns An Observable for the server respnose.
+   */
+  registerContext(
+      userId: string, speechContent: string, startTimestamp?: Date,
+      timezone?: string): Observable<RegisterContextResponse>;
 
   /**
    * Given partner identity, retrieve list of AAC users associated with the
@@ -180,14 +191,19 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
     });
   }
 
-  registerContext(userId: string, speechContent: string):
-      Observable<RegisterContextResponse> {
+  registerContext(
+      userId: string, speechContent: string, startTimestamp?: Date,
+      timezone?: string): Observable<RegisterContextResponse> {
     const {endpoint, headers, withCredentials} = this.getServerCallParams();
+    startTimestamp = startTimestamp || new Date();
+    timezone = timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
     return this.http.get<RegisterContextResponse>(endpoint, {
       params: {
         mode: 'register_context',
         userId: userId,
         speechContent: speechContent,
+        startTimestamp: startTimestamp.toISOString(),
+        timezone: timezone,
       },
       withCredentials,
       headers,

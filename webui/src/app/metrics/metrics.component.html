@@ -1,7 +1,13 @@
 <style>
 
 :host {
-  white-space: pre-wrap
+  white-space: pre-wrap;
+}
+
+.container {
+  height: 28px;
+  max-height: 28px;
+  overflow: hidden;
 }
 
 .icon-tag {
@@ -38,6 +44,8 @@
 
 </style>
 
+<div class="container">
+
 <div class="icon-tag">
   ⏱️
 </div>
@@ -66,4 +74,6 @@
   <span class="latest-metric" *ngIf="latestKsr !== null">
     (latest:{{latestKsr.toFixed(2)}})
   </span>
+</div>
+
 </div>

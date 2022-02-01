@@ -1,13 +1,17 @@
 <style>
 
 :host {
+  background-color: black;
+  box-sizing: border-box;
+  color: #333;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
   font-size: 16px;
-  background-color: black;
-  color: #333;
-  box-sizing: border-box;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+app-abbreviation-component {
+  display: block;
 }
 
 app-context-component {
@@ -18,32 +22,142 @@ app-text-to-speech-component {
   float: right;
 }
 
+.auth-area {
+  border: 2px solid yellow;
+  border-radius: 7px;
+  padding: 10px;
+}
+
+.bottom-area {
+  position: absolute;
+  top: 100%;
+  transform: translateY(-100%);
+}
+
+.button-image {
+  max-width: 65%;
+  max-height: 65%;
+}
+
+.content {
+  box-sizing: border-box;
+  height: fit-content;
+  margin: 0;
+  width: fit-content;
+}
+
+.main-area {
+  display: flex;
+  height: fit-content;
+  overflow: hidden;
+  position: relative;
+  width: 1200px;
+}
+
+.main-left-pane {
+  align-items:flex-end;
+  box-sizing: border-box;
+  display: flex;
+  min-height: 100%;
+  justify-content: flex-end;
+  padding-bottom: 10px;
+  width: fit-content;
+}
+
+.mode-abbreviation-expansion {
+  height: 360px;
+}
+
+.mode-quick-phrases {
+  height: 240px;
+}
+
+.side-pane-button {
+  background: transparent;
+  border: none;
+  display: block;
+  height: 50px;
+  margin: 10px 0 0;
+  width: 50px;
+}
+
+.side-pane-button-container {
+  display: table-column;
+}
+
 </style>
 
 <div #contentWrapper class="content" role="main">
 
-  <div class="content" role="main">
-    <div *ngIf="!hasAccessToken()" class="auth-area">
-      <app-auth-component (newAccessToken)="onNewAccessToken($event)"></app-auth-component>
+  <div *ngIf="!hasAccessToken()" class="auth-area">
+    <app-auth-component (newAccessToken)="onNewAccessToken($event)"></app-auth-component>
+  </div>
+
+  <app-external-events-component
+      #externalEvents
+      [textEntryBeginSubject]="textEntryBeginSubject"
+      [textEntryEndSubject]="textEntryEndSubject">
+  </app-external-events-component>
+
+  <app-text-to-speech-component
+      [textEntryEndSubject]="textEntryEndSubject"
+      [accessToken]="accessToken">
+  </app-text-to-speech-component>
+
+  <div
+      class="minimized-area"
+      *ngIf="hasAccessToken() && appState === 'MINIBAR'">
+    <app-mini-bar-component
+      [appState]="appState"
+      (appStateDeminimized)="onAppStateDeminimized()">
+    </app-mini-bar-component>
+  </div>
+
+  <app-metrics-component
+      *ngIf="hasAccessToken() && appState !== 'MINIBAR'"
+      [textEntryBeginSubject]="textEntryBeginSubject"
+      [textEntryEndSubject]="textEntryEndSubject">
+  </app-metrics-component>
+
+  <div
+      class="main-area"
+      *ngIf="hasAccessToken() && appState !== 'MINIBAR'">
+    <div class="main-left-pane">
+      <div class="side-pane-button-container">
+        <button
+            *ngFor="let quickPhrasesAppState of nonMinimizedStatesAppStates"
+            #clickableButton
+            class="side-pane-button"
+            (click)="onQuickPhrasesCareButtonClicked($event, quickPhrasesAppState)">
+          <img
+              class="button-image"
+              src="{{getNonMinimizedStateImgSrc(quickPhrasesAppState, appState === quickPhrasesAppState)}}"
+              alt="quick phrases" />
+        </button>
+
+        <button
+            #clickableButton
+            class="side-pane-button minimize-button"
+            (click)="onMinimizeButtonClicked($event)">
+          <img class="button-image" src="/assets/images/minimize.png" alt="minimize" />
+        </button>
+      </div>
     </div>
 
-    <app-external-events-component
-        #externalEvents
-        [textEntryBeginSubject]="textEntryBeginSubject"
-        [textEntryEndSubject]="textEntryEndSubject">
-    </app-external-events-component>
+    <div
+        class="main-right-pane mode-quick-pharses"
+        *ngIf="hasAccessToken() && isQuickPhrasesAppState()">
+      <app-quick-phrases-component
+          [phrases]="getQuickPhrases()"
+          [color]="getQuickPhrasesColor()"
+          [textEntryBeginSubject]="textEntryBeginSubject"
+          [textEntryEndSubject]="textEntryEndSubject"
+      ></app-quick-phrases-component>
+    </div>
 
-    <app-metrics-component
-        [textEntryBeginSubject]="textEntryBeginSubject"
-        [textEntryEndSubject]="textEntryEndSubject">
-    </app-metrics-component>
-
-    <app-text-to-speech-component
-        [textEntryEndSubject]="textEntryEndSubject"
-        [accessToken]="accessToken">
-    </app-text-to-speech-component>
-
-    <div *ngIf="hasAccessToken()">
+    <div
+        class="main-right-pane mode-abbreviation-expansion"
+        *ngIf="hasAccessToken() && appState === 'ABBREVIATION_EXPANSION'">
 
       <app-context-component
         [textEntryEndSubject]="textEntryEndSubject"
@@ -59,6 +173,7 @@ app-text-to-speech-component {
       ></app-abbreviation-component>
 
     </div>
+
   </div>
 
 </div>

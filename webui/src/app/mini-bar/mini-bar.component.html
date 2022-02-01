@@ -1,0 +1,39 @@
+<style>
+
+:host {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+}
+
+.button-image {
+  align-self: center;
+  margin-bottom: 2px;
+  margin-left: 5px;
+  max-height: 70%;
+  max-width: 70%;
+}
+
+.main-button {
+  background-image: linear-gradient(to top right, cyan, purple, magenta);
+  border: none;
+  border-radius: 25px;
+  color: #eee;
+  display: grid;
+  font-size: 18px;
+  height: 50px;
+  justify-content: center;
+  text-align: center;
+  vertical-align: middle;
+  width: 50px;
+}
+
+</style>
+
+<!-- NOTE: We avoid using a button for this to avoid
+    the button stealing focus and interfere with
+    keyboard events. -->
+<div
+    #clickableButton
+    class="main-button"
+    (click)="onButtonClicked($event)">
+  <img class="button-image" src="/assets/images/minibar-icon.png" alt="Speak Faster" />
+</div>

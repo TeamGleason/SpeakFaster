@@ -248,6 +248,22 @@ export class ExternalEventsComponent implements OnInit {
     ExternalEventsComponent.keypressListeners.push(listener);
   }
 
+  /**
+   * Unregister a registered listener. If the `listener` object is
+   * unregistered, this call is a no-op.
+   */
+  public static unregisterKeypressListener(listener: KeypressListener) {
+    const index = ExternalEventsComponent.keypressListeners.indexOf(listener);
+    if (index !== -1) {
+      ExternalEventsComponent.keypressListeners.splice(index, 1);
+    }
+  }
+
+  /** Get the number of registered keypress listeners. */
+  public static getNumKeypressListeners(): number {
+    return ExternalEventsComponent.keypressListeners.length;
+  }
+
   /** Clear all registered keypress listeners. */
   public static clearKeypressListeners() {
     ExternalEventsComponent.keypressListeners.splice(0);

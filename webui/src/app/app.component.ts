@@ -163,8 +163,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     return this._accessToken;
   }
 
-  onAbbreviationExpansionButtonClicked(event: Event) {}
-
   onMinimizeButtonClicked(event: Event) {
     this.changeAppState(AppState.MINIBAR);
   }

@@ -11,6 +11,6 @@ export enum AppState {
   QUICK_PHRASES_PARTNERS = 'QUICK_PHRASES_PARTNERS',
   // Quick phrases: care.
   QUICK_PHRASES_CARE = 'QUICK_PHRASES_CARE',
-  // Abbreviation expansion.
+  // Expanded in full (i.e., not minimized as a mini-bar).
   ABBREVIATION_EXPANSION = 'ABBREVIATION_EXPANSION',
 }

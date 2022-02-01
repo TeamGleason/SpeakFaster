@@ -182,8 +182,8 @@ describe('AuthComponent', () => {
         fixture.detectChanges();
         expect(seenAccessToken).toEqual('new_test_access_token');
         done();
-      }, refreshTokenInterval * 1e3);
-    }, interval * 1e3);
+      }, refreshTokenInterval * 2e3);
+    }, interval * 2e3);
   });
 
   it('including access_token parameter in route fires newAccessToken', () => {

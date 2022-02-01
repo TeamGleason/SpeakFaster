@@ -80,9 +80,10 @@ describe('ConversationTurnComponent', () => {
     fixture.detectChanges();
     await fixture.whenStable();
     const calls = testListener.updateButtonBoxesCalls;
-    expect(calls.length).toEqual(1);
-    expect(calls[0][0].indexOf('ConversationTurnComponent')).toEqual(0);
-    expect(calls[0][1].length).toEqual(1);
-    expect(calls[0][1][0].length).toEqual(4);
+    expect(calls.length).toBeGreaterThanOrEqual(1);
+    const lastCall = calls[calls.length - 1];
+    expect(lastCall[0].indexOf('ConversationTurnComponent')).toEqual(0);
+    expect(lastCall[1].length).toEqual(1);
+    expect(lastCall[1][0].length).toEqual(4);
   });
 });

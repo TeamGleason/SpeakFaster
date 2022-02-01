@@ -76,6 +76,7 @@ describe('ContextComponent', () => {
   });
 
   it('displays the latest four elements if there are more than four', () => {
+    // TODO(cais): Fix test.
     for (let i = 0; i < 5; ++i) {
       textEntryEndSubject.next({
         text: `Hello, #${i}`,

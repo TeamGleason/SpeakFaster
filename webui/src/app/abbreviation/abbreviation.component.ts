@@ -258,6 +258,7 @@ export class AbbreviationComponent implements OnDestroy, OnInit, AfterViewInit {
               this.responseError = error.message;
               this.cdr.detectChanges();
             });
+    this.cdr.detectChanges();
   }
 
   /** Heuristics about the num_samples to use when requesting AE from server. */

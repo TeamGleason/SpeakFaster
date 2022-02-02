@@ -177,6 +177,23 @@ describe('AbbreviationComponent', () => {
     expect(events[0].numHumanKeypresses).toEqual(expectedNumKeypresses);
   });
 
+  it('shows request ongoing spinner and message during server call',
+      async () => {
+        fixture.componentInstance.contextStrings = ['hello'];
+        fixture.componentInstance.listenToKeypress(
+            ['h', 'a', 'y', ' ', ' '], 'hay  ');
+        fixture.detectChanges();
+
+        const requestOngoingMessages =
+            fixture.debugElement.queryAll(By.css('.request-ongoing-message'));
+        expect(requestOngoingMessages.length).toEqual(1);
+        expect(requestOngoingMessages[0].nativeElement.innerText)
+            .toEqual('Getting abbrevaition expansions...');
+        const spinners =
+            fixture.debugElement.queryAll(By.css('mat-progress-spinner'));
+        expect(spinners.length).toEqual(1);
+      });
+
   for (const [keySequence, precedingText] of [
            [['h', 'a', 'y', ' ', ' '], undefined],
            [[' ', 'h', 'a', 'y', ' ', ' '], undefined],

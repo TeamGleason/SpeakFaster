@@ -1,12 +1,18 @@
 <style>
 
 :host {
-    box-sizing: border-box;
-    color: #EEE;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
-    font-size: 32px;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+  box-sizing: border-box;
+  color: #EEE;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  font-size: 32px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+mat-progress-spinner {
+  display: inline-block;
+  stroke: #ddd;
+  zoom: 0.3;
 }
 
 .abbreviation-option {
@@ -38,6 +44,10 @@
     "a a a a c c c c e e e e"
     "b b b b d d d d f f f f"
     "b b b b d d d d f f f f";
+}
+
+.item {
+  width: 355px;
 }
 
 .item1 {
@@ -83,12 +93,19 @@
   width: fit-content;
 }
 
+.empty-options-container {
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+}
+
 .expansions {
   display: inline-block;
   white-space: nowrap;
 }
 
 .info {
+  font-size: 22px;
   margin-left: 10px;
 }
 
@@ -136,6 +153,14 @@
   color: yellow;
 }
 
+.request-ongoing-message {
+  margin-left: 15px;
+}
+
+.response-empty {
+  color: orange;
+}
+
 .response-error {
   color: orange;
 }
@@ -149,16 +174,34 @@
   width: 150px;
 }
 
+.try-again-button {
+  font-size: 18px;
+  height: fit-content;
+  padding: 10px;
+  vertical-align: top;
+  width: 120px;
+}
+
+.upper-container {
+  height: 150px;
+}
+
 </style>
 
+<div class="upper-container">
+
 <div *ngIf="requestOngoing" class="info request-ongoing">
-  Getting abbrevaition expansions...
+  <mat-progress-spinner
+      [mode]="'indeterminate'"
+      [value]="50">
+  </mat-progress-spinner>
+  <span class="request-ongoing-message">Getting abbrevaition expansions...</span>
 </div>
 <div *ngIf="responseError !== null" class="info response-error">
   Error: {{responseError}}
 </div>
 <div
-    *ngIf="state === 'CHOOSING_EXPANSION' || state === 'CHOOSING_EDIT_TARGET'"
+    *ngIf="state === 'CHOOSING_EXPANSION' || state === 'CHOOSING_EDIT_TARGET' || state == 'SPELLING'"
     class="expansions">
   <button
       #clickableButton
@@ -167,15 +210,25 @@
       (click)="onEditButtonClicked($event)">
     ✏️
   </button>
+  <div *ngIf="receivedEmptyOptions" class="empty-options-container">
+    <span class="info response-empty">Found no expansions</span>
+    <button
+        #clickableButton
+        class="option-button try-again-button"
+        (click)="onTryAgainButtonClicked($event)">
+      Try again
+    </button>
+  </div>
   <div class="abbreviation-options-container">
     <div class="abbreviation-options-grid">
       <app-phrase-component
           *ngFor="let abbreviationOption of abbreviationOptions; let i = index"
           #abbreviationOption
-          class="item{{i + 1}}"
+          class="item item{{i + 1}}"
           [ngClass]="{'candidate-for-edit': state === 'CHOOSING_EDIT_TARGET'}"
           [phraseText]="abbreviationOption"
           [phraseIndex]="i"
+          [scaleFontSize]="true"
           (speakButtonClicked)="onSpeakOptionButtonClicked($event)"
           (injectButtonClicked)="onExpansionOptionButtonClicked($event)">
       </app-phrase-component>
@@ -210,6 +263,8 @@
       class="token-input"
       type="text"
       value="{{manualTokenString}}" />
+
+</div>
 
 </div>
 

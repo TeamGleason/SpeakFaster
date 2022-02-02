@@ -15,7 +15,8 @@ import {TextEntryEndEvent} from '../types/text-entry';
 import {AbbreviationComponent, State} from './abbreviation.component';
 import {AbbreviationModule} from './abbreviation.module';
 
-describe('AbbreviationComponent', () => {
+// TODO(cais): DO NOT SUBMIT.
+fdescribe('AbbreviationComponent', () => {
   let abbreviationExpansionTriggers: Subject<InputAbbreviationChangedEvent>;
   let textEntryEndSubject: Subject<TextEntryEndEvent>;
   let fixture: ComponentFixture<AbbreviationComponent>;
@@ -213,6 +214,22 @@ describe('AbbreviationComponent', () => {
        expect(events[0].numHumanKeypresses).toEqual(expectedNumKeypresses);
      });
 
+  it('shows request ongoing spinner and message during server call', () => {
+    fixture.componentInstance.contextStrings = ['hello'];
+    fixture.componentInstance.listenToKeypress(
+        ['h', 'a', 'y', ' ', ' '], 'hay  ');
+    fixture.detectChanges();
+
+    const requestOngoingMessages =
+        fixture.debugElement.queryAll(By.css('.request-ongoing-message'));
+    expect(requestOngoingMessages.length).toEqual(1);
+    expect(requestOngoingMessages[0].nativeElement.innerText)
+        .toEqual('Getting abbrevaition expansions...');
+    const spinners =
+        fixture.debugElement.queryAll(By.css('mat-progress-spinner'));
+    expect(spinners.length).toEqual(1);
+  });
+
   for (const [keySequence, precedingText] of [
            [['h', 'a', 'y', ' ', ' '], undefined],
            [[' ', 'h', 'a', 'y', ' ', ' '], undefined],
@@ -255,6 +272,44 @@ describe('AbbreviationComponent', () => {
          expect(abbreviationChangeEvents).toEqual([expected]);
        });
   }
+
+  it('Shows no-option mesasage and try-again button if no option', () => {
+    spyOn(fixture.componentInstance.speakFasterService, 'expandAbbreviation')
+        .and.returnValue(of({}));
+    fixture.componentInstance.contextStrings = ['hello'];
+    fixture.componentInstance.listenToKeypress(
+        ['h', 'a', 'y', ' ', ' '], 'hay  ');
+    fixture.detectChanges();
+
+    const noExpansionSpans =
+        fixture.debugElement.queryAll(By.css('.response-empty'));
+    expect(noExpansionSpans.length).toEqual(1);
+    const tryAgainButtons =
+        fixture.debugElement.queryAll(By.css('.try-again-button'));
+    expect(tryAgainButtons.length).toEqual(1);
+  });
+
+  it('Clicking try again button dismisses no-expnsion and try-again button',
+     async () => {
+       const spy = spyOn(
+                       fixture.componentInstance.speakFasterService,
+                       'expandAbbreviation')
+                       .and.returnValue(of({}));
+       fixture.componentInstance.contextStrings = ['hello'];
+       fixture.componentInstance.listenToKeypress(
+           ['h', 'a', 'y', ' ', ' '], 'hay  ');
+       fixture.detectChanges();
+       const tryAgainButtons =
+           fixture.debugElement.query(By.css('.try-again-button'));
+       spy.and.callThrough();
+       tryAgainButtons.nativeElement.click();
+       fixture.detectChanges();
+       await fixture.whenStable();
+
+       expect(fixture.debugElement.query(By.css('.response-empty'))).toBeNull();
+       expect(fixture.debugElement.query(By.css('.try-again-button')))
+           .toBeNull();
+     });
 
   it('does not display SpellComponent initially', () => {
     const spellComponents =

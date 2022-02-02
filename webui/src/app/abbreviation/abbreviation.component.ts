@@ -3,7 +3,7 @@ import {Subject, Subscription} from 'rxjs';
 import {keySequenceEndsWith, limitStringLength} from 'src/utils/text-utils';
 import {createUuid} from 'src/utils/uuid';
 
-import {injectKeys, updateButtonBoxesForElements} from '../../utils/cefsharp';
+import {injectKeys, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from '../../utils/cefsharp';
 import {isPlainAlphanumericKey, isTextContentKey} from '../../utils/keyboard-utils';
 import {ExternalEventsComponent, KeypressListener, repeatVirtualKey, VIRTUAL_KEY} from '../external/external-events.component';
 import {SpeakFasterService} from '../speakfaster-service';
@@ -67,6 +67,7 @@ export class AbbreviationComponent implements OnDestroy, OnInit, AfterViewInit {
   requestOngoing: boolean = false;
   responseError: string|null = null;
   abbreviationOptions: string[] = [];
+  receivedEmptyOptions: boolean = false;
   private _selectedAbbreviationIndex: number = -1;
   private abbreviationExpansionTriggersSubscription?: Subscription;
 
@@ -90,8 +91,7 @@ export class AbbreviationComponent implements OnDestroy, OnInit, AfterViewInit {
   ngAfterViewInit() {
     this.clickableButtons.changes.subscribe(
         (queryList: QueryList<ElementRef>) => {
-          updateButtonBoxesForElements(
-              AbbreviationComponent._NAME + this.instanceId, queryList);
+          updateButtonBoxesForElements(this.instanceId, queryList);
         });
   }
 
@@ -100,6 +100,7 @@ export class AbbreviationComponent implements OnDestroy, OnInit, AfterViewInit {
     if (this.abbreviationExpansionTriggersSubscription) {
       this.abbreviationExpansionTriggersSubscription.unsubscribe();
     }
+    updateButtonBoxesToEmpty(this.instanceId);
   }
 
   public listenToKeypress(keySequence: string[], reconstructedText: string):
@@ -153,6 +154,10 @@ export class AbbreviationComponent implements OnDestroy, OnInit, AfterViewInit {
     }
   }
 
+  onTryAgainButtonClicked(event: Event) {
+    this.expandAbbreviation();
+  }
+
   get selectedAbbreviationIndex() {
     return this._selectedAbbreviationIndex;
   }
@@ -164,7 +169,8 @@ export class AbbreviationComponent implements OnDestroy, OnInit, AfterViewInit {
   onExpansionOptionButtonClicked(event: {
     phraseText: string; phraseIndex: number
   }) {
-    if (this.state === State.CHOOSING_EXPANSION) {
+    if (this.state === State.CHOOSING_EXPANSION ||
+        this.state == State.SPELLING) {
       this.selectExpansionOption(event.phraseIndex, /* toInjectKeys= */ true);
     } else if (this.state === State.CHOOSING_EDIT_TARGET) {
       this.editTokens.splice(0);
@@ -322,6 +328,7 @@ export class AbbreviationComponent implements OnDestroy, OnInit, AfterViewInit {
     this.abbreviationOptions = [];
     this.requestOngoing = true;
     this.responseError = null;
+    this.receivedEmptyOptions = false;
     const LIMIT_TURNS = 2;
     const LIMIT_CONTEXT_TURN_LENGTH = 60
     const usedContextStrings: string[] = [...this.contextStrings.map(
@@ -345,16 +352,19 @@ export class AbbreviationComponent implements OnDestroy, OnInit, AfterViewInit {
             data => {
               this.requestOngoing = false;
               if (data.exactMatches != null) {
-                this.abbreviationOptions = data.exactMatches;
-                this.state = State.CHOOSING_EXPANSION;
-                this.cdr.detectChanges();
+                this.abbreviationOptions.push(...data.exactMatches);
               }
+              this.state = State.CHOOSING_EXPANSION;
+              this.receivedEmptyOptions = this.abbreviationOptions.length === 0;
+              this.cdr.detectChanges();
             },
             error => {
               this.requestOngoing = false;
+              this.receivedEmptyOptions = false;
               this.responseError = error.message;
               this.cdr.detectChanges();
             });
+    this.cdr.detectChanges();
   }
 
   /** Heuristics about the num_samples to use when requesting AE from server. */

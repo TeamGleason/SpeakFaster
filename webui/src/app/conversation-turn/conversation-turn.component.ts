@@ -18,7 +18,7 @@ export class ConversationTurnComponent implements AfterViewInit, OnDestroy {
 
   private static readonly CONTENT_STRING_MAX_LENGTH = 50;
   private static readonly BASE_FONT_SIZE_PX = 24;
-  private static readonly FONT_SCALING_LENGTH_THRESHOLD = 45;
+  private static readonly FONT_SCALING_LENGTH_THRESHOLD = 36;
 
   @Input() turn!: ConversationTurn;
   @Input() isFocus: boolean = false;

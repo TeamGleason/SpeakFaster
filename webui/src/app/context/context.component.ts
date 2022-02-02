@@ -204,14 +204,11 @@ export class ContextComponent implements OnInit, AfterViewInit {
                   // Avoid adding duplicate context signals.
                   continue;
                 }
-                console.log('Pushing:', contextSignal);  // DEBUG
                 this.contextSignals.push(
-                    contextSignal as ConversationTurnContextSignal);
+                    (contextSignal as ConversationTurnContextSignal));
               }
               this.limitContextItemsCount();
               this.cleanUpAndSortFocusContextIds();
-              // TODO(cais): Discard obsolete context IDs.
-              // console.log('A100:', this.focusContextIds);  // DEBUG
               if (this.focusContextIds.length === 0 &&
                   this.contextSignals.length > 0) {
                 this.focusContextIds.push(
@@ -220,7 +217,6 @@ export class ContextComponent implements OnInit, AfterViewInit {
                 this.cleanUpAndSortFocusContextIds();
               }
               this.emitContextStringsSelected();
-              // console.log('A200:', this.contextSignals);  // DEBUG
               this.contextRetrievalError = null;
             },
             error => {
@@ -252,7 +248,7 @@ export class ContextComponent implements OnInit, AfterViewInit {
           turn1.conversationTurn!.isHardcoded) {
         return 1;
       } else {
-        // TODO(cais): startTimestamp is often unavailable.
+        // TODO(cais): What if startTimestamp is unavailable?
         return new Date(turn0.timestamp).getTime() -
             new Date(turn1.timestamp).getTime();
       }
@@ -263,10 +259,9 @@ export class ContextComponent implements OnInit, AfterViewInit {
     this.sortContextSignals();
     if (this.contextSignals.length >
         ContextComponent.MAX_DISPLAYED_CONTEXT_COUNT) {
-      const numExtra = this.contextSignals.length -
+      const numExtras = this.contextSignals.length -
           ContextComponent.MAX_DISPLAYED_CONTEXT_COUNT;
-      this.contextSignals.splice(
-          this.contextSignals.length - numExtra, numExtra);
+      this.contextSignals.splice(0, numExtras);
     }
   }
 

@@ -15,8 +15,7 @@ import {TextEntryEndEvent} from '../types/text-entry';
 import {AbbreviationComponent, State} from './abbreviation.component';
 import {AbbreviationModule} from './abbreviation.module';
 
-// TODO(cais): DO NOT SUBMIT.
-fdescribe('AbbreviationComponent', () => {
+describe('AbbreviationComponent', () => {
   let abbreviationExpansionTriggers: Subject<InputAbbreviationChangedEvent>;
   let textEntryEndSubject: Subject<TextEntryEndEvent>;
   let fixture: ComponentFixture<AbbreviationComponent>;
@@ -229,6 +228,22 @@ fdescribe('AbbreviationComponent', () => {
         fixture.debugElement.queryAll(By.css('mat-progress-spinner'));
     expect(spinners.length).toEqual(1);
   });
+  it('shows request ongoing spinner and message during server call',
+      async () => {
+        fixture.componentInstance.contextStrings = ['hello'];
+        fixture.componentInstance.listenToKeypress(
+            ['h', 'a', 'y', ' ', ' '], 'hay  ');
+        fixture.detectChanges();
+
+        const requestOngoingMessages =
+            fixture.debugElement.queryAll(By.css('.request-ongoing-message'));
+        expect(requestOngoingMessages.length).toEqual(1);
+        expect(requestOngoingMessages[0].nativeElement.innerText)
+            .toEqual('Getting abbrevaition expansions...');
+        const spinners =
+            fixture.debugElement.queryAll(By.css('mat-progress-spinner'));
+        expect(spinners.length).toEqual(1);
+      });
 
   for (const [keySequence, precedingText] of [
            [['h', 'a', 'y', ' ', ' '], undefined],
@@ -289,7 +304,7 @@ fdescribe('AbbreviationComponent', () => {
     expect(tryAgainButtons.length).toEqual(1);
   });
 
-  it('Clicking try again button dismisses no-expnsion and try-again button',
+  it('Clicking try again button dismisses no-expansion and try-again button',
      async () => {
        const spy = spyOn(
                        fixture.componentInstance.speakFasterService,

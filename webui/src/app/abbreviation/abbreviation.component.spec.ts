@@ -253,7 +253,7 @@ describe('AbbreviationComponent', () => {
     expect(tryAgainButtons.length).toEqual(1);
   });
 
-  it('Clicking try again button dismisses no-expnsion and try-again button',
+  it('Clicking try again button dismisses no-expansion and try-again button',
      async () => {
        const spy = spyOn(
                        fixture.componentInstance.speakFasterService,

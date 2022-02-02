@@ -84,6 +84,7 @@ mat-progress-spinner {
 }
 
 .info {
+  font-size: 22px;
   margin-left: 10px;
 }
 
@@ -96,8 +97,11 @@ mat-progress-spinner {
 }
 
 .request-ongoing-message {
-  font-size: 22px;
   margin-left: 15px;
+}
+
+.response-empty {
+  color: orange;
 }
 
 .response-error {
@@ -121,6 +125,15 @@ mat-progress-spinner {
   width: 70px;
 }
 
+.try-again-button {
+  font-size: 18px;
+  height: fit-content;
+  line-height: 32px;
+  padding: 5px;
+  vertical-align: top;
+  width: 120px;
+}
+
 .upper-container {
   height: 150px;
 }
@@ -138,6 +151,15 @@ mat-progress-spinner {
 </div>
 <div *ngIf="responseError !== null" class="info response-error">
   Error: {{responseError}}
+</div>
+<div *ngIf="receivedEmptyOptions" class="empty-options-container">
+  <span class="info response-empty">Found no expansions</span>
+  <button
+      #clickableButton
+      class="option-button try-again-button"
+      (click)="onTryAgainButtonClicked($event)">
+    Try again
+  </button>
 </div>
 <div
     *ngIf="state === 'CHOOSING_EXPANSION' || state == 'SPELLING'"

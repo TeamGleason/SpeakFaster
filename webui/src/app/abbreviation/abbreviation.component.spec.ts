@@ -237,6 +237,44 @@ describe('AbbreviationComponent', () => {
        });
   }
 
+  it('Shows no-option mesasage and try-again button if no option', () => {
+    spyOn(fixture.componentInstance.speakFasterService, 'expandAbbreviation')
+        .and.returnValue(of({}));
+    fixture.componentInstance.contextStrings = ['hello'];
+    fixture.componentInstance.listenToKeypress(
+        ['h', 'a', 'y', ' ', ' '], 'hay  ');
+    fixture.detectChanges();
+
+    const noExpansionSpans =
+        fixture.debugElement.queryAll(By.css('.response-empty'));
+    expect(noExpansionSpans.length).toEqual(1);
+    const tryAgainButtons =
+        fixture.debugElement.queryAll(By.css('.try-again-button'));
+    expect(tryAgainButtons.length).toEqual(1);
+  });
+
+  it('Clicking try again button dismisses no-expnsion and try-again button',
+     async () => {
+       const spy = spyOn(
+                       fixture.componentInstance.speakFasterService,
+                       'expandAbbreviation')
+                       .and.returnValue(of({}));
+       fixture.componentInstance.contextStrings = ['hello'];
+       fixture.componentInstance.listenToKeypress(
+           ['h', 'a', 'y', ' ', ' '], 'hay  ');
+       fixture.detectChanges();
+       const tryAgainButtons =
+           fixture.debugElement.query(By.css('.try-again-button'));
+       spy.and.callThrough();
+       tryAgainButtons.nativeElement.click();
+       fixture.detectChanges();
+       await fixture.whenStable();
+
+       expect(fixture.debugElement.query(By.css('.response-empty'))).toBeNull();
+       expect(fixture.debugElement.query(By.css('.try-again-button')))
+           .toBeNull();
+     });
+
   it('does not display SpellComponent initially', () => {
     const spellComponents =
         fixture.debugElement.queryAll(By.css('app-spell-component'));

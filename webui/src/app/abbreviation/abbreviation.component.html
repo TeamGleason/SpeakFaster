@@ -54,6 +54,10 @@ mat-progress-spinner {
     "b b b b d d d d f f f f";
 }
 
+.item {
+  width: 355px;
+}
+
 .item1 {
   grid-area: a;
 }
@@ -169,9 +173,10 @@ mat-progress-spinner {
       <app-phrase-component
           *ngFor="let abbreviationOption of abbreviationOptions; let i = index"
           #abbreviationOption
-          class="item{{i + 1}}"
+          class="item item{{i + 1}}"
           [phraseText]="abbreviationOption"
           [phraseIndex]="i"
+          [scaleFontSize]="true"
           (speakButtonClicked)="onSpeakOptionButtonClicked($event)"
           (injectButtonClicked)="onExpansionOptionButtonClicked($event)">
       </app-phrase-component>

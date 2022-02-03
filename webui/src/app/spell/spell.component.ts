@@ -1,4 +1,4 @@
-import {AfterViewInit, ChangeDetectorRef, Component, ElementRef, EventEmitter, Input, OnChanges, OnDestroy, OnInit, Output, QueryList, SimpleChanges, ViewChildren} from '@angular/core';
+import {ChangeDetectorRef, Component, ElementRef, EventEmitter, Input, OnChanges, OnDestroy, OnInit, Output, QueryList, SimpleChanges, ViewChildren} from '@angular/core';
 import {updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
 import {isAlphanumericChar} from 'src/utils/text-utils';
 import {createUuid} from 'src/utils/uuid';
@@ -58,6 +58,7 @@ export class SpellComponent implements OnInit, OnChanges, OnDestroy {
 
   ngOnDestroy() {
     // TODO(cais): Add unit test.
+    updateButtonBoxesToEmpty(this.instanceId);
     ExternalEventsComponent.unregisterKeypressListener(this.keypressListener);
   }
 

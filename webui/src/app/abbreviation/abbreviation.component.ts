@@ -147,6 +147,14 @@ export class AbbreviationComponent implements OnDestroy, OnInit, AfterViewInit {
   }
 
   onAbortButtonClicked(event: Event) {
+    if (this.reconstructedText) {
+      this.textEntryEndSubject.next({
+        text: '',
+        timestampMillis: new Date().getTime(),
+        isFinal: true,
+        isAborted: true,
+      });
+    }
     this.resetState();
   }
 

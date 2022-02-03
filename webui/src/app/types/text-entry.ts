@@ -44,4 +44,7 @@ export interface TextEntryEndEvent {
   // output from this app per se, not text-to-speech output in another app like
   // the text editor tethereed to this app.
   inAppTextToSpeechAudioConfig?: TextToSpeechAudioConfig;
+
+  // Whether this is an aborted text entry event.
+  isAborted?: boolean;
 }

@@ -209,7 +209,12 @@ describe('AbbreviationComponent', () => {
     ]);
   });
 
-  it('clicking abort button resets state', () => {
+  it('clicking abort button resets state and send end event', () => {
+    const textEntryEndEvents: TextEntryEndEvent[] = [];
+    textEntryEndSubject.subscribe(event => {
+      textEntryEndEvents.push(event);
+    });
+    fixture.componentInstance.reconstructedText = 'wtii  ';
     fixture.componentInstance.abbreviation = {
       tokens: ['w', 't', 'i', 'i'].map(char => ({
                                          value: char,
@@ -234,6 +239,11 @@ describe('AbbreviationComponent', () => {
     expect(componentInstance.responseError).toBeNull();
     expect(componentInstance.abbreviationOptions).toEqual([]);
     expect(componentInstance.reconstructedText).toEqual('');
+    expect(textEntryEndEvents.length).toEqual(1);
+    expect(textEntryEndEvents[0].text).toEqual('');
+    expect(textEntryEndEvents[0].timestampMillis).toBeGreaterThan(0);
+    expect(textEntryEndEvents[0].isFinal).toBeTrue();
+    expect(textEntryEndEvents[0].isAborted).toBeTrue();
   });
 
   it('clicking inject-button publishes to textEntryEndSubject', () => {

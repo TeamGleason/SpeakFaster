@@ -163,4 +163,20 @@ describe('MetricsComponent', () => {
              .toEqual('(latest:0.80)');
        });
   }
+
+  it('ignores aborted event', () => {
+    textEntryBeginSubject.next({
+      timestampMillis: 1000,
+    });
+    textEntryEndSubject.next({
+      timestampMillis: 2000,
+      text: '',
+      isFinal: true,
+      isAborted: true,
+    });
+    const wpmContainer = fixture.debugElement.query(By.css('.wpm'));
+    expect(wpmContainer).toBeNull();
+    const ksrContainer = fixture.debugElement.query(By.css('.ksr'));
+    expect(ksrContainer).toBeNull();
+  });
 });

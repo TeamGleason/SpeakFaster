@@ -27,7 +27,7 @@ export class MetricsComponent implements OnInit {
       console.log(`Text entry begin at ${event.timestampMillis}`);
     });
     this.textEntryEndSubject.subscribe((event: TextEntryEndEvent) => {
-      if (!event.isFinal) {
+      if (!event.isFinal || event.isAborted) {
         return;
       }
       if (this.currentStartTimeMillis === null) {

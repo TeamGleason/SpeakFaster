@@ -3,7 +3,6 @@ import {Subject} from 'rxjs';
 import {updateButtonBoxesForElements} from 'src/utils/cefsharp';
 import {createUuid} from 'src/utils/uuid';
 
-import {isTextContentKey} from '../../utils/keyboard-utils';
 import {ExternalEventsComponent} from '../external/external-events.component';
 import {AbbreviationSpec, AbbreviationToken, InputAbbreviationChangedEvent, StartSpellingEvent} from '../types/abbreviation';
 import {TextEntryBeginEvent, TextEntryEndEvent} from '../types/text-entry';
@@ -24,9 +23,6 @@ export class AbbreviationEditingComponent implements OnInit, AfterViewInit {
   private readonly instanceId = createUuid();
   @Input() textInjectionSubject!: Subject<TextEntryEndEvent>;
   @Input() textEntryBeginSubject!: Subject<TextEntryBeginEvent>;
-  @Output()
-  inputAbbreviationChanged: EventEmitter<InputAbbreviationChangedEvent> =
-      new EventEmitter();
   @Output()
   spellingStateChanged: EventEmitter<'START'|'END'> = new EventEmitter();
 
@@ -83,23 +79,6 @@ export class AbbreviationEditingComponent implements OnInit, AfterViewInit {
     this.state = State.EDITING_TOKEN;
   }
 
-  onExpandAbbreviationButtonClicked(event: Event) {
-    if (this.state != State.ENTERING_ABBREVIATION ||
-        this.inputAbbreviation.indexOf(' ') !== -1) {
-      return;
-    }
-    const abbreviationSpec: AbbreviationSpec = {
-      tokens: this.inputAbbreviation.trim().split('').map(letter => ({
-                                                            value: letter,
-                                                            isKeyword: false,
-                                                          })),
-      readableString: this.inputAbbreviation,
-      lineageId: createUuid(),
-    };
-    this.inputAbbreviationChanged.emit(
-        {abbreviationSpec, requestExpansion: true});
-  }
-
   onSpellButtonClicked(event: Event) {
     this.startSpelling();
   }
@@ -121,27 +100,5 @@ export class AbbreviationEditingComponent implements OnInit, AfterViewInit {
     this.inputAbbreviation = '';
     this.isSpellingTaskIsNew = true;
     this.state = State.ENTERING_ABBREVIATION;
-    this.inputAbbreviationChanged.emit({
-      abbreviationSpec: {
-        tokens: [],
-        readableString: '',
-        lineageId: createUuid(),
-      },
-      requestExpansion: false,
-    });
-  }
-
-  private setInputString(event: Event) {
-    const abbreviationToken:
-        AbbreviationToken = {value: this.inputAbbreviation, isKeyword: false};
-    const abbreviationSpec: AbbreviationSpec = {
-      tokens: [abbreviationToken],
-      readableString: abbreviationToken.value,
-      lineageId: createUuid(),
-    };
-    this.inputAbbreviationChanged.emit(
-        {abbreviationSpec, requestExpansion: false});
-    event.preventDefault();
-    event.stopPropagation();
   }
 }

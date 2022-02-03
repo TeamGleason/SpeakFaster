@@ -57,15 +57,6 @@ input[type="text"]:disabled{
 
 <button
     #clickableButton
-    *ngIf="inputAbbreviation.length > 0 && inputAbbreviation.indexOf(' ') === -1 && state === 'ENTERING_ABBREVIATION'"
-    class="action-button"
-    (click)="onExpandAbbreviationButtonClicked($event)">
-  Expand
-  <!-- <span class="button-shortcut-key">(Enter)</span> -->
-</button>
-
-<button
-    #clickableButton
     *ngIf="inputAbbreviation.length > 0 && state === 'ENTERING_ABBREVIATION'"
     class="action-button"
     (click)="onSpellButtonClicked($event)">

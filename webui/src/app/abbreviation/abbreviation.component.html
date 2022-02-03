@@ -80,6 +80,22 @@ mat-progress-spinner {
   grid-area: f;
 }
 
+.action-button {
+  background: darkgreen;
+  border: 2px solid #888;
+  border-radius: 5px;
+  color: #eee;
+  display: inline-block;
+  font-size: 28px;
+  height: 72px;
+  line-height: 32px;
+  margin: 10px;
+  min-width: 72px;
+  padding: 15px;
+  vertical-align: top;
+  width: fit-content;
+}
+
 .candidate-for-edit {
   border: 2px solid #eee;
 }
@@ -209,7 +225,15 @@ mat-progress-spinner {
 
 <div class="upper-container">
 
-<div *ngIf="requestOngoing" class="info request-ongoing">
+<button
+    #clickableButton
+    *ngIf="state === 'PRE_CHOOSING_EXPANSION' && !isInputAbbreviationEmpty"
+    class="action-button expand-abbreviation-button"
+    (click)="onExpandAbbreviationButtonClicked($event)">
+  Expand abbreviation
+</button>
+
+<div *ngIf="state == 'REQUEST_ONGOING'" class="info request-ongoing">
   <mat-progress-spinner
       [mode]="'indeterminate'"
       [value]="50">
@@ -233,7 +257,7 @@ mat-progress-spinner {
     <span class="info response-empty">Found no expansions</span>
     <button
         #clickableButton
-        class="option-button try-again-button"
+        class="action-button try-again-button"
         (click)="onTryAgainButtonClicked($event)">
       Try again
     </button>

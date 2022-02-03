@@ -100,6 +100,19 @@ describe('ExternalEventsComponent', () => {
     expect(component.text).toEqual('a');
   });
 
+  it('aborted event resets state', () => {
+    component.externalKeypressHook(65);  // 'a'
+    component.externalKeypressHook(32);  // Space
+    component.externalKeypressHook(32);  // Space
+    textEntryEndSubject.next({
+      text: '',
+      timestampMillis: Date.now(),
+      isFinal: true,
+      isAborted: true,
+    });
+    expect(component.text).toEqual('');
+  });
+
   it('Registering keypress listener causes listener to be called', () => {
     const keySequences: string[][] = [];
     const reconstructedTexts: string[] = [];

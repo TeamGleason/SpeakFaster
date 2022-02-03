@@ -82,7 +82,6 @@ export class AbbreviationComponent implements OnDestroy, OnInit, AfterViewInit {
                 return;
               }
               this.abbreviation = event.abbreviationSpec;
-              console.log('spell: this.abbreviation=', this.abbreviation);  // DEBUG
               this.expandAbbreviation();
             });
   }
@@ -160,7 +159,7 @@ export class AbbreviationComponent implements OnDestroy, OnInit, AfterViewInit {
   }
 
   get isInputAbbreviationEmpty() {
-  return this.reconstructedText.trim().length === 0;
+    return this.reconstructedText.trim().length === 0;
   }
 
   get selectedAbbreviationIndex() {
@@ -172,12 +171,13 @@ export class AbbreviationComponent implements OnDestroy, OnInit, AfterViewInit {
   }
 
   onExpandAbbreviationButtonClicked(event: Event) {
+    const text = this.reconstructedText.trim();
     const abbreviationSpec: AbbreviationSpec = {
-      tokens: this.reconstructedText.trim().split('').map(letter => ({
-                                                            value: letter,
-                                                            isKeyword: false,
-                                                          })),
-      readableString: this.reconstructedText,
+      tokens: text.trim().split('').map(letter => ({
+                                          value: letter,
+                                          isKeyword: false,
+                                        })),
+      readableString: text.trim(),
       lineageId: createUuid(),
     };
     this.abbreviationExpansionTriggers.next(

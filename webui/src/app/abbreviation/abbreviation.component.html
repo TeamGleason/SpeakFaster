@@ -312,7 +312,7 @@ mat-progress-spinner {
 </div>
 
 <app-spell-component
-    *ngIf="abbreviation !== null && (state === 'SPELLING' || state === 'CHOOSING_EXPANSION')"
+    *ngIf="abbreviation !== null && (state === 'SPELLING' || state === 'CHOOSING_EXPANSION' || state === 'REQUEST_ONGOING')"
     class="spell-component"
     [originalAbbreviationSpec]="abbreviation!"
     (newAbbreviationSpec)="onNewAbbreviationSpec($event)"

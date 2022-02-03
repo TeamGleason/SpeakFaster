@@ -110,6 +110,7 @@ describe('AbbreviationComponent', () => {
       },
       {value: 'b', isKeyword: false}
     ]);
+    expect(triggers[0].abbreviationSpec.readableString).toEqual('ab');
     expect(triggers[0].requestExpansion).toBeTrue();
   });
 

@@ -54,9 +54,6 @@ export class SpellComponent implements OnInit, OnChanges, OnDestroy {
       this.resetState();
     }
     AppComponent.registerAppResizeCallback(this.appResizeCallback.bind(this));
-    console.log(
-        'spell: ngOnInit: originalAbbreviationChars=',
-        JSON.stringify(this.originalAbbreviationChars));  // DEBUG
   }
 
   ngOnDestroy() {
@@ -97,9 +94,6 @@ export class SpellComponent implements OnInit, OnChanges, OnDestroy {
       this.originalAbbreviationChars.push(token.value);
       this.spelledWords.push(null);
     });
-    console.log(
-        'spell: resetState: originalAbbreviationChars=',
-        JSON.stringify(this.originalAbbreviationChars));  // DEBUG
   }
 
   listenToKeypress(keySequence: string[], reconstructedText: string): void {

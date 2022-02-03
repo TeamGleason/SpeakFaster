@@ -228,7 +228,7 @@ export class ExternalEventsComponent implements OnInit {
   ngOnInit() {
     this.textEntryEndSubject.subscribe(event => {
       // TODO(cais): Add unit test.
-      if (!event.isFinal || event.isAborted) {
+      if (!event.isFinal) {
         return;
       }
       this.reset();

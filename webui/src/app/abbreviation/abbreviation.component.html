@@ -96,6 +96,14 @@ mat-progress-spinner {
   width: fit-content;
 }
 
+.action-abort-button {
+  background-color: darkorange;
+  display: inline-block;
+  height: 66px;
+  margin: 2px;
+  width: 66px;
+}
+
 .candidate-for-edit {
   border: 2px solid #eee;
 }
@@ -275,6 +283,12 @@ mat-progress-spinner {
           (speakButtonClicked)="onSpeakOptionButtonClicked($event)"
           (injectButtonClicked)="onExpansionOptionButtonClicked($event)">
       </app-phrase-component>
+      <button
+          #clickableButton
+          class="action-button action-abort-button"
+          (click)="onAbortButtonClicked($event)">
+          🗙
+      </button>
     </div>
   </div>
 </div>

@@ -54,8 +54,8 @@ export class AbbreviationComponent implements OnDestroy, OnInit, AfterViewInit {
 
   @ViewChildren('tokenInput')
   tokenInputElements!: QueryList<ElementRef<HTMLElement>>;
-  reconstructedText: string = '';
 
+  reconstructedText: string = '';
   state = State.PRE_CHOOSING_EXPANSION;
   readonly editTokens: string[] = [];
   readonly replacementTokens: string[] = [];
@@ -154,6 +154,10 @@ export class AbbreviationComponent implements OnDestroy, OnInit, AfterViewInit {
     }
   }
 
+  onAbortButtonClicked(event: Event) {
+    this.resetState();
+  }
+
   onTryAgainButtonClicked(event: Event) {
     this.expandAbbreviation();
   }
@@ -200,7 +204,8 @@ export class AbbreviationComponent implements OnDestroy, OnInit, AfterViewInit {
   }
 
   onSpeakOptionButtonClicked(event: {phraseText: string, phraseIndex: number}) {
-    if (this.state !== State.CHOOSING_EXPANSION) {
+    if (this.state !== State.CHOOSING_EXPANSION &&
+        this.state !== State.SPELLING) {
       return;
     }
     this.selectExpansionOption(

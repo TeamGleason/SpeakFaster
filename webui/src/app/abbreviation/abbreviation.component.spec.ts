@@ -16,7 +16,7 @@ import {TextEntryEndEvent} from '../types/text-entry';
 import {AbbreviationComponent, State} from './abbreviation.component';
 import {AbbreviationModule} from './abbreviation.module';
 
-describe('AbbreviationComponent', () => {
+fdescribe('AbbreviationComponent', () => {
   let abbreviationExpansionTriggers: Subject<InputAbbreviationChangedEvent>;
   let textEntryEndSubject: Subject<TextEntryEndEvent>;
   let fixture: ComponentFixture<AbbreviationComponent>;
@@ -58,6 +58,12 @@ describe('AbbreviationComponent', () => {
     const abbreviationOptions =
         fixture.debugElement.queryAll(By.css('.abbreviation-option'));
     expect(abbreviationOptions.length).toEqual(0);
+  });
+
+  it('initially displays no abort button', () => {
+    const abortButtons =
+        fixture.debugElement.queryAll(By.css('.action-abort-button'));
+    expect(abortButtons.length).toEqual(0);
   });
 
   it('initially displays no expand-abbreviation button', () => {
@@ -201,6 +207,33 @@ describe('AbbreviationComponent', () => {
       8,  8,  8,  8,  8,  8,  8,  8,  87, 72, 65, 84,
       32, 84, 73, 77, 69, 32, 73, 83, 32, 73, 84, 32,
     ]);
+  });
+
+  it('clicking abort button resets state', () => {
+    fixture.componentInstance.abbreviation = {
+      tokens: ['w', 't', 'i', 'i'].map(char => ({
+                                         value: char,
+                                         isKeyword: false,
+                                       })),
+      readableString: 'wtii',
+      triggerKeys: [VIRTUAL_KEY.SPACE, VIRTUAL_KEY.SPACE],
+      eraserSequence: repeatVirtualKey(VIRTUAL_KEY.BACKSPACE, 8),
+      lineageId: createUuid(),
+    };
+    fixture.componentInstance.abbreviationOptions = ['what time is it'];
+    fixture.componentInstance.state = State.CHOOSING_EXPANSION;
+    fixture.detectChanges();
+    const abortButtons =
+        fixture.debugElement.query(By.css('.action-abort-button'));
+    abortButtons.nativeElement.click();
+    fixture.detectChanges();
+
+    const {componentInstance} = fixture;
+    expect(componentInstance.state).toEqual(State.PRE_CHOOSING_EXPANSION);
+    expect(componentInstance.abbreviation).toBeNull();
+    expect(componentInstance.responseError).toBeNull();
+    expect(componentInstance.abbreviationOptions).toEqual([]);
+    expect(componentInstance.reconstructedText).toEqual('');
   });
 
   it('clicking inject-button publishes to textEntryEndSubject', () => {

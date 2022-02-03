@@ -8,6 +8,7 @@ import {createUuid} from 'src/utils/uuid';
 
 import * as cefSharp from '../../utils/cefsharp';
 import {ExternalEventsComponent, repeatVirtualKey, VIRTUAL_KEY} from '../external/external-events.component';
+import {configureService} from '../speakfaster-service';
 import {TestListener} from '../test-utils/test-cefsharp-listener';
 import {AbbreviationSpec, InputAbbreviationChangedEvent} from '../types/abbreviation';
 import {TextEntryEndEvent} from '../types/text-entry';
@@ -41,6 +42,10 @@ describe('AbbreviationComponent', () => {
         abbreviationExpansionTriggers;
     fixture.componentInstance.textEntryEndSubject = textEntryEndSubject;
     fixture.detectChanges();
+    configureService({
+      endpoint: '',
+      accessToken: null,
+    });
   });
 
   afterAll(async () => {
@@ -53,6 +58,66 @@ describe('AbbreviationComponent', () => {
     const abbreviationOptions =
         fixture.debugElement.queryAll(By.css('.abbreviation-option'));
     expect(abbreviationOptions.length).toEqual(0);
+  });
+
+  it('initially displays no abort button', () => {
+    const abortButtons =
+        fixture.debugElement.queryAll(By.css('.action-abort-button'));
+    expect(abortButtons.length).toEqual(0);
+  });
+
+  it('initially displays no expand-abbreviation button', () => {
+    const expandButton =
+        fixture.debugElement.queryAll(By.css('.expand-abbreviation-button'));
+    expect(expandButton.length).toEqual(0);
+  });
+
+  it('displays expand-abbreviation button after text becomes non-empty', () => {
+    fixture.componentInstance.listenToKeypress(['a'], 'a');
+    fixture.detectChanges();
+
+    const expandButton =
+        fixture.debugElement.queryAll(By.css('.expand-abbreviation-button'));
+    expect(expandButton.length).toEqual(1);
+  });
+
+  it('Erases text to empty hides expand-abbreviation button', () => {
+    fixture.componentInstance.listenToKeypress(['a'], 'a');
+    fixture.componentInstance.listenToKeypress(
+        ['a', VIRTUAL_KEY.BACKSPACE], '');
+    fixture.detectChanges();
+
+    const expandButton =
+        fixture.debugElement.queryAll(By.css('.expand-abbreviation-button'));
+    expect(expandButton.length).toEqual(0);
+    expect(expandButton.length).toEqual(0);
+  });
+
+  it('clicking expand-abbreviation button sends trigger', () => {
+    const triggers: InputAbbreviationChangedEvent[] = [];
+    fixture.componentInstance.abbreviationExpansionTriggers.subscribe(
+        trigger => {
+          triggers.push(trigger);
+        });
+    fixture.componentInstance.listenToKeypress(['a'], 'a');
+    fixture.componentInstance.listenToKeypress(['a', 'b'], 'ab');
+    fixture.componentInstance.listenToKeypress(
+        ['a', 'b', VIRTUAL_KEY.SPACE], 'ab ');
+    fixture.detectChanges();
+    const expandButton =
+        fixture.debugElement.query(By.css('.expand-abbreviation-button'));
+    expandButton.nativeElement.click();
+
+    expect(triggers.length).toEqual(1);
+    expect(triggers[0].abbreviationSpec.tokens).toEqual([
+      {
+        value: 'a',
+        isKeyword: false,
+      },
+      {value: 'b', isKeyword: false}
+    ]);
+    expect(triggers[0].abbreviationSpec.readableString).toEqual('ab');
+    expect(triggers[0].requestExpansion).toBeTrue();
   });
 
   for (const [contextStrings, precedingText] of [
@@ -144,6 +209,33 @@ describe('AbbreviationComponent', () => {
     ]);
   });
 
+  it('clicking abort button resets state', () => {
+    fixture.componentInstance.abbreviation = {
+      tokens: ['w', 't', 'i', 'i'].map(char => ({
+                                         value: char,
+                                         isKeyword: false,
+                                       })),
+      readableString: 'wtii',
+      triggerKeys: [VIRTUAL_KEY.SPACE, VIRTUAL_KEY.SPACE],
+      eraserSequence: repeatVirtualKey(VIRTUAL_KEY.BACKSPACE, 8),
+      lineageId: createUuid(),
+    };
+    fixture.componentInstance.abbreviationOptions = ['what time is it'];
+    fixture.componentInstance.state = State.CHOOSING_EXPANSION;
+    fixture.detectChanges();
+    const abortButtons =
+        fixture.debugElement.query(By.css('.action-abort-button'));
+    abortButtons.nativeElement.click();
+    fixture.detectChanges();
+
+    const {componentInstance} = fixture;
+    expect(componentInstance.state).toEqual(State.PRE_CHOOSING_EXPANSION);
+    expect(componentInstance.abbreviation).toBeNull();
+    expect(componentInstance.responseError).toBeNull();
+    expect(componentInstance.abbreviationOptions).toEqual([]);
+    expect(componentInstance.reconstructedText).toEqual('');
+  });
+
   it('clicking inject-button publishes to textEntryEndSubject', () => {
     const events: TextEntryEndEvent[] = [];
     textEntryEndSubject.subscribe(event => {
@@ -178,21 +270,21 @@ describe('AbbreviationComponent', () => {
   });
 
   it('shows request ongoing spinner and message during server call',
-      async () => {
-        fixture.componentInstance.contextStrings = ['hello'];
-        fixture.componentInstance.listenToKeypress(
-            ['h', 'a', 'y', ' ', ' '], 'hay  ');
-        fixture.detectChanges();
+     async () => {
+       fixture.componentInstance.contextStrings = ['hello'];
+       fixture.componentInstance.listenToKeypress(
+           ['h', 'a', 'y', ' ', ' '], 'hay  ');
+       fixture.detectChanges();
 
-        const requestOngoingMessages =
-            fixture.debugElement.queryAll(By.css('.request-ongoing-message'));
-        expect(requestOngoingMessages.length).toEqual(1);
-        expect(requestOngoingMessages[0].nativeElement.innerText)
-            .toEqual('Getting abbrevaition expansions...');
-        const spinners =
-            fixture.debugElement.queryAll(By.css('mat-progress-spinner'));
-        expect(spinners.length).toEqual(1);
-      });
+       const requestOngoingMessages =
+           fixture.debugElement.queryAll(By.css('.request-ongoing-message'));
+       expect(requestOngoingMessages.length).toEqual(1);
+       expect(requestOngoingMessages[0].nativeElement.innerText)
+           .toEqual('Getting abbrevaition expansions...');
+       const spinners =
+           fixture.debugElement.queryAll(By.css('mat-progress-spinner'));
+       expect(spinners.length).toEqual(1);
+     });
 
   for (const [keySequence, precedingText] of [
            [['h', 'a', 'y', ' ', ' '], undefined],

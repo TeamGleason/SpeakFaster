@@ -11,6 +11,7 @@ import {TextEntryEndEvent} from '../types/text-entry';
 
 export enum State {
   PRE_CHOOSING_EXPANSION = 'PRE_CHOOSING_EXPANSION',
+  REQUEST_ONGIONG = 'REQUEST_ONGOING',
   CHOOSING_EXPANSION = 'CHOOSING_EXPANSION',
   SPELLING = 'SPELLING',
 }
@@ -46,6 +47,7 @@ export class AbbreviationComponent implements OnDestroy, OnInit, AfterViewInit {
   @ViewChildren('abbreviationOption')
   abbreviationOptionElements!: QueryList<ElementRef<HTMLElement>>;
 
+  reconstructedText: string = '';
   state = State.PRE_CHOOSING_EXPANSION;
   readonly editTokens: string[] = [];
   readonly replacementTokens: string[] = [];
@@ -53,7 +55,6 @@ export class AbbreviationComponent implements OnDestroy, OnInit, AfterViewInit {
   manualTokenString: string = '';
 
   abbreviation: AbbreviationSpec|null = null;
-  requestOngoing: boolean = false;
   responseError: string|null = null;
   abbreviationOptions: string[] = [];
   receivedEmptyOptions: boolean = false;
@@ -78,6 +79,7 @@ export class AbbreviationComponent implements OnDestroy, OnInit, AfterViewInit {
   }
 
   ngAfterViewInit() {
+    updateButtonBoxesForElements(this.instanceId, this.clickableButtons);
     this.clickableButtons.changes.subscribe(
         (queryList: QueryList<ElementRef>) => {
           updateButtonBoxesForElements(this.instanceId, queryList);
@@ -94,6 +96,7 @@ export class AbbreviationComponent implements OnDestroy, OnInit, AfterViewInit {
 
   public listenToKeypress(keySequence: string[], reconstructedText: string):
       void {
+    this.reconstructedText = reconstructedText;
     if (this.state === State.PRE_CHOOSING_EXPANSION) {
       if (keySequenceEndsWith(
               keySequence, ABBRVIATION_EXPANSION_TRIGGER_COMBO_KEY) &&
@@ -114,6 +117,7 @@ export class AbbreviationComponent implements OnDestroy, OnInit, AfterViewInit {
         }
         const eraserLength = text.length;
         text = text.trim();
+        text = text.replace(/\n/g, '');
         if (text.length > 0) {
           // An abbreviation expansion has been triggered.
           // TODO(#49): Support keywords in abbreviation (e.g.,
@@ -142,28 +146,52 @@ export class AbbreviationComponent implements OnDestroy, OnInit, AfterViewInit {
     }
   }
 
+  onAbortButtonClicked(event: Event) {
+    this.resetState();
+  }
+
   onTryAgainButtonClicked(event: Event) {
     this.expandAbbreviation();
+  }
+
+  get isInputAbbreviationEmpty() {
+    return this.reconstructedText.trim().length === 0;
   }
 
   get selectedAbbreviationIndex() {
     return this._selectedAbbreviationIndex;
   }
 
+  onExpandAbbreviationButtonClicked(event: Event) {
+    const text = this.reconstructedText.trim();
+    const abbreviationSpec: AbbreviationSpec = {
+      tokens: text.trim().split('').map(letter => ({
+                                          value: letter,
+                                          isKeyword: false,
+                                        })),
+      readableString: text.trim(),
+      lineageId: createUuid(),
+    };
+    this.abbreviationExpansionTriggers.next(
+        {abbreviationSpec, requestExpansion: true});
+  }
+
   onExpansionOptionButtonClicked(event: {
     phraseText: string; phraseIndex: number
   }) {
-    if (this.state === State.CHOOSING_EXPANSION) {
-      this.selectExpansionOption(event.phraseIndex, /* injectKeys= */ true);
+    if (this.state === State.CHOOSING_EXPANSION ||
+        this.state == State.SPELLING) {
+      this.selectExpansionOption(event.phraseIndex, /* toInjectKeys= */ true);
     }
   }
 
   onSpeakOptionButtonClicked(event: {phraseText: string, phraseIndex: number}) {
-    if (this.state !== 'CHOOSING_EXPANSION') {
+    if (this.state !== State.CHOOSING_EXPANSION &&
+        this.state !== State.SPELLING) {
       return;
     }
     this.selectExpansionOption(
-        event.phraseIndex, /* toInjectKeys= */ true,
+        event.phraseIndex, /* toInjectKeys= */ false,
         /* toTriggerInAppTextToSpeech= */ true);
   }
 
@@ -209,7 +237,6 @@ export class AbbreviationComponent implements OnDestroy, OnInit, AfterViewInit {
 
   private resetState() {
     this.abbreviation = null;
-    this.requestOngoing = false;
     this.responseError = null;
     if (this.abbreviationOptions.length > 0) {
       this.abbreviationOptions.splice(0);
@@ -218,6 +245,7 @@ export class AbbreviationComponent implements OnDestroy, OnInit, AfterViewInit {
     this.editTokens.splice(0);
     this.replacementTokens.splice(0);
     this.manualTokenString = '';
+    this.reconstructedText = '';
     this.state = State.PRE_CHOOSING_EXPANSION;
     this.cdr.detectChanges();
   }
@@ -228,7 +256,7 @@ export class AbbreviationComponent implements OnDestroy, OnInit, AfterViewInit {
       return;
     }
     this.abbreviationOptions = [];
-    this.requestOngoing = true;
+    this.state = State.REQUEST_ONGIONG;
     this.responseError = null;
     this.receivedEmptyOptions = false;
     const LIMIT_TURNS = 2;
@@ -252,7 +280,6 @@ export class AbbreviationComponent implements OnDestroy, OnInit, AfterViewInit {
             this.abbreviation.precedingText)
         .subscribe(
             data => {
-              this.requestOngoing = false;
               if (data.exactMatches != null) {
                 this.abbreviationOptions.push(...data.exactMatches);
               }
@@ -261,7 +288,7 @@ export class AbbreviationComponent implements OnDestroy, OnInit, AfterViewInit {
               this.cdr.detectChanges();
             },
             error => {
-              this.requestOngoing = false;
+              this.state = State.CHOOSING_EXPANSION;
               this.receivedEmptyOptions = false;
               this.responseError = error.message;
               this.cdr.detectChanges();

@@ -62,7 +62,7 @@ export class QuickPhrasesComponent implements AfterViewInit, OnChanges,
     phraseText: string; phraseIndex: number
   }) {
     this.selectPhrase(
-        event.phraseIndex, /* toInjectKeys= */ true,
+        event.phraseIndex, /* toInjectKeys= */ false,
         /* toTriggerInAppTextToSpeech= */ false);
   }
 

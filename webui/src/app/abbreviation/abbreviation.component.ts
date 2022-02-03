@@ -186,7 +186,7 @@ export class AbbreviationComponent implements OnDestroy, OnInit, AfterViewInit {
       return;
     }
     this.selectExpansionOption(
-        event.phraseIndex, /* toInjectKeys= */ true,
+        event.phraseIndex, /* toInjectKeys= */ false,
         /* toTriggerInAppTextToSpeech= */ true);
   }
 

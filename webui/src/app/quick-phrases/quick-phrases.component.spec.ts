@@ -116,7 +116,7 @@ describe('QuickPhrasesComponent', () => {
         .toBeGreaterThan(beginEvents[0].timestampMillis);
     expect(endEvents[0].isFinal).toEqual(true);
     expect(endEvents[0].inAppTextToSpeechAudioConfig).toBeUndefined();
-    expect(testListener.injectedKeysCalls.length).toEqual(1);
+    expect(testListener.injectedKeysCalls.length).toEqual(0);
     expect(testListener.injectedKeysCalls[0].length)
         .toEqual('violets are blue'.length + 1);
   });

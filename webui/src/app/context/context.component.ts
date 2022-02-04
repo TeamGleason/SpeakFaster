@@ -36,7 +36,7 @@ export class ContextComponent implements OnInit {
   ngOnInit() {
     this.focusContextIds.splice(0);
     this.textEntryEndSubject.subscribe((textInjection: TextEntryEndEvent) => {
-      if (!textInjection.isFinal) {
+      if (!textInjection.isFinal || textInjection.isAborted) {
         return;
       }
       const timestamp = new Date(textInjection.timestampMillis);

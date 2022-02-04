@@ -178,7 +178,6 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
     });
   }
 
-  // TODO(cais): Add other parameters.
   retrieveContext(userId: string) {
     const {endpoint, headers, withCredentials} = this.getServerCallParams();
     return this.http.get<RetrieveContextResponse>(endpoint, {

@@ -55,15 +55,25 @@ mat-progress-spinner {
   color: red;
 }
 
+.partner-and-user-container {
+  color: #ccc;
+  display: flex;
+  font-size: 20px;
+  flex-direction: row;
+  justify-content: space-around;
+  line-height: 48px;
+  margin-bottom: 15px;
+  vertical-align: middle;
+}
+
 .partner-given-name {
   margin-left: 6px;
 }
 
 .partner-profile-section {
-  color: #ccc;
   display: flex;
-  margin: 5px;
-  font-size: 20px;
+  flex: 1;
+  margin: 0 5px;
   line-height: 48px;
   vertical-align: middle;
 }
@@ -92,7 +102,7 @@ mat-progress-spinner {
   cursor: pointer;
   margin-bottom: 10px;
   max-width: 400px;
-  min-height: 100px;
+  min-height: 80px;
   padding-left: 20px;
   width: 100%;
 }
@@ -143,20 +153,28 @@ mat-progress-spinner {
   display: block;
   line-height: 34px;
   margin-top: 10px;
-  padding-right: 6px;
   position: relative;
 }
 
 .user-ids {
+  border-radius: 5px;
   font-size: 22px;
+  height: 48px;
   margin-left: 8px;
   min-width: 80px;
-  padding: 5px;
 }
 
 .user-ids-container {
-  font-size: 22px;
-  margin-top: 6px;
+  display: flex;
+  flex-direction: row;
+  max-height: 48px;
+  line-height: 48px;
+  margin: 0;
+  vertical-align: middle;
+}
+
+.user-ids-tag {
+  height: 48px;
 }
 
 </style>
@@ -178,29 +196,32 @@ mat-progress-spinner {
   </button>
 
   <div *ngIf="state !== 'NOT_SIGNED_IN'">
-    <div class="partner-profile-section">
-        <img
-            *ngIf="partnerProfileImageUrl !== null"
-            class="profile-image"
-            src="{{partnerProfileImageUrl}}" />
-        <span class="partner-given-name">{{partnerGivenName}}</span>
-    </div>
 
-    <div *ngIf="state === 'GETTING_AAC_USER_LIST'">
-      Retrieving AAC user list...
-    </div>
+    <div class="partner-and-user-container">
+      <div class="partner-profile-section">
+          <img
+              *ngIf="partnerProfileImageUrl !== null"
+              class="profile-image"
+              src="{{partnerProfileImageUrl}}" />
+          <span class="partner-given-name">{{partnerGivenName}}</span>
+      </div>
 
-    <div
-        *ngIf="state !== 'GETTING_AAC_USER_LIST'"
-        class="user-ids-container">
-      <span>Choose AAC users:</span>
-      <select class="user-ids" #userIdsSelect>
-        <option
-            *ngFor="let userId of userIds"
-            [value]="userId">
-          {{userId}}
-        </option>
-      </select>
+      <div *ngIf="state === 'GETTING_AAC_USER_LIST'">
+        Retrieving AAC user list...
+      </div>
+
+      <div
+          *ngIf="state !== 'GETTING_AAC_USER_LIST'"
+          class="user-ids-container">
+        <span class="user-ids-tag">to user:</span>
+        <select class="user-ids" #userIdsSelect>
+          <option
+              *ngFor="let userId of userIds"
+              [value]="userId">
+            {{userId}}
+          </option>
+        </select>
+      </div>
     </div>
 
     <div class="turn-input-container">

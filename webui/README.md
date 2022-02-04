@@ -49,6 +49,41 @@ In VSCode, you can auto format the .ts file by using the shortcut key
 `Ctrl + Shift + I` (or the equivalent shortcut key on operatings systems
 other than Linux).
 
+## WebUI URL parameters
+
+The WebUI can operate under two different modes:
+
+1. AAC user mode, this is the default mode that serves an AAC user
+2. Partner (companion) mode, this is the mode that should
+   be used by a conversation partner of the the AAC user
+
+The set of required URL parameters vary between the two modes.
+
+### 1. AAC user mode
+
+Under the AAC user mode, the following URL parameters must be provided:
+
+1. `access_token`: This is the Google OAuth2 access token that can be provided
+   by a native layer (e.g., C# .NET) that manages the user sign-in and refresh token
+   logic. See https://github.com/googlesamples/oauth-apps-for-windows for
+   examples.
+2. `user_given_name`: This is the given name of the user. It can be obtained
+   during Google OAuth2 authentication with a proper scope and provided to
+   the WebUI.
+3. `endpoint`: This is the URL to the API endpoint that serves features such as
+   abbreviation expansion and text prediction.
+
+### 2. Partner (companion) mode
+
+The partner mode can be activated with the URL parameter:
+
+```
+partner=1
+```
+
+Under the partner mode, the same `endpoint` URL parameter as described above is
+required.
+
 ## Interface between WebUI and hosting app
 
 The API between the JavaScript/TypeScript code in the WebUI and the hosting Windows

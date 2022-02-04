@@ -5,6 +5,7 @@ import {Injectable} from '@angular/core';
 import {Observable} from 'rxjs';
 
 import {AbbreviationSpec} from './types/abbreviation';
+import {ContextSignal} from './types/context';
 
 export interface PingResponse {
   ping_response: string;
@@ -13,6 +14,21 @@ export interface PingResponse {
 export interface AbbreviationExpansionRespnose {
   exactMatches?: string[];
   prefixMatches?: string[];
+}
+
+export interface RetrieveContextResponse {
+  result: 'UNKNOWN'|'SUCCESS'|'ERROR_INVALID_USER_ID'|'ERROR_INVALID_TIMESPAN';
+  errorMessage?: string;
+  contextSignals?: ContextSignal[];
+}
+
+export interface RegisterContextResponse {
+  result: 'UNKNOWN'|'SUCCESS';
+  contextId: string;
+}
+
+export interface PartnerUsersResponse {
+  user_ids: string[];
 }
 
 /** Abstract interface for SpeakFaster service backend. */
@@ -37,6 +53,28 @@ export interface SpeakFasterServiceStub {
       speechContent: string, abbreviationSpec: AbbreviationSpec,
       numSamples: number,
       precedingText?: string): Observable<AbbreviationExpansionRespnose>;
+
+  retrieveContext(userId: string): Observable<RetrieveContextResponse>;
+
+  /**
+   * Register a conversation turn as a context signal.
+   * @param userId the ID of the user to whom this conversation turn is
+   *     addressed.
+   * @param speechContent content of the conversation turn.
+   * @param startTimestamp the timestamp for the start of the conversation turn.
+   * @param timezone name of the timezone in which the sender of the
+   *     conversation turn is located,
+   * @returns An Observable for the server respnose.
+   */
+  registerContext(
+      userId: string, speechContent: string, startTimestamp?: Date,
+      timezone?: string): Observable<RegisterContextResponse>;
+
+  /**
+   * Given partner identity, retrieve list of AAC users associated with the
+   * partner.
+   */
+  getPartnerUsers(partnerEmail: string): Observable<PartnerUsersResponse>;
 }
 
 /** Configuration for remote service. */
@@ -94,6 +132,48 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
       withCredentials,
       headers,
     });
+  }
+
+  retrieveContext(userId: string) {
+    const {endpoint, headers, withCredentials} = this.getServerCallParams();
+    return this.http.get<RetrieveContextResponse>(endpoint, {
+      params: {
+        mode: 'retrieve_context',
+        userId: userId,
+      },
+      withCredentials,
+      headers,
+    });
+  }
+
+  registerContext(
+      userId: string, speechContent: string, startTimestamp?: Date,
+      timezone?: string): Observable<RegisterContextResponse> {
+    const {endpoint, headers, withCredentials} = this.getServerCallParams();
+    startTimestamp = startTimestamp || new Date();
+    timezone = timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
+    return this.http.get<RegisterContextResponse>(endpoint, {
+      params: {
+        mode: 'register_context',
+        userId: userId,
+        speechContent: speechContent,
+        startTimestamp: startTimestamp.toISOString(),
+        timezone: timezone,
+      },
+      withCredentials,
+      headers,
+    });
+  }
+
+  getPartnerUsers(partnerEmail: string): Observable<PartnerUsersResponse> {
+    const {headers, withCredentials} = this.getServerCallParams();
+    return this.http.get<PartnerUsersResponse>('/partner_users', {
+      params: {
+        partner_email: partnerEmail,
+      },
+      withCredentials,
+      headers,
+    })
   }
 
   private getServerCallParams(): {

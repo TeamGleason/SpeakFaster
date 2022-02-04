@@ -36,6 +36,8 @@
     "@angular-eslint/template-parser": "12.5.0",
     "@angular/cli": "~12.2.8",
     "@angular/compiler-cli": "~12.2.0",
+    "@types/gapi": "^0.0.41",
+    "@types/gapi.auth2": "^0.0.56",
     "@types/jasmine": "~3.8.0",
     "@types/node": "^12.11.1",
     "@typescript-eslint/eslint-plugin": "4.28.2",

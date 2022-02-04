@@ -16,7 +16,18 @@ button {
   font-size: 32px;
 }
 
+mat-progress-spinner {
+  display: inline-block;
+  stroke: #ddd;
+  zoom: 0.3;
+}
+
+.content {
+  margin: 5px;
+}
+
 .message {
+  display: inline-block;
   font-size: 18px;
   margin-left: 6px;
   margin-top: 20px;
@@ -53,7 +64,7 @@ button {
   display: inline-block;
   flex: 1;
   font-size: 26px;
-  height: 48px;
+  height: 64px;
   margin-left: 4px;
   margin-top: 6px;
   margin-right: 2px;
@@ -66,9 +77,10 @@ button {
   color: #EEE;
   cursor: pointer;
   margin-bottom: 10px;
+  max-width: 400px;
   min-height: 100px;
-  min-width: 400px;
   padding-left: 20px;
+  width: 100%;
 }
 
 .sign-in-out-button:hover {
@@ -92,9 +104,10 @@ button {
 .turn-input {
   box-sizing: border-box;
   border-radius: 4px;
-  font-size: 26px;
-  margin: 2px 4px;
-  padding: 1px;
+  font-size: 24px;
+  height: 90px;
+  line-height: 110%;
+  padding: 3px;
   width: 100%;
 }
 
@@ -129,9 +142,8 @@ button {
 <div class="content">
 
   <button
-      id="sign-in-out-button"
       class="sign-in-out-button"
-      (click)="partnerAuthenticate()">
+      (click)="partnerToggleAuthenticationState()">
     <div class="sign-in-out-button-content">
       <img
           class="sign-in-out-button-image"
@@ -143,7 +155,7 @@ button {
     </div>
   </button>
 
-  <div *ngIf="isPartnerSignedIn">
+  <div *ngIf="state !== 'NOT_SIGNED_IN'">
     <div class="partner-profile-section">
         <img
             *ngIf="partnerProfileImageUrl !== null"
@@ -152,7 +164,13 @@ button {
         <span class="partner-given-name">{{partnerGivenName}}</span>
     </div>
 
-    <div *ngIf="userIds.length > 0" class="user-ids-container">
+    <div *ngIf="state === 'GETTING_AAC_USER_LIST'">
+      Retrieving AAC user list...
+    </div>
+
+    <div
+        *ngIf="state !== 'GETTING_AAC_USER_LIST'"
+        class="user-ids-container">
       <span>Choose AAC users:</span>
       <select class="user-ids" #userIdsSelect>
         <option
@@ -173,13 +191,14 @@ button {
       <div class="turn-input-buttons-container">
         <button
             class="text-input-button"
-            [disabled]="sendRequestPending || asrPending"
+            [disabled]="state === 'SENDING_MESSAGE'"
             (click)="onSpeakButtonClicked($event)">
-          🎤 Speak
+          <span *ngIf="state !== 'ASR_ONGOING'">🎤 Speak</span>
+          <span *ngIf="state === 'ASR_ONGOING'">🟥 Stop</span>
         </button>
         <button
             class="text-input-button"
-            [disabled]="sendRequestPending || asrPending"
+            [disabled]="isAsrOrMessageSendOngoing"
             (click)="onSendButtonClicked($event)">
           Send
         </button>
@@ -188,6 +207,11 @@ button {
   </div>
 
   <div>
+    <mat-progress-spinner
+        *ngIf="isAsrOrMessageSendOngoing"
+        [mode]="'indeterminate'"
+        [value]="50">
+    </mat-progress-spinner>
     <div
         *ngIf="infoMessage !== null"
         class="message message-info">

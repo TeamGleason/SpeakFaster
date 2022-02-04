@@ -7,6 +7,20 @@ import {PartnerUsersResponse, SpeakFasterService} from '../speakfaster-service';
 
 const DEFAULT_USER_IDS: string[] = ['cais', 'testuser'];
 
+export enum State {
+  // User (partner) has not signed in yet.
+  NOT_SIGNED_IN = 'NOT_SIGNED_IN',
+  // User (partner) is signed in and the app is requesting the list of
+  // associated AAC user(s).
+  GETTING_AAC_USER_LIST = 'GETTING_AAC_USER_LIST',
+  // User (partner0 is signed in and AAC user list is retrieved successfully.
+  READY = 'READY',
+  // ASR is ongoing.
+  ASR_ONGOING = 'ASR_ONGOING',
+  // Sending message.
+  SENDING_MESSAGE = 'SENDING_MESSAGE',
+}
+
 @Component({
   selector: 'app-partner-component',
   templateUrl: './partner.component.html',
@@ -17,18 +31,18 @@ export class PartnerComponent implements OnInit {
   private static readonly DISCOVERY_URL =
       'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
 
+  state: State = State.NOT_SIGNED_IN;
   private clientId: string = '';
 
   private googleAuth?: gapi.auth2.GoogleAuth;
   private user?: gapi.auth2.GoogleUser;
+  private speechRecognition: any;
   private _accessToken: string|null = null;
   private _partnerEmail: string|null = null;
   private _partnerGivenName: string|null = null;
   private _partnerProfileImageUrl: string|null = null;
   private _infoMessage: string|null = null;
   private _errorMessage: string|null = null;
-  private _asrPending: boolean = false;
-  private _sendRequestPendng: boolean = false;
 
   @Output() newAccessToken: EventEmitter<string> = new EventEmitter();
 
@@ -77,6 +91,7 @@ export class PartnerComponent implements OnInit {
     if (!this.user) {
       this._errorMessage = 'Failed to get current user';
       this.resetPartnerInfo();
+      this.state = State.NOT_SIGNED_IN;
       this.cdr.detectChanges();
       return;
     }
@@ -85,6 +100,7 @@ export class PartnerComponent implements OnInit {
     if (!isAuthorized) {
       this._errorMessage = 'Not authorized';
       this.resetPartnerInfo();
+      this.state = State.NOT_SIGNED_IN;
       this.cdr.detectChanges();
       return;
     }
@@ -94,17 +110,20 @@ export class PartnerComponent implements OnInit {
     this._partnerEmail = userProfile.getEmail();
     this._partnerGivenName = userProfile.getGivenName();
     this._partnerProfileImageUrl = userProfile.getImageUrl();
+    this.state = State.GETTING_AAC_USER_LIST;
     this.speakFasterService.getPartnerUsers(this._partnerEmail!)
         .subscribe(
             (partnerUsersResonse: PartnerUsersResponse) => {
               this._userIds.splice(0);
               this._userIds.push(...partnerUsersResonse.user_ids);
               console.log('Added user IDs:', this._userIds);
+              this.state = State.READY;
               this.cdr.detectChanges();
             },
             (error) => {
               this._userIds.splice(0);
               this._userIds.push(...DEFAULT_USER_IDS);
+              this.state = State.READY;
               this.cdr.detectChanges();
               console.warn(
                   'Retrieving partner user IDs failed, using default user IDs:',
@@ -122,11 +141,10 @@ export class PartnerComponent implements OnInit {
     this._partnerEmail = null;
     this._partnerGivenName = null;
     this._partnerProfileImageUrl = null;
-    this._infoMessage = null;
-    this._errorMessage = null;
+    this.clearMessages();
   }
 
-  partnerAuthenticate() {
+  partnerToggleAuthenticationState() {
     if (this.isPartnerSignedIn) {
       this.googleAuth!.signOut();
     } else {
@@ -139,38 +157,55 @@ export class PartnerComponent implements OnInit {
   }
 
   onSpeakButtonClicked(event: Event) {
-    const speechRecog = (window as any).SpeechRecognition ||
-        (window as any).webkitSpeechRecognition;
-    const recog = new speechRecog();
+    if (this.state === State.ASR_ONGOING) {
+      this.speechRecognition.stop();
+      console.log('called stop()');  // DEBUG
+      return;
+    }
 
-    recog.onstart = () => {
+    if (this.speechRecognition === undefined) {
+      const speechRecog = (window as any).SpeechRecognition ||
+          (window as any).webkitSpeechRecognition;
+      this.speechRecognition = new speechRecog();
+    }
+
+    this.speechRecognition.onstart = () => {
+      this.state = State.ASR_ONGOING;
+      this.clearMessages();
       this._infoMessage = 'Listening. Please start speaking...';
-      this._errorMessage = null;
-      this._asrPending = true;
       this.cdr.detectChanges();
     };
 
-    recog.onspeechend = () => {
-      recog.stop();
-      this._infoMessage = null;
-      this._errorMessage = null;
-      this._asrPending = false;
+    this.speechRecognition.onspeechend = () => {
+      this.speechRecognition.stop();
+      this.state = State.READY;
+      this.clearMessages();
       this.cdr.detectChanges();
     };
 
-    //     // This runs when the speech recognition service returns result
-    recog.onresult = (event: any) => {
+    this.speechRecognition.onend = () => {
+      this.state = State.READY;
+      this.clearMessages();
+      this.cdr.detectChanges();
+    };
+
+    this.speechRecognition.onresult = (event: any) => {
       const transcript = event.results[0][0].transcript;
       this.turnTextInput.nativeElement.value = transcript.trim();
       this.turnText = transcript.trim();
       this.cdr.detectChanges();
     };
 
-    recog.start();
+    this.speechRecognition.start();
+  }
+
+  private clearMessages() {
+    this._infoMessage = null;
+    this._errorMessage = null;
   }
 
   onSendButtonClicked(event: Event) {
-    const speechContent = this.turnText.trim();
+    const speechContent = this.turnText.trim().replace(/\n/g, ' ');
     if (!speechContent) {
       this._infoMessage = null;
       this._errorMessage = 'Message is empty!';
@@ -184,7 +219,7 @@ export class PartnerComponent implements OnInit {
       this.cdr.detectChanges();
       return;
     }
-    this._sendRequestPendng = true;
+    this.state = State.SENDING_MESSAGE;
     this._infoMessage = 'Sending...';
     this._errorMessage = null;
     this.cdr.detectChanges();
@@ -195,19 +230,19 @@ export class PartnerComponent implements OnInit {
               if (registerContextResponse.result === 'SUCCESS') {
                 this.turnText = '';
                 this._errorMessage = null;
-                this._infoMessage = `Message sent: ${speechContent}`;
+                this._infoMessage = `Message sent to ${userId}: "${speechContent}"`;
                 if (this.turnTextInput) {
                   this.turnTextInput.nativeElement.value = '';
                 }
               } else {
                 this._errorMessage = 'Message not sent. There was an error.';
               }
-              this._sendRequestPendng = false;
+              this.state = State.READY;
               this.cdr.detectChanges();
             },
             error => {
+              this.state = State.READY;
               this._errorMessage = 'Message not sent. There was an error.';
-              this._sendRequestPendng = false;
               this.cdr.detectChanges();
             });
   }
@@ -240,12 +275,9 @@ export class PartnerComponent implements OnInit {
     return this._userIds;
   }
 
-  get asrPending(): boolean {
-    return this._asrPending;
-  }
-
-  get sendRequestPending(): boolean {
-    return this._sendRequestPendng;
+  get isAsrOrMessageSendOngoing(): boolean {
+    return this.state === State.ASR_ONGOING ||
+        this.state === State.SENDING_MESSAGE;
   }
 
   get infoMessage(): string|null {

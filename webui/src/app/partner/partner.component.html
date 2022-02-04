@@ -1,0 +1,258 @@
+<style>
+
+:host {
+  box-sizing: border-box;
+  color: #EEE;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  font-size: 32px;
+  margin: 2px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+button {
+  border: 2px solid #888;
+  border-radius: 5px;
+  font-size: 32px;
+}
+
+mat-progress-spinner {
+  display: inline-block;
+  stroke: #ddd;
+  zoom: 0.3;
+}
+
+.clear-button-row {
+  align-items: flex-end;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.content {
+  margin: 5px;
+}
+
+.info-container {
+  display: flex;
+  justify-content: flex-end;
+  margin-right: 10px;
+  line-height: 30px;
+  vertical-align: middle;
+}
+
+.message {
+  display: inline-block;
+  font-size: 18px;
+  margin-left: 6px;
+  margin-top: 20px;
+}
+
+.message-info {
+  color: #ddd;
+}
+
+.message-error {
+  color: red;
+}
+
+.partner-given-name {
+  margin-left: 6px;
+}
+
+.partner-profile-section {
+  color: #ccc;
+  display: flex;
+  margin: 5px;
+  font-size: 20px;
+  line-height: 48px;
+  vertical-align: middle;
+}
+
+.profile-image {
+  border-radius: 50%;
+  height: 45px;
+  width: 45px;
+}
+
+.text-input-button {
+  display: inline-block;
+  flex: 1;
+  font-size: 26px;
+  height: 64px;
+  margin-left: 4px;
+  margin-top: 6px;
+  margin-right: 2px;
+  min-width: 100px;
+  vertical-align: middle;
+}
+
+.sign-in-out-button {
+  background-color: black;
+  color: #EEE;
+  cursor: pointer;
+  margin-bottom: 10px;
+  max-width: 400px;
+  min-height: 100px;
+  padding-left: 20px;
+  width: 100%;
+}
+
+.sign-in-out-button:hover {
+  background-color: #222;
+}
+
+.sign-in-out-button-content {
+  display: flex;
+  line-height: 40px;
+  vertical-align: middle;
+}
+
+.sign-in-out-button-image {
+  vertical-align: middle;
+}
+
+.sign-in-out-button-text {
+  vertical-align: middle;
+}
+
+.text-clear-button {
+  flex: 1;
+  font-size: 18px;
+  height: 50px;
+  margin: 0 0 10px;
+  max-width: 100px;;
+}
+
+.turn-input {
+  box-sizing: border-box;
+  border-radius: 4px;
+  font-size: 24px;
+  height: 90px;
+  line-height: 110%;
+  padding: 3px;
+  width: 100%;
+}
+
+.turn-input-buttons-container {
+  align-items: stretch;
+  display: flex;
+  flex-direction: row;
+}
+
+.turn-input-container {
+  display: block;
+  line-height: 34px;
+  margin-top: 10px;
+  padding-right: 6px;
+  position: relative;
+}
+
+.user-ids {
+  font-size: 22px;
+  margin-left: 8px;
+  min-width: 80px;
+  padding: 5px;
+}
+
+.user-ids-container {
+  font-size: 22px;
+  margin-top: 6px;
+}
+
+</style>
+
+<div class="content">
+
+  <button
+      class="sign-in-out-button"
+      (click)="partnerToggleAuthenticationState()">
+    <div class="sign-in-out-button-content">
+      <img
+          class="sign-in-out-button-image"
+          src={{signInOutButtonImgSrc}}
+          referrerpolicy="no-referrer" />
+      <span class="sign-in-out-button-text">
+        {{signInOutButtonCaption}}
+      </span>
+    </div>
+  </button>
+
+  <div *ngIf="state !== 'NOT_SIGNED_IN'">
+    <div class="partner-profile-section">
+        <img
+            *ngIf="partnerProfileImageUrl !== null"
+            class="profile-image"
+            src="{{partnerProfileImageUrl}}" />
+        <span class="partner-given-name">{{partnerGivenName}}</span>
+    </div>
+
+    <div *ngIf="state === 'GETTING_AAC_USER_LIST'">
+      Retrieving AAC user list...
+    </div>
+
+    <div
+        *ngIf="state !== 'GETTING_AAC_USER_LIST'"
+        class="user-ids-container">
+      <span>Choose AAC users:</span>
+      <select class="user-ids" #userIdsSelect>
+        <option
+            *ngFor="let userId of userIds"
+            [value]="userId">
+          {{userId}}
+        </option>
+      </select>
+    </div>
+
+    <div class="turn-input-container">
+      <div class="clear-button-row">
+        <button
+            class="text-input-button text-clear-button"
+            (click)="onClearButtonClicked($event)">
+          ❌ Clear
+        </button>
+      </div>
+      <textarea
+          #turnTextInput
+          row="3"
+          class="turn-input"
+          (change)="onTurnTextChanged($event)"></textarea>
+
+      <div class="turn-input-buttons-container">
+        <button
+            class="text-input-button"
+            [disabled]="state === 'SENDING_MESSAGE'"
+            (click)="onSpeakButtonClicked($event)">
+          <span *ngIf="state !== 'ASR_ONGOING'">🎤 Speak</span>
+          <span *ngIf="state === 'ASR_ONGOING'">🟥 Stop</span>
+        </button>
+        <button
+            class="text-input-button text-send-button"
+            [disabled]="isAsrOrMessageSendOngoing"
+            (click)="onSendButtonClicked($event)">
+          Send
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div
+     *ngIf="state !== 'NOT_SIGNED_IN'"
+     class="info-container">
+    <mat-progress-spinner
+        *ngIf="isAsrOrMessageSendOngoing"
+        [mode]="'indeterminate'"
+        [value]="50">
+    </mat-progress-spinner>
+    <div
+        *ngIf="infoMessage !== null"
+        class="message message-info">
+      {{infoMessage}}
+    </div>
+    <div
+        *ngIf="errorMessage !== null"
+        class="message message-error">
+      {{errorMessage}}
+    </div>
+  </div>
+
+</div>

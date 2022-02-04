@@ -53,8 +53,7 @@ other than Linux).
 
 The WebUI can operate under two different modes:
 
-1. AAC user mode, this is the default mode that serves an 
-   AAC user
+1. AAC user mode, this is the default mode that serves an AAC user
 2. Partner (companion) mode, this is the mode that should
    be used by a conversation partner of the the AAC user
 

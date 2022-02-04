@@ -22,8 +22,22 @@ mat-progress-spinner {
   zoom: 0.3;
 }
 
+.clear-button-row {
+  align-items: flex-end;
+  display: flex;
+  justify-content: flex-end;
+}
+
 .content {
   margin: 5px;
+}
+
+.info-container {
+  display: flex;
+  justify-content: flex-end;
+  margin-right: 10px;
+  line-height: 30px;
+  vertical-align: middle;
 }
 
 .message {
@@ -101,6 +115,14 @@ mat-progress-spinner {
   vertical-align: middle;
 }
 
+.text-clear-button {
+  flex: 1;
+  font-size: 18px;
+  height: 50px;
+  margin: 0 0 10px;
+  max-width: 100px;;
+}
+
 .turn-input {
   box-sizing: border-box;
   border-radius: 4px;
@@ -117,7 +139,7 @@ mat-progress-spinner {
   flex-direction: row;
 }
 
-.turn-input-form {
+.turn-input-container {
   display: block;
   line-height: 34px;
   margin-top: 10px;
@@ -149,7 +171,7 @@ mat-progress-spinner {
           class="sign-in-out-button-image"
           src={{signInOutButtonImgSrc}}
           referrerpolicy="no-referrer" />
-      <span class=".sign-in-out-button-text">
+      <span class="sign-in-out-button-text">
         {{signInOutButtonCaption}}
       </span>
     </div>
@@ -181,7 +203,14 @@ mat-progress-spinner {
       </select>
     </div>
 
-    <div class="turn-input-form">
+    <div class="turn-input-container">
+      <div class="clear-button-row">
+        <button
+            class="text-input-button text-clear-button"
+            (click)="onClearButtonClicked($event)">
+          ❌ Clear
+        </button>
+      </div>
       <textarea
           #turnTextInput
           row="3"
@@ -197,7 +226,7 @@ mat-progress-spinner {
           <span *ngIf="state === 'ASR_ONGOING'">🟥 Stop</span>
         </button>
         <button
-            class="text-input-button"
+            class="text-input-button text-send-button"
             [disabled]="isAsrOrMessageSendOngoing"
             (click)="onSendButtonClicked($event)">
           Send
@@ -206,7 +235,9 @@ mat-progress-spinner {
     </div>
   </div>
 
-  <div>
+  <div
+     *ngIf="state !== 'NOT_SIGNED_IN'"
+     class="info-container">
     <mat-progress-spinner
         *ngIf="isAsrOrMessageSendOngoing"
         [mode]="'indeterminate'"

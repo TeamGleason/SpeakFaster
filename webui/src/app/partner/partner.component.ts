@@ -62,26 +62,30 @@ export class PartnerComponent implements OnInit {
         this.clientId = params['client_id'];
       }
     });
-    gapi.load('client:auth2', () => {
-      if (!this.clientId) {
-        this._errorMessage = 'Missing client ID. Check URL.';
-        this.cdr.detectChanges();
-        return;
-      }
-      gapi.client
-          .init({
-            clientId: this.clientId,
-            scope: PartnerComponent.GOOGLE_AUTH_SCOPE,
-            discoveryDocs: [PartnerComponent.DISCOVERY_URL],
-          })
-          .then(() => {
-            this.googleAuth = gapi.auth2.getAuthInstance();
-            this.googleAuth.isSignedIn.listen(() => {
+    if ((window as any).gapi) {
+      gapi.load('client:auth2', () => {
+        if (!this.clientId) {
+          this._errorMessage = 'Missing client ID. Check URL.';
+          this.cdr.detectChanges();
+          return;
+        }
+        gapi.client
+            .init({
+              clientId: this.clientId,
+              scope: PartnerComponent.GOOGLE_AUTH_SCOPE,
+              discoveryDocs: [PartnerComponent.DISCOVERY_URL],
+            })
+            .then(() => {
+              this.googleAuth = gapi.auth2.getAuthInstance();
+              this.googleAuth.isSignedIn.listen(() => {
+                this.getUserInfo();
+              });
               this.getUserInfo();
             });
-            this.getUserInfo();
-          });
-    });
+      });
+    } else {
+      console.error('gapi is not defined. cannot perform authentication.');
+    }
   }
 
   private getUserInfo(): void {
@@ -145,10 +149,10 @@ export class PartnerComponent implements OnInit {
   }
 
   partnerToggleAuthenticationState() {
-    if (this.isPartnerSignedIn) {
-      this.googleAuth!.signOut();
-    } else {
+    if (this.state === State.NOT_SIGNED_IN) {
       this.googleAuth!.signIn();
+    } else {
+      this.googleAuth!.signOut();
     }
   }
 
@@ -159,7 +163,6 @@ export class PartnerComponent implements OnInit {
   onSpeakButtonClicked(event: Event) {
     if (this.state === State.ASR_ONGOING) {
       this.speechRecognition.stop();
-      console.log('called stop()');  // DEBUG
       return;
     }
 
@@ -167,6 +170,9 @@ export class PartnerComponent implements OnInit {
       const speechRecog = (window as any).SpeechRecognition ||
           (window as any).webkitSpeechRecognition;
       this.speechRecognition = new speechRecog();
+      this.speechRecognition.continuous = false;
+      this.speechRecognition.intermediateResults = true;
+      this.speechRecognition.maxAlternatives = 1;
     }
 
     this.speechRecognition.onstart = () => {
@@ -204,11 +210,17 @@ export class PartnerComponent implements OnInit {
     this._errorMessage = null;
   }
 
+  onClearButtonClicked(event: Event) {
+    this.turnText = '';
+    this.turnTextInput.nativeElement.value = '';
+    this.cdr.detectChanges();
+  }
+
   onSendButtonClicked(event: Event) {
     const speechContent = this.turnText.trim().replace(/\n/g, ' ');
     if (!speechContent) {
       this._infoMessage = null;
-      this._errorMessage = 'Message is empty!';
+      this._errorMessage = 'Error: Message is empty!';
       this.cdr.detectChanges();
       return;
     }
@@ -230,7 +242,8 @@ export class PartnerComponent implements OnInit {
               if (registerContextResponse.result === 'SUCCESS') {
                 this.turnText = '';
                 this._errorMessage = null;
-                this._infoMessage = `Message sent to ${userId}: "${speechContent}"`;
+                this._infoMessage =
+                    `Message sent to ${userId}: "${speechContent}"`;
                 if (this.turnTextInput) {
                   this.turnTextInput.nativeElement.value = '';
                 }
@@ -242,6 +255,7 @@ export class PartnerComponent implements OnInit {
             },
             error => {
               this.state = State.READY;
+              this._infoMessage = null;
               this._errorMessage = 'Message not sent. There was an error.';
               this.cdr.detectChanges();
             });
@@ -249,19 +263,14 @@ export class PartnerComponent implements OnInit {
 
   get signInOutButtonImgSrc(): string {
     return '/assets/images/' +
-        (this.isPartnerSignedIn ? 'logout.png' : 'login.png');
+        (this.state === State.NOT_SIGNED_IN ? 'login.png' : 'logout.png');
   }
 
   get signInOutButtonCaption(): string {
-    return 'Partner Sign-' + (this.isPartnerSignedIn ? 'Out' : 'In');
+    return 'Partner Sign-' +
+        (this.state === State.NOT_SIGNED_IN ? 'In' : 'Out');
   }
 
-  get isPartnerSignedIn(): boolean {
-    if (!this.user) {
-      return false;
-    }
-    return this.user.hasGrantedScopes(PartnerComponent.GOOGLE_AUTH_SCOPE);
-  }
 
   get partnerGivenName(): string|null {
     return this._partnerGivenName;

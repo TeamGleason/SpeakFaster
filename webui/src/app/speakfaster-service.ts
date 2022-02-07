@@ -6,6 +6,7 @@ import {Observable} from 'rxjs';
 
 import {AbbreviationSpec} from './types/abbreviation';
 import {ContextSignal} from './types/context';
+import {ContextualPhrase} from './types/contextual_phrase';
 
 export interface PingResponse {
   ping_response: string;
@@ -25,6 +26,38 @@ export interface RetrieveContextResponse {
 export interface RegisterContextResponse {
   result: 'UNKNOWN'|'SUCCESS';
   contextId: string;
+}
+
+export interface TextPredictionRequest {
+  contextTurns: string[];
+
+  // Text already entered by user, which the request is aimed at finding a
+  // continuation to. This can be an empty string.
+  textPrefix: string;
+
+  // Timestamp for the moment at which the text-prediction is made. Should
+  // be in the ISO8601 format and UTC timezone.
+  timestamp?: string;
+
+  // Timezone name in which the user is located. Must be interpretable by
+  // the pytz library, e.g., "US/Central" or "America/Chicago".
+  timezone?: string;
+
+  // Tags used to filter the responses. Used for the contextual phrases (quick
+  // phrases). Undefined or empty array is interpreted as no filtering.
+  allowedTags?: string[];
+}
+
+export interface TextPredictionResponse {
+  outputs?: string[];
+
+  // Contextual phrases ("quick phrases") predicted without using text prefix or
+  // conversation-turn context.
+  contextualPhrases?: ContextualPhrase[];
+}
+
+export interface FillMaskResponse {
+  results: string[];
 }
 
 export interface PartnerUsersResponse {
@@ -54,6 +87,10 @@ export interface SpeakFasterServiceStub {
       numSamples: number,
       precedingText?: string): Observable<AbbreviationExpansionRespnose>;
 
+  textPrediction(textPredictionRequest: TextPredictionRequest):
+      Observable<TextPredictionResponse>;
+
+  // TODO(cais): Add other parameters.
   retrieveContext(userId: string): Observable<RetrieveContextResponse>;
 
   /**
@@ -129,6 +166,30 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
         precedingText: precedingText || '',
         numSamples,
       },
+      withCredentials,
+      headers,
+    });
+  }
+
+  textPrediction(textPredictionRequest: TextPredictionRequest):
+      Observable<TextPredictionResponse> {
+    const {endpoint, headers, withCredentials} = this.getServerCallParams();
+    const params: any = {
+      mode: 'text_continuation',
+      speechContent: textPredictionRequest.contextTurns.join('|'),
+      textPrefix: textPredictionRequest.textPrefix,
+    };
+    if (textPredictionRequest.timestamp) {
+      params['timestamp'] = textPredictionRequest.timestamp;
+    }
+    if (textPredictionRequest.timezone) {
+      params['timezone'] = textPredictionRequest.timezone;
+    }
+    if (textPredictionRequest.allowedTags) {
+      params['allowedTags'] = textPredictionRequest.allowedTags.join(',');
+    }
+    return this.http.get<TextPredictionResponse>(endpoint, {
+      params,
       withCredentials,
       headers,
     });

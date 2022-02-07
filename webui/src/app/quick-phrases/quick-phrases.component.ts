@@ -1,5 +1,5 @@
 /** Quick phrase list for direct selection. */
-import {AfterContentChecked, AfterViewChecked, AfterViewInit, Component, ElementRef, EventEmitter, Input, OnChanges, OnDestroy, Output, QueryList, SimpleChanges, ViewChild, ViewChildren} from '@angular/core';
+import {AfterViewInit, ChangeDetectorRef, Component, ElementRef, Input, OnChanges, OnDestroy, QueryList, SimpleChanges, ViewChild, ViewChildren} from '@angular/core';
 import {Subject} from 'rxjs';
 import {injectKeys, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
 import {allItemsEqual} from 'src/utils/text-utils';
@@ -8,7 +8,14 @@ import {createUuid} from 'src/utils/uuid';
 import {AppComponent} from '../app.component';
 import {VIRTUAL_KEY} from '../external/external-events.component';
 import {PhraseComponent} from '../phrase/phrase.component';
+import {SpeakFasterService, TextPredictionResponse} from '../speakfaster-service';
 import {TextEntryBeginEvent, TextEntryEndEvent} from '../types/text-entry';
+
+export enum State {
+  RETRIEVING_PHRASES = 'RETRIEVING_PHRASES',
+  RETRIEVED_PHRASES = 'RETRIEVED_PHRASES',
+  ERROR = 'ERROR',
+}
 
 @Component({
   selector: 'app-quick-phrases-component',
@@ -21,17 +28,62 @@ export class QuickPhrasesComponent implements AfterViewInit, OnChanges,
   private readonly instanceId =
       QuickPhrasesComponent._NAME + '_' + createUuid();
   private readonly SCROLL_STEP = 75;
+  state = State.RETRIEVING_PHRASES;
 
+  // Tags used for filtering the quick phrases (contextual phrases) during
+  // server call.
+  // TODO(cais): Connect with user_id logic from URL parameters.
+  @Input() userId: string = 'testuser';
+  @Input() allowedTags: string[] = [];
   @Input() textEntryBeginSubject!: Subject<TextEntryBeginEvent>;
   @Input() textEntryEndSubject!: Subject<TextEntryEndEvent>;
-  @Input() phrases: string[] = [];
   @Input() color: string = 'gray';
+  readonly phrases: string[] = [];
+  errorMessage: string|null = null;
 
   @ViewChildren('clickableButton')
   clickableButtons!: QueryList<ElementRef<HTMLElement>>;
   @ViewChildren('phraseOption') phraseOptions!: QueryList<PhraseComponent>;
   @ViewChild('quickPhrasesContainer')
   quickPhrasesContainer!: ElementRef<HTMLDivElement>;
+
+  constructor(
+      public speakFasterService: SpeakFasterService,
+      private cdr: ChangeDetectorRef) {}
+
+  private retrievePhrases(): void {
+    // Using empty text prefix and empty conversation turns means retrieving
+    // contextual phrases ("quick phrases").
+    this.speakFasterService
+        .textPrediction({
+          contextTurns: [],
+          textPrefix: '',
+          timestamp: new Date().toISOString(),
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          allowedTags: this.allowedTags,
+        })
+        .subscribe(
+            (data: TextPredictionResponse) => {
+              this.state = State.RETRIEVED_PHRASES;
+              this.phrases.splice(0);
+              if (data.contextualPhrases) {
+                this.phrases.push(...data.contextualPhrases.map(
+                    phrase => phrase.text.trim()));
+              }
+              this.errorMessage = null;
+              setTimeout(
+                  () => this.updatePhraseButtonBoxesWithContainerRect(), 0);
+              this.cdr.detectChanges();
+            },
+            error => {
+              this.errorMessage = `Failed to get quick phrases for tags ${
+                  this.allowedTags.join(',')}`;
+              this.state = State.ERROR;
+              setTimeout(
+                  () => this.updatePhraseButtonBoxesWithContainerRect(), 0);
+              this.cdr.detectChanges();
+            });
+  }
 
   ngAfterViewInit() {
     updateButtonBoxesForElements(this.instanceId, this.clickableButtons);
@@ -43,15 +95,16 @@ export class QuickPhrasesComponent implements AfterViewInit, OnChanges,
   }
 
   ngOnChanges(changes: SimpleChanges) {
-    if (!changes.phrases) {
+    if (!changes.allowedTags) {
       return;
     }
-    if (changes.phrases.previousValue &&
+    if (changes.allowedTags.previousValue &&
         allItemsEqual(
-            changes.phrases.previousValue, changes.phrases.currentValue)) {
+            changes.allowedTags.previousValue,
+            changes.allowedTags.currentValue)) {
       return;
     }
-    setTimeout(() => this.updatePhraseButtonBoxesWithContainerRect(), 0);
+    this.retrievePhrases();
   }
 
   ngOnDestroy() {
@@ -73,7 +126,7 @@ export class QuickPhrasesComponent implements AfterViewInit, OnChanges,
   }
 
   checkPhraseOverflow(): boolean {
-    if (!this.quickPhrasesContainer) {
+    if (!this.quickPhrasesContainer || this.state !== State.RETRIEVED_PHRASES) {
       return false;
     }
     const phrasesContainer = this.quickPhrasesContainer.nativeElement;

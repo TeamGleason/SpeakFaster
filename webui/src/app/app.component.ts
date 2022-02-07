@@ -258,35 +258,20 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     }
   }
 
-  // TODO(cais): Do not hardcode. Query these from the SpeakFasterService
-  // instead.
-  getQuickPhrases(): string[] {
+  getQuickPhrasesAllowedTags(): string[] {
     switch (this.appState) {
       case AppState.QUICK_PHRASES_FAVORITE:
-        return [];
+        return ['favorite'];
       case AppState.QUICK_PHRASES_TEMPORAL:
-        return [
-          'Good morning',
-          'Have a wonderful Tuesday',
-        ];
+        return ['temporal'];
       case AppState.QUICK_PHRASES_PARTNERS:
-        return [
-          'Alice',  'Bob',     'Charlie', 'Danielle', 'Elly',    'Frank',
-          'George', 'Heather', 'Irine',   'John',     'Kevin',   'Lana',
-          'Mike',   'Nick',    'Oscar',   'Peter',    'Quentin', 'Rene',
-          'Sherry', 'Tom',     'Ulysses', 'Vivian',   'William', 'Xavier',
-          'Yasmin', 'Zachary'
-        ];
+        return ['partner'];
       case AppState.QUICK_PHRASES_CARE:
-        return [
-          'Thank you very much',
-          'I need to think about that',
-          'Let\'s go for a walk',
-        ];
+        return ['care'];
       default:
         throw new Error(`Invalid app state: ${this.appState}`);
     }
-  }
+  };
 
   getQuickPhrasesColor(): string {
     switch (this.appState) {

@@ -54,11 +54,14 @@ export class TextPredictionComponent implements AfterViewInit, OnChanges,
       return;
     }
     this.speakFasterService
-        .textPrediction(this.contextStrings, textPrefix.trim())
+        .textPrediction({
+          contextTurns: this.contextStrings,
+          textPrefix: textPrefix.trim(),
+        })
         .subscribe(
             data => {
               this.predictions.splice(0);
-              this.predictions.push(...data.outputs);
+              this.predictions.push(...data.outputs!);
             },
             error => {
               this.predictions.splice(0);

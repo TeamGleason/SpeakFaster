@@ -50,6 +50,9 @@ export class InputBarComponent implements OnInit, AfterViewInit {
   }
 
   onSpeakAsIsButtonClicked(event: Event) {
+    if (!this.inputString.trim()) {
+      return;
+    }
     const text = this.inputString.trim();
     this.textInjectionSubject.next({
       text,
@@ -62,6 +65,9 @@ export class InputBarComponent implements OnInit, AfterViewInit {
   }
 
   onFavoriteButtonClicked(event: Event) {
+    if (!this.inputString.trim()) {
+      return;
+    }
     // TODO(cais): Implement favoriting phrases.
   }
 

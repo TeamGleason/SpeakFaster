@@ -47,6 +47,7 @@ mat-progress-spinner {
 }
 
 .item {
+  padding: 1px;
   width: 355px;
 }
 
@@ -99,7 +100,8 @@ mat-progress-spinner {
 }
 
 .candidate-for-edit {
-  border: 2px solid #eee;
+  border: 1px solid #eee;
+  padding: 0;
 }
 
 .edit-token {
@@ -161,7 +163,7 @@ mat-progress-spinner {
 
 .refinement-button {
   height: 64px;
-  margin: 4px 6px 7px;
+  margin: 4px 6px 9px;
 }
 
 .refinement-buttons-container {
@@ -230,21 +232,22 @@ mat-progress-spinner {
   Error: {{responseError}}
 </div>
 <div
-    *ngIf="state === 'CHOOSING_EXPANSION' || state === 'CHOOSING_EDITED_EXPANSION' || state == 'SPELLING'"
+    *ngIf="state === 'CHOOSING_EXPANSION' || state === 'CHOOSING_EXPANSION_TO_REFINE' || state == 'SPELLING'"
     class="expansions">
   <div class="refinement-buttons-container">
     <button
         #clickableButton
         *ngIf="abbreviationOptions.length > 0"
         class="option-button refinement-button"
-        (click)="onEditButtonClicked($event)">
+        (click)="onRefineExpansionReplaceTokenButtonClicked($event)">
       ✏️
     </button>
 
     <button
         #clickableButton
         *ngIf="abbreviationOptions.length > 0"
-        class="option-button refinement-button">
+        class="option-button refinement-button"
+        (click)="onRefineExpansionChoosePrefixButtonClicked($event)">
         ✂️
     </button>
   </div>
@@ -264,13 +267,12 @@ mat-progress-spinner {
           *ngFor="let abbreviationOption of abbreviationOptions; let i = index"
           #abbreviationOption
           class="item item{{i + 1}}"
-          [ngClass]="{'candidate-for-edit': state === 'CHOOSING_EDITED_EXPANSION'}"
+          [ngClass]="{'candidate-for-edit': state === 'CHOOSING_EXPANSION_TO_REFINE'}"
           [phraseText]="abbreviationOption"
           [phraseIndex]="i"
           [scaleFontSize]="true"
           (speakButtonClicked)="onSpeakOptionButtonClicked($event)"
-          (injectButtonClicked)="onExpansionOptionButtonClicked($event)"
-          (click)="onExpansionPhraseClicked($event, i)">
+          (injectButtonClicked)="onExpansionOptionButtonClicked($event)">
       </app-phrase-component>
       <button
           #clickableButton
@@ -283,7 +285,8 @@ mat-progress-spinner {
 </div>
 
 <app-abbreviation-refinement-component
-    *ngIf="state === 'EDITING_EXPANSION' && editedExpansionText !== null"
+    *ngIf="state === 'REFINING_EXPANSION' && editedExpansionText !== null"
+    [refinementType]="refinementType"
     [contextStrings]="usedContextStrings"
     [originalExpansionText]="editedExpansionText"
     (refinementResult)="onRefinementResult($event)">

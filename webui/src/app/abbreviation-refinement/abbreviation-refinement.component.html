@@ -64,7 +64,12 @@ mat-progress-spinner {
 </style>
 
 <div class="instruction">
-  Choose token to replace:
+  <span *ngIf="refinementType === 'REPLACE_TOKEN' else choosePrefix">
+    ✏️ Choose word to replace:
+  </span>
+  <ng-template #choosePrefix>
+    <span>✂️ Choose last word to keep:</span>
+  </ng-template>
 </div>
 
 <div class="tokens-container">

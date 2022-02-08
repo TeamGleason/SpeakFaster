@@ -78,11 +78,18 @@ export class AbbreviationRefinementComponent implements OnInit, AfterViewInit {
     if (this.state === State.REQUEST_ONGOING) {
       return;
     }
+    const tokens: string[] = this._tokens.slice();
+    if (this.refinementType === 'CHOOSE_PREFIX') {
+      this.refinementResult.emit({
+        phrase: tokens.slice(0, index + 1).join(' '),
+        isAbort: false,
+      });
+      return;
+    }
     const speechContent = this.contextStrings.join('|');
     this.replacementIndex = index;
-    const tokensIncludingMask: string[] = this._tokens.slice();
-    tokensIncludingMask[index] = '_';
-    const phraseWithMask = tokensIncludingMask.join(' ');
+    tokens[index] = '_';
+    const phraseWithMask = tokens.join(' ');
     const maskInitial = this._tokens[index][0];
     this.state = State.REQUEST_ONGOING;
     this.speakFasterService.fillMask(speechContent, phraseWithMask, maskInitial)
@@ -117,6 +124,31 @@ export class AbbreviationRefinementComponent implements OnInit, AfterViewInit {
   public listenToKeypress(keySequence: string[], reconstructedText: string):
       void {
     // TODO(cais): Listen to replacement keys.
+
+  //   if (isPlainAlphanumericKey(event, 'Enter')) {
+  //     if (this.manualTokenString.trim().length > 0) {
+  //       this.emitExpansionWithTokenReplacement(this.manualTokenString.trim());
+  //       return true;
+  //     } else if (this.selectedTokenIndex !== null) {
+  //       // Use the original.
+  //       this.emitExpansionWithTokenReplacement(
+  //           this.editTokens[this.selectedTokenIndex]);
+  //       return true;
+  //     }
+  //   } else if (isTextContentKey(event)) {
+  //     this.manualTokenString += event.key.toLocaleLowerCase();
+  //     return true;
+  //   } else if (isPlainAlphanumericKey(event, 'Backspace')) {
+  //     if (this.manualTokenString.length > 0) {
+  //       this.manualTokenString =
+  //           this.manualTokenString.slice(0, this.manualTokenString.length -
+  //           1);
+  //       return true;
+  //     }
+  //   }
+  //   return false;
+  // }  // TODO(cais): Clean up.
+
   }
 
   get currentTokens(): string[] {

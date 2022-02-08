@@ -5,7 +5,7 @@ import {createUuid} from 'src/utils/uuid';
 
 import {injectKeys, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from '../../utils/cefsharp';
 import {isPlainAlphanumericKey, isTextContentKey} from '../../utils/keyboard-utils';
-import { RefinementResult } from '../abbreviation-refinement/abbreviation-refinement.component';
+import {RefinementResult, RefinementType} from '../abbreviation-refinement/abbreviation-refinement.component';
 import {ExternalEventsComponent, KeypressListener, repeatVirtualKey, VIRTUAL_KEY} from '../external/external-events.component';
 import {SpeakFasterService} from '../speakfaster-service';
 import {AbbreviationSpec, InputAbbreviationChangedEvent} from '../types/abbreviation';
@@ -16,8 +16,8 @@ export enum State {
   REQUEST_ONGIONG = 'REQUEST_ONGOING',
   CHOOSING_EXPANSION = 'CHOOSING_EXPANSION',
   SPELLING = 'SPELLING',
-  CHOOSING_EDITED_EXPANSION = 'CHOOSING_EDITED_EXPANSION',
-  EDITING_EXPANSION = 'EDITING_EXPANSION',
+  CHOOSING_EXPANSION_TO_REFINE = 'CHOOSING_EXPANSION_TO_REFINE',
+  REFINING_EXPANSION = 'REFINING_EXPANSION',
 }
 
 // Abbreviation expansion can be triggered by entering the abbreviation followed
@@ -57,6 +57,7 @@ export class AbbreviationComponent implements OnDestroy, OnInit, AfterViewInit {
 
   reconstructedText: string = '';
   state = State.PRE_CHOOSING_EXPANSION;
+  private pendingRefinementType: RefinementType = 'REPLACE_TOKEN';
   editedExpansionText: string|null = null;
   readonly editTokens: string[] = [];
   readonly replacementTokens: string[] = [];
@@ -179,9 +180,16 @@ export class AbbreviationComponent implements OnDestroy, OnInit, AfterViewInit {
     return this._selectedAbbreviationIndex;
   }
 
-  onEditButtonClicked(event: Event) {
-    this.state = State.CHOOSING_EDITED_EXPANSION;
-    // TODO(cais): Update gaze-click regions.
+  onRefineExpansionReplaceTokenButtonClicked(event: Event) {
+    this.state = State.CHOOSING_EXPANSION_TO_REFINE;
+    this.pendingRefinementType = 'REPLACE_TOKEN';
+    // TODO(cais): Update gaze-click regions to make the entire button
+    // clickable?
+  }
+
+  onRefineExpansionChoosePrefixButtonClicked(event: Event) {
+    this.state = State.CHOOSING_EXPANSION_TO_REFINE;
+    this.pendingRefinementType = 'CHOOSE_PREFIX';
   }
 
   onExpandAbbreviationButtonClicked(event: Event) {
@@ -201,22 +209,21 @@ export class AbbreviationComponent implements OnDestroy, OnInit, AfterViewInit {
   onExpansionOptionButtonClicked(event: {
     phraseText: string; phraseIndex: number
   }) {
-    if (this.state === State.CHOOSING_EXPANSION ||
+    if (this.state === State.CHOOSING_EXPANSION_TO_REFINE) {
+      this.enterRefineState(event.phraseText);
+      return;
+    } else if (
+        this.state === State.CHOOSING_EXPANSION ||
         this.state == State.SPELLING) {
       this.selectExpansionOption(event.phraseIndex, /* toInjectKeys= */ true);
     }
   }
 
-  onExpansionPhraseClicked(event: Event, index: number) {
-    if (this.state !== State.CHOOSING_EDITED_EXPANSION) {
+  onSpeakOptionButtonClicked(event: {phraseText: string, phraseIndex: number}) {
+    if (this.state === State.CHOOSING_EXPANSION_TO_REFINE) {
+      this.enterRefineState(event.phraseText);
       return;
     }
-    this.state = State.EDITING_EXPANSION;
-    this.editedExpansionText = this.abbreviationOptions[index];
-    this.cdr.detectChanges();
-  }
-
-  onSpeakOptionButtonClicked(event: {phraseText: string, phraseIndex: number}) {
     if (this.state !== State.CHOOSING_EXPANSION &&
         this.state !== State.SPELLING) {
       return;
@@ -226,28 +233,10 @@ export class AbbreviationComponent implements OnDestroy, OnInit, AfterViewInit {
         /* toTriggerInAppTextToSpeech= */ true);
   }
 
-  private handleKeyboardEventForReplacemenToken(event: KeyboardEvent): boolean {
-    if (isPlainAlphanumericKey(event, 'Enter')) {
-      if (this.manualTokenString.trim().length > 0) {
-        this.emitExpansionWithTokenReplacement(this.manualTokenString.trim());
-        return true;
-      } else if (this.selectedTokenIndex !== null) {
-        // Use the original.
-        this.emitExpansionWithTokenReplacement(
-            this.editTokens[this.selectedTokenIndex]);
-        return true;
-      }
-    } else if (isTextContentKey(event)) {
-      this.manualTokenString += event.key.toLocaleLowerCase();
-      return true;
-    } else if (isPlainAlphanumericKey(event, 'Backspace')) {
-      if (this.manualTokenString.length > 0) {
-        this.manualTokenString =
-            this.manualTokenString.slice(0, this.manualTokenString.length - 1);
-        return true;
-      }
-    }
-    return false;
+  private enterRefineState(text: string) {
+    this.state = State.REFINING_EXPANSION;
+    this.editedExpansionText = text;
+    this.cdr.detectChanges();
   }
 
   onReplacementTokenButtonClicked(event: Event, index: number) {
@@ -394,5 +383,9 @@ export class AbbreviationComponent implements OnDestroy, OnInit, AfterViewInit {
       }
     }
     return maxAbbrevLength > 5 ? 256 : 128;
+  }
+
+  get refinementType(): RefinementType {
+    return this.pendingRefinementType;
   }
 }

@@ -185,13 +185,6 @@ app-text-to-speech-component {
           [textInjectionSubject]="textEntryEndSubject"
           (spellingStateChanged)="onSpellingStateChanged($event)"
         ></app-abbreviation-editing-component>
-
-        <!-- TODO(cais): Add back when doing smart text continuation. -->
-        <!-- <app-text-prediction-component
-          [contextStrings]="contextStrings"
-          [textPrefix]=(inputAbbreviation)
-          [textInjectionSubject]="textEntryEndSubject"
-        ></app-text-prediction-component> -->
       </div>
     </div>
 

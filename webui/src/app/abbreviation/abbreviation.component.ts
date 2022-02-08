@@ -5,6 +5,7 @@ import {createUuid} from 'src/utils/uuid';
 
 import {injectKeys, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from '../../utils/cefsharp';
 import {isPlainAlphanumericKey, isTextContentKey} from '../../utils/keyboard-utils';
+import { RefinementResult } from '../abbreviation-refinement/abbreviation-refinement.component';
 import {ExternalEventsComponent, KeypressListener, repeatVirtualKey, VIRTUAL_KEY} from '../external/external-events.component';
 import {SpeakFasterService} from '../speakfaster-service';
 import {AbbreviationSpec, InputAbbreviationChangedEvent} from '../types/abbreviation';
@@ -15,9 +16,8 @@ export enum State {
   REQUEST_ONGIONG = 'REQUEST_ONGOING',
   CHOOSING_EXPANSION = 'CHOOSING_EXPANSION',
   SPELLING = 'SPELLING',
-  CHOOSING_EDIT_TARGET = 'CHOOSING_EDIT_TARGET',
-  CHOOSING_TOKEN = 'CHOOSING_TOKEN',
-  CHOOSING_TOKEN_REPLACEMENT = 'CHOOSING_TOKEN_REPLACEMENT',
+  CHOOSING_EDITED_EXPANSION = 'CHOOSING_EDITED_EXPANSION',
+  EDITING_EXPANSION = 'EDITING_EXPANSION',
 }
 
 // Abbreviation expansion can be triggered by entering the abbreviation followed
@@ -57,6 +57,7 @@ export class AbbreviationComponent implements OnDestroy, OnInit, AfterViewInit {
 
   reconstructedText: string = '';
   state = State.PRE_CHOOSING_EXPANSION;
+  editedExpansionText: string|null = null;
   readonly editTokens: string[] = [];
   readonly replacementTokens: string[] = [];
   selectedTokenIndex: number|null = null;
@@ -179,7 +180,8 @@ export class AbbreviationComponent implements OnDestroy, OnInit, AfterViewInit {
   }
 
   onEditButtonClicked(event: Event) {
-    this.state = State.CHOOSING_EDIT_TARGET;
+    this.state = State.CHOOSING_EDITED_EXPANSION;
+    // TODO(cais): Update gaze-click regions.
   }
 
   onExpandAbbreviationButtonClicked(event: Event) {
@@ -202,13 +204,16 @@ export class AbbreviationComponent implements OnDestroy, OnInit, AfterViewInit {
     if (this.state === State.CHOOSING_EXPANSION ||
         this.state == State.SPELLING) {
       this.selectExpansionOption(event.phraseIndex, /* toInjectKeys= */ true);
-    } else if (this.state === State.CHOOSING_EDIT_TARGET) {
-      this.editTokens.splice(0);
-      this.editTokens.push(
-          ...this.abbreviationOptions[event.phraseIndex].split(' '));
-      this.selectedTokenIndex = null;
-      this.state = State.CHOOSING_TOKEN;
     }
+  }
+
+  onExpansionPhraseClicked(event: Event, index: number) {
+    if (this.state !== State.CHOOSING_EDITED_EXPANSION) {
+      return;
+    }
+    this.state = State.EDITING_EXPANSION;
+    this.editedExpansionText = this.abbreviationOptions[index];
+    this.cdr.detectChanges();
   }
 
   onSpeakOptionButtonClicked(event: {phraseText: string, phraseIndex: number}) {
@@ -219,39 +224,6 @@ export class AbbreviationComponent implements OnDestroy, OnInit, AfterViewInit {
     this.selectExpansionOption(
         event.phraseIndex, /* toInjectKeys= */ false,
         /* toTriggerInAppTextToSpeech= */ true);
-  }
-
-  onEditTokenButtonClicked(event: Event, index: number) {
-    if (this.state !== State.CHOOSING_TOKEN) {
-      return;
-    }
-    const tokensIncludingMask: string[] = this.editTokens.slice();
-    tokensIncludingMask[index] = '_';
-    const phraseWithMask = tokensIncludingMask.join(' ');
-    const maskInitial = this.editTokens[index][0];
-    const speechContent = this.contextStrings[this.contextStrings.length - 1];
-    this.selectedTokenIndex = index;
-    this.speakFasterService.fillMask(speechContent, phraseWithMask, maskInitial)
-        .subscribe(
-            data => {
-              this.replacementTokens.splice(0);
-              const replacements = data.results.slice();
-              const originalToken = this.editTokens[this.selectedTokenIndex!];
-              if (replacements.indexOf(originalToken) !== -1) {
-                replacements.splice(replacements.indexOf(originalToken), 1);
-              }
-              this.replacementTokens.push(...replacements);
-              if (this.replacementTokens.length >
-                  AbbreviationComponent._MAX_NUM_REPLACEMENT_TOKENS) {
-                this.replacementTokens.splice(
-                    AbbreviationComponent._MAX_NUM_REPLACEMENT_TOKENS);
-              }
-              this.state = State.CHOOSING_TOKEN_REPLACEMENT;
-            },
-            error => {
-                // TODO(cais): Handle fill mask error.
-                // TODO(cais): Provide exit.
-            });
   }
 
   private handleKeyboardEventForReplacemenToken(event: KeyboardEvent): boolean {
@@ -286,6 +258,14 @@ export class AbbreviationComponent implements OnDestroy, OnInit, AfterViewInit {
   onNewAbbreviationSpec(abbreviationSpec: AbbreviationSpec) {
     this.abbreviationExpansionTriggers.next(
         {abbreviationSpec, requestExpansion: true});
+  }
+
+  onRefinementResult(refinementResult: RefinementResult) {
+    if (!refinementResult.isAbort) {
+      this.abbreviationOptions.splice(0);
+      this.abbreviationOptions.push(refinementResult.phrase);
+    }
+    this.state = State.CHOOSING_EXPANSION;
   }
 
   private emitExpansionWithTokenReplacement(replacementToken: string) {
@@ -360,15 +340,7 @@ export class AbbreviationComponent implements OnDestroy, OnInit, AfterViewInit {
     this.state = State.REQUEST_ONGIONG;
     this.responseError = null;
     this.receivedEmptyOptions = false;
-    const LIMIT_TURNS = 2;
-    const LIMIT_CONTEXT_TURN_LENGTH = 60
-    const usedContextStrings: string[] = [...this.contextStrings.map(
-        contextString =>
-            limitStringLength(contextString, LIMIT_CONTEXT_TURN_LENGTH))];
-    if (usedContextStrings.length > LIMIT_TURNS) {
-      usedContextStrings.splice(0, usedContextStrings.length - LIMIT_TURNS);
-    }
-    // TODO(#49): Limit by token length?
+    const usedContextStrings = this.usedContextStrings;
     const numSamples = this.getNumSamples(this.abbreviation);
     const usedContextString = usedContextStrings.join('|');
     console.log(
@@ -395,6 +367,19 @@ export class AbbreviationComponent implements OnDestroy, OnInit, AfterViewInit {
               this.cdr.detectChanges();
             });
     this.cdr.detectChanges();
+  }
+
+  get usedContextStrings(): string[] {
+    // TODO(#49): Limit by token length?
+    const LIMIT_TURNS = 2;
+    const LIMIT_CONTEXT_TURN_LENGTH = 60;
+    const strings = [...this.contextStrings.map(
+        contextString =>
+            limitStringLength(contextString, LIMIT_CONTEXT_TURN_LENGTH))];
+    if (strings.length > LIMIT_TURNS) {
+      strings.splice(0, strings.length - LIMIT_TURNS);
+    }
+    return strings;
   }
 
   /** Heuristics about the num_samples to use when requesting AE from server. */

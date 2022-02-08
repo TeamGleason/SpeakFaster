@@ -124,7 +124,8 @@ mat-progress-spinner {
 }
 
 .expansions {
-  display: inline-block;
+  display: inline-flex;
+  flex-direction: row;
   white-space: nowrap;
 }
 
@@ -158,19 +159,15 @@ mat-progress-spinner {
   width: fit-content;
 }
 
-.replacement-token {
-  background-color: lightblue;
-  border: 2px solid #888;
-  border-radius: 5px;
-  color: #111;
-  display: inline-block;
-  font-size: 28px;
-  line-height: 32px;
-  margin: 5px;
-  min-width: 120px;
-  padding: 12px;
-  vertical-align: middle;;
-  width: fit-content;
+.refinement-button {
+  height: 64px;
+  margin: 4px 6px 7px;
+}
+
+.refinement-buttons-container {
+  display: inline-flex;
+  margin: 0 0 0 3px;
+  flex-direction: column;
 }
 
 .request-ongoing {
@@ -233,15 +230,25 @@ mat-progress-spinner {
   Error: {{responseError}}
 </div>
 <div
-    *ngIf="state === 'CHOOSING_EXPANSION' || state === 'CHOOSING_EDIT_TARGET' || state == 'SPELLING'"
+    *ngIf="state === 'CHOOSING_EXPANSION' || state === 'CHOOSING_EDITED_EXPANSION' || state == 'SPELLING'"
     class="expansions">
-  <button
-      #clickableButton
-      *ngIf="abbreviationOptions.length > 0"
-      class="option-button"
-      (click)="onEditButtonClicked($event)">
-    ✏️
-  </button>
+  <div class="refinement-buttons-container">
+    <button
+        #clickableButton
+        *ngIf="abbreviationOptions.length > 0"
+        class="option-button refinement-button"
+        (click)="onEditButtonClicked($event)">
+      ✏️
+    </button>
+
+    <button
+        #clickableButton
+        *ngIf="abbreviationOptions.length > 0"
+        class="option-button refinement-button">
+        ✂️
+    </button>
+  </div>
+
   <div *ngIf="receivedEmptyOptions" class="empty-options-container">
     <span class="info response-empty">Found no expansions</span>
     <button
@@ -257,12 +264,13 @@ mat-progress-spinner {
           *ngFor="let abbreviationOption of abbreviationOptions; let i = index"
           #abbreviationOption
           class="item item{{i + 1}}"
-          [ngClass]="{'candidate-for-edit': state === 'CHOOSING_EDIT_TARGET'}"
+          [ngClass]="{'candidate-for-edit': state === 'CHOOSING_EDITED_EXPANSION'}"
           [phraseText]="abbreviationOption"
           [phraseIndex]="i"
           [scaleFontSize]="true"
           (speakButtonClicked)="onSpeakOptionButtonClicked($event)"
-          (injectButtonClicked)="onExpansionOptionButtonClicked($event)">
+          (injectButtonClicked)="onExpansionOptionButtonClicked($event)"
+          (click)="onExpansionPhraseClicked($event, i)">
       </app-phrase-component>
       <button
           #clickableButton
@@ -274,35 +282,12 @@ mat-progress-spinner {
   </div>
 </div>
 
-<div
-    *ngIf="state === 'CHOOSING_TOKEN' || state === 'CHOOSING_TOKEN_REPLACEMENT'">
-  <button
-      *ngFor="let editToken of editTokens; let i = index"
-      #clickableButton
-      class="edit-token"
-      [ngClass]="{'is-token-selected': i === selectedTokenIndex}"
-      (click)="onEditTokenButtonClicked($event, i)">
-    <div class="edit-token-text">{{editToken}}</div>
-  </button>
-</div>
-
-<div
-    *ngIf="state === 'CHOOSING_TOKEN_REPLACEMENT'">
-  <button
-      *ngFor="let replacementToken of replacementTokens; let i = index"
-      #clickableButton
-      class="replacement-token"
-      (click)="onReplacementTokenButtonClicked($event, i)">
-    <div class="replacement-token-text">{{replacementToken}}</div>
-  </button>
-
-  <input
-      #tokenInput
-      class="token-input"
-      type="text"
-      value="{{manualTokenString}}" />
-
-</div>
+<app-abbreviation-refinement-component
+    *ngIf="state === 'EDITING_EXPANSION' && editedExpansionText !== null"
+    [contextStrings]="usedContextStrings"
+    [originalExpansionText]="editedExpansionText"
+    (refinementResult)="onRefinementResult($event)">
+</app-abbreviation-refinement-component>
 
 </div>
 

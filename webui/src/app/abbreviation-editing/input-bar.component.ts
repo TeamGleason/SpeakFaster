@@ -31,7 +31,7 @@ export class InputBarComponent implements OnInit, AfterViewInit {
 
   state: State = State.ENTERING_ABBREVIATION;
 
-  inputAbbreviation: string = '';
+  inputString: string = '';
 
   startSpellingSubject: Subject<StartSpellingEvent> = new Subject();
   private isSpellingTaskIsNew = true;
@@ -41,7 +41,7 @@ export class InputBarComponent implements OnInit, AfterViewInit {
       if (textInjection.isFinal) {
         this.resetState();
       } else {
-        this.inputAbbreviation = textInjection.text;
+        this.inputString = textInjection.text;
       }
     });
     ExternalEventsComponent.registerKeypressListener(
@@ -58,7 +58,7 @@ export class InputBarComponent implements OnInit, AfterViewInit {
 
   public listenToKeypress(keySequence: string[], reconstructedText: string):
       void {
-    this.inputAbbreviation = reconstructedText;
+    this.inputString = reconstructedText;
   }
 
   private startAbbreviationExpansionEditing() {
@@ -66,7 +66,7 @@ export class InputBarComponent implements OnInit, AfterViewInit {
   }
 
   onEnterAsIsButtonClicked(event: Event) {
-    const text = this.inputAbbreviation.trim();
+    const text = this.inputString.trim();
     this.textInjectionSubject.next({
       text,
       timestampMillis: Date.now(),
@@ -79,7 +79,7 @@ export class InputBarComponent implements OnInit, AfterViewInit {
   }
 
   private resetState() {
-    this.inputAbbreviation = '';
+    this.inputString = '';
     this.isSpellingTaskIsNew = true;
     this.state = State.ENTERING_ABBREVIATION;
   }

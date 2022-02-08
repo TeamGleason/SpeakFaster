@@ -65,11 +65,11 @@ input[type="text"]:disabled{
       class="input-box"
       type="text"
       disabled="true"
-      value="{{inputAbbreviation}}" />
+      value="{{inputString}}" />
 
   <button
       #clickableButton
-      *ngIf="inputAbbreviation.length > 0 && state === 'ENTERING_ABBREVIATION'"
+      *ngIf="inputString.length > 0 && state === 'ENTERING_ABBREVIATION'"
       class="action-button"
       (click)="onEnterAsIsButtonClicked($event)">
     Enter as is

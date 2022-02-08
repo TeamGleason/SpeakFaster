@@ -55,7 +55,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       new Subject<TextEntryBeginEvent>();
   textEntryEndSubject: Subject<TextEntryEndEvent> = new Subject();
   // Context speech content used for AE and other text predictions.
-  inputAbbreviation: string = '';
+  inputString: string = '';
   readonly contextStrings: string[] = [];
 
   @ViewChildren('clickableButton')
@@ -174,8 +174,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   onAbbreviationInputChanged(abbreviationChangedEvent:
                                  InputAbbreviationChangedEvent) {
-    this.inputAbbreviation =
-        abbreviationChangedEvent.abbreviationSpec.readableString;
+    this.inputString = abbreviationChangedEvent.abbreviationSpec.readableString;
     this.abbreviationExpansionTriggers.next(abbreviationChangedEvent);
   }
 

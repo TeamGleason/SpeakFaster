@@ -6,20 +6,14 @@ import {createUuid} from 'src/utils/uuid';
 import {ExternalEventsComponent} from '../external/external-events.component';
 import {TextEntryBeginEvent, TextEntryEndEvent} from '../types/text-entry';
 
-enum State {
-  ENTERING_ABBREVIATION = 'ENTERING_ABBREVIATION',
-  SPELLING = 'SPELLING',
-  EDITING_TOKEN = 'EDITING_TOKEN',
-}
-
 @Component({
   selector: 'app-input-bar-component',
   templateUrl: './input-bar.component.html',
 })
 export class InputBarComponent implements OnInit, AfterViewInit {
   private static readonly _NAME = 'InputBarComponent';
+  private readonly instanceId = InputBarComponent._NAME + '_' + createUuid();
 
-  private readonly instanceId = createUuid();
   @Input() textInjectionSubject!: Subject<TextEntryEndEvent>;
   @Input() textEntryBeginSubject!: Subject<TextEntryBeginEvent>;
   @Output()
@@ -28,11 +22,7 @@ export class InputBarComponent implements OnInit, AfterViewInit {
   @ViewChildren('clickableButton')
   buttons!: QueryList<ElementRef<HTMLButtonElement>>;
 
-  state: State = State.ENTERING_ABBREVIATION;
-
   inputString: string = '';
-
-  private isSpellingTaskIsNew = true;
 
   ngOnInit() {
     this.textInjectionSubject.subscribe((textInjection: TextEntryEndEvent) => {
@@ -47,20 +37,16 @@ export class InputBarComponent implements OnInit, AfterViewInit {
   }
 
   ngAfterViewInit() {
+    updateButtonBoxesForElements(this.instanceId, this.buttons);
     this.buttons.changes.subscribe(
         (queryList: QueryList<ElementRef<HTMLButtonElement>>) => {
-          updateButtonBoxesForElements(
-              InputBarComponent._NAME + this.instanceId, queryList);
+          updateButtonBoxesForElements(this.instanceId, queryList);
         });
   }
 
   public listenToKeypress(keySequence: string[], reconstructedText: string):
       void {
     this.inputString = reconstructedText;
-  }
-
-  private startAbbreviationExpansionEditing() {
-    this.state = State.EDITING_TOKEN;
   }
 
   onSpeakAsIsButtonClicked(event: Event) {
@@ -75,17 +61,11 @@ export class InputBarComponent implements OnInit, AfterViewInit {
     });
   }
 
-  onEditButtonClicked(event: Event) {
-    this.startAbbreviationExpansionEditing();
-  }
-
   onFavoriteButtonClicked(event: Event) {
     // TODO(cais): Implement favoriting phrases.
   }
 
   private resetState() {
     this.inputString = '';
-    this.isSpellingTaskIsNew = true;
-    this.state = State.ENTERING_ABBREVIATION;
   }
 }

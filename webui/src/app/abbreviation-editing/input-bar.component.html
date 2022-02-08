@@ -13,7 +13,7 @@ input[type="text"]:disabled{
   background: #272626;
   color: white;
   font-size: 30px;
-  height: 50px;
+  height: 48px;
 }
 
 .button-image {
@@ -41,7 +41,7 @@ input[type="text"]:disabled{
   line-height: 45px;
   padding: 0 0 5px;
   vertical-align: middle;
-  width: 750px;
+  width: 800px;
 }
 
 .hidden {
@@ -55,7 +55,7 @@ input[type="text"]:disabled{
   color: #eee;
   flex: 1;
   font-size: 20px;
-  height: 52px;
+  height: 50px;
   margin: 0 10px;
   min-width: 100px;
   padding: 0;
@@ -79,7 +79,6 @@ input[type="text"]:disabled{
 
   <button
       #clickableButton
-      *ngIf="inputString.length > 0 && state === 'ENTERING_ABBREVIATION'"
       class="action-button"
       (click)="onSpeakAsIsButtonClicked($event)">
       <img class="button-image" src="/assets/images/speak.png" alt="speak phrase as is" />
@@ -87,7 +86,6 @@ input[type="text"]:disabled{
 
   <button
       #clickableButton
-      *ngIf="inputString.length > 0 && state === 'ENTERING_ABBREVIATION'"
       class="action-button favorite-button"
       (click)="onFavoriteButtonClicked($event)">
       <img class="button-image" src="/assets/images/favorite.png" alt="add phrase to favorite" />

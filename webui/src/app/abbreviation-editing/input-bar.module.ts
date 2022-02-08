@@ -3,15 +3,15 @@ import {BrowserModule} from '@angular/platform-browser';
 
 import {SpellModule} from '../spell/spell.module';
 
-import {AbbreviationEditingComponent} from './abbreviation-editing.component';
+import {InputBarComponent} from './input-bar.component';
 
 @NgModule({
-  declarations: [AbbreviationEditingComponent],
+  declarations: [InputBarComponent],
   imports: [
     BrowserModule,
     SpellModule,
   ],
-  exports: [AbbreviationEditingComponent],
+  exports: [InputBarComponent],
 })
-export class AbbreviationEditingModule {
+export class InputBarModule {
 }

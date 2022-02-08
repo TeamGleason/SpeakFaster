@@ -179,10 +179,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     this.abbreviationExpansionTriggers.next(abbreviationChangedEvent);
   }
 
-  onSpellingStateChanged(state: 'START'|'END') {
-    this.isSpelling = state === 'START';
-  }
-
   /**
    * Register callback for app resizeing.
    * This registered callbacks are invoked when the container for the entire

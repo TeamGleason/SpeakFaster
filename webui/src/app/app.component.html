@@ -180,11 +180,10 @@ app-text-to-speech-component {
       ></app-abbreviation-component>
 
       <div class="bottom-area">
-        <app-abbreviation-editing-component
+        <app-input-bar-component
           [textEntryBeginSubject]="textEntryBeginSubject"
           [textInjectionSubject]="textEntryEndSubject"
-          (spellingStateChanged)="onSpellingStateChanged($event)"
-        ></app-abbreviation-editing-component>
+        ></app-input-bar-component>
       </div>
     </div>
 

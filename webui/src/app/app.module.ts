@@ -1,7 +1,7 @@
 import {NgModule} from '@angular/core';
 import {BrowserModule} from '@angular/platform-browser';
 
-import {AbbreviationEditingModule} from './abbreviation-editing/abbreviation-editing.module';
+import {InputBarModule} from './abbreviation-editing/input-bar.module';
 import {AbbreviationModule} from './abbreviation/abbreviation.module';
 import {AppRoutingModule} from './app-routing.module';
 import {AppComponent} from './app.component';
@@ -19,7 +19,7 @@ import {TextToSpeechModule} from './text-to-speech/text-to-speech.module';
 @NgModule({
   declarations: [AppComponent],
   imports: [
-    AbbreviationEditingModule,
+    InputBarModule,
     AbbreviationModule,
     AppRoutingModule,
     AuthModule,

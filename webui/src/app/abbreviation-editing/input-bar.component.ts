@@ -14,11 +14,11 @@ enum State {
 }
 
 @Component({
-  selector: 'app-abbreviation-editing-component',
-  templateUrl: './abbreviation-editing.component.html',
+  selector: 'app-input-bar-component',
+  templateUrl: './input-bar.component.html',
 })
-export class AbbreviationEditingComponent implements OnInit, AfterViewInit {
-  private static readonly _NAME = 'AbbreviationEditingComponent';
+export class InputBarComponent implements OnInit, AfterViewInit {
+  private static readonly _NAME = 'InputBarComponent';
 
   private readonly instanceId = createUuid();
   @Input() textInjectionSubject!: Subject<TextEntryEndEvent>;
@@ -52,7 +52,7 @@ export class AbbreviationEditingComponent implements OnInit, AfterViewInit {
     this.buttons.changes.subscribe(
         (queryList: QueryList<ElementRef<HTMLButtonElement>>) => {
           updateButtonBoxesForElements(
-              AbbreviationEditingComponent._NAME + this.instanceId, queryList);
+              InputBarComponent._NAME + this.instanceId, queryList);
         });
   }
 
@@ -61,26 +61,8 @@ export class AbbreviationEditingComponent implements OnInit, AfterViewInit {
     this.inputAbbreviation = reconstructedText;
   }
 
-  private startSpelling() {
-    if (this.state != State.ENTERING_ABBREVIATION ||
-        this.inputAbbreviation.length === 0) {
-      return;
-    }
-    this.state = State.SPELLING;
-    this.spellingStateChanged.emit('START');
-    this.startSpellingSubject.next({
-      originalAbbreviationChars: this.inputAbbreviation.split(''),
-      isNewSpellingTask: this.isSpellingTaskIsNew,
-    });
-    this.isSpellingTaskIsNew = false;
-  }
-
   private startAbbreviationExpansionEditing() {
     this.state = State.EDITING_TOKEN;
-  }
-
-  onSpellButtonClicked(event: Event) {
-    this.startSpelling();
   }
 
   onEnterAsIsButtonClicked(event: Event) {

@@ -16,6 +16,29 @@ mat-progress-spinner {
   zoom: 0.3;
 }
 
+button {
+  background: #333;
+  border: 2px solid #888;
+  border-radius: 5px;
+  color: #ddd;
+  display: inline-block;
+  font-size: 24px;
+  line-height: 24px;
+  margin: 5px 0 5px 10px;
+  min-width: 75px;
+  padding: 15px;
+  vertical-align: middle;;
+  width: fit-content;
+}
+
+.abort-button {
+  background-color: brown;
+  display: inline-block;
+  height: 60px;
+  margin-left: 20px;
+  width: 66px;
+}
+
 .instruction {
   color: #888;
   font-size: 20px;
@@ -31,21 +54,6 @@ mat-progress-spinner {
 .replacements-container {
   border: dashed 1px #888;
   margin-left: 20px;
-}
-
-.token {
-  background: #333;
-  border: 2px solid #888;
-  border-radius: 5px;
-  color: #ddd;
-  display: inline-block;
-  font-size: 24px;
-  line-height: 24px;
-  margin: 5px 0 5px 10px;
-  min-width: 75px;
-  padding: 15px;
-  vertical-align: middle;;
-  width: fit-content;
 }
 
 .token-chosen {
@@ -81,6 +89,13 @@ mat-progress-spinner {
       (click)="onTokenButtonClicked($event, i)">
     {{token}}
   </button>
+
+  <button
+      #clickableButton
+      class="abort-button"
+      (click)="onAbortButtonClicked($event)">
+      🗙
+  </button>
 </div>
 
 <div *ngIf="state == 'REQUEST_ONGOING'" class="request-ongoing">
@@ -101,4 +116,15 @@ mat-progress-spinner {
       (click)="onReplacementButtonClicked($event, i)">
     {{replacement}}
   </button>
+
+  <div
+      *ngIf="replacementsEmpty"
+      class="instruction">
+    Found no replacements
+    <button
+        class="retry-button"
+        (click)="onTryAgainButtonClicked($event)">
+      Try again
+    </button>
+  </div>
 </div>

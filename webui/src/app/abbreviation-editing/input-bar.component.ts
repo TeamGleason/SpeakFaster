@@ -4,7 +4,6 @@ import {updateButtonBoxesForElements} from 'src/utils/cefsharp';
 import {createUuid} from 'src/utils/uuid';
 
 import {ExternalEventsComponent} from '../external/external-events.component';
-import {AbbreviationSpec, AbbreviationToken, InputAbbreviationChangedEvent, StartSpellingEvent} from '../types/abbreviation';
 import {TextEntryBeginEvent, TextEntryEndEvent} from '../types/text-entry';
 
 enum State {
@@ -33,7 +32,6 @@ export class InputBarComponent implements OnInit, AfterViewInit {
 
   inputString: string = '';
 
-  startSpellingSubject: Subject<StartSpellingEvent> = new Subject();
   private isSpellingTaskIsNew = true;
 
   ngOnInit() {

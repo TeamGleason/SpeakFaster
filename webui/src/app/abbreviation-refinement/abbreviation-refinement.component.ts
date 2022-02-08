@@ -22,7 +22,7 @@ export interface RefinementResult {
   isAbort: boolean;
 }
 
-export type RefinementType = 'REPLACE_TOKEN' | 'CHOOSE_PREFIX';
+export type RefinementType = 'REPLACE_TOKEN'|'CHOOSE_PREFIX';
 
 @Component({
   selector: 'app-abbreviation-refinement-component',
@@ -54,7 +54,6 @@ export class AbbreviationRefinementComponent implements OnInit, AfterViewInit {
   state: State = State.CHOOSING_TOKEN;
 
   constructor(public speakFasterService: SpeakFasterService) {}
-  // TODO(cais): Provide escape route.
 
   ngOnInit() {
     this._tokens.push(...this.originalExpansionText.split(' '));
@@ -78,28 +77,34 @@ export class AbbreviationRefinementComponent implements OnInit, AfterViewInit {
     if (this.state === State.REQUEST_ONGOING) {
       return;
     }
-    const tokens: string[] = this._tokens.slice();
     if (this.refinementType === 'CHOOSE_PREFIX') {
       this.refinementResult.emit({
-        phrase: tokens.slice(0, index + 1).join(' '),
+        phrase: this._tokens.slice(0, index + 1).join(' '),
         isAbort: false,
       });
       return;
     }
-    const speechContent = this.contextStrings.join('|');
     this.replacementIndex = index;
+    this.callFillMask();
+  }
+
+  private callFillMask() {
+    const tokens: string[] = this._tokens.slice();
+    const speechContent = this.contextStrings.join('|');
+    const index = this.replacementIndex!;
     tokens[index] = '_';
     const phraseWithMask = tokens.join(' ');
-    const maskInitial = this._tokens[index][0];
+    const maskInitial = this._tokens[this.replacementIndex!][0];
     this.state = State.REQUEST_ONGOING;
     this.speakFasterService.fillMask(speechContent, phraseWithMask, maskInitial)
         .subscribe(
             (data: FillMaskResponse) => {
               this._replacements.splice(0);
-              this._replacements.push(...data.results.filter(
-                  result => result.trim().toLowerCase() !==
-                      this._tokens[index].trim().toLocaleLowerCase()));
-              // TODO(cais): Deal with `data.results` is undefined.
+              if (data.results) {
+                this._replacements.push(...data.results.filter(
+                    result => result.trim().toLowerCase() !==
+                        this._tokens[index].trim().toLocaleLowerCase()));
+              }
               this.state = State.CHOOSING_TOKEN_REPLACEMNT;
             },
             error => {
@@ -121,34 +126,44 @@ export class AbbreviationRefinementComponent implements OnInit, AfterViewInit {
     });
   }
 
+  onAbortButtonClicked(event: Event) {
+    this.refinementResult.emit({
+      phrase: '',
+      isAbort: true,
+    });
+  }
+
+  onTryAgainButtonClicked(event: Event) {
+    this.callFillMask();
+  }
+
   public listenToKeypress(keySequence: string[], reconstructedText: string):
       void {
     // TODO(cais): Listen to replacement keys.
 
-  //   if (isPlainAlphanumericKey(event, 'Enter')) {
-  //     if (this.manualTokenString.trim().length > 0) {
-  //       this.emitExpansionWithTokenReplacement(this.manualTokenString.trim());
-  //       return true;
-  //     } else if (this.selectedTokenIndex !== null) {
-  //       // Use the original.
-  //       this.emitExpansionWithTokenReplacement(
-  //           this.editTokens[this.selectedTokenIndex]);
-  //       return true;
-  //     }
-  //   } else if (isTextContentKey(event)) {
-  //     this.manualTokenString += event.key.toLocaleLowerCase();
-  //     return true;
-  //   } else if (isPlainAlphanumericKey(event, 'Backspace')) {
-  //     if (this.manualTokenString.length > 0) {
-  //       this.manualTokenString =
-  //           this.manualTokenString.slice(0, this.manualTokenString.length -
-  //           1);
-  //       return true;
-  //     }
-  //   }
-  //   return false;
-  // }  // TODO(cais): Clean up.
-
+    //   if (isPlainAlphanumericKey(event, 'Enter')) {
+    //     if (this.manualTokenString.trim().length > 0) {
+    //       this.emitExpansionWithTokenReplacement(this.manualTokenString.trim());
+    //       return true;
+    //     } else if (this.selectedTokenIndex !== null) {
+    //       // Use the original.
+    //       this.emitExpansionWithTokenReplacement(
+    //           this.editTokens[this.selectedTokenIndex]);
+    //       return true;
+    //     }
+    //   } else if (isTextContentKey(event)) {
+    //     this.manualTokenString += event.key.toLocaleLowerCase();
+    //     return true;
+    //   } else if (isPlainAlphanumericKey(event, 'Backspace')) {
+    //     if (this.manualTokenString.length > 0) {
+    //       this.manualTokenString =
+    //           this.manualTokenString.slice(0, this.manualTokenString.length -
+    //           1);
+    //       return true;
+    //     }
+    //   }
+    //   return false;
+    // }  // TODO(cais): Clean up.
   }
 
   get currentTokens(): string[] {
@@ -157,6 +172,10 @@ export class AbbreviationRefinementComponent implements OnInit, AfterViewInit {
 
   get replacements(): string[] {
     return this._replacements.slice();
+  }
+
+  get replacementsEmpty(): boolean {
+    return this._replacements.length === 0;
   }
 
   isTokenChosenForReplacement(index: number): boolean {

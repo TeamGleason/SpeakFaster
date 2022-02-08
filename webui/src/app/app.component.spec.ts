@@ -9,7 +9,6 @@ import {AuthModule} from './auth/auth.module';
 import {ExternalEventsModule} from './external/external-events.module';
 import {MetricsModule} from './metrics/metrics.module';
 import {MiniBarModule} from './mini-bar/mini-bar.module';
-import {QuickPhrasesModule} from './quick-phrases/quick-phrases.module';
 import {TestListener} from './test-utils/test-cefsharp-listener';
 import {AppState} from './types/app-state';
 
@@ -27,7 +26,6 @@ describe('AppComponent', () => {
             ExternalEventsModule,
             MetricsModule,
             MiniBarModule,
-            QuickPhrasesModule,
             RouterTestingModule,
           ],
           declarations: [AppComponent],

@@ -10,9 +10,22 @@ app-phrase-component {
   margin: 3px 5px;
 }
 
+mat-progress-spinner {
+  display: inline-block;
+  stroke: #ddd;
+  zoom: 0.3;
+}
+
 .container {
   display: flex;
   flex-direction: row;
+}
+
+.error {
+  color: red;
+  font-size: 22px;
+  margin: 8px;
+  text-align: center;
 }
 
 .no-quick-phrases {
@@ -26,6 +39,13 @@ app-phrase-component {
   height: 365px;
   max-height: 365px;
   overflow-y: hidden;
+}
+
+.retrieving-quick-phrases {
+  color: #aaa;
+  font-size: 22px;
+  margin: 8px;
+  text-align: center;
 }
 
 .scroll-button {
@@ -73,10 +93,27 @@ app-phrase-component {
     </app-phrase-component>
 
     <div
-        *ngIf="phrases.length === 0"
+        *ngIf="state === 'RETRIEVING_PHRASES'"
+        class="retrieving-quick-phrases">
+      <mat-progress-spinner
+          [mode]="'indeterminate'"
+          [value]="50">
+      </mat-progress-spinner>
+      Retrieving phrases...
+    </div>
+
+    <div
+        *ngIf="state === 'RETRIEVED_PHRASES' && phrases.length === 0"
         class="no-quick-phrases">
         No quick phrases found
     </div>
+
+    <div
+        *ngIf="state === 'ERROR'"
+        class="error">
+      {{errorMessage}}
+    </div>
+
   </div>
 
   <div

@@ -8,7 +8,6 @@ import {createUuid} from 'src/utils/uuid';
 
 import * as cefSharp from '../../utils/cefsharp';
 import {ExternalEventsComponent, repeatVirtualKey, VIRTUAL_KEY} from '../external/external-events.component';
-import {configureService} from '../speakfaster-service';
 import {TestListener} from '../test-utils/test-cefsharp-listener';
 import {AbbreviationSpec, InputAbbreviationChangedEvent} from '../types/abbreviation';
 import {TextEntryEndEvent} from '../types/text-entry';
@@ -42,10 +41,6 @@ describe('AbbreviationComponent', () => {
         abbreviationExpansionTriggers;
     fixture.componentInstance.textEntryEndSubject = textEntryEndSubject;
     fixture.detectChanges();
-    configureService({
-      endpoint: '',
-      accessToken: null,
-    });
   });
 
   afterAll(async () => {

@@ -167,28 +167,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     return this._accessToken;
   }
 
-  onQuickPhrasesCareButtonClicked(event: Event, appState: string) {
-    switch (appState) {
-      case 'QUICK_PHRASES_FAVORITE':
-        this.changeAppState(AppState.QUICK_PHRASES_FAVORITE);
-        break;
-      case 'QUICK_PHRASES_TEMPORAL':
-        this.changeAppState(AppState.QUICK_PHRASES_TEMPORAL);
-        break;
-      case 'QUICK_PHRASES_PARTNERS':
-        this.changeAppState(AppState.QUICK_PHRASES_PARTNERS);
-        break;
-      case 'QUICK_PHRASES_CARE':
-        this.changeAppState(AppState.QUICK_PHRASES_CARE);
-        break;
-      case 'ABBREVIATION_EXPANSION':
-        this.changeAppState(AppState.ABBREVIATION_EXPANSION);
-        break;
-      default:
-        break;
-    }
-  }
-
   onMinimizeButtonClicked(event: Event) {
     this.changeAppState(AppState.MINIBAR);
   }
@@ -211,6 +189,28 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   /** Clear all reigstered app-resize callbacks. */
   public static clearAppResizeCallback() {
     AppComponent.appResizeCallbacks.splice(0);
+  }
+
+  onQuickPhrasesCareButtonClicked(event: Event, appState: string) {
+    switch (appState) {
+      case 'QUICK_PHRASES_FAVORITE':
+        this.changeAppState(AppState.QUICK_PHRASES_FAVORITE);
+        break;
+      case 'QUICK_PHRASES_TEMPORAL':
+        this.changeAppState(AppState.QUICK_PHRASES_TEMPORAL);
+        break;
+      case 'QUICK_PHRASES_PARTNERS':
+        this.changeAppState(AppState.QUICK_PHRASES_PARTNERS);
+        break;
+      case 'QUICK_PHRASES_CARE':
+        this.changeAppState(AppState.QUICK_PHRASES_CARE);
+        break;
+      case 'ABBREVIATION_EXPANSION':
+        this.changeAppState(AppState.ABBREVIATION_EXPANSION);
+        break;
+      default:
+        break;
+    }
   }
 
   isQuickPhrasesAppState() {
@@ -246,34 +246,20 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     }
   }
 
-  // TODO(cais): Do not hardcode. Query these from the SpeakFasterService
-  // instead.
-  getQuickPhrases(): string[] {
+  getQuickPhrasesAllowedTags(): string[] {
     switch (this.appState) {
       case AppState.QUICK_PHRASES_FAVORITE:
-        return [];
+        return ['favorite'];
       case AppState.QUICK_PHRASES_TEMPORAL:
-        return [
-          'Good morning',
-          'Have a wonderful Tuesday',
-        ];
+        return ['temporal'];
       case AppState.QUICK_PHRASES_PARTNERS:
-        return [
-          'Alice', 'Bob', 'Charlie', 'Danielle', 'Elly', 'Frank', 'George',
-          'Heather', 'Irine', 'John', 'Kevin', 'Lana', 'Mike', 'Nick', 'Oscar',
-          'Peter', 'Quentin', 'Rene', 'Sherry', 'Tom', 'Ulysses', 'Vivian',
-          'William', 'Xavier', 'Yasmin', 'Zachary'
-        ];
+        return ['partner'];
       case AppState.QUICK_PHRASES_CARE:
-        return [
-          'Thank you very much',
-          'I need to think about that',
-          'Let\'s go for a walk',
-        ];
+        return ['care'];
       default:
         throw new Error(`Invalid app state: ${this.appState}`);
     }
-  }
+  };
 
   getQuickPhrasesColor(): string {
     switch (this.appState) {

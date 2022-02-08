@@ -63,17 +63,24 @@ export class InputBarComponent implements OnInit, AfterViewInit {
     this.state = State.EDITING_TOKEN;
   }
 
-  onEnterAsIsButtonClicked(event: Event) {
+  onSpeakAsIsButtonClicked(event: Event) {
     const text = this.inputString.trim();
     this.textInjectionSubject.next({
       text,
       timestampMillis: Date.now(),
       isFinal: true,
+      inAppTextToSpeechAudioConfig: {
+        volume_gain_db: 0,
+      }
     });
   }
 
   onEditButtonClicked(event: Event) {
     this.startAbbreviationExpansionEditing();
+  }
+
+  onFavoriteButtonClicked(event: Event) {
+    // TODO(cais): Implement favoriting phrases.
   }
 
   private resetState() {

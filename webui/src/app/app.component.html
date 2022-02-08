@@ -154,33 +154,23 @@ app-text-to-speech-component {
     </div>
 
     <div
-        class="main-right-pane mode-quick-pharses"
-        *ngIf="hasAccessToken() && isQuickPhrasesAppState()">
+        class="main-right-pane mode-quick-pharses">
       <app-quick-phrases-component
+          *ngIf="hasAccessToken() && isQuickPhrasesAppState()"
           [allowedTags]="getQuickPhrasesAllowedTags()"
           [color]="getQuickPhrasesColor()"
           [textEntryBeginSubject]="textEntryBeginSubject"
           [textEntryEndSubject]="textEntryEndSubject"
       ></app-quick-phrases-component>
 
-      <div class="bottom-area">
-        <app-input-bar-component
-          [textEntryBeginSubject]="textEntryBeginSubject"
-          [textInjectionSubject]="textEntryEndSubject"
-        ></app-input-bar-component>
-      </div>
-    </div>
-
-    <div
-        class="main-right-pane mode-abbreviation-expansion"
-        *ngIf="hasAccessToken() && appState === 'ABBREVIATION_EXPANSION'">
-
       <app-context-component
+        *ngIf="hasAccessToken() && appState === 'ABBREVIATION_EXPANSION'"
         [textEntryEndSubject]="textEntryEndSubject"
         (contextStringsSelected)="onContextStringsSelected($event)"
       ></app-context-component>
 
       <app-abbreviation-component
+        *ngIf="hasAccessToken() && appState === 'ABBREVIATION_EXPANSION'"
         [contextStrings]="contextStrings"
         [abbreviationExpansionTriggers]="abbreviationExpansionTriggers"
         [textEntryEndSubject]="textEntryEndSubject"

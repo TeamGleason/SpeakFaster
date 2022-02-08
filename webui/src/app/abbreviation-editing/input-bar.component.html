@@ -10,15 +10,21 @@
 }
 
 input[type="text"]:disabled{
-  background-color: #eee;
-  color: #111;
+  background: #272626;
+  color: white;
+  font-size: 30px;
+  height: 50px;
+}
+
+.button-image {
+  max-width: 50%;
+  max-height: 50%;
 }
 
 .input-box {
-  border: 2px solid #888;
-  border-radius: 3px;
+  border: none;
+  border-radius: 8px;
   flex: 1;
-  font-size: 32px;
   margin: 0 8px;
   min-width: 100%;
   width: 100%;
@@ -43,18 +49,22 @@ input[type="text"]:disabled{
 }
 
 .action-button {
-  background: #333;
-  border: 2px solid #888;
-  border-radius: 5px;
+  background: #27AE60;
+  border: none;
+  border-radius: 8px;
   color: #eee;
   flex: 1;
   font-size: 20px;
-  height: 45px;
+  height: 52px;
   margin: 0 10px;
-  min-width: 150px;
+  min-width: 100px;
   padding: 0;
   vertical-align: middle;
-  width: fit-content;
+  width: 100px;
+}
+
+.favorite-button {
+  background: #473261;
 }
 
 </style>
@@ -71,8 +81,16 @@ input[type="text"]:disabled{
       #clickableButton
       *ngIf="inputString.length > 0 && state === 'ENTERING_ABBREVIATION'"
       class="action-button"
-      (click)="onEnterAsIsButtonClicked($event)">
-    Enter as is
+      (click)="onSpeakAsIsButtonClicked($event)">
+      <img class="button-image" src="/assets/images/speak.png" alt="speak phrase as is" />
+  </button>
+
+  <button
+      #clickableButton
+      *ngIf="inputString.length > 0 && state === 'ENTERING_ABBREVIATION'"
+      class="action-button favorite-button"
+      (click)="onFavoriteButtonClicked($event)">
+      <img class="button-image" src="/assets/images/favorite.png" alt="add phrase to favorite" />
   </button>
 
 </div>

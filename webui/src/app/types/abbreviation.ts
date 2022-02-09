@@ -64,8 +64,3 @@ export interface InputAbbreviationChangedEvent {
   readonly requestExpansion: boolean;
 }
 
-/** An event that signifies the starting of spelling out of an abbreviation. */
-export interface StartSpellingEvent {
-  readonly originalAbbreviationChars: string[];
-  readonly isNewSpellingTask: boolean;
-}

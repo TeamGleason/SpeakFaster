@@ -90,7 +90,7 @@
   <div *ngIf="turn.speakerId != null && turn.speakerId.length > 0" class="speaker-tag">
     {{turn.speakerId}}
   </div>
-  <div *ngIf="!turn.isHardcoded" class="time-tag">
+  <div *ngIf="showTimestamp && !turn.isHardcoded" class="time-tag">
     {{agoString}}
   </div>
   <div *ngIf="turn.isHardcoded" class="hardcode-tag">

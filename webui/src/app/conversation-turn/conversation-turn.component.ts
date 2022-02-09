@@ -22,6 +22,7 @@ export class ConversationTurnComponent implements AfterViewInit, OnDestroy {
 
   @Input() turn!: ConversationTurn;
   @Input() isFocus: boolean = false;
+  @Input() showTimestamp: boolean = false;
   @ViewChildren('button') buttons!: QueryList<ElementRef<HTMLButtonElement>>;
   @ViewChild('turnContent') turnContentElement!: ElementRef;
 

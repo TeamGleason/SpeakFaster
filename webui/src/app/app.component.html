@@ -119,7 +119,7 @@ app-text-to-speech-component {
   </div>
 
   <app-metrics-component
-      *ngIf="hasAccessToken() && appState !== 'MINIBAR'"
+      *ngIf="showMetrics && hasAccessToken() && appState !== 'MINIBAR'"
       [textEntryBeginSubject]="textEntryBeginSubject"
       [textEntryEndSubject]="textEntryEndSubject">
   </app-metrics-component>

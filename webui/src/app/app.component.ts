@@ -41,6 +41,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   private previousNonMinimizedAppState: AppState = this.appState;
 
   private _isPartner = false;
+  private _showMetrics = false;
   // Set this to `false` to skip using access token (e.g., developing with
   // an automatically authorized browser context.)
   private useAccessToken = true;
@@ -72,6 +73,9 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       }
       if (params['endpoint'] && this.endpoint === '') {
         this._endpoint = params['endpoint'];
+      }
+      if (params['show_metrics']) {
+        this._showMetrics = this.stringValueMeansTrue(params['show_metrics']);
       }
       const useOauth = params['use_oauth'];
       if (typeof useOauth === 'string' &&
@@ -145,6 +149,10 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   getUserRole(): UserRole {
     return this._isPartner ? UserRole.PARTNER : UserRole.AAC_USER;
+  }
+
+  get showMetrics(): boolean {
+    return this._showMetrics;
   }
 
   onNewAccessToken(accessToken: string) {

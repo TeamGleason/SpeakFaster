@@ -96,6 +96,11 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     });
   }
 
+  private stringValueMeansTrue(str: string): boolean {
+    str = str.trim().toLocaleLowerCase();
+    return str === 'true' || str === '1' || str === 't';
+  }
+
   ngAfterViewInit() {
     registerExternalKeypressHook(
         this.externalEventsComponent.externalKeypressHook.bind(

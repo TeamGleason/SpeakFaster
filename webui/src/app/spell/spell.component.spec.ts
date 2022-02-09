@@ -1,6 +1,6 @@
 /** Unit tests for the SpellComponent. */
 import {HttpClientModule} from '@angular/common/http';
-import {SimpleChange} from '@angular/core';
+import {ElementRef, SimpleChange} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {By} from '@angular/platform-browser';
 import {Subject} from 'rxjs';
@@ -86,6 +86,22 @@ describe('SpellComponent', () => {
     const spellInputs = fixture.debugElement.queryAll(By.css('.spell-input'));
     expect(spellInputs.length).toEqual(1);
     expect(spellInputs[0].nativeElement.value).toEqual('b');
+  });
+
+  it('input box is disabled and has type text during spelling', () => {
+    fixture.componentInstance.originalAbbreviationSpec =
+        getAbbreviationSpecForTest(['a', 'b', 'c']);
+    fixture.componentInstance.spellIndex = 1;
+    fixture.detectChanges();
+    fixture.componentInstance.listenToKeypress(
+        ['a', 'b', 'c', ' ', ' ', 'b'], 'abc  b');
+    fixture.detectChanges();
+
+    const spellInputs = fixture.debugElement.queryAll(By.css('.spell-input'));
+    expect(spellInputs.length).toEqual(1);
+    expect(spellInputs[0].nativeElement.getAttribute('type')).toEqual('text');
+    expect(spellInputs[0].nativeElement.getAttribute('disabled'))
+        .toEqual('true');
   });
 
   it('typing letters for spelled word populates spell input', () => {

@@ -63,3 +63,4 @@ export interface InputAbbreviationChangedEvent {
   // Whether abbreviation expansion is requested.
   readonly requestExpansion: boolean;
 }
+

@@ -1,0 +1,94 @@
+<style>
+
+:host {
+    box-sizing: border-box;
+    color: #EEE;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+    font-size: 32px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+input[type="text"]:disabled{
+  background: #272626;
+  color: white;
+  font-size: 30px;
+  height: 48px;
+}
+
+.button-image {
+  max-width: 50%;
+  max-height: 50%;
+}
+
+.input-box {
+  border: none;
+  border-radius: 8px;
+  flex: 1;
+  margin: 0 8px;
+  min-width: 100%;
+  width: 100%;
+}
+
+.button-shortcut-key {
+  font-size: 18px;
+  color: #888;
+}
+
+.container {
+  display: flex;
+  flex-direction: row;
+  line-height: 45px;
+  padding: 0 0 5px;
+  vertical-align: middle;
+  width: 800px;
+}
+
+.hidden {
+  display: none;
+}
+
+.action-button {
+  background: #27AE60;
+  border: none;
+  border-radius: 8px;
+  color: #eee;
+  flex: 1;
+  font-size: 20px;
+  height: 50px;
+  margin: 0 10px;
+  min-width: 100px;
+  padding: 0;
+  vertical-align: middle;
+  width: 100px;
+}
+
+.favorite-button {
+  background: #473261;
+}
+
+</style>
+
+<div class="container">
+
+  <input
+      class="input-box"
+      type="text"
+      disabled="true"
+      value="{{inputString}}" />
+
+  <button
+      #clickableButton
+      class="action-button speak-button"
+      (click)="onSpeakAsIsButtonClicked($event)">
+      <img class="button-image" src="/assets/images/speak.png" alt="speak phrase as is" />
+  </button>
+
+  <button
+      #clickableButton
+      class="action-button favorite-button"
+      (click)="onFavoriteButtonClicked($event)">
+      <img class="button-image" src="/assets/images/favorite.png" alt="add phrase to favorite" />
+  </button>
+
+</div>

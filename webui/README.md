@@ -73,6 +73,10 @@ Under the AAC user mode, the following URL parameters must be provided:
 3. `endpoint`: This is the URL to the API endpoint that serves features such as
    abbreviation expansion and text prediction.
 
+Optional URL parameters include:
+- `showMetrics`: Controls whether text-entry metrics such as words-per minute
+  (WPM) and keystroke-saving rate (KSR) are visible in the UI. Default: false.
+
 ### 2. Partner (companion) mode
 
 The partner mode can be activated with the URL parameter:

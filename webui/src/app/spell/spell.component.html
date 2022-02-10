@@ -10,6 +10,11 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+input[type="text"]:disabled{
+  background: #272626;
+  color: white;
+}
+
 .abbreviated-token {
   background: #333;
   border: 2px solid #888;
@@ -18,7 +23,7 @@
   display: inline-block;
   font-size: 24px;
   line-height: 24px;
-  margin: 10px 0 10px 10px;
+  margin: 5px 0 5px 10px;
   min-width: 75px;
   padding: 15px;
   vertical-align: middle;;
@@ -31,7 +36,7 @@
 }
 
 .done-button {
-  background: #333;
+  background: darkgreen;
   border: 2px solid #888;
   border-radius: 5px;
   color: #eee;
@@ -84,8 +89,9 @@
   <input
       *ngIf="spellIndex !== null && i === spellIndex"
       class="spell-input"
+      type="text"
+      disabled="true"
       [value]="tokenSpellingInput" />
-
 </div>
 
 <button

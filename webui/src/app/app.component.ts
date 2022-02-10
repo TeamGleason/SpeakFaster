@@ -41,6 +41,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   private previousNonMinimizedAppState: AppState = this.appState;
 
   private _isPartner = false;
+  private _showMetrics = false;
   // Set this to `false` to skip using access token (e.g., developing with
   // an automatically authorized browser context.)
   private useAccessToken = true;
@@ -69,12 +70,13 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     bindCefSharpListener();
     this.route.queryParams.subscribe(params => {
       if (params['partner']) {
-        const partnerFlag = params['partner'].toLocaleLowerCase();
-        this._isPartner = partnerFlag === 'true' || partnerFlag === '1' ||
-            partnerFlag === 't';
+        this._isPartner = this.stringValueMeansTrue(params['partner']);
       }
       if (params['endpoint'] && this.endpoint === '') {
         this._endpoint = params['endpoint'];
+      }
+      if (params['show_metrics']) {
+        this._showMetrics = this.stringValueMeansTrue(params['show_metrics']);
       }
       const useOauth = params['use_oauth'];
       if (typeof useOauth === 'string' &&
@@ -86,6 +88,11 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
         })
       }
     });
+  }
+
+  private stringValueMeansTrue(str: string): boolean {
+    str = str.trim().toLocaleLowerCase();
+    return str === 'true' || str === '1' || str === 't';
   }
 
   ngAfterViewInit() {
@@ -141,6 +148,10 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   getUserRole(): UserRole {
     return this._isPartner ? UserRole.PARTNER : UserRole.AAC_USER;
+  }
+
+  get showMetrics(): boolean {
+    return this._showMetrics;
   }
 
   onNewAccessToken(accessToken: string) {

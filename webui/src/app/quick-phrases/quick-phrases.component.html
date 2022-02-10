@@ -84,6 +84,7 @@ mat-progress-spinner {
         *ngFor="let phrase of phrases; let i = index"
         #phraseOption
         class="item{{i + 1}}"
+        [favoriteButtonPerformsDeletion]="true"
         [phraseText]="phrase"
         [phraseIndex]="i"
         [showFavoriteButton]="true"

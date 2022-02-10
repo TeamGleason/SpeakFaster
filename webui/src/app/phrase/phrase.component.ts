@@ -3,6 +3,11 @@ import {AfterViewInit, Component, ElementRef, EventEmitter, Input, OnDestroy, Ou
 import {updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
 import {createUuid} from 'src/utils/uuid';
 
+export enum State {
+  READY = 'READY',
+  CONFIRMING_DELETION = 'CONFIRMING_DELETION',
+}
+
 @Component({
   selector: 'app-phrase-component',
   templateUrl: './phrase.component.html',
@@ -14,6 +19,7 @@ export class PhraseComponent implements AfterViewInit, OnDestroy {
   private static readonly BASE_FONT_SIZE_PX = 22;
   private static readonly FONT_SCALING_LENGTH_THRESHOLD = 32;
   @Input() color: string = '#093F3A';
+  @Input() favoriteButtonPerformsDeletion: boolean = false;
   @Input() phraseText!: string;
   @Input() phraseIndex!: number;
   @Input() showFavoriteButton: boolean = false;
@@ -30,6 +36,8 @@ export class PhraseComponent implements AfterViewInit, OnDestroy {
           new EventEmitter();
 
   @ViewChild('phrase') phraseElement!: ElementRef<HTMLDivElement>;
+
+  private state = State.READY;
 
   public updateButtonBoxesWithContainerRect(containerRect: DOMRect) {
     updateButtonBoxesForElements(
@@ -76,7 +84,23 @@ export class PhraseComponent implements AfterViewInit, OnDestroy {
   }
 
   onFavoriteButtonClicked(event: Event) {
-    this.favoriteButtonClicked.emit(
-        {phraseText: this.phraseText, phraseIndex: this.phraseIndex});
+    if (this.favoriteButtonPerformsDeletion && this.state === State.READY) {
+      this.state = State.CONFIRMING_DELETION;
+    } else {
+      this.favoriteButtonClicked.emit(
+          {phraseText: this.phraseText, phraseIndex: this.phraseIndex});
+    }
+  }
+
+  get favoriteButtonImageUrl(): string {
+    if (this.favoriteButtonPerformsDeletion) {
+      if (this.state === State.READY) {
+        return '/assets/images/delete.png';
+      } else {
+        return '/assets/images/delete_forever.png';
+      }
+    } else {
+      return '/assets/images/favorite.png';
+    }
   }
 }

@@ -67,6 +67,18 @@ input[type="text"]:disabled{
   background: #473261;
 }
 
+.button-state-error {
+  background: red;
+}
+
+.button-state-pending {
+  background: orange;
+}
+
+.button-state-success {
+  background: green;
+}
+
 </style>
 
 <div class="container">
@@ -87,8 +99,13 @@ input[type="text"]:disabled{
   <button
       #clickableButton
       class="action-button favorite-button"
+      [ngClass]="{
+          'button-state-pending': state === 'ADD_CONTEXTUAL_PHRASE_PENDING',
+          'button-state-success': state === 'ADD_CONTEXTUAL_PHRASE_SUCCESS',
+          'button-state-error': state === 'ADD_CONTEXTUAL_PHRASE_ERROR'
+        }"
       (click)="onFavoriteButtonClicked($event)">
-      <img class="button-image" src="/assets/images/favorite.png" alt="add phrase to favorite" />
+      <img class="button-image" src="{{favoriteButtonImageUrl}}" alt="add phrase to favorite" />
   </button>
 
 </div>

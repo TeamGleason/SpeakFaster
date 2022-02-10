@@ -5,7 +5,16 @@ import {updateButtonBoxesForElements} from 'src/utils/cefsharp';
 import {createUuid} from 'src/utils/uuid';
 
 import {ExternalEventsComponent} from '../external/external-events.component';
+import {SpeakFasterService} from '../speakfaster-service';
+import {AddContextualPhraseResponse} from '../types/contextual_phrase';
 import {TextEntryEndEvent} from '../types/text-entry';
+
+export enum State {
+  READY = 'READY',
+  ADD_CONTEXTUAL_PHRASE_PENDING = 'ADD_CONTEXTUAL_PHRASE_PENDING',
+  ADD_CONTEXTUAL_PHRASE_SUCCESS = 'ADD_CONTEXTUAL_PHRASE_SUCCESS',
+  ADD_CONTEXTUAL_PHRASE_ERROR = 'ADD_CONTEXTUAL_PHRASE_ERROR',
+}
 
 @Component({
   selector: 'app-input-bar-component',
@@ -14,13 +23,18 @@ import {TextEntryEndEvent} from '../types/text-entry';
 export class InputBarComponent implements OnInit, AfterViewInit {
   private static readonly _NAME = 'InputBarComponent';
   private readonly instanceId = InputBarComponent._NAME + '_' + createUuid();
+  private static readonly STATE_REST_DELAY_MILLIS = 2000;
 
+  @Input() userId!: string;
   @Input() textEntryEndSubject!: Subject<TextEntryEndEvent>;
 
   @ViewChildren('clickableButton')
   buttons!: QueryList<ElementRef<HTMLButtonElement>>;
 
+  state = State.READY;
   inputString: string = '';
+
+  constructor(public speakFasterService: SpeakFasterService) {}
 
   ngOnInit() {
     this.textEntryEndSubject.subscribe((textInjection: TextEntryEndEvent) => {
@@ -66,10 +80,52 @@ export class InputBarComponent implements OnInit, AfterViewInit {
     if (!this.inputString.trim()) {
       return;
     }
-    // TODO(cais): Implement favoriting phrases.
+    this.state = State.ADD_CONTEXTUAL_PHRASE_PENDING;
+    this.speakFasterService
+        .addContextualPhrase({
+          userId: this.userId,
+          contextualPhrase: {
+            phraseId: '',  // For AddContextualPhraseRequest, this is ignored.
+            text: this.inputString.trim(),
+            tags: ['favorite'],  // TODO(cais): Do not hardcode this.
+          }
+        })
+        .subscribe(
+            (data: AddContextualPhraseResponse) => {
+              this.state = State.ADD_CONTEXTUAL_PHRASE_SUCCESS;
+              setTimeout(() => {
+                this.textEntryEndSubject.next({
+                  text: '',
+                  timestampMillis: new Date().getTime(),
+                  isFinal: true,
+                  isAborted: true,
+                });
+                this.resetState();
+              }, InputBarComponent.STATE_REST_DELAY_MILLIS);
+            },
+            error => {
+              setTimeout(
+                  () => this.resetState(false),
+                  InputBarComponent.STATE_REST_DELAY_MILLIS);
+            });
   }
 
-  private resetState() {
-    this.inputString = '';
+  private resetState(cleanText: boolean = true) {
+    this.state = State.READY;
+    if (cleanText) {
+      this.inputString = '';
+    }
+  }
+
+  get favoriteButtonImageUrl(): string {
+    if (this.state === State.ADD_CONTEXTUAL_PHRASE_PENDING) {
+      return '/assets/images/hourglass.png';
+    } else if (this.state === State.ADD_CONTEXTUAL_PHRASE_SUCCESS) {
+      return '/assets/images/success-circle.png';
+    } else if (this.state === State.ADD_CONTEXTUAL_PHRASE_ERROR) {
+      return '/assets/image/error-circle.png';
+    } else {
+      return '/assets/images/favorite.png';
+    }
   }
 }

@@ -9,6 +9,7 @@ import {ExternalEventsComponent} from './external/external-events.component';
 import {configureService, SpeakFasterService} from './speakfaster-service';
 import {InputAbbreviationChangedEvent} from './types/abbreviation';
 import {AppState} from './types/app-state';
+import {AddContextualPhraseRequest, DeleteContextualPhraseRequest} from './types/contextual_phrase';
 import {TextEntryBeginEvent, TextEntryEndEvent} from './types/text-entry';
 
 
@@ -46,6 +47,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   // an automatically authorized browser context.)
   private useAccessToken = true;
 
+  // TODO(cais): Control with URL parameter.
+  private _userId: string = 'testuser';
   private _endpoint: string = '';
   private _accessToken: string = '';
   isSpelling = false;
@@ -55,6 +58,9 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   textEntryBeginSubject: Subject<TextEntryBeginEvent> =
       new Subject<TextEntryBeginEvent>();
   textEntryEndSubject: Subject<TextEntryEndEvent> = new Subject();
+  addContextualPhraseSubject: Subject<AddContextualPhraseRequest> =
+      new Subject();
+
   // Context speech content used for AE and other text predictions.
   inputString: string = '';
   readonly contextStrings: string[] = [];
@@ -148,6 +154,10 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   getUserRole(): UserRole {
     return this._isPartner ? UserRole.PARTNER : UserRole.AAC_USER;
+  }
+
+  get userId(): string {
+    return this._userId;
   }
 
   get showMetrics(): boolean {

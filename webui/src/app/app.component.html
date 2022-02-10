@@ -153,6 +153,7 @@ app-text-to-speech-component {
         class="main-right-pane mode-quick-pharses">
       <app-quick-phrases-component
           *ngIf="hasAccessToken() && isQuickPhrasesAppState()"
+          [userId]="userId"
           [allowedTags]="getQuickPhrasesAllowedTags()"
           [color]="getQuickPhrasesColor()"
           [textEntryBeginSubject]="textEntryBeginSubject"
@@ -174,6 +175,7 @@ app-text-to-speech-component {
 
       <div class="bottom-area">
         <app-input-bar-component
+            [userId]="userId"
             [textEntryEndSubject]="textEntryEndSubject"
         ></app-input-bar-component>
       </div>

@@ -6,7 +6,7 @@ import {Observable} from 'rxjs';
 
 import {AbbreviationSpec} from './types/abbreviation';
 import {ContextSignal} from './types/context';
-import {ContextualPhrase} from './types/contextual_phrase';
+import {AddContextualPhraseRequest, AddContextualPhraseResponse, ContextualPhrase, DeleteContextualPhraseRequest, DeleteContextualPhraseResponse} from './types/contextual_phrase';
 
 export interface PingResponse {
   ping_response: string;
@@ -89,6 +89,12 @@ export interface SpeakFasterServiceStub {
 
   textPrediction(textPredictionRequest: TextPredictionRequest):
       Observable<TextPredictionResponse>;
+
+  addContextualPhrase(request: AddContextualPhraseRequest):
+      Observable<AddContextualPhraseResponse>;
+
+  deleteContextualPhrase(request: DeleteContextualPhraseRequest):
+      Observable<DeleteContextualPhraseResponse>;
 
   fillMask(speechContent: string, phraseWithMask: string, maskInitial: string):
       Observable<FillMaskResponse>;
@@ -192,6 +198,39 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
       params['allowedTags'] = textPredictionRequest.allowedTags.join(',');
     }
     return this.http.get<TextPredictionResponse>(endpoint, {
+      params,
+      withCredentials,
+      headers,
+    });
+  }
+
+  addContextualPhrase(request: AddContextualPhraseRequest):
+      Observable<AddContextualPhraseResponse> {
+    const {endpoint, headers, withCredentials} = this.getServerCallParams();
+    const params: any = {
+      mode: 'add_contextual_phrase',
+      userId: request.userId,
+      text: request.contextualPhrase.text,
+      tags: request.contextualPhrase.tags ?
+          request.contextualPhrase.tags.join(',') :
+          undefined,
+    };
+    return this.http.get<AddContextualPhraseResponse>(endpoint, {
+      params,
+      withCredentials,
+      headers,
+    });
+  }
+
+  deleteContextualPhrase(request: DeleteContextualPhraseRequest):
+      Observable<DeleteContextualPhraseResponse> {
+    const {endpoint, headers, withCredentials} = this.getServerCallParams();
+    const params: any = {
+      mode: 'delete_contextual_phrase',
+      userId: request.userId,
+      phraseId: request.phraseId,
+    };
+    return this.http.get<DeleteContextualPhraseResponse>(endpoint, {
       params,
       withCredentials,
       headers,

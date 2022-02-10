@@ -32,8 +32,7 @@ export class QuickPhrasesComponent implements AfterViewInit, OnChanges,
 
   // Tags used for filtering the quick phrases (contextual phrases) during
   // server call.
-  // TODO(cais): Connect with user_id logic from URL parameters.
-  @Input() userId: string = 'testuser';
+  @Input() userId!: string;
   @Input() allowedTags: string[] = [];
   @Input() textEntryBeginSubject!: Subject<TextEntryBeginEvent>;
   @Input() textEntryEndSubject!: Subject<TextEntryEndEvent>;

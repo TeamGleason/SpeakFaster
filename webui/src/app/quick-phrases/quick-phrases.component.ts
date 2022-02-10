@@ -38,6 +38,7 @@ export class QuickPhrasesComponent implements AfterViewInit, OnChanges,
   @Input() textEntryEndSubject!: Subject<TextEntryEndEvent>;
   @Input() color: string = 'gray';
   readonly phrases: string[] = [];
+  readonly phraseIds: string[] = [];
   errorMessage: string|null = null;
 
   @ViewChildren('clickableButton')
@@ -65,9 +66,12 @@ export class QuickPhrasesComponent implements AfterViewInit, OnChanges,
             (data: TextPredictionResponse) => {
               this.state = State.RETRIEVED_PHRASES;
               this.phrases.splice(0);
+              this.phraseIds.splice(0);
               if (data.contextualPhrases) {
                 this.phrases.push(...data.contextualPhrases.map(
                     phrase => phrase.text.trim()));
+                this.phraseIds.push(
+                    ...data.contextualPhrases.map(phrase => phrase.phraseId));
               }
               this.errorMessage = null;
               setTimeout(
@@ -116,6 +120,20 @@ export class QuickPhrasesComponent implements AfterViewInit, OnChanges,
     this.selectPhrase(
         event.phraseIndex, /* toInjectKeys= */ true,
         /* toTriggerInAppTextToSpeech= */ false);
+  }
+
+  onFavoriteButtonClicked(event: {phraseText: string, phraseIndex: number}) {
+    const phraseId = this.phraseIds[event.phraseIndex];
+    this.speakFasterService.deleteContextualPhrase({
+      userId: this.userId,
+      phraseId,
+    }).subscribe(data => {
+      this.retrievePhrases();
+      // TODO(cais): Add unit test.
+    }, error => {
+      // TODO(cais): Display error in UI.
+      console.log('Deleting quick phrase failed:', error);  // DEBUG
+    });
   }
 
   onSpeakOptionButtonClicked(event: {phraseText: string, phraseIndex: number}) {

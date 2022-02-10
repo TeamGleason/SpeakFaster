@@ -26,6 +26,7 @@ export class InputBarComponent implements OnInit, AfterViewInit {
   private static readonly STATE_REST_DELAY_MILLIS = 2000;
 
   @Input() userId!: string;
+
   @Input() textEntryEndSubject!: Subject<TextEntryEndEvent>;
 
   @ViewChildren('clickableButton')
@@ -127,5 +128,6 @@ export class InputBarComponent implements OnInit, AfterViewInit {
     } else {
       return '/assets/images/favorite.png';
     }
+    // TODO(cais): Implement favoriting phrases.
   }
 }

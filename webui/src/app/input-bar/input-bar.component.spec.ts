@@ -1,23 +1,33 @@
 /** Unit tests for InputBarComponent. */
-import {ElementRef} from '@angular/core';
+import {ElementRef, Injectable} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {By} from '@angular/platform-browser';
 import {Subject} from 'rxjs';
 
+import {SpeakFasterService} from '../speakfaster-service';
 import {TextEntryEndEvent} from '../types/text-entry';
 
 import {InputBarComponent} from './input-bar.component';
 import {InputBarModule} from './input-bar.module';
 
+@Injectable()
+class SpeakFasterServiceForTest {
+}
+
 describe('InputBarComponent', () => {
   let textEntryEndSubject: Subject<TextEntryEndEvent>;
   let fixture: ComponentFixture<InputBarComponent>;
+  let speakFasterServiceForTest: SpeakFasterServiceForTest;
 
   beforeEach(async () => {
+    speakFasterServiceForTest = new SpeakFasterServiceForTest();
     await TestBed
         .configureTestingModule({
           imports: [InputBarModule],
           declarations: [InputBarComponent],
+          providers: [
+            {provide: SpeakFasterService, useValue: speakFasterServiceForTest}
+          ],
         })
         .compileComponents();
     textEntryEndSubject = new Subject();

@@ -24,6 +24,10 @@ export class PhraseComponent implements AfterViewInit, OnDestroy {
   @Input() phraseText!: string;
   @Input() phraseIndex!: number;
   @Input() scaleFontSize = false;
+  @Input() isTextClickable: boolean = false;
+  @Output()
+  textClicked: EventEmitter<{phraseText: string, phraseIndex: number}> =
+      new EventEmitter();
   @Output()
   speakButtonClicked: EventEmitter<{phraseText: string, phraseIndex: number}> =
       new EventEmitter();
@@ -36,16 +40,19 @@ export class PhraseComponent implements AfterViewInit, OnDestroy {
           new EventEmitter();
 
   @ViewChild('phrase') phraseElement!: ElementRef<HTMLDivElement>;
+  @ViewChildren('clickableButton')
+  clickableButtons!: QueryList<ElementRef<HTMLElement>>;
+  @ViewChildren('clickableButton,phrase')
+  clickableButtonsAndText!: QueryList<ElementRef<HTMLElement>>;
 
   private state = State.READY;
 
   public updateButtonBoxesWithContainerRect(containerRect: DOMRect) {
+    const clicakbleAreas = this.isTextClickable ? this.clickableButtonsAndText :
+                                                  this.clickableButtons;
     updateButtonBoxesForElements(
-        this.instanceId, this.clickableButtons, containerRect);
+        this.instanceId, clicakbleAreas, containerRect);
   }
-
-  @ViewChildren('clickableButton')
-  clickableButtons!: QueryList<ElementRef<HTMLElement>>;
 
   ngAfterViewInit() {
     let fontSizePx = PhraseComponent.BASE_FONT_SIZE_PX;
@@ -62,15 +69,27 @@ export class PhraseComponent implements AfterViewInit, OnDestroy {
       this.phraseElement.nativeElement.style.lineHeight =
           `${lineHeightPx.toFixed(1)}px`;
     }
-    updateButtonBoxesForElements(this.instanceId, this.clickableButtons);
-    this.clickableButtons.changes.subscribe(
-        (queryList: QueryList<ElementRef>) => {
-          updateButtonBoxesForElements(this.instanceId, queryList);
-        });
+    // TODO(cais): Add unit test.
+    const clicakbleAreas = this.isTextClickable ? this.clickableButtonsAndText :
+                                                  this.clickableButtons;
+    updateButtonBoxesForElements(this.instanceId, clicakbleAreas);
+    clicakbleAreas.changes.subscribe((queryList: QueryList<ElementRef>) => {
+      updateButtonBoxesForElements(this.instanceId, queryList);
+    });
   }
 
   ngOnDestroy() {
     updateButtonBoxesToEmpty(this.instanceId);
+  }
+
+  onTextClicked(event: Event) {
+    if (!this.isTextClickable) {
+      return;
+    }
+    this.textClicked.emit({
+      phraseText: this.phraseText,
+      phraseIndex: this.phraseIndex,
+    });  // TODO(cais): Add unit test.
   }
 
   onSpeakButtonClicked(event: Event) {

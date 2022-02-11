@@ -1,13 +1,12 @@
-import {AfterViewInit, Component, ElementRef, EventEmitter, Input, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
-import {Subject} from 'rxjs';
+import {AfterViewInit, Component, ElementRef, EventEmitter, Input, OnChanges, OnInit, Output, QueryList, SimpleChanges, ViewChildren} from '@angular/core';
+import {Subject, Subscription} from 'rxjs';
 import {updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
 import {createUuid} from 'src/utils/uuid';
 
 import {ExternalEventsComponent, KeypressListener} from '../external/external-events.component';
-import {FillMaskResponse, SpeakFasterService} from '../speakfaster-service';
+import {FillMaskRequest, FillMaskResponse, SpeakFasterService} from '../speakfaster-service';
 
 enum State {
-  CHOOSING_TOKEN = 'CHOOSING_TOKEN',
   REQUEST_ONGOING = 'REQUEST_ONGOING',
   CHOOSING_TOKEN_REPLACEMNT = 'CHOOSING_TOKEN_REPLACEMNT',
   ERROR = 'ERROR',
@@ -28,13 +27,14 @@ export type RefinementType = 'REPLACE_TOKEN'|'CHOOSE_PREFIX';
   selector: 'app-abbreviation-refinement-component',
   templateUrl: './abbreviation-refinement.component.html',
 })
-export class AbbreviationRefinementComponent implements OnInit, AfterViewInit {
+export class AbbreviationRefinementComponent implements OnInit, AfterViewInit,
+                                                        OnChanges {
   private static readonly _NAME = 'AbbreviationRefinementComponent';
   private readonly instanceId =
       AbbreviationRefinementComponent._NAME + '_' + createUuid();
 
   @Input() refinementType: RefinementType = 'REPLACE_TOKEN';
-  @Input() contextStrings!: string[];
+  @Input() fillMaskRequest!: FillMaskRequest;
   @Input() originalExpansionText!: string;
   @Output()
   refinementResult: EventEmitter<RefinementResult> = new EventEmitter();
@@ -44,66 +44,71 @@ export class AbbreviationRefinementComponent implements OnInit, AfterViewInit {
 
   private readonly keypressListener: KeypressListener =
       this.listenToKeypress.bind(this);
-  private readonly _tokens: string[] = [];
   private replacementIndex: number|null = null;
   private readonly _replacements: string[] = [];
 
   @ViewChildren('clickableButton')
   buttons!: QueryList<ElementRef<HTMLButtonElement>>;
 
-  state: State = State.CHOOSING_TOKEN;
+  state: State = State.REQUEST_ONGOING;
+  private clickableButtonsSubscription?: Subscription;
 
   constructor(public speakFasterService: SpeakFasterService) {}
 
-  ngOnInit() {
-    this._tokens.push(...this.originalExpansionText.split(' '));
-    ExternalEventsComponent.registerKeypressListener(this.keypressListener)
-  }
+  ngOnInit() {}
 
   ngAfterViewInit() {
     updateButtonBoxesForElements(this.instanceId, this.clickableButtons);
-    this.clickableButtons.changes.subscribe(
+    this.clickableButtonsSubscription = this.clickableButtons.changes.subscribe(
         (queryList: QueryList<ElementRef>) => {
           updateButtonBoxesForElements(this.instanceId, queryList);
         });
   }
 
+  ngOnChanges(changes: SimpleChanges) {
+    // TODO(cais): Add unit test.
+    if (!changes.fillMaskRequest) {
+      return;
+    }
+    this.callFillMask();
+  }
+
   ngOnDestroy() {
+    if (this.clickableButtonsSubscription) {
+      this.clickableButtonsSubscription.unsubscribe();
+    }
     ExternalEventsComponent.unregisterKeypressListener(this.keypressListener);
     updateButtonBoxesToEmpty(this.instanceId);
   }
 
-  onTokenButtonClicked(event: Event, index: number) {
-    if (this.state === State.REQUEST_ONGOING) {
-      return;
-    }
-    if (this.refinementType === 'CHOOSE_PREFIX') {
-      this.refinementResult.emit({
-        phrase: this._tokens.slice(0, index + 1).join(' '),
-        isAbort: false,
-      });
-      return;
-    }
-    this.replacementIndex = index;
-    this.callFillMask();
-  }
+  // onTokenButtonClicked(event: Event, index: number) {
+  //   console.log('onTokenButtonClicked():', index);  // DEBUG
+  //   if (this.refinementType === 'CHOOSE_PREFIX') {
+  //     this.refinementResult.emit({
+  //       phrase: this._tokens.slice(0, index + 1).join(' '),
+  //       isAbort: false,
+  //     });
+  //     return;
+  //   }
+  //   this.replacementIndex = index;
+  //   this.callFillMask();
+  // }
 
   private callFillMask() {
-    const tokens: string[] = this._tokens.slice();
-    const speechContent = this.contextStrings.join('|');
-    const index = this.replacementIndex!;
-    tokens[index] = '_';
-    const phraseWithMask = tokens.join(' ');
-    const maskInitial = this._tokens[this.replacementIndex!][0];
     this.state = State.REQUEST_ONGOING;
-    this.speakFasterService.fillMask(speechContent, phraseWithMask, maskInitial)
+    this.speakFasterService.fillMask(this.fillMaskRequest)
         .subscribe(
             (data: FillMaskResponse) => {
+              console.log('Fill mask response:', data);  // DEBUG
               this._replacements.splice(0);
               if (data.results) {
-                this._replacements.push(...data.results.filter(
-                    result => result.trim().toLowerCase() !==
-                        this._tokens[index].trim().toLocaleLowerCase()));
+                this._replacements.push(
+                    ...data.results.map(word => word.trim()));
+                // TODO(cais): Discard punctuation and deduplicate.
+                // TODO(cais): Discard items that are the same as the original
+                // one. .filter(
+                //   result => result.trim().toLowerCase() !==
+                //       this._tokens[index].trim().toLocaleLowerCase()));
               }
               this.state = State.CHOOSING_TOKEN_REPLACEMNT;
             },
@@ -115,13 +120,9 @@ export class AbbreviationRefinementComponent implements OnInit, AfterViewInit {
   }
 
   onReplacementButtonClicked(event: Event, index: number) {
-    if (this.replacementIndex === null) {
-      return;
-    }
-    const tokens: string[] = this._tokens.slice();
-    tokens[this.replacementIndex] = this._replacements[index];
     this.refinementResult.emit({
-      phrase: tokens.join(' '),
+      phrase: this.fillMaskRequest.phraseWithMask.replace(
+          '_', this._replacements[index]),
       isAbort: false,
     });
   }
@@ -164,10 +165,6 @@ export class AbbreviationRefinementComponent implements OnInit, AfterViewInit {
     //   }
     //   return false;
     // }  // TODO(cais): Clean up.
-  }
-
-  get currentTokens(): string[] {
-    return this._tokens.slice();
   }
 
   get replacements(): string[] {

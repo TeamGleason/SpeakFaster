@@ -71,33 +71,6 @@ button {
 
 </style>
 
-<div class="instruction">
-  <span *ngIf="refinementType === 'REPLACE_TOKEN' else choosePrefix">
-    ✏️ Choose word to replace:
-  </span>
-  <ng-template #choosePrefix>
-    <span>✂️ Choose last word to keep:</span>
-  </ng-template>
-</div>
-
-<div class="tokens-container">
-  <button
-      #clickableButton
-      *ngFor="let token of currentTokens; let i = index"
-      class="token"
-      [ngClass]="{'token-chosen': isTokenChosenForReplacement(i)}"
-      (click)="onTokenButtonClicked($event, i)">
-    {{token}}
-  </button>
-
-  <button
-      #clickableButton
-      class="abort-button"
-      (click)="onAbortButtonClicked($event)">
-      🗙
-  </button>
-</div>
-
 <div *ngIf="state == 'REQUEST_ONGOING'" class="request-ongoing">
   <mat-progress-spinner
       [mode]="'indeterminate'"

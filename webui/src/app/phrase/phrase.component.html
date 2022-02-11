@@ -55,7 +55,12 @@
 <div class="phrase-container"
   style="background-color: {{color}}">
 
-  <div #phrase class="phrase">{{phraseText}}</div>
+  <div
+      #phrase
+      class="phrase"
+      (click)="onTextClicked($event)">
+    {{phraseText}}
+  </div>
   <button
       #clickableButton
       class="action-button speak-button"

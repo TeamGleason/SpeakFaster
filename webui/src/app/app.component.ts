@@ -6,7 +6,8 @@ import {bindCefSharpListener, registerExternalKeypressHook, resizeWindow, update
 import {createUuid} from '../utils/uuid';
 
 import {ExternalEventsComponent} from './external/external-events.component';
-import {configureService, SpeakFasterService} from './speakfaster-service';
+import {InputBarChipsEvent} from './input-bar/input-bar.component';
+import {configureService, FillMaskRequest, SpeakFasterService} from './speakfaster-service';
 import {InputAbbreviationChangedEvent} from './types/abbreviation';
 import {AppState} from './types/app-state';
 import {AddContextualPhraseRequest, DeleteContextualPhraseRequest} from './types/contextual_phrase';
@@ -55,11 +56,13 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   abbreviationExpansionTriggers: Subject<InputAbbreviationChangedEvent> =
       new Subject();
+  fillMaskTriggers: Subject<FillMaskRequest> = new Subject();
   textEntryBeginSubject: Subject<TextEntryBeginEvent> =
       new Subject<TextEntryBeginEvent>();
   textEntryEndSubject: Subject<TextEntryEndEvent> = new Subject();
   addContextualPhraseSubject: Subject<AddContextualPhraseRequest> =
       new Subject();
+  inputBarChipsSubject: Subject<InputBarChipsEvent> = new Subject();
 
   // Context speech content used for AE and other text predictions.
   inputString: string = '';

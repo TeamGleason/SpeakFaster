@@ -9,14 +9,6 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-.container {
-  display: flex;
-  flex-direction: row;
-  padding: 0 0 5px;
-  vertical-align: middle;
-  width: 1050px;
-}
-
 .action-button {
   background: #27AE60;
   border: none;
@@ -33,13 +25,25 @@
 }
 
 .action-button.abort-button {
-  background-color: #525453;
+  background: #525453;
   width: 60px;
+}
+
+.action-button.chip-button {
+  background: #0687BE;
+  font-weight: 600;
+  min-width: 65px;
+  width: fit-content;
+  padding: 0 4px;
 }
 
 .action-button.expand-button {
   background-color: #525453;
   width: 100px;
+}
+
+.base-text-area {
+  display: inline-block;
 }
 
 .button-image {
@@ -62,6 +66,22 @@
 
 .button-state-success {
   background: green;
+}
+
+.chips-container {
+  display: inline-block;
+}
+
+.action-button.chip-button.chip-focused {
+  background: darkgreen;
+}
+
+.container {
+  display: flex;
+  flex-direction: row;
+  padding: 0 0 5px;
+  vertical-align: middle;
+  width: 1050px;
 }
 
 .favorite-button {
@@ -93,7 +113,8 @@
 }
 
 .simulated-cursor {
-  font-weight: bold;
+  font-weight: 900;
+  font-size: 36px;
   margin-left: 0.1em;
 }
 
@@ -103,12 +124,28 @@
 
   <div class="input-box">
     <div class="main-area">
-      <span class="input-text">{{inputString}}</span>
-      <span class="simulated-cursor">|</span>
+      <div
+          class="base-text-area"
+          *ngIf="state === 'ENTERING_BASE_TEXT'">
+        <span class="input-text">{{inputString}}</span>
+        <span class="simulated-cursor">|</span>
+      </div>
+      <div
+          class="chips-container"
+          *ngIf="state === 'SHOWING_WORD_CHIPS'">
+        <button
+            #clickableButton
+            class="action-button chip-button"
+            *ngFor="let chip of chips; let i = index"
+            [ngClass]="{'chip-focused': i === focusChipIndex}"
+            (click)="onChipClicked(i)">
+          {{chip.text}}
+        </button>
+      </div>
 
       <button
           #clickableButton
-          *ngIf="inputStringNonEmpty"
+          *ngIf="state === 'ENTERING_BASE_TEXT' && inputStringNonEmpty"
           class="action-button expand-button"
           (click)="onExpandButtonClicked($event)">
         Expand
@@ -130,7 +167,7 @@
           #clickableButton
           class="action-button speak-button"
           (click)="onSpeakAsIsButtonClicked($event)">
-          <img class="button-image" src="/assets/images/speak.png" alt="speak phrase as is" />
+        <img class="button-image" src="/assets/images/speak.png" alt="speak phrase as is" />
       </button>
 
       <button
@@ -142,7 +179,7 @@
               'button-state-error': state === 'ADD_CONTEXTUAL_PHRASE_ERROR'
             }"
           (click)="onFavoriteButtonClicked($event)">
-          <img class="button-image" src="{{favoriteButtonImageUrl}}" alt="add phrase to favorite" />
+        <img class="button-image" src="{{favoriteButtonImageUrl}}" alt="add phrase to favorite" />
       </button>
     </div>
 

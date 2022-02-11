@@ -99,11 +99,6 @@ mat-progress-spinner {
   width: 66px;
 }
 
-.candidate-for-edit {
-  border: 1px solid lightgreen;
-  padding: 0;
-}
-
 .edit-token {
   background: #333;
   border: 2px solid #888;
@@ -224,25 +219,8 @@ mat-progress-spinner {
   Error: {{responseError}}
 </div>
 <div
-    *ngIf="state === 'CHOOSING_EXPANSION' || state === 'CHOOSING_EXPANSION_TO_REFINE' || state == 'SPELLING'"
+    *ngIf="state === 'CHOOSING_EXPANSION' || state == 'SPELLING'"
     class="expansions">
-  <div class="refinement-buttons-container">
-    <button
-        #clickableButton
-        *ngIf="abbreviationOptions.length > 0"
-        class="option-button refinement-button"
-        (click)="onRefineExpansionReplaceTokenButtonClicked($event)">
-      ✏️
-    </button>
-
-    <button
-        #clickableButton
-        *ngIf="abbreviationOptions.length > 0"
-        class="option-button refinement-button"
-        (click)="onRefineExpansionChoosePrefixButtonClicked($event)">
-        ✂️
-    </button>
-  </div>
 
   <div *ngIf="receivedEmptyOptions" class="empty-options-container">
     <span class="info response-empty">Found no expansions</span>
@@ -259,28 +237,24 @@ mat-progress-spinner {
           *ngFor="let abbreviationOption of abbreviationOptions; let i = index"
           #abbreviationOption
           class="item item{{i + 1}}"
-          [ngClass]="{'candidate-for-edit': state === 'CHOOSING_EXPANSION_TO_REFINE'}"
           [phraseText]="abbreviationOption"
           [phraseIndex]="i"
           [scaleFontSize]="true"
+          [showFavoriteButton]="true"
+          [color]="phraseBackgroundColor"
+          [isTextClickable]="true"
+          (textClicked)="onTextClicked($event)"
           (speakButtonClicked)="onSpeakOptionButtonClicked($event)"
           (injectButtonClicked)="onExpansionOptionButtonClicked($event)">
       </app-phrase-component>
-      <!-- <button
-          #clickableButton
-          class="action-button action-abort-button"
-          (click)="onAbortButtonClicked($event)">
-          🗙
-      </button> -->  <!-- TODO(cais): Clean up. -->
     </div>
   </div>
 </div>
 
 <app-abbreviation-refinement-component
-    *ngIf="state === 'REFINING_EXPANSION' && editedExpansionText !== null"
+    *ngIf="state === 'REFINING_EXPANSION'"
     [refinementType]="refinementType"
-    [contextStrings]="usedContextStrings"
-    [originalExpansionText]="editedExpansionText"
+    [fillMaskRequest]="fillMaskRequest!"
     (refinementResult)="onRefinementResult($event)">
 </app-abbreviation-refinement-component>
 

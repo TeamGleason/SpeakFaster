@@ -56,6 +56,14 @@ export interface TextPredictionResponse {
   contextualPhrases?: ContextualPhrase[];
 }
 
+export interface FillMaskRequest {
+  speechContent: string;
+
+  phraseWithMask: string;
+
+  maskInitial: string
+}
+
 export interface FillMaskResponse {
   results: string[];
 }
@@ -96,8 +104,7 @@ export interface SpeakFasterServiceStub {
   deleteContextualPhrase(request: DeleteContextualPhraseRequest):
       Observable<DeleteContextualPhraseResponse>;
 
-  fillMask(speechContent: string, phraseWithMask: string, maskInitial: string):
-      Observable<FillMaskResponse>;
+  fillMask(request: FillMaskRequest): Observable<FillMaskResponse>;
 
   // TODO(cais): Add other parameters.
   retrieveContext(userId: string): Observable<RetrieveContextResponse>;
@@ -237,15 +244,12 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
     });
   }
 
-  fillMask(speechContent: string, phraseWithMask: string, maskInitial: string):
-      Observable<FillMaskResponse> {
+  fillMask(request: FillMaskRequest): Observable<FillMaskResponse> {
     const {endpoint, headers, withCredentials} = this.getServerCallParams();
     return this.http.get<FillMaskResponse>(endpoint, {
       params: {
         mode: 'fill_mask',
-        speechContent,
-        phraseWithMask,
-        maskInitial,
+        ...request,
       },
       withCredentials,
       headers,

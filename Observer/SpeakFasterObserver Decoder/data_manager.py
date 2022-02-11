@@ -162,7 +162,8 @@ class DataManager(object):
                s3_bucket_name,
                gcs_bucket_name,
                local_data_root):
-    self._s3_client = boto3.Session(profile_name=aws_profile_name).client("s3")
+    self._s3_session = boto3.Session(profile_name=aws_profile_name)
+    self._s3_client = self._s3_session.client("s3")
     self._aws_profile_name = aws_profile_name
     self._s3_bucket_name = s3_bucket_name
     self._gcs_bucket_name = gcs_bucket_name
@@ -173,11 +174,11 @@ class DataManager(object):
     self._manual_timezone_name = None
     self._check_aws_cli()
     self._curator_username = os.getlogin()
-    self._session_prefix_to_claiming_username = {}
     if self._curator_username:
       print("Determined username: %s" % self._curator_username)
     else:
       raise ValueError("Unable to determine username of curator")
+    self._session_prefix_to_claiming_username = {}
 
   def _check_aws_cli(self):
     try:
@@ -435,7 +436,7 @@ class DataManager(object):
                                 session_prefix,
                                 remote_status,
                                 local_status,
-                                claiming_username):
+                                claiming_username=None):
     keypresses_per_second = self.get_session_keypresses_per_second(
         session_prefix)
     session_prefix = get_base_session_prefix(session_prefix)
@@ -488,33 +489,24 @@ class DataManager(object):
       use_cached: Whether to use cached results.
 
     Returns:
-      A tuple of
-        1. The status string.
-        2. Name of the data curator who has claimed the session (if any). None
-           represents unclaimed status.
+      The status string.
     """
-    if (not use_cached or
-        session_prefix not in self._session_prefix_to_claiming_username):
-      claiming_username = self.get_remote_session_claim_username(session_prefix)
-      self._session_prefix_to_claiming_username[session_prefix] = claiming_username
-    else:
-      claiming_username = self._session_prefix_to_claiming_username[session_prefix]
     if use_cached:
       if session_prefix in self._sessions_with_curated_processed_tsv:
-        return "POSTPROCESSED", claiming_username
+        return "POSTPROCESSED"
       elif session_prefix in self._sessions_with_merged_tsv:
-        return "PREPROCESSED", claiming_username
+        return "PREPROCESSED"
       else:
-        return "NOT_PREPROCESSED", claiming_username
+        return "NOT_PREPROCESSED"
     else:
       if self._remote_object_exists(
          session_prefix, file_naming.CURATED_PROCESSED_TSV_FILENAME):
-        return "POSTPROCESSED", claiming_username
+        return "POSTPROCESSED"
       elif self._remote_object_exists(
         session_prefix, file_naming.MERGED_TSV_FILENAME):
-        return "PREPROCESSED", claiming_username
+        return "PREPROCESSED"
       else:
-        return "NOT_PREPROCESSED", claiming_username
+        return "NOT_PREPROCESSED"
 
   def get_remote_session_claim_username(self, session_prefix):
     f = io.BytesIO()
@@ -593,7 +585,7 @@ class DataManager(object):
           modal=True)
       return "Not uploading preprocessing results", False
     to_upload = True
-    if self.get_remote_session_folder_status(session_prefix)[0] != "NOT_PREPROCESSED":
+    if self.get_remote_session_folder_status(session_prefix) != "NOT_PREPROCESSED":
       answer = sg.popup_yes_no(
           "Session %s already contains preprocessing results remotely. "
           "Do you want to upload preprocessing results again?" % session_prefix)
@@ -658,7 +650,7 @@ class DataManager(object):
       return "Not uploading postprocessing results", False
     to_upload = True
     if (not to_gcs and
-        self.get_remote_session_folder_status(session_prefix)[0] == "POSTPROCESSED"):
+        self.get_remote_session_folder_status(session_prefix) == "POSTPROCESSED"):
       answer = sg.popup_yes_no(
           "Session %s already contains postprocessing results remotely. "
           "Do you want to upload postprocessing results again?" % session_prefix)
@@ -802,12 +794,12 @@ def _list_sessions(window,
 
   data_manager.update_remote_session_objects_status(container_prefix)
   for session_prefix in session_prefixes:
-    remote_status, claiming_username = data_manager.get_remote_session_folder_status(
+    remote_status = data_manager.get_remote_session_folder_status(
         container_prefix + session_prefix, use_cached=True)
     local_status = data_manager.get_local_session_folder_status(
         container_prefix + session_prefix)
     session_prefixes_with_status.append(data_manager.get_session_status_string(
-        session_prefix, remote_status, local_status, claiming_username))
+        session_prefix, remote_status, local_status))
     if remote_status == "POSTPROCESSED":
       if data_manager.get_session_gcs_status(session_prefix) == "UPLOADED":
         session_color = "gray"
@@ -867,7 +859,7 @@ def _download_preprocess_upload_sessions_from(window,
   print("List of sessions to run:")
   for session_prefix in session_prefixes:
     if data_manager.get_remote_session_folder_status(
-        container_prefix + session_prefix)[0] != "NOT_PREPROCESSED":
+        container_prefix + session_prefix) != "NOT_PREPROCESSED":
       continue
     (_, _, _, _, num_keypresses, num_audio_files,
      _, _) = data_manager.get_session_details(container_prefix + session_prefix)
@@ -941,9 +933,10 @@ def _show_session_info(window,
 
   selection_index = session_list.Widget.curselection()
   new_list = session_list.Values[:]
-  (remote_status,
-   claiming_username) = data_manager.get_remote_session_folder_status(
+  remote_status = data_manager.get_remote_session_folder_status(
       session_prefix, use_cached=user_cached)
+  claiming_username = data_manager.get_remote_session_claim_username(
+      session_prefix)
   local_status = data_manager.get_local_session_folder_status(session_prefix)
   new_list[selection_index[0]] = data_manager.get_session_status_string(
       session_prefix, remote_status, local_status, claiming_username)

@@ -87,7 +87,6 @@ export class AbbreviationComponent implements OnDestroy, OnInit, AfterViewInit {
                 return;
               }
               this.abbreviation = event.abbreviationSpec;
-              console.log('AE trigger:', this.abbreviation);  // DEBUG
               this.expandAbbreviation();
             });
     this.fillMaskRequestTriggersSubscription =

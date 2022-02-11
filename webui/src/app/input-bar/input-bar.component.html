@@ -29,14 +29,6 @@
   width: 60px;
 }
 
-.action-button.chip-button {
-  background: #0687BE;
-  font-weight: 600;
-  min-width: 65px;
-  width: fit-content;
-  padding: 0 4px;
-}
-
 .action-button.expand-button {
   background-color: #525453;
   width: 100px;
@@ -70,10 +62,6 @@
 
 .chips-container {
   display: inline-block;
-}
-
-.action-button.chip-button.chip-focused {
-  background: darkgreen;
 }
 
 .container {
@@ -126,26 +114,26 @@
     <div class="main-area">
       <div
           class="base-text-area"
-          *ngIf="state === 'ENTERING_BASE_TEXT'">
+          *ngIf="state !== 'SHOWING_WORD_CHIPS' && state !== 'FOCUSED_ON_CHIP'">
         <span class="input-text">{{inputString}}</span>
         <span class="simulated-cursor">|</span>
       </div>
       <div
           class="chips-container"
-          *ngIf="state === 'SHOWING_WORD_CHIPS'">
-        <button
-            #clickableButton
-            class="action-button chip-button"
+          *ngIf="state === 'SHOWING_WORD_CHIPS' || state === 'FOCUSED_ON_CHIP'">
+        <app-input-bar-chip-component
             *ngFor="let chip of chips; let i = index"
-            [ngClass]="{'chip-focused': i === focusChipIndex}"
+            [text]="getChipText(i)"
+            [typed]="i === focusChipIndex && isChipTyped(i)"
+            [focused]="i === focusChipIndex"
             (click)="onChipClicked(i)">
-          {{chip.text}}
-        </button>
+        </app-input-bar-chip-component>
       </div>
 
       <button
           #clickableButton
-          *ngIf="state === 'ENTERING_BASE_TEXT' && inputStringNonEmpty"
+          *ngIf="(state === 'ENTERING_BASE_TEXT' ||
+                  state === 'CHOOSING_PHRASES') && inputStringNonEmpty"
           class="action-button expand-button"
           (click)="onExpandButtonClicked($event)">
         Expand

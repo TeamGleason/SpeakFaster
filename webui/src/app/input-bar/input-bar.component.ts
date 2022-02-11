@@ -12,7 +12,9 @@ import {TextEntryEndEvent} from '../types/text-entry';
 
 export enum State {
   ENTERING_BASE_TEXT = 'ENTERING_BASE_TEXT',
+  CHOOSING_PHRASES = 'CHOOSING_PHRASES',
   SHOWING_WORD_CHIPS = 'SHOWING_WORD_CHIPS',
+  FOCUSED_ON_CHIP = 'FOCUSED_ON_CHIP',
   ADD_CONTEXTUAL_PHRASE_PENDING = 'ADD_CONTEXTUAL_PHRASE_PENDING',
   ADD_CONTEXTUAL_PHRASE_SUCCESS = 'ADD_CONTEXTUAL_PHRASE_SUCCESS',
   ADD_CONTEXTUAL_PHRASE_ERROR = 'ADD_CONTEXTUAL_PHRASE_ERROR',
@@ -48,15 +50,19 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private readonly _chips: InputBarChipSpec[] = [];
   private _focusChipIndex: number|null = null;
+  private _chipTypedText: Array<string|null>|null = null;
 
   @ViewChildren('clickableButton')
   buttons!: QueryList<ElementRef<HTMLButtonElement>>;
 
   state = State.ENTERING_BASE_TEXT;
   inputString: string = '';
+  private baseReconstructedText: string = '';
 
   private textEntryEndSubjectSubscription?: Subscription;
   private inputBarChipsSubscription?: Subscription;
+  private abbreviationExpansionTriggersSubscription?: Subscription;
+  private keypressListener = this.listenToKeypress.bind(this);
 
   constructor(public speakFasterService: SpeakFasterService) {}
 
@@ -69,16 +75,28 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
             this.updateInputString(textInjection.text);
           }
         });
-    ExternalEventsComponent.registerKeypressListener(
-        this.listenToKeypress.bind(this));
-    this.inputBarChipsSubject.subscribe((event: InputBarChipsEvent) => {
-      this._focusChipIndex = null;
-      this._chips.splice(0);
-      this._chips.push(...event.chips);
-      if (this._chips.length > 0) {
-        this.state = State.SHOWING_WORD_CHIPS;
-      }
-    });
+    ExternalEventsComponent.registerKeypressListener(this.keypressListener);
+    this.inputBarChipsSubscription =
+        this.inputBarChipsSubject.subscribe((event: InputBarChipsEvent) => {
+          console.log('chips:', JSON.stringify(event));  // DEBUG
+          this._focusChipIndex = null;
+          this._chips.splice(0);
+          this._chips.push(...event.chips);
+          if (this._chipTypedText !== null) {
+            for (let i = 0; i < this._chipTypedText.length; ++i) {
+              if (this._chipTypedText[i] !== null) {
+                this._chips[i].text = this._chipTypedText[i]!;
+              }
+            }
+          }
+          if (this._chips.length > 0) {
+            this.state = State.SHOWING_WORD_CHIPS;
+          }
+        });
+    this.abbreviationExpansionTriggersSubscription =
+        this.abbreviationExpansionTriggers.subscribe(event => {
+          this.state = State.CHOOSING_PHRASES;
+        });
   }
 
   ngAfterViewInit() {
@@ -96,12 +114,26 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this.inputBarChipsSubscription) {
       this.inputBarChipsSubscription.unsubscribe();
     }
+    if (this.abbreviationExpansionTriggersSubscription) {
+      this.abbreviationExpansionTriggersSubscription.unsubscribe();
+    }
     updateButtonBoxesToEmpty(this.instanceId);
+    ExternalEventsComponent.unregisterKeypressListener(this.keypressListener);
   }
 
   public listenToKeypress(keySequence: string[], reconstructedText: string):
       void {
-    this.updateInputString(reconstructedText);
+    if (this.state === State.ENTERING_BASE_TEXT) {
+      this.updateInputString(reconstructedText);
+    } else if (this.state === State.FOCUSED_ON_CHIP) {
+      if (this._chipTypedText === null) {
+        this._chipTypedText = Array(this._chips.length).fill(null);
+      }
+      const t = reconstructedText.slice(this.baseReconstructedText.length);
+      console.log('t=', t);  // DEBUEG
+      this._chipTypedText[this._focusChipIndex!] =
+          reconstructedText.slice(this.baseReconstructedText.length);
+    }
   }
 
   onExpandButtonClicked(event: Event) {
@@ -127,6 +159,15 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   onChipClicked(index: number) {
     this._focusChipIndex = index;
     const tokens: string[] = this._chips.map(chip => chip.text);
+    if (this._chipTypedText !== null) {
+      for (let i = 0; i < this._chipTypedText.length; ++i) {
+        if (this._chipTypedText[i] !== null) {
+          tokens[i] = this._chipTypedText[i]!.trim();
+        }
+      }
+    }
+    // TODO(cais): Add unit tests.
+
     tokens[index] = '_';
     const phraseWithMask = tokens.join(' ');
     const maskInitial = this._chips[index].text[0];
@@ -135,55 +176,75 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
       phraseWithMask,
       maskInitial,
     });
+    this.state = State.FOCUSED_ON_CHIP;
+    this.baseReconstructedText = this.inputString;
   }
 
   onClearButtonClicked(event: Event) {
-    if (this.state === State.ENTERING_BASE_TEXT) {
+    if (this.state === State.ENTERING_BASE_TEXT ||
+        this.state === State.CHOOSING_PHRASES) {
       this.textEntryEndSubject.next({
         text: '',
         timestampMillis: new Date().getTime(),
         isFinal: true,
         isAborted: true,
       });
-    } else if (this.state === State.SHOWING_WORD_CHIPS) {
+    } else if (
+        this.state === State.SHOWING_WORD_CHIPS ||
+        this.state === State.FOCUSED_ON_CHIP) {
       this.state = State.ENTERING_BASE_TEXT;
     }
   }
 
-  onSpeakAsIsButtonClicked(event: Event) {
+  private reCreatedTextMaybeFromChips(): string {
     let text: string = '';
-    if (this.state === State.SHOWING_WORD_CHIPS) {
-      text = this._chips.map(chip => chip.text).join(' ');
-    } else if (this.state === State.ENTERING_BASE_TEXT) {
-      if (!this.inputString.trim()) {
-        return;
-      }
-      text = this.inputString.trim();
-    }
-    if (text) {
-      this.textEntryEndSubject.next({
-        text,
-        timestampMillis: Date.now(),
-        isFinal: true,
-        inAppTextToSpeechAudioConfig: {
-          volume_gain_db: 0,
+    if (this.state === State.SHOWING_WORD_CHIPS ||
+        this.state === State.FOCUSED_ON_CHIP) {
+      const words: string[] = this._chips.map(chip => chip.text);
+      if (this._focusChipIndex && this._chipTypedText !== null) {
+        for (let i = 0; i < this._chipTypedText.length; ++i) {
+          if (this._chipTypedText[i] !== null) {
+            words[i] = this._chipTypedText[i]!;
+          }
         }
-      });
+      }
+      return words.join(' ');
+    } else if (this.state === State.ENTERING_BASE_TEXT) {
+      return this.inputString.trim();
     }
+    text = text.trim();
+    return text;
+  }
+
+  onSpeakAsIsButtonClicked(event: Event) {
+    const text = this.reCreatedTextMaybeFromChips();
+    if (!text) {
+      return;
+    }
+    this.textEntryEndSubject.next({
+      text,
+      timestampMillis: Date.now(),
+      isFinal: true,
+      inAppTextToSpeechAudioConfig: {
+        volume_gain_db: 0,
+      }
+    });
   }
 
   onFavoriteButtonClicked(event: Event) {
-    if (!this.inputString.trim()) {
+    const text = this.reCreatedTextMaybeFromChips();
+    if (!text) {
       return;
     }
+    console.log('text=', text);  // DEBUG
     this.state = State.ADD_CONTEXTUAL_PHRASE_PENDING;
     this.speakFasterService
         .addContextualPhrase({
           userId: this.userId,
           contextualPhrase: {
             phraseId: '',  // For AddContextualPhraseRequest, this is ignored.
-            text: this.inputString.trim(),
-            tags: ['favorite'],  // TODO(cais): Do not hardcode this.
+            text,
+            tags: ['favorite'],  // TODO(cais): Do not hardcode this tag
           }
         })
         .subscribe(
@@ -208,6 +269,8 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private resetState(cleanText: boolean = true) {
     this.state = State.ENTERING_BASE_TEXT;
+    this._focusChipIndex = null;
+    this._chipTypedText = null;
     if (cleanText) {
       this.updateInputString('');
     }
@@ -216,6 +279,17 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   private updateInputString(newStringValue: string) {
     this.inputString = newStringValue;
     updateButtonBoxesForElements(this.instanceId, this.buttons);
+  }
+
+  getChipText(index: number): string {
+    if (this._chipTypedText !== null) {
+      if (this._chipTypedText[index] === null) {
+        return this._chips[index].text;
+      } else {
+        return this._chipTypedText[index]!;
+      }
+    }
+    return this._chips[index].text;
   }
 
   get inputStringNonEmpty(): boolean {
@@ -228,6 +302,13 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
 
   get focusChipIndex(): number|null {
     return this._focusChipIndex;
+  }
+
+  isChipTyped(index: number): boolean {
+    if (this._chipTypedText === null) {
+      return false;
+    }
+    return this._chipTypedText[index] !== null;
   }
 
   get favoriteButtonImageUrl(): string {

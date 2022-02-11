@@ -132,7 +132,7 @@ export class QuickPhrasesComponent implements AfterViewInit, OnChanges,
       // TODO(cais): Add unit test.
     }, error => {
       // TODO(cais): Display error in UI.
-      console.log('Deleting quick phrase failed:', error);  // DEBUG
+      console.error('Deleting quick phrase failed:', error);
     });
   }
 

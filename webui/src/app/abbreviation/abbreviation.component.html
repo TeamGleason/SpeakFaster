@@ -213,14 +213,6 @@ mat-progress-spinner {
 
 <div class="upper-container">
 
-<button
-    #clickableButton
-    *ngIf="state === 'PRE_CHOOSING_EXPANSION' && !isInputAbbreviationEmpty"
-    class="action-button expand-abbreviation-button"
-    (click)="onExpandAbbreviationButtonClicked($event)">
-  Expand abbreviation
-</button>
-
 <div *ngIf="state == 'REQUEST_ONGOING'" class="info request-ongoing">
   <mat-progress-spinner
       [mode]="'indeterminate'"
@@ -274,12 +266,12 @@ mat-progress-spinner {
           (speakButtonClicked)="onSpeakOptionButtonClicked($event)"
           (injectButtonClicked)="onExpansionOptionButtonClicked($event)">
       </app-phrase-component>
-      <button
+      <!-- <button
           #clickableButton
           class="action-button action-abort-button"
           (click)="onAbortButtonClicked($event)">
           🗙
-      </button>
+      </button> -->  <!-- TODO(cais): Clean up. -->
     </div>
   </div>
 </div>

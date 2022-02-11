@@ -1,51 +1,20 @@
 <style>
 
 :host {
-    box-sizing: border-box;
-    color: #EEE;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
-    font-size: 32px;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-}
-
-input[type="text"]:disabled{
-  background: #272626;
-  color: white;
-  font-size: 30px;
-  height: 48px;
-}
-
-.button-image {
-  max-width: 50%;
-  max-height: 50%;
-}
-
-.input-box {
-  border: none;
-  border-radius: 8px;
-  flex: 1;
-  margin: 0 8px;
-  min-width: 100%;
-  width: 100%;
-}
-
-.button-shortcut-key {
-  font-size: 18px;
-  color: #888;
+  box-sizing: border-box;
+  color: #EEE;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  font-size: 32px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .container {
   display: flex;
   flex-direction: row;
-  line-height: 45px;
   padding: 0 0 5px;
   vertical-align: middle;
-  width: 800px;
-}
-
-.hidden {
-  display: none;
+  width: 1050px;
 }
 
 .action-button {
@@ -55,16 +24,32 @@ input[type="text"]:disabled{
   color: #eee;
   flex: 1;
   font-size: 20px;
-  height: 50px;
-  margin: 0 10px;
-  min-width: 100px;
+  height: 48px;
+  margin: 0 5px;
+  order: 2;
   padding: 0;
   vertical-align: middle;
+  width: 85px;
+}
+
+.action-button.abort-button {
+  background-color: #525453;
+  width: 60px;
+}
+
+.action-button.expand-button {
+  background-color: #525453;
   width: 100px;
 }
 
-.favorite-button {
-  background: #473261;
+.button-image {
+  max-width: 50%;
+  max-height: 50%;
+}
+
+.button-shortcut-key {
+  font-size: 18px;
+  color: #888;
 }
 
 .button-state-error {
@@ -79,33 +64,88 @@ input[type="text"]:disabled{
   background: green;
 }
 
+.favorite-button {
+  background: #473261;
+}
+
+.input-box {
+  background: #272626;
+  border: none;
+  border-radius: 8px;
+  color: white;
+  display: flex;
+  font-size: 30px;
+  height: 60px;
+  line-height: 60px;
+  margin: 0 8px;
+  min-width: 100%;
+  padding: 0 4px;
+  width: 100%;
+}
+
+.main-area {
+  flex: 1;
+}
+
+.right-buttons-container {
+  display: inline-block;
+  width: fit-content;
+}
+
+.simulated-cursor {
+  font-weight: bold;
+  margin-left: 0.1em;
+}
+
 </style>
 
 <div class="container">
 
-  <input
-      class="input-box"
-      type="text"
-      disabled="true"
-      value="{{inputString}}" />
+  <div class="input-box">
+    <div class="main-area">
+      <span class="input-text">{{inputString}}</span>
+      <span class="simulated-cursor">|</span>
 
-  <button
-      #clickableButton
-      class="action-button speak-button"
-      (click)="onSpeakAsIsButtonClicked($event)">
-      <img class="button-image" src="/assets/images/speak.png" alt="speak phrase as is" />
-  </button>
+      <button
+          #clickableButton
+          *ngIf="inputStringNonEmpty"
+          class="action-button expand-button"
+          (click)="onExpandButtonClicked($event)">
+        Expand
+      </button>
 
-  <button
-      #clickableButton
-      class="action-button favorite-button"
-      [ngClass]="{
-          'button-state-pending': state === 'ADD_CONTEXTUAL_PHRASE_PENDING',
-          'button-state-success': state === 'ADD_CONTEXTUAL_PHRASE_SUCCESS',
-          'button-state-error': state === 'ADD_CONTEXTUAL_PHRASE_ERROR'
-        }"
-      (click)="onFavoriteButtonClicked($event)">
-      <img class="button-image" src="{{favoriteButtonImageUrl}}" alt="add phrase to favorite" />
-  </button>
+      <button
+          #clickableButton
+          *ngIf="inputStringNonEmpty"
+          class="action-button abort-button"
+          (click)="onClearButtonClicked($event)">
+        X
+      </button>
+    </div>
+
+    <div
+        class="right-buttons-container"
+        *ngIf="inputStringNonEmpty">
+      <button
+          #clickableButton
+          class="action-button speak-button"
+          (click)="onSpeakAsIsButtonClicked($event)">
+          <img class="button-image" src="/assets/images/speak.png" alt="speak phrase as is" />
+      </button>
+
+      <button
+          #clickableButton
+          class="action-button favorite-button"
+          [ngClass]="{
+              'button-state-pending': state === 'ADD_CONTEXTUAL_PHRASE_PENDING',
+              'button-state-success': state === 'ADD_CONTEXTUAL_PHRASE_SUCCESS',
+              'button-state-error': state === 'ADD_CONTEXTUAL_PHRASE_ERROR'
+            }"
+          (click)="onFavoriteButtonClicked($event)">
+          <img class="button-image" src="{{favoriteButtonImageUrl}}" alt="add phrase to favorite" />
+      </button>
+    </div>
+
+  </div>
 
 </div>

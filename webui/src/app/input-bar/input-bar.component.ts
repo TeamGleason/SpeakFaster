@@ -1,11 +1,12 @@
 /** An input bar, with related functional buttons. */
-import {AfterViewInit, Component, ElementRef, EventEmitter, Input, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
+import {AfterViewInit, Component, ElementRef, Input, OnChanges, OnInit, QueryList, SimpleChanges, ViewChildren} from '@angular/core';
 import {Subject} from 'rxjs';
 import {updateButtonBoxesForElements} from 'src/utils/cefsharp';
 import {createUuid} from 'src/utils/uuid';
 
-import {ExternalEventsComponent} from '../external/external-events.component';
+import {ExternalEventsComponent, repeatVirtualKey, VIRTUAL_KEY} from '../external/external-events.component';
 import {SpeakFasterService} from '../speakfaster-service';
+import {AbbreviationSpec, InputAbbreviationChangedEvent} from '../types/abbreviation';
 import {AddContextualPhraseResponse} from '../types/contextual_phrase';
 import {TextEntryEndEvent} from '../types/text-entry';
 
@@ -26,8 +27,9 @@ export class InputBarComponent implements OnInit, AfterViewInit {
   private static readonly STATE_REST_DELAY_MILLIS = 2000;
 
   @Input() userId!: string;
-
   @Input() textEntryEndSubject!: Subject<TextEntryEndEvent>;
+  @Input()
+  abbreviationExpansionTriggers!: Subject<InputAbbreviationChangedEvent>;
 
   @ViewChildren('clickableButton')
   buttons!: QueryList<ElementRef<HTMLButtonElement>>;
@@ -42,7 +44,7 @@ export class InputBarComponent implements OnInit, AfterViewInit {
       if (textInjection.isFinal) {
         this.resetState();
       } else {
-        this.inputString = textInjection.text;
+        this.updateInputString(textInjection.text);
       }
     });
     ExternalEventsComponent.registerKeypressListener(
@@ -59,7 +61,37 @@ export class InputBarComponent implements OnInit, AfterViewInit {
 
   public listenToKeypress(keySequence: string[], reconstructedText: string):
       void {
-    this.inputString = reconstructedText;
+    this.updateInputString(reconstructedText);
+  }
+
+  onExpandButtonClicked(event: Event) {
+    const precedingText = '';
+    const text = this.inputString.trim();
+    const eraserLength = text.length;
+    const abbreviationSpec: AbbreviationSpec = {
+      tokens: text.split('').map(char => ({
+                                   value: char,
+                                   isKeyword: false,
+                                 })),
+      readableString: text,
+      eraserSequence:
+          repeatVirtualKey(VIRTUAL_KEY.BACKSPACE, eraserLength),
+      precedingText,
+      lineageId: createUuid(),
+    };
+    console.log('Abbreviation expansion triggered:', abbreviationSpec);
+    this.abbreviationExpansionTriggers.next(
+        {abbreviationSpec, requestExpansion: true});
+    return;
+  }
+
+  onClearButtonClicked(event: Event) {
+    this.textEntryEndSubject.next({
+      text: '',
+      timestampMillis: new Date().getTime(),
+      isFinal: true,
+      isAborted: true,
+    });
   }
 
   onSpeakAsIsButtonClicked(event: Event) {
@@ -114,8 +146,17 @@ export class InputBarComponent implements OnInit, AfterViewInit {
   private resetState(cleanText: boolean = true) {
     this.state = State.READY;
     if (cleanText) {
-      this.inputString = '';
+      this.updateInputString('');
     }
+  }
+
+  private updateInputString(newStringValue: string) {
+    this.inputString = newStringValue;
+    updateButtonBoxesForElements(this.instanceId, this.buttons);
+  }
+
+  get inputStringNonEmpty(): boolean {
+    return this.inputString.trim().length > 0;
   }
 
   get favoriteButtonImageUrl(): string {

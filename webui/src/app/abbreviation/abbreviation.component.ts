@@ -86,6 +86,11 @@ export class AbbreviationComponent implements OnDestroy, OnInit, AfterViewInit {
               this.abbreviation = event.abbreviationSpec;
               this.expandAbbreviation();
             });
+    this.textEntryEndSubject.subscribe(event => {
+      if (event.isFinal && event.isAborted) {
+        this.resetState();  // TODO(cais): Add unit test.
+      }
+    });
   }
 
   ngAfterViewInit() {
@@ -156,17 +161,17 @@ export class AbbreviationComponent implements OnDestroy, OnInit, AfterViewInit {
     }
   }
 
-  onAbortButtonClicked(event: Event) {
-    if (this.reconstructedText) {
-      this.textEntryEndSubject.next({
-        text: '',
-        timestampMillis: new Date().getTime(),
-        isFinal: true,
-        isAborted: true,
-      });
-    }
-    this.resetState();
-  }
+  // onAbortButtonClicked(event: Event) {
+  //   if (this.reconstructedText) {
+  //     this.textEntryEndSubject.next({
+  //       text: '',
+  //       timestampMillis: new Date().getTime(),
+  //       isFinal: true,
+  //       isAborted: true,
+  //     });
+  //   }
+  //   this.resetState();
+  // }  // TODO(cais): Clean up.
 
   onTryAgainButtonClicked(event: Event) {
     this.expandAbbreviation();
@@ -192,19 +197,19 @@ export class AbbreviationComponent implements OnDestroy, OnInit, AfterViewInit {
     this.pendingRefinementType = 'CHOOSE_PREFIX';
   }
 
-  onExpandAbbreviationButtonClicked(event: Event) {
-    const text = this.reconstructedText.trim();
-    const abbreviationSpec: AbbreviationSpec = {
-      tokens: text.trim().split('').map(letter => ({
-                                          value: letter,
-                                          isKeyword: false,
-                                        })),
-      readableString: text.trim(),
-      lineageId: createUuid(),
-    };
-    this.abbreviationExpansionTriggers.next(
-        {abbreviationSpec, requestExpansion: true});
-  }
+  // onExpandAbbreviationButtonClicked(event: Event) {
+  //   const text = this.reconstructedText.trim();
+  //   const abbreviationSpec: AbbreviationSpec = {
+  //     tokens: text.trim().split('').map(letter => ({
+  //                                         value: letter,
+  //                                         isKeyword: false,
+  //                                       })),
+  //     readableString: text.trim(),
+  //     lineageId: createUuid(),
+  //   };
+  //   this.abbreviationExpansionTriggers.next(
+  //       {abbreviationSpec, requestExpansion: true});
+  // }  // TODO(cais): Clean up.
 
   onExpansionOptionButtonClicked(event: {
     phraseText: string; phraseIndex: number

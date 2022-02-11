@@ -151,18 +151,25 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   onSpeakAsIsButtonClicked(event: Event) {
-    if (!this.inputString.trim()) {
-      return;
-    }
-    const text = this.inputString.trim();
-    this.textEntryEndSubject.next({
-      text,
-      timestampMillis: Date.now(),
-      isFinal: true,
-      inAppTextToSpeechAudioConfig: {
-        volume_gain_db: 0,
+    let text: string = '';
+    if (this.state === State.SHOWING_WORD_CHIPS) {
+      text = this._chips.map(chip => chip.text).join(' ');
+    } else if (this.state === State.ENTERING_BASE_TEXT) {
+      if (!this.inputString.trim()) {
+        return;
       }
-    });
+      text = this.inputString.trim();
+    }
+    if (text) {
+      this.textEntryEndSubject.next({
+        text,
+        timestampMillis: Date.now(),
+        isFinal: true,
+        inAppTextToSpeechAudioConfig: {
+          volume_gain_db: 0,
+        }
+      });
+    }
   }
 
   onFavoriteButtonClicked(event: Event) {

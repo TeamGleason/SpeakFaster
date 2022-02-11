@@ -81,25 +81,11 @@ export class AbbreviationRefinementComponent implements OnInit, AfterViewInit,
     updateButtonBoxesToEmpty(this.instanceId);
   }
 
-  // onTokenButtonClicked(event: Event, index: number) {
-  //   console.log('onTokenButtonClicked():', index);  // DEBUG
-  //   if (this.refinementType === 'CHOOSE_PREFIX') {
-  //     this.refinementResult.emit({
-  //       phrase: this._tokens.slice(0, index + 1).join(' '),
-  //       isAbort: false,
-  //     });
-  //     return;
-  //   }
-  //   this.replacementIndex = index;
-  //   this.callFillMask();
-  // }
-
   private callFillMask() {
     this.state = State.REQUEST_ONGOING;
     this.speakFasterService.fillMask(this.fillMaskRequest)
         .subscribe(
             (data: FillMaskResponse) => {
-              console.log('Fill mask response:', data);  // DEBUG
               this._replacements.splice(0);
               if (data.results) {
                 this._replacements.push(

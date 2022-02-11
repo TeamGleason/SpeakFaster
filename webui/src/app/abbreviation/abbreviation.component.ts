@@ -87,6 +87,7 @@ export class AbbreviationComponent implements OnDestroy, OnInit, AfterViewInit {
                 return;
               }
               this.abbreviation = event.abbreviationSpec;
+              console.log('AE trigger:', this.abbreviation);  // DEBUG
               this.expandAbbreviation();
             });
     this.fillMaskRequestTriggersSubscription =
@@ -96,7 +97,8 @@ export class AbbreviationComponent implements OnDestroy, OnInit, AfterViewInit {
           this.cdr.detectChanges();
         });
     this.textEntryEndSubject.subscribe(event => {
-      if (event.isFinal && event.isAborted) {
+      if (event.isFinal) {
+        // console.log('Calling ')
         this.resetState();  // TODO(cais): Add unit test.
       }
     });
@@ -222,11 +224,6 @@ export class AbbreviationComponent implements OnDestroy, OnInit, AfterViewInit {
     this.cdr.detectChanges();
   }
 
-  onReplacementTokenButtonClicked(event: Event, index: number) {
-    // Reconstruct the phrase with the replacement.
-    this.emitExpansionWithTokenReplacement(this.replacementTokens[index]);
-  }
-
   onNewAbbreviationSpec(abbreviationSpec: AbbreviationSpec) {
     this.abbreviationExpansionTriggers.next(
         {abbreviationSpec, requestExpansion: true});
@@ -239,19 +236,6 @@ export class AbbreviationComponent implements OnDestroy, OnInit, AfterViewInit {
     }
     this.inputBarChipsSubject.next(this.phraseToChips(refinementResult.phrase));
     this.state = State.CHOOSING_EXPANSION;
-  }
-
-  private emitExpansionWithTokenReplacement(replacementToken: string) {
-    // Reconstruct the phrase with the replacement.
-    const tokens: string[] = this.editTokens.slice();
-    tokens[this.selectedTokenIndex!] = replacementToken;
-    this.textEntryEndSubject.next({
-      text: tokens.join(' '),
-      timestampMillis: Date.now(),
-      isFinal: true,
-    });
-    // TODO(cais): Prevent selection in gap state.
-    setTimeout(() => this.resetState(), 1000);
   }
 
   private selectExpansionOption(
@@ -267,6 +251,13 @@ export class AbbreviationComponent implements OnDestroy, OnInit, AfterViewInit {
       numKeypresses += this.abbreviation.triggerKeys.length;
     }
     const text = this.abbreviationOptions[this._selectedAbbreviationIndex];
+    if (toInjectKeys) {
+      const injectedKeys: Array<string|VIRTUAL_KEY> =
+          this.abbreviation!.eraserSequence || [];
+      injectedKeys.push(...text.split(''));
+      injectedKeys.push(VIRTUAL_KEY.SPACE);  // Append a space at the end.
+      injectKeys(injectedKeys);
+    }
     this.textEntryEndSubject.next({
       text,
       timestampMillis: Date.now(),
@@ -276,13 +267,6 @@ export class AbbreviationComponent implements OnDestroy, OnInit, AfterViewInit {
       inAppTextToSpeechAudioConfig:
           toTriggerInAppTextToSpeech ? {volume_gain_db: 0} : undefined,
     });
-    if (toInjectKeys) {
-      const injectedKeys: Array<string|VIRTUAL_KEY> =
-          this.abbreviation!.eraserSequence || [];
-      injectedKeys.push(...text.split(''));
-      injectedKeys.push(VIRTUAL_KEY.SPACE);  // Append a space at the end.
-      injectKeys(injectedKeys);
-    }
     // TODO(cais): Prevent selection in gap state.
     setTimeout(
         () => this.resetState(),

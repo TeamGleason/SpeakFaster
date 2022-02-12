@@ -23,8 +23,9 @@ export class InputBarChipComponent implements OnInit, AfterViewInit, OnDestroy {
 
   @Input() text!: string;
   @Input() typed!: boolean;
+  @Input() supportsCut: boolean = false;
   @Input() focused: boolean = false;
-  @Output() click: EventEmitter<number> = new EventEmitter();
+  @Output() cutClicked: EventEmitter<Event> = new EventEmitter();
 
   @ViewChildren('clickableButton')
   buttons!: QueryList<ElementRef<HTMLButtonElement>>;
@@ -47,5 +48,7 @@ export class InputBarChipComponent implements OnInit, AfterViewInit, OnDestroy {
     updateButtonBoxesToEmpty(this.instanceId);
   }
 
-  onClicked(event: Event) {}
+  onCutButtonClicked(event: Event) {
+    this.cutClicked.emit(event);
+  }
 }

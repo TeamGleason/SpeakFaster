@@ -79,9 +79,11 @@ button {
   <span class="request-ongoing-message">Getting replacement words...</span>
 </div>
 
+
 <div
     class="replacements-container"
     *ngIf="state === 'CHOOSING_TOKEN_REPLACEMNT'">
+
   <button
       #clickableButton
       *ngFor="let replacement of replacements; let i = index"

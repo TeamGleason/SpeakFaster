@@ -21,6 +21,10 @@
   background: darkgreen;
 }
 
+.chip-button.cut-button {
+  background: #ccc;
+}
+
 </style>
 
 <button
@@ -29,4 +33,12 @@
     [ngClass]="{'chip-focused': focused}">
   {{text}}
   <span *ngIf="typed">|</span>
+</button>
+
+<button
+    #clickableButton
+    *ngIf="focused && supportsCut"
+    class="chip-button cut-button"
+    (click)="onCutButtonClicked($event)">
+  ✂️
 </button>

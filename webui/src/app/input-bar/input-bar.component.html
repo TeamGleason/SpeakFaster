@@ -131,8 +131,10 @@
             *ngFor="let chip of chips; let i = index"
             [text]="getChipText(i)"
             [typed]="i === focusChipIndex && isChipTyped(i)"
+            [supportsCut]="state === 'FOCUSED_ON_WORD_CHIP' && i !== chips.length - 1"
             [focused]="i === focusChipIndex"
-            (click)="onChipClicked(i)">
+            (click)="onChipClicked(i)"
+            (cutClicked)="onChipCutClicked($event, i)">
         </app-input-bar-chip-component>
       </div>
 

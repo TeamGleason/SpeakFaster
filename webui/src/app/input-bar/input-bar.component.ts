@@ -17,6 +17,7 @@ export enum State {
   CHOOSING_PHRASES = 'CHOOSING_PHRASES',
   CHOOSING_WORD_CHIP = 'CHOOSING_WORD_CHIP',
   FOCUSED_ON_WORD_CHIP = 'FOCUSED_ON_WORD_CHIP',
+  AFTER_CUT = 'AFTER_CUT',
   ADD_CONTEXTUAL_PHRASE_PENDING = 'ADD_CONTEXTUAL_PHRASE_PENDING',
   ADD_CONTEXTUAL_PHRASE_SUCCESS = 'ADD_CONTEXTUAL_PHRASE_SUCCESS',
   ADD_CONTEXTUAL_PHRASE_ERROR = 'ADD_CONTEXTUAL_PHRASE_ERROR',
@@ -61,6 +62,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   inputString: string = '';
   private latestReconstructedString = '';
   private baseReconstructedText: string = '';
+  private cutText = '';
 
   private textEntryEndSubjectSubscription?: Subscription;
   private inputBarChipsSubscription?: Subscription;
@@ -128,7 +130,12 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
       void {
     this.latestReconstructedString = reconstructedText;
     if (this.state === State.ENTERING_BASE_TEXT) {
-      this.updateInputString(reconstructedText);
+      this.updateInputString(
+          reconstructedText.slice(this.baseReconstructedText.length));
+    } else if (this.state === State.AFTER_CUT) {
+      this.updateInputString(
+          this.cutText +
+          reconstructedText.slice(this.baseReconstructedText.length));
     } else if (this.state === State.CHOOSING_LETTER_CHIP) {
       // If there is a uniquely matching word, then choose it.
       const typedLetter = reconstructedText.slice(reconstructedText.length - 1)
@@ -150,18 +157,21 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
         }
         this._chipTypedText[this._focusChipIndex] = typedLetter;
       }
+      updateButtonBoxesForElements(this.instanceId, this.buttons);
     } else if (this.state === State.FOCUSED_ON_LETTER_CHIP) {
       if (this._chipTypedText === null) {
         this._chipTypedText = Array(this._chips.length).fill(null);
       }
       this._chipTypedText[this._focusChipIndex!] =
           reconstructedText.slice(this.baseReconstructedText.length);
+      updateButtonBoxesForElements(this.instanceId, this.buttons);
     } else if (this.state === State.FOCUSED_ON_WORD_CHIP) {
       if (this._chipTypedText === null) {
         this._chipTypedText = Array(this._chips.length).fill(null);
       }
       this._chipTypedText[this._focusChipIndex!] =
           reconstructedText.slice(this.baseReconstructedText.length);
+      updateButtonBoxesForElements(this.instanceId, this.buttons);
     }
   }
 
@@ -261,9 +271,21 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+  onChipCutClicked(event: Event, index: number) {
+    if (this.state === State.FOCUSED_ON_WORD_CHIP) {
+      this.cutText =
+          this._chips.slice(0, index + 1).map(chip => chip.text).join(' ') +
+          ' ';
+      this.inputString = this.cutText;
+      this.state = State.AFTER_CUT;
+      this.baseReconstructedText = this.latestReconstructedString;
+    }
+  }
+
   onClearButtonClicked(event: Event) {
     if (this.state === State.ENTERING_BASE_TEXT ||
-        this.state === State.CHOOSING_PHRASES) {
+        this.state === State.CHOOSING_PHRASES ||
+        this.state === State.AFTER_CUT) {
       this.textEntryEndSubject.next({
         text: '',
         timestampMillis: new Date().getTime(),
@@ -290,7 +312,9 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
         }
       }
       return words.join(' ');
-    } else if (this.state === State.ENTERING_BASE_TEXT) {
+    } else if (
+        this.state === State.ENTERING_BASE_TEXT ||
+        this.state === State.AFTER_CUT) {
       return this.inputString.trim();
     }
     text = text.trim();
@@ -354,6 +378,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     if (cleanText) {
       this.updateInputString('');
     }
+    this.cutText = '';
   }
 
   private updateInputString(newStringValue: string) {

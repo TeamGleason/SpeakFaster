@@ -102,7 +102,7 @@
 
 .simulated-cursor {
   font-weight: 900;
-  font-size: 36px;
+  font-size: 30px;
   margin-left: 0.1em;
 }
 
@@ -114,13 +114,19 @@
     <div class="main-area">
       <div
           class="base-text-area"
-          *ngIf="state !== 'SHOWING_WORD_CHIPS' && state !== 'FOCUSED_ON_CHIP'">
+          *ngIf="state !== 'CHOOSING_LETTER_CHIP' &&
+                 state !== 'FOCUSED_ON_LETTER_CHIP' &&
+                 state !== 'CHOOSING_WORD_CHIP' &&
+                 state !== 'FOCUSED_ON_WORD_CHIP'">
         <span class="input-text">{{inputString}}</span>
         <span class="simulated-cursor">|</span>
       </div>
       <div
           class="chips-container"
-          *ngIf="state === 'SHOWING_WORD_CHIPS' || state === 'FOCUSED_ON_CHIP'">
+          *ngIf="state === 'CHOOSING_LETTER_CHIP' ||
+                 state === 'FOCUSED_ON_LETTER_CHIP' ||
+                 state === 'CHOOSING_WORD_CHIP' ||
+                 state === 'FOCUSED_ON_WORD_CHIP'">
         <app-input-bar-chip-component
             *ngFor="let chip of chips; let i = index"
             [text]="getChipText(i)"
@@ -133,10 +139,20 @@
       <button
           #clickableButton
           *ngIf="(state === 'ENTERING_BASE_TEXT' ||
-                  state === 'CHOOSING_PHRASES') && inputStringNonEmpty"
+                  state === 'CHOOSING_PHRASES' ||
+                  state === 'FOCUSED_ON_LETTER_CHIP') && inputStringNonEmpty"
           class="action-button expand-button"
           (click)="onExpandButtonClicked($event)">
         Expand
+      </button>
+
+      <button
+          #clickableButton
+          *ngIf="(state === 'ENTERING_BASE_TEXT' ||
+                  state === 'CHOOSING_PHRASES') && inputStringNonEmpty"
+          class="action-button expand-button"
+          (click)="onSpellButtonClicked($event)">
+        Spell
       </button>
 
       <button

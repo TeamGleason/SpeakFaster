@@ -6,15 +6,17 @@ import {createUuid} from 'src/utils/uuid';
 
 import {ExternalEventsComponent, repeatVirtualKey, VIRTUAL_KEY} from '../external/external-events.component';
 import {FillMaskRequest, SpeakFasterService} from '../speakfaster-service';
-import {AbbreviationSpec, InputAbbreviationChangedEvent} from '../types/abbreviation';
+import {AbbreviationSpec, AbbreviationToken, InputAbbreviationChangedEvent} from '../types/abbreviation';
 import {AddContextualPhraseResponse} from '../types/contextual_phrase';
 import {TextEntryEndEvent} from '../types/text-entry';
 
 export enum State {
   ENTERING_BASE_TEXT = 'ENTERING_BASE_TEXT',
+  CHOOSING_LETTER_CHIP = 'CHOOSING_LETTER_CHIP',
+  FOCUSED_ON_LETTER_CHIP = 'FOCUSED_ON_LETTER_CHIP',
   CHOOSING_PHRASES = 'CHOOSING_PHRASES',
-  SHOWING_WORD_CHIPS = 'SHOWING_WORD_CHIPS',
-  FOCUSED_ON_CHIP = 'FOCUSED_ON_CHIP',
+  CHOOSING_WORD_CHIP = 'CHOOSING_WORD_CHIP',
+  FOCUSED_ON_WORD_CHIP = 'FOCUSED_ON_WORD_CHIP',
   ADD_CONTEXTUAL_PHRASE_PENDING = 'ADD_CONTEXTUAL_PHRASE_PENDING',
   ADD_CONTEXTUAL_PHRASE_SUCCESS = 'ADD_CONTEXTUAL_PHRASE_SUCCESS',
   ADD_CONTEXTUAL_PHRASE_ERROR = 'ADD_CONTEXTUAL_PHRASE_ERROR',
@@ -57,6 +59,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
 
   state = State.ENTERING_BASE_TEXT;
   inputString: string = '';
+  private latestReconstructedString = '';
   private baseReconstructedText: string = '';
 
   private textEntryEndSubjectSubscription?: Subscription;
@@ -78,7 +81,6 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     ExternalEventsComponent.registerKeypressListener(this.keypressListener);
     this.inputBarChipsSubscription =
         this.inputBarChipsSubject.subscribe((event: InputBarChipsEvent) => {
-          console.log('chips:', JSON.stringify(event));  // DEBUG
           this._focusChipIndex = null;
           this._chips.splice(0);
           this._chips.push(...event.chips);
@@ -90,7 +92,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
             }
           }
           if (this._chips.length > 0) {
-            this.state = State.SHOWING_WORD_CHIPS;
+            this.state = State.CHOOSING_WORD_CHIP;
           }
         });
     this.abbreviationExpansionTriggersSubscription =
@@ -123,14 +125,19 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
 
   public listenToKeypress(keySequence: string[], reconstructedText: string):
       void {
+    this.latestReconstructedString = reconstructedText;
     if (this.state === State.ENTERING_BASE_TEXT) {
       this.updateInputString(reconstructedText);
-    } else if (this.state === State.FOCUSED_ON_CHIP) {
+    } else if (this.state === State.FOCUSED_ON_LETTER_CHIP) {
       if (this._chipTypedText === null) {
         this._chipTypedText = Array(this._chips.length).fill(null);
       }
-      const t = reconstructedText.slice(this.baseReconstructedText.length);
-      console.log('t=', t);  // DEBUEG
+      this._chipTypedText[this._focusChipIndex!] =
+          reconstructedText.slice(this.baseReconstructedText.length);
+    } else if (this.state === State.FOCUSED_ON_WORD_CHIP) {
+      if (this._chipTypedText === null) {
+        this._chipTypedText = Array(this._chips.length).fill(null);
+      }
       this._chipTypedText[this._focusChipIndex!] =
           reconstructedText.slice(this.baseReconstructedText.length);
     }
@@ -140,7 +147,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     const precedingText = '';
     const text = this.inputString.trim();
     const eraserLength = text.length;
-    const abbreviationSpec: AbbreviationSpec = {
+    let abbreviationSpec: AbbreviationSpec = {
       tokens: text.split('').map(char => ({
                                    value: char,
                                    isKeyword: false,
@@ -150,34 +157,84 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
       precedingText,
       lineageId: createUuid(),
     };
+    if (this.state === State.FOCUSED_ON_LETTER_CHIP) {
+      const tokens: AbbreviationToken[] = [];
+      let pendingChars: string = '';
+      for (let i = 0; i < this._chips.length; ++i) {
+        const isSpelled =
+            this._chipTypedText !== null && this._chipTypedText[i] !== null;
+        if (isSpelled) {
+          // Word is spelled out.
+          if (pendingChars) {
+            tokens.push({
+              value: pendingChars,
+              isKeyword: false,
+            });
+            pendingChars = '';
+          }
+          tokens.push({
+            value: this._chipTypedText![i]!,
+            isKeyword: true,
+          });
+        } else {
+          // The word has *not* been spelled out.
+          pendingChars += this._chips[i].text;
+        }
+      }
+      if (pendingChars) {
+        tokens.push({
+          value: pendingChars,
+          isKeyword: false,
+        });
+      }
+      abbreviationSpec = {
+        tokens,
+        readableString: tokens.map(token => token.value).join(' '),
+        precedingText,
+        eraserSequence: repeatVirtualKey(VIRTUAL_KEY.BACKSPACE, eraserLength),
+        lineageId: createUuid(),  // TODO(cais): Is this correct?
+      };
+    }
     console.log('Abbreviation expansion triggered:', abbreviationSpec);
     this.abbreviationExpansionTriggers.next(
         {abbreviationSpec, requestExpansion: true});
     return;
   }
 
+  onSpellButtonClicked(event: Event) {
+    const abbreviation = this.inputString.trim();
+    this.inputBarChipsSubject.next({
+      chips: abbreviation.split('').map(char => ({text: char})),
+    });
+    this.state = State.CHOOSING_LETTER_CHIP;
+  }
+
   onChipClicked(index: number) {
     this._focusChipIndex = index;
-    const tokens: string[] = this._chips.map(chip => chip.text);
-    if (this._chipTypedText !== null) {
-      for (let i = 0; i < this._chipTypedText.length; ++i) {
-        if (this._chipTypedText[i] !== null) {
-          tokens[i] = this._chipTypedText[i]!.trim();
+    this.baseReconstructedText = this.latestReconstructedString;
+    if (this.state === State.CHOOSING_LETTER_CHIP) {
+      // TODO(cais): Add unit tests.
+      this.state = State.FOCUSED_ON_LETTER_CHIP;
+    } else if (this.state === State.CHOOSING_WORD_CHIP) {
+      // TODO(cais): Add unit tests.
+      const tokens: string[] = this._chips.map(chip => chip.text);
+      if (this._chipTypedText !== null) {
+        for (let i = 0; i < this._chipTypedText.length; ++i) {
+          if (this._chipTypedText[i] !== null) {
+            tokens[i] = this._chipTypedText[i]!.trim();
+          }
         }
       }
+      tokens[index] = '_';
+      const phraseWithMask = tokens.join(' ');
+      const maskInitial = this._chips[index].text[0];
+      this.fillMaskTriggers.next({
+        speechContent: this.contextStrings.join('|'),
+        phraseWithMask,
+        maskInitial,
+      });
+      this.state = State.FOCUSED_ON_WORD_CHIP;
     }
-    // TODO(cais): Add unit tests.
-
-    tokens[index] = '_';
-    const phraseWithMask = tokens.join(' ');
-    const maskInitial = this._chips[index].text[0];
-    this.fillMaskTriggers.next({
-      speechContent: this.contextStrings.join('|'),
-      phraseWithMask,
-      maskInitial,
-    });
-    this.state = State.FOCUSED_ON_CHIP;
-    this.baseReconstructedText = this.inputString;
   }
 
   onClearButtonClicked(event: Event) {
@@ -190,16 +247,16 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
         isAborted: true,
       });
     } else if (
-        this.state === State.SHOWING_WORD_CHIPS ||
-        this.state === State.FOCUSED_ON_CHIP) {
+        this.state === State.CHOOSING_WORD_CHIP ||
+        this.state === State.FOCUSED_ON_WORD_CHIP) {
       this.state = State.ENTERING_BASE_TEXT;
     }
   }
 
   private reCreatedTextMaybeFromChips(): string {
     let text: string = '';
-    if (this.state === State.SHOWING_WORD_CHIPS ||
-        this.state === State.FOCUSED_ON_CHIP) {
+    if (this.state === State.CHOOSING_WORD_CHIP ||
+        this.state === State.FOCUSED_ON_WORD_CHIP) {
       const words: string[] = this._chips.map(chip => chip.text);
       if (this._focusChipIndex && this._chipTypedText !== null) {
         for (let i = 0; i < this._chipTypedText.length; ++i) {
@@ -236,7 +293,6 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!text) {
       return;
     }
-    console.log('text=', text);  // DEBUG
     this.state = State.ADD_CONTEXTUAL_PHRASE_PENDING;
     this.speakFasterService
         .addContextualPhrase({
@@ -302,6 +358,15 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
 
   get focusChipIndex(): number|null {
     return this._focusChipIndex;
+  }
+
+  get chipBackgroundColor(): string {
+    if (this.state === State.CHOOSING_LETTER_CHIP ||
+        this.state === State.FOCUSED_ON_LETTER_CHIP) {
+      return '#406647';
+    } else {
+      return '#0687BE';
+    }
   }
 
   isChipTyped(index: number): boolean {

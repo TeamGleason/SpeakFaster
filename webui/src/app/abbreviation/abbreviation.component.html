@@ -36,19 +36,22 @@ mat-progress-spinner {
 .abbreviation-options-grid {
   align-items: start;
   display: grid;
-  gap: 5px;
+  gap: 1px 5px;
   grid-auto-columns: minmax(0, 1fr);
   grid-auto-flow: column;
   grid-template-areas:
-    "a a a a c c c c e e e e"
-    "a a a a c c c c e e e e"
-    "b b b b d d d d f f f f"
-    "b b b b d d d d f f f f";
+    "a a a a b b b b"
+    "a a a a b b b b"
+    "c c c c d d d d"
+    "c c c c d d d d"
+    "e e e e f f f f"
+    "e e e e f f f f";
+  padding-left: 3px;
 }
 
 .item {
   padding: 1px;
-  width: 355px;
+  width: 525px;
 }
 
 .item1 {
@@ -259,10 +262,11 @@ mat-progress-spinner {
 </app-abbreviation-refinement-component>
 
 </div>
-
+<!--
 <app-spell-component
     *ngIf="abbreviation !== null && (state === 'SPELLING' || state === 'CHOOSING_EXPANSION' || state === 'REQUEST_ONGOING')"
     class="spell-component"
     [originalAbbreviationSpec]="abbreviation!"
     (newAbbreviationSpec)="onNewAbbreviationSpec($event)"
-></app-spell-component>
+></app-spell-component> -->
+<!-- TODO(cais): Clean up. -->

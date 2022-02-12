@@ -13,6 +13,7 @@ import {AbbreviationSpec, AbbreviationToken} from '../types/abbreviation';
 // no match.
 // TODO(cais): Support workflow, same as above, but before entering the
 // keyword, first click a button to indicate which word is being spelled out.
+// TODO(cais): This may be obsolete. Remove.
 export enum SpellingState {
   CHOOSING_TOKEN = 'CHOOSING_TOKEN',
   SPELLING_TOKEN = 'SPELLING_TOKEN',

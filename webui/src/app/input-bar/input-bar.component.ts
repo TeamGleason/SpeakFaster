@@ -81,6 +81,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     ExternalEventsComponent.registerKeypressListener(this.keypressListener);
     this.inputBarChipsSubscription =
         this.inputBarChipsSubject.subscribe((event: InputBarChipsEvent) => {
+          console.log('Chip subject():', this.state);  // DEBUG
           this._focusChipIndex = null;
           this._chips.splice(0);
           this._chips.push(...event.chips);
@@ -128,6 +129,27 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     this.latestReconstructedString = reconstructedText;
     if (this.state === State.ENTERING_BASE_TEXT) {
       this.updateInputString(reconstructedText);
+    } else if (this.state === State.CHOOSING_LETTER_CHIP) {
+      // If there is a uniquely matching word, then choose it.
+      const typedLetter = reconstructedText.slice(reconstructedText.length - 1)
+                              .toLocaleLowerCase();
+      let matchingChipIndices: number[] = [];
+      for (let i = 0; i < this._chips.length; ++i) {
+        if (this._chips[i].text.toLocaleLowerCase() === typedLetter) {
+          matchingChipIndices.push(i);
+        }
+      }
+      if (matchingChipIndices.length === 1) {
+        this.state = State.FOCUSED_ON_LETTER_CHIP;
+        // TODO(cais): Add unit test.
+        this.baseReconstructedText = this.latestReconstructedString.slice(
+            0, this.latestReconstructedString.length - 1);
+        this._focusChipIndex = matchingChipIndices[0];
+        if (this._chipTypedText === null) {
+          this._chipTypedText = Array(this._chips.length).fill(null);
+        }
+        this._chipTypedText[this._focusChipIndex] = typedLetter;
+      }
     } else if (this.state === State.FOCUSED_ON_LETTER_CHIP) {
       if (this._chipTypedText === null) {
         this._chipTypedText = Array(this._chips.length).fill(null);
@@ -215,7 +237,9 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this.state === State.CHOOSING_LETTER_CHIP) {
       // TODO(cais): Add unit tests.
       this.state = State.FOCUSED_ON_LETTER_CHIP;
-    } else if (this.state === State.CHOOSING_WORD_CHIP) {
+    } else if (
+        this.state === State.CHOOSING_WORD_CHIP ||
+        this.state === State.FOCUSED_ON_WORD_CHIP) {
       // TODO(cais): Add unit tests.
       const tokens: string[] = this._chips.map(chip => chip.text);
       if (this._chipTypedText !== null) {

@@ -83,7 +83,6 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     ExternalEventsComponent.registerKeypressListener(this.keypressListener);
     this.inputBarChipsSubscription =
         this.inputBarChipsSubject.subscribe((event: InputBarChipsEvent) => {
-          console.log('Chip subject():', this.state);  // DEBUG
           this._focusChipIndex = null;
           this._chips.splice(0);
           this._chips.push(...event.chips);
@@ -378,6 +377,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     if (cleanText) {
       this.updateInputString('');
     }
+    this.baseReconstructedText = '';
     this.cutText = '';
   }
 

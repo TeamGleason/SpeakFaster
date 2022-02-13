@@ -463,7 +463,7 @@ class DataManager(object):
 
   def update_remote_session_objects_status(self, session_container_prefix):
     """Update the status of key remote objects."""
-    paginator = self._s3_client.get_paginator("list_objects")
+    paginator = self._s3_client.get_paginator("list_objects_v2")
     pages = paginator.paginate(
         Bucket=self._s3_bucket_name, Prefix=session_container_prefix)
     query_string = (
@@ -791,7 +791,6 @@ def _list_sessions(window,
   session_prefixes = data_manager.get_session_prefixes(container_prefix)
   session_prefixes_with_status = []
   session_colors = []
-
   data_manager.update_remote_session_objects_status(container_prefix)
   for session_prefix in session_prefixes:
     remote_status = data_manager.get_remote_session_folder_status(

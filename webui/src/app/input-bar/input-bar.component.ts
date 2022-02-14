@@ -1,5 +1,5 @@
 /** An input bar, with related functional buttons. */
-import {AfterViewInit, Component, ElementRef, Input, OnChanges, OnDestroy, OnInit, QueryList, SimpleChanges, ViewChildren} from '@angular/core';
+import {AfterViewInit, Component, ElementRef, EventEmitter, Input, OnDestroy, OnInit, Output, QueryList, SimpleChanges, ViewChildren} from '@angular/core';
 import {Subject, Subscription} from 'rxjs';
 import {updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
 import {createUuid} from 'src/utils/uuid';
@@ -50,6 +50,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   abbreviationExpansionTriggers!: Subject<InputAbbreviationChangedEvent>;
   @Input() fillMaskTriggers!: Subject<FillMaskRequest>;
   @Input() inputBarChipsSubject!: Subject<InputBarChipsEvent>;
+  @Output() inputStringChanged: EventEmitter<string> = new EventEmitter();
 
   private readonly _chips: InputBarChipSpec[] = [];
   private _focusChipIndex: number|null = null;
@@ -230,7 +231,6 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     console.log('Abbreviation expansion triggered:', abbreviationSpec);
     this.abbreviationExpansionTriggers.next(
         {abbreviationSpec, requestExpansion: true});
-    return;
   }
 
   onSpellButtonClicked(event: Event) {
@@ -388,6 +388,8 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private updateInputString(newStringValue: string) {
     this.inputString = newStringValue;
+    // TODO(cais): Add unit test.
+    this.inputStringChanged.next(this.inputString);
     updateButtonBoxesForElements(this.instanceId, this.buttons);
   }
 

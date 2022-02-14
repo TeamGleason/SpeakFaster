@@ -183,7 +183,7 @@ app-text-to-speech-component {
       <app-abbreviation-component
         *ngIf="hasAccessToken() &&
                appState === 'ABBREVIATION_EXPANSION' &&
-               anyContextStringsAvailable"
+               (anyContextStringsAvailable || inputStringNonEmpty)"
         [contextStrings]="contextStringsSelected"
         [abbreviationExpansionTriggers]="abbreviationExpansionTriggers"
         [fillMaskTriggers]="fillMaskTriggers"
@@ -199,6 +199,7 @@ app-text-to-speech-component {
             [inputBarChipsSubject]="inputBarChipsSubject"
             [abbreviationExpansionTriggers]="abbreviationExpansionTriggers"
             [fillMaskTriggers]="fillMaskTriggers"
+            (inputStringChanged)="onInputStringChanged($event)"
         ></app-input-bar-component>
       </div>
     </div>

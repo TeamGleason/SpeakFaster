@@ -65,9 +65,9 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   inputBarChipsSubject: Subject<InputBarChipsEvent> = new Subject();
 
   // Context speech content used for AE and other text predictions.
-  inputString: string = '';
   readonly contextStringsAvailable: string[] = [];
   readonly contextStringsSelected: string[] = [];
+  private inputString: string = '';
 
   @ViewChildren('clickableButton')
   clickableButtons!: QueryList<ElementRef<HTMLElement>>;
@@ -188,6 +188,10 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     return this._accessToken;
   }
 
+  onInputStringChanged(str: string) {
+    this.inputString = str;
+  }
+
   onMinimizeButtonClicked(event: Event) {
     this.changeAppState(AppState.MINIBAR);
   }
@@ -206,7 +210,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   onAbbreviationInputChanged(abbreviationChangedEvent:
                                  InputAbbreviationChangedEvent) {
-    this.inputString = abbreviationChangedEvent.abbreviationSpec.readableString;
     this.abbreviationExpansionTriggers.next(abbreviationChangedEvent);
   }
 
@@ -254,11 +257,15 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
         this.appState === AppState.QUICK_PHRASES_PARTNERS ||
         this.appState === AppState.QUICK_PHRASES_CARE ||
         (this.appState === AppState.ABBREVIATION_EXPANSION &&
-         !this.anyContextStringsAvailable);
+         !this.anyContextStringsAvailable && this.inputString.trim() === '');
   }
 
   get anyContextStringsAvailable(): boolean {
     return this.contextStringsAvailable.length > 0;
+  }
+
+  get inputStringNonEmpty(): boolean {
+    return this.inputString.trim().length > 0;
   }
 
   get nonMinimizedStatesAppStates(): AppState[] {

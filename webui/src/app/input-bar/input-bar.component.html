@@ -166,14 +166,12 @@
       </button>
     </div>
 
-    <div
-        class="right-buttons-container"
-        *ngIf="inputStringNonEmpty">
-      <button
-          #clickableButton
-          class="action-button speak-button"
-          (click)="onSpeakAsIsButtonClicked($event)">
-        <img class="button-image" src="/assets/images/speak.png" alt="speak phrase as is" />
+    <div class="right-buttons-container">
+      <button class="action-button speak-button">
+        <app-speak-button-component
+            [phrase]="effectiveTextToSpeechPhrase"
+            (speakButtonClicked)="onSpeakAsIsButtonClicked($event)">
+        </app-speak-button-component>
       </button>
 
       <button

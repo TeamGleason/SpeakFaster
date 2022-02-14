@@ -10,16 +10,3 @@
 </style>
 
 <audio #ttsAudio></audio>
-
-<div
-    *ngIf="audioPlaying"
-    class="audio-playing">
-  🔊
-</div>
-
-<div
-    *ngIf="errorMessage !== null"
-    class="error-message">
-  <span>TTS error:</span>
-  {{errorMessage}}
-</div>

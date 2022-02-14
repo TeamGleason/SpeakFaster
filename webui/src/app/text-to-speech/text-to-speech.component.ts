@@ -9,13 +9,24 @@ import {TextEntryEndEvent} from '../types/text-entry';
 const DEFAULT_LANGUAGE_CODE = 'en-US';
 const DEFAULT_AUDIO_ENCODING = 'LINEAR16';
 
+export interface TextToSpeechEvent {
+  state: 'PLAY'|'END'|'ERROR';
+
+  errorMessage?: string;
+}
+
+export type TextToSpeechListener = (event: TextToSpeechEvent) => void;
+
 @Component({
   selector: 'app-text-to-speech-component',
   templateUrl: './text-to-speech.component.html',
   providers: [TextToSpeechService],
 })
 export class TextToSpeechComponent implements OnInit {
+  private static readonly listeners: TextToSpeechListener[] = [];
+
   @Input() textEntryEndSubject!: Subject<TextEntryEndEvent>;
+  // @Input() textToSpeechEventSubject!: Subject<TextToSpeechEvent>;
   @Input() accessToken!: string;
 
   @ViewChildren('ttsAudio')
@@ -27,6 +38,23 @@ export class TextToSpeechComponent implements OnInit {
   constructor(
       public textToSpeechService: TextToSpeechService,
       private cdr: ChangeDetectorRef) {}
+
+  public static registerTextToSpeechListener(listener: TextToSpeechListener) {
+    if (TextToSpeechComponent.listeners.indexOf(listener) !== -1) {
+      return;
+    }
+    TextToSpeechComponent.listeners.push(listener);
+    // TODO(cais): Add unit test.
+  }
+
+  public static unregisterTextToSpeechListener(listener: TextToSpeechListener) {
+    const index = TextToSpeechComponent.listeners.indexOf(listener);
+    if (index === -1) {
+      return;
+    }
+    TextToSpeechComponent.listeners.splice(index, 1);
+    // TODO(cais): Add unit test.
+  }
 
   ngOnInit() {
     this.textEntryEndSubject.subscribe(event => {
@@ -46,6 +74,10 @@ export class TextToSpeechComponent implements OnInit {
   sendTextToSpeechRequest(text: string) {
     if (this.accessToken.length === 0) {
       this.errorMessage = 'no access token';
+      TextToSpeechComponent.listeners.forEach(listener => {
+        listener({state: 'ERROR', errorMessage: this.errorMessage || ''});
+      });
+      // TODO(cais): Add unit test.
       return;
     }
     this.textToSpeechService
@@ -64,9 +96,16 @@ export class TextToSpeechComponent implements OnInit {
               const ttsAudioElement = this.ttsAudioElements.first.nativeElement;
               if (!ttsAudioElement.onplay) {
                 ttsAudioElement.onplay = () => {
+                  TextToSpeechComponent.listeners.forEach(listener => {
+                    listener({state: 'PLAY'});
+                  });
                   this.audioPlaying = true;
                 };
                 ttsAudioElement.onended = () => {
+                  TextToSpeechComponent.listeners.forEach(listener => {
+                    listener({state: 'END'});
+                  });
+                  // TODO(cais): Add unit test.
                   this.audioPlaying = false;
                 };
               }
@@ -87,6 +126,10 @@ export class TextToSpeechComponent implements OnInit {
               } else {
                 this.errorMessage = `${error.statusText}`;
               }
+              TextToSpeechComponent.listeners.forEach(listener => {
+                listener(
+                    {state: 'ERROR', errorMessage: this.errorMessage || ''});
+              });
               this.cdr.detectChanges();
             });
   }

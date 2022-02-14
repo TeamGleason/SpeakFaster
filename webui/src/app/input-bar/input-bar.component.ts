@@ -128,7 +128,8 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   public listenToKeypress(keySequence: string[], reconstructedText: string):
       void {
     this.latestReconstructedString = reconstructedText;
-    if (this.state === State.ENTERING_BASE_TEXT) {
+    if (this.state === State.ENTERING_BASE_TEXT ||
+        this.state === State.CHOOSING_PHRASES) {
       this.updateInputString(
           reconstructedText.slice(this.baseReconstructedText.length));
     } else if (this.state === State.AFTER_CUT) {
@@ -298,30 +299,34 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  private reCreatedTextMaybeFromChips(): string {
+  /**
+   * Compute the effective text-to-speech phrase, taking into account the
+   * current UI state, such as directly-entered text and chips.
+   */
+  get effectiveTextToSpeechPhrase(): string {
     let text: string = '';
     if (this.state === State.CHOOSING_WORD_CHIP ||
         this.state === State.FOCUSED_ON_WORD_CHIP) {
       const words: string[] = this._chips.map(chip => chip.text);
       if (this._focusChipIndex && this._chipTypedText !== null) {
-        for (let i = 0; i < this._chipTypedText.length; ++i) {
-          if (this._chipTypedText[i] !== null) {
-            words[i] = this._chipTypedText[i]!;
+        this._chipTypedText.forEach((chipText, i) => {
+          if (chipText !== null) {
+            words[i] = chipText;
           }
-        }
+        });
       }
       return words.join(' ');
     } else if (
         this.state === State.ENTERING_BASE_TEXT ||
         this.state === State.AFTER_CUT) {
-      return this.inputString.trim();
+      return this.inputString;
     }
     text = text.trim();
     return text;
   }
 
   onSpeakAsIsButtonClicked(event: Event) {
-    const text = this.reCreatedTextMaybeFromChips();
+    const text = this.effectiveTextToSpeechPhrase;
     if (!text) {
       return;
     }
@@ -336,7 +341,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   onFavoriteButtonClicked(event: Event) {
-    const text = this.reCreatedTextMaybeFromChips();
+    const text = this.effectiveTextToSpeechPhrase;
     if (!text) {
       return;
     }

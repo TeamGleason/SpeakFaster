@@ -29,6 +29,7 @@ export class ContextComponent implements OnInit, AfterViewInit {
   readonly contextSignals: ConversationTurnContextSignal[] = [];
   contextRetrievalError: string|null = null;
 
+  @Output() contextStringsUpdated: EventEmitter<string[]> = new EventEmitter();
   @Output() contextStringsSelected: EventEmitter<string[]> = new EventEmitter();
 
   @ViewChildren('contextItem')
@@ -150,6 +151,7 @@ export class ContextComponent implements OnInit, AfterViewInit {
     return false;
   }
 
+  // TODO(cais): Remove if unused.
   private populateConversationTurnWithDefault() {
     if (this.contextSignals.length > 0) {
       return;
@@ -182,12 +184,13 @@ export class ContextComponent implements OnInit, AfterViewInit {
               if (data.errorMessage != null) {
                 this.contextRetrievalError = data.errorMessage;
                 // TODO(cais): Fix string interpolation in HTML.
-                this.populateConversationTurnWithDefault();
+                // this.populateConversationTurnWithDefault();
                 return;
               }
               if (data.contextSignals == null ||
                   data.contextSignals.length === 0) {
-                this.populateConversationTurnWithDefault();
+                // this.populateConversationTurnWithDefault();
+                this.contextStringsUpdated.next([]);
                 return;
               }
               this.cleanUpContextSignals();
@@ -218,11 +221,13 @@ export class ContextComponent implements OnInit, AfterViewInit {
               }
               this.emitContextStringsSelected();
               this.contextRetrievalError = null;
+              this.contextStringsUpdated.next(this.contextSignals.map(
+                  signal => signal.conversationTurn.speechContent));
             },
             error => {
               this.cleanUpContextSignals();
               this.contextRetrievalError = JSON.stringify(error);
-              this.populateConversationTurnWithDefault();
+              // this.populateConversationTurnWithDefault();
             });
   }
 

@@ -47,6 +47,11 @@ app-text-to-speech-component {
   width: fit-content;
 }
 
+.context-and-quick-phrase-container {
+  max-height: 300px;
+  overflow-y: hidden;
+}
+
 .main-area {
   display: flex;
   height: fit-content;
@@ -130,6 +135,13 @@ app-text-to-speech-component {
     <div class="main-left-pane">
       <div class="side-pane-button-container">
         <button
+            #clickableButton
+            class="side-pane-button minimize-button"
+            (click)="onMinimizeButtonClicked($event)">
+          <img class="button-image" src="/assets/images/close.png" alt="minimize" />
+        </button>
+
+        <button
             *ngFor="let quickPhrasesAppState of nonMinimizedStatesAppStates"
             #clickableButton
             class="side-pane-button"
@@ -142,33 +154,37 @@ app-text-to-speech-component {
 
         <button
             #clickableButton
-            class="side-pane-button minimize-button"
-            (click)="onMinimizeButtonClicked($event)">
-          <img class="button-image" src="/assets/images/minimize.png" alt="minimize" />
+            class="side-pane-button menu-button">
+          <img class="button-image" src="/assets/images/menu.png" alt="menu" />
         </button>
       </div>
     </div>
 
-    <div
-        class="main-right-pane mode-quick-pharses">
-      <app-quick-phrases-component
-          *ngIf="hasAccessToken() && isQuickPhrasesAppState()"
-          [userId]="userId"
-          [allowedTags]="getQuickPhrasesAllowedTags()"
-          [color]="getQuickPhrasesColor()"
-          [textEntryBeginSubject]="textEntryBeginSubject"
+    <div class="main-right-pane">
+      <div class="context-and-quick-phrase-container">
+        <app-context-component
+          *ngIf="hasAccessToken() &&
+                appState === 'ABBREVIATION_EXPANSION'"
           [textEntryEndSubject]="textEntryEndSubject"
-      ></app-quick-phrases-component>
+          (contextStringsUpdated)="onContextStringsUpdated($event)"
+          (contextStringsSelected)="onContextStringsSelected($event)"
+        ></app-context-component>
 
-      <app-context-component
-        *ngIf="hasAccessToken() && appState === 'ABBREVIATION_EXPANSION'"
-        [textEntryEndSubject]="textEntryEndSubject"
-        (contextStringsSelected)="onContextStringsSelected($event)"
-      ></app-context-component>
+        <app-quick-phrases-component
+            *ngIf="hasAccessToken() && isQuickPhrasesAppState()"
+            [userId]="userId"
+            [allowedTags]="getQuickPhrasesAllowedTags()"
+            [color]="getQuickPhrasesColor()"
+            [textEntryBeginSubject]="textEntryBeginSubject"
+            [textEntryEndSubject]="textEntryEndSubject"
+        ></app-quick-phrases-component>
+      </div>
 
       <app-abbreviation-component
-        *ngIf="hasAccessToken() && appState === 'ABBREVIATION_EXPANSION'"
-        [contextStrings]="contextStrings"
+        *ngIf="hasAccessToken() &&
+               appState === 'ABBREVIATION_EXPANSION' &&
+               anyContextStringsAvailable"
+        [contextStrings]="contextStringsSelected"
         [abbreviationExpansionTriggers]="abbreviationExpansionTriggers"
         [fillMaskTriggers]="fillMaskTriggers"
         [textEntryEndSubject]="textEntryEndSubject"
@@ -178,7 +194,7 @@ app-text-to-speech-component {
       <div class="bottom-area">
         <app-input-bar-component
             [userId]="userId"
-            [contextStrings]="contextStrings"
+            [contextStrings]="contextStringsSelected"
             [textEntryEndSubject]="textEntryEndSubject"
             [inputBarChipsSubject]="inputBarChipsSubject"
             [abbreviationExpansionTriggers]="abbreviationExpansionTriggers"

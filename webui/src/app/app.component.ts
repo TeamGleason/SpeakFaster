@@ -66,7 +66,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   // Context speech content used for AE and other text predictions.
   inputString: string = '';
-  readonly contextStrings: string[] = [];
+  readonly contextStringsAvailable: string[] = [];
+  readonly contextStringsSelected: string[] = [];
 
   @ViewChildren('clickableButton')
   clickableButtons!: QueryList<ElementRef<HTMLElement>>;
@@ -191,9 +192,16 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     this.changeAppState(AppState.MINIBAR);
   }
 
+  onContextStringsUpdated(contextStrings: string[]) {
+    // TODO(cais): Add unit tests.
+    this.contextStringsAvailable.splice(0);
+    this.contextStringsAvailable.push(...contextStrings);
+  }
+
   onContextStringsSelected(contextStrings: string[]) {
-    this.contextStrings.splice(0);
-    this.contextStrings.push(...contextStrings);
+    // TODO(cais): Add unit tests.
+    this.contextStringsSelected.splice(0);
+    this.contextStringsSelected.push(...contextStrings);
   }
 
   onAbbreviationInputChanged(abbreviationChangedEvent:
@@ -227,9 +235,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       case 'QUICK_PHRASES_FAVORITE':
         this.changeAppState(AppState.QUICK_PHRASES_FAVORITE);
         break;
-      case 'QUICK_PHRASES_TEMPORAL':
-        this.changeAppState(AppState.QUICK_PHRASES_TEMPORAL);
-        break;
       case 'QUICK_PHRASES_PARTNERS':
         this.changeAppState(AppState.QUICK_PHRASES_PARTNERS);
         break;
@@ -246,16 +251,20 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   isQuickPhrasesAppState() {
     return this.appState === AppState.QUICK_PHRASES_FAVORITE ||
-        this.appState === AppState.QUICK_PHRASES_TEMPORAL ||
         this.appState === AppState.QUICK_PHRASES_PARTNERS ||
-        this.appState === AppState.QUICK_PHRASES_CARE;
+        this.appState === AppState.QUICK_PHRASES_CARE ||
+        (this.appState === AppState.ABBREVIATION_EXPANSION &&
+         !this.anyContextStringsAvailable);
+  }
+
+  get anyContextStringsAvailable(): boolean {
+    return this.contextStringsAvailable.length > 0;
   }
 
   get nonMinimizedStatesAppStates(): AppState[] {
     return [
-      AppState.QUICK_PHRASES_FAVORITE, AppState.QUICK_PHRASES_TEMPORAL,
-      AppState.QUICK_PHRASES_PARTNERS, AppState.QUICK_PHRASES_CARE,
-      AppState.ABBREVIATION_EXPANSION
+      AppState.QUICK_PHRASES_CARE, AppState.QUICK_PHRASES_PARTNERS,
+      AppState.QUICK_PHRASES_FAVORITE, AppState.ABBREVIATION_EXPANSION
     ];
   }
 
@@ -264,8 +273,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     switch (appState) {
       case AppState.QUICK_PHRASES_FAVORITE:
         return `/assets/images/quick-phrases-favorite-${activeStateString}.png`;
-      case AppState.QUICK_PHRASES_TEMPORAL:
-        return `/assets/images/quick-phrases-temporal-${activeStateString}.png`;
       case AppState.QUICK_PHRASES_PARTNERS:
         return `/assets/images/quick-phrases-partners-${activeStateString}.png`;
       case AppState.QUICK_PHRASES_CARE:
@@ -281,12 +288,14 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     switch (this.appState) {
       case AppState.QUICK_PHRASES_FAVORITE:
         return ['favorite'];
-      case AppState.QUICK_PHRASES_TEMPORAL:
-        return ['temporal'];
       case AppState.QUICK_PHRASES_PARTNERS:
         return ['partner'];
       case AppState.QUICK_PHRASES_CARE:
         return ['care'];
+      case AppState.ABBREVIATION_EXPANSION:
+        // NOTE: When no context strings ia available during AE, we show the
+        // temporal context-based quick phrases instead.
+        return ['temporal'];
       default:
         throw new Error(`Invalid app state: ${this.appState}`);
     }
@@ -296,12 +305,12 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     switch (this.appState) {
       case AppState.QUICK_PHRASES_FAVORITE:
         return '#473261';
-      case AppState.QUICK_PHRASES_TEMPORAL:
-        return '#603819';
       case AppState.QUICK_PHRASES_PARTNERS:
         return '#3F0909';
       case AppState.QUICK_PHRASES_CARE:
         return '#093F3A';
+      case AppState.ABBREVIATION_EXPANSION:
+        return '#603819';
       default:
         throw new Error(`Invalid app state: ${this.appState}`);
     }

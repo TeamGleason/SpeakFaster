@@ -104,8 +104,7 @@ describe('AppComponent', () => {
 
   for (const appState
            of [AppState.QUICK_PHRASES_CARE, AppState.QUICK_PHRASES_FAVORITE,
-               AppState.QUICK_PHRASES_PARTNERS,
-               AppState.QUICK_PHRASES_TEMPORAL]) {
+               AppState.QUICK_PHRASES_PARTNERS]) {
     it(`shows QuickPhrasesComponent when AppState is ${appState}`, async () => {
       fixture.componentInstance.onNewAccessToken('foo-access-token');
       fixture.componentInstance.appState = AppState.QUICK_PHRASES_CARE;

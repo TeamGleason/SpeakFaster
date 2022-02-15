@@ -1,7 +1,7 @@
 /** Utility functions related to processing personal names. */
 
-// TODO(cais): Do not hardcode.
-const registeredNames: string[] = ['Donald', 'Goofy', 'Mickey', 'Pluto', 'Shanqing'];
+const registeredNames: string[] =
+    ['Donald', 'Goofy', 'Mickey', 'Pluto', 'Shanqing'];
 
 function canonicalizeName(name: string): string {
   return name.slice(0, 1).toLocaleUpperCase() +
@@ -25,6 +25,15 @@ export function unregisterName(name: string): void {
   registeredNames.splice(index, 1);
 }
 
+export function chooseStringRandomly(strings: string[]): string {
+  if (strings.length === 0) {
+    throw new Error('Cannot choose at random: array is empty.')
+  }
+  const n = strings.length;
+  const i = Math.min(Math.floor(Math.random() * n), n - 1);
+  return strings[i];
+}
+
 export function replacePersonNamesWithKnownValues(inputString: string): string {
   const words = inputString.split(' ').filter(word => word.length > 0);
   for (let i = 0; i < words.length; ++i) {
@@ -41,8 +50,9 @@ export function replacePersonNamesWithKnownValues(inputString: string): string {
       const matchingRegisteredNames = registeredNames.filter(name => {
         return name.toLocaleLowerCase().startsWith(initialLetter);
       });
-      // TODO(cais): Choose at random if there are multiple.
-      words[i] = matchingRegisteredNames[0] + punctuation;
+      if (matchingRegisteredNames.length > 0) {
+        words[i] = chooseStringRandomly(matchingRegisteredNames) + punctuation;
+      }
     }
   }
   return words.join(' ');

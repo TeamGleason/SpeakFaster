@@ -293,7 +293,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       case AppState.QUICK_PHRASES_FAVORITE:
         return ['favorite'];
       case AppState.QUICK_PHRASES_PARTNERS:
-        return ['partner'];
+        return ['partner-name'];
       case AppState.QUICK_PHRASES_CARE:
         return ['care'];
       default:

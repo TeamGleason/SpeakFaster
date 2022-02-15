@@ -1,28 +1,12 @@
-/** Utility functions related to processing personal names. */
+/** Component processing personal names in text. */
+import {Component, Input, OnInit} from '@angular/core';
 
-const registeredNames: string[] =
-    ['Donald', 'Goofy', 'Mickey', 'Pluto', 'Shanqing'];
+import {SpeakFasterService, TextPredictionResponse} from '../speakfaster-service';
 
-function canonicalizeName(name: string): string {
+export function canonicalizeName(name: string): string {
+  name = name.trim();
   return name.slice(0, 1).toLocaleUpperCase() +
       name.slice(1).toLocaleLowerCase();
-}
-
-export function registerName(name: string): void {
-  name = canonicalizeName(name);
-  if (registeredNames.indexOf(name) !== -1) {
-    return;
-  }
-  registeredNames.push(name);
-}
-
-export function unregisterName(name: string): void {
-  name = canonicalizeName(name);
-  const index = registeredNames.indexOf(name);
-  if (index === -1) {
-    return;
-  }
-  registeredNames.splice(index, 1);
 }
 
 export function chooseStringRandomly(strings: string[]): string {
@@ -34,28 +18,86 @@ export function chooseStringRandomly(strings: string[]): string {
   return strings[i];
 }
 
-export function replacePersonNamesWithKnownValues(inputString: string): string {
-  const words = inputString.split(' ').filter(word => word.length > 0);
-  for (let i = 0; i < words.length; ++i) {
-    let canonicalWord = canonicalizeName(words[i]);
-    let punctuation = '';
-    if (canonicalWord.match(/[A-Za-z]+[,;\-\.\?\!]/)) {
-      punctuation = canonicalWord.slice(canonicalWord.length - 1);
-      canonicalWord = canonicalWord.slice(0, canonicalWord.length - 1);
+@Component({
+  selector: 'app-personal-names-component',
+  templateUrl: './personal-names.component.html',
+  providers: [SpeakFasterService],
+})
+export class PersonalNamesComponent implements OnInit {
+  //   private static readonly listeners: TextToSpeechListener[] = [];
+  private static readonly PERSONAL_NAMES_TAG = 'partner-name';
+  private static readonly registeredNames: string[] = [];
+
+  public static replacePersonNamesWithKnownValues(inputString: string): string {
+    if (PersonalNamesComponent.registerName.length === 0) {
+      return inputString;
     }
-    if (GIVEN_NAMES.indexOf(canonicalWord) !== -1 &&
-        registeredNames.length > 0) {
-      // This is given name.
-      const initialLetter = canonicalWord.slice(0, 1).toLocaleLowerCase();
-      const matchingRegisteredNames = registeredNames.filter(name => {
-        return name.toLocaleLowerCase().startsWith(initialLetter);
-      });
-      if (matchingRegisteredNames.length > 0) {
-        words[i] = chooseStringRandomly(matchingRegisteredNames) + punctuation;
+    const words = inputString.split(' ').filter(word => word.length > 0);
+    for (let i = 0; i < words.length; ++i) {
+      let canonicalWord = canonicalizeName(words[i]);
+      let punctuation = '';
+      if (canonicalWord.match(/[A-Za-z]+[,;\-\.\?\!]/)) {
+        punctuation = canonicalWord.slice(canonicalWord.length - 1);
+        canonicalWord = canonicalWord.slice(0, canonicalWord.length - 1);
+      }
+      if (GIVEN_NAMES.indexOf(canonicalWord) !== -1 &&
+          PersonalNamesComponent.registeredNames.length > 0) {
+        // This is given name.
+        const initialLetter = canonicalWord.slice(0, 1).toLocaleLowerCase();
+        const matchingRegisteredNames =
+            PersonalNamesComponent.registeredNames.filter(name => {
+              return name.toLocaleLowerCase().startsWith(initialLetter);
+            });
+        if (matchingRegisteredNames.length > 0) {
+          words[i] =
+              chooseStringRandomly(matchingRegisteredNames) + punctuation;
+        }
       }
     }
+    return words.join(' ');
   }
-  return words.join(' ');
+
+  @Input() userId!: string;
+
+  errorMessage?: string|null = null;
+
+  constructor(public speakFasterService: SpeakFasterService) {}
+
+  ngOnInit() {
+    this.speakFasterService
+        .textPrediction({
+          contextTurns: [],
+          textPrefix: '',
+          timestamp: new Date().toISOString(),
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          allowedTags: [PersonalNamesComponent.PERSONAL_NAMES_TAG],
+        })
+        .subscribe((data: TextPredictionResponse) => {
+          data.contextualPhrases?.forEach(phrase => {
+            PersonalNamesComponent.registerName(phrase.text);
+          });
+          console.log(
+              'Reigstered personal names:',
+              JSON.stringify(PersonalNamesComponent.registeredNames));
+        });
+  }
+
+  private static registerName(name: string): void {
+    name = canonicalizeName(name);
+    if (PersonalNamesComponent.registeredNames.indexOf(name) !== -1) {
+      return;
+    }
+    PersonalNamesComponent.registeredNames.push(name);
+  }
+
+  private static unregisterName(name: string): void {
+    name = canonicalizeName(name);
+    const index = PersonalNamesComponent.registeredNames.indexOf(name);
+    if (index === -1) {
+      return;
+    }
+    PersonalNamesComponent.registeredNames.splice(index, 1);
+  }
 }
 
 // From

@@ -129,6 +129,11 @@ app-text-to-speech-component {
       [textEntryEndSubject]="textEntryEndSubject">
   </app-metrics-component>
 
+  <app-personal-names-component
+      *ngIf="hasAccessToken()"
+      [userId]="userId"
+  ></app-personal-names-component>
+
   <div
       class="main-area"
       *ngIf="hasAccessToken() && appState !== 'MINIBAR'">

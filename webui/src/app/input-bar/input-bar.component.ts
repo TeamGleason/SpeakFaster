@@ -128,6 +128,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
 
   public listenToKeypress(keySequence: string[], reconstructedText: string):
       void {
+    const lastKey = keySequence[keySequence.length - 1];
     this.latestReconstructedString = reconstructedText;
     if (this.state === State.ENTERING_BASE_TEXT ||
         this.state === State.CHOOSING_PHRASES) {
@@ -160,6 +161,9 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
       }
       updateButtonBoxesForElements(this.instanceId, this.buttons);
     } else if (this.state === State.FOCUSED_ON_LETTER_CHIP) {
+      if (lastKey === VIRTUAL_KEY.ENTER || lastKey === VIRTUAL_KEY.SPACE) {
+        this.onExpandButtonClicked();
+      }
       if (this._chipTypedText === null) {
         this._chipTypedText = Array(this._chips.length).fill(null);
       }
@@ -167,6 +171,9 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
           reconstructedText.slice(this.baseReconstructedText.length);
       updateButtonBoxesForElements(this.instanceId, this.buttons);
     } else if (this.state === State.FOCUSED_ON_WORD_CHIP) {
+      if (lastKey === VIRTUAL_KEY.ENTER || lastKey === VIRTUAL_KEY.SPACE) {
+        this.onSpeakAsIsButtonClicked();
+      }
       if (this._chipTypedText === null) {
         this._chipTypedText = Array(this._chips.length).fill(null);
       }
@@ -176,7 +183,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  onExpandButtonClicked(event: Event) {
+  onExpandButtonClicked(event?: Event) {
     const precedingText = '';
     const text = this.inputString.trim();
     const eraserLength = text.length;
@@ -325,7 +332,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     return text;
   }
 
-  onSpeakAsIsButtonClicked(event: Event) {
+  onSpeakAsIsButtonClicked(event?: Event) {
     const text = this.effectiveTextToSpeechPhrase;
     if (!text) {
       return;

@@ -38,6 +38,12 @@
   display: inline-block;
 }
 
+.buttons-container {
+  align-items: center;
+  display: inline-flex;
+  flex-direction: row;
+}
+
 .button-image {
   max-width: 50%;
   max-height: 50%;
@@ -61,7 +67,7 @@
 }
 
 .chips-container {
-  display: inline-block;
+  display: inline-flex;
 }
 
 .container {
@@ -92,11 +98,15 @@
 }
 
 .main-area {
+  display: flex;
+  flex-direction: row;
   flex: 1;
 }
 
 .right-buttons-container {
-  display: inline-block;
+  align-items: center;
+  display: flex;
+  flex-direction: row;
   width: fit-content;
 }
 
@@ -138,32 +148,34 @@
         </app-input-bar-chip-component>
       </div>
 
-      <button
-          #clickableButton
-          *ngIf="(state === 'ENTERING_BASE_TEXT' ||
-                  state === 'CHOOSING_PHRASES' ||
-                  state === 'FOCUSED_ON_LETTER_CHIP') && inputStringNonEmpty"
-          class="action-button expand-button"
-          (click)="onExpandButtonClicked($event)">
-        Expand
-      </button>
+      <div class="buttons-container">
+        <button
+            #clickableButton
+            *ngIf="(state === 'ENTERING_BASE_TEXT' ||
+                    state === 'CHOOSING_PHRASES' ||
+                    state === 'FOCUSED_ON_LETTER_CHIP') && inputStringNonEmpty"
+            class="action-button expand-button"
+            (click)="onExpandButtonClicked($event)">
+          Expand
+        </button>
 
-      <button
-          #clickableButton
-          *ngIf="(state === 'ENTERING_BASE_TEXT' ||
-                  state === 'CHOOSING_PHRASES') && inputStringNonEmpty"
-          class="action-button expand-button"
-          (click)="onSpellButtonClicked($event)">
-        Spell
-      </button>
+        <button
+            #clickableButton
+            *ngIf="(state === 'ENTERING_BASE_TEXT' ||
+                    state === 'CHOOSING_PHRASES') && inputStringNonEmpty"
+            class="action-button expand-button"
+            (click)="onSpellButtonClicked($event)">
+          Spell
+        </button>
 
-      <button
-          #clickableButton
-          *ngIf="inputStringNonEmpty"
-          class="action-button abort-button"
-          (click)="onClearButtonClicked($event)">
-        X
-      </button>
+        <button
+            #clickableButton
+            *ngIf="inputStringNonEmpty"
+            class="action-button abort-button"
+            (click)="onClearButtonClicked($event)">
+          X
+        </button>
+      </div>
     </div>
 
     <div class="right-buttons-container">

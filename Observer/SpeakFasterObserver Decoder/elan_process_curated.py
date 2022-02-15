@@ -463,6 +463,7 @@ def postprocess_curated(input_dir, speaker_id_config_json_path):
   with open(out_json_path, "wt") as f:
     out_json["proprocessing_timestamp"] = (
         str(datetime.utcnow().strftime("%Y%m%dT%H%M%S.%fZ")))
+    out_json["curator_username"] = os.getlogin()
     out_json["speech_curation_stats"] = speech_curation_stats
     json.dump(out_json, f, indent=2)
     print("\nWrote additional info to JSON file: %s" % out_json_path)

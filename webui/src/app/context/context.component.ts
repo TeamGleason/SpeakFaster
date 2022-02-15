@@ -151,7 +151,6 @@ export class ContextComponent implements OnInit, AfterViewInit {
     return false;
   }
 
-  // TODO(cais): Remove if unused.
   private populateConversationTurnWithDefault() {
     if (this.contextSignals.length > 0) {
       return;
@@ -183,13 +182,12 @@ export class ContextComponent implements OnInit, AfterViewInit {
             data => {
               if (data.errorMessage != null) {
                 this.contextRetrievalError = data.errorMessage;
-                // TODO(cais): Fix string interpolation in HTML.
-                // this.populateConversationTurnWithDefault();
+                this.populateConversationTurnWithDefault();
                 return;
               }
               if (data.contextSignals == null ||
                   data.contextSignals.length === 0) {
-                // this.populateConversationTurnWithDefault();
+                this.populateConversationTurnWithDefault();
                 this.contextStringsUpdated.next([]);
                 return;
               }

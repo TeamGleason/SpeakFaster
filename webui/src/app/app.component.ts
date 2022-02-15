@@ -227,7 +227,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     }
   }
 
-
   /** Clear all reigstered app-resize callbacks. */
   public static clearAppResizeCallback() {
     AppComponent.appResizeCallbacks.splice(0);
@@ -255,9 +254,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   isQuickPhrasesAppState() {
     return this.appState === AppState.QUICK_PHRASES_FAVORITE ||
         this.appState === AppState.QUICK_PHRASES_PARTNERS ||
-        this.appState === AppState.QUICK_PHRASES_CARE ||
-        (this.appState === AppState.ABBREVIATION_EXPANSION &&
-         !this.anyContextStringsAvailable && this.inputString.trim() === '');
+        this.appState === AppState.QUICK_PHRASES_CARE;
   }
 
   get anyContextStringsAvailable(): boolean {
@@ -299,10 +296,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
         return ['partner'];
       case AppState.QUICK_PHRASES_CARE:
         return ['care'];
-      case AppState.ABBREVIATION_EXPANSION:
-        // NOTE: When no context strings ia available during AE, we show the
-        // temporal context-based quick phrases instead.
-        return ['temporal'];
       default:
         throw new Error(`Invalid app state: ${this.appState}`);
     }
@@ -316,8 +309,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
         return '#3F0909';
       case AppState.QUICK_PHRASES_CARE:
         return '#093F3A';
-      case AppState.ABBREVIATION_EXPANSION:
-        return '#603819';
       default:
         throw new Error(`Invalid app state: ${this.appState}`);
     }

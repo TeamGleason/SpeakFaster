@@ -7,7 +7,8 @@ import {injectKeys, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from
 import {RefinementResult, RefinementType} from '../abbreviation-refinement/abbreviation-refinement.component';
 import {ExternalEventsComponent, KeypressListener, repeatVirtualKey, VIRTUAL_KEY} from '../external/external-events.component';
 import {InputBarChipsEvent} from '../input-bar/input-bar.component';
-import {FillMaskRequest, FillMaskResponse, SpeakFasterService} from '../speakfaster-service';
+import {replacePersonNamesWithKnownValues} from '../personal-names/personal-name-utils';
+import {FillMaskRequest, SpeakFasterService} from '../speakfaster-service';
 import {AbbreviationSpec, InputAbbreviationChangedEvent} from '../types/abbreviation';
 import {TextEntryEndEvent} from '../types/text-entry';
 
@@ -310,7 +311,14 @@ export class AbbreviationComponent implements OnDestroy, OnInit, AfterViewInit {
         .subscribe(
             data => {
               if (data.exactMatches != null) {
-                this.abbreviationOptions.push(...data.exactMatches);
+                data.exactMatches.forEach(exactMatch => {
+                  const replaced =
+                      replacePersonNamesWithKnownValues(exactMatch);
+                  if (this.abbreviationOptions.indexOf(replaced) === -1) {
+                    this.abbreviationOptions.push(replaced);
+                  }
+                });
+                // this.abbreviationOptions.push(...data.exactMatches);
               }
               this.state = State.CHOOSING_EXPANSION;
               this.receivedEmptyOptions = this.abbreviationOptions.length === 0;

@@ -62,7 +62,7 @@ export class PhraseComponent implements AfterViewInit, OnDestroy {
       fontSizePx /= Math.pow(
           (this.phraseText.length /
            PhraseComponent.FONT_SCALING_LENGTH_THRESHOLD),
-          1.2);
+          1.1);
       this.phraseElement.nativeElement.style.fontSize =
           `${fontSizePx.toFixed(1)}px`;
       const lineHeightPx = fontSizePx + 2;

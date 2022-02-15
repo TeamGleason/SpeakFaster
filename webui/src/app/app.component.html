@@ -161,29 +161,24 @@ app-text-to-speech-component {
     </div>
 
     <div class="main-right-pane">
-      <div class="context-and-quick-phrase-container">
-        <app-context-component
-          *ngIf="hasAccessToken() &&
-                appState === 'ABBREVIATION_EXPANSION'"
-          [textEntryEndSubject]="textEntryEndSubject"
-          (contextStringsUpdated)="onContextStringsUpdated($event)"
-          (contextStringsSelected)="onContextStringsSelected($event)"
-        ></app-context-component>
+      <app-context-component
+        *ngIf="hasAccessToken() && appState === 'ABBREVIATION_EXPANSION'"
+        [textEntryEndSubject]="textEntryEndSubject"
+        (contextStringsUpdated)="onContextStringsUpdated($event)"
+        (contextStringsSelected)="onContextStringsSelected($event)"
+      ></app-context-component>
 
-        <app-quick-phrases-component
-            *ngIf="hasAccessToken() && isQuickPhrasesAppState()"
-            [userId]="userId"
-            [allowedTags]="getQuickPhrasesAllowedTags()"
-            [color]="getQuickPhrasesColor()"
-            [textEntryBeginSubject]="textEntryBeginSubject"
-            [textEntryEndSubject]="textEntryEndSubject"
-        ></app-quick-phrases-component>
-      </div>
+      <app-quick-phrases-component
+          *ngIf="hasAccessToken() && isQuickPhrasesAppState()"
+          [userId]="userId"
+          [allowedTags]="getQuickPhrasesAllowedTags()"
+          [color]="getQuickPhrasesColor()"
+          [textEntryBeginSubject]="textEntryBeginSubject"
+          [textEntryEndSubject]="textEntryEndSubject"
+      ></app-quick-phrases-component>
 
       <app-abbreviation-component
-        *ngIf="hasAccessToken() &&
-               appState === 'ABBREVIATION_EXPANSION' &&
-               (anyContextStringsAvailable || inputStringNonEmpty)"
+        *ngIf="hasAccessToken() && appState === 'ABBREVIATION_EXPANSION'"
         [contextStrings]="contextStringsSelected"
         [abbreviationExpansionTriggers]="abbreviationExpansionTriggers"
         [fillMaskTriggers]="fillMaskTriggers"

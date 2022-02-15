@@ -41,6 +41,13 @@ export interface ContextualPhrase {
   // The presence of a conversation partner, as specified by the unique ID for
   // the partner, as a contextual signal.
   partnerId?: string;
+
+  // Creation timestamp for the quick phrase, in ISO format. Assume UTC time
+  // zone.
+  createdTimestamp?: string;
+
+  // Last modified timestamp (if any), in ISO format. Assume UTC time zone.
+  lastModifiedTimestamp?: string;
 }
 
 // Request to add a contextual phrase (i.e., "quick phrase").

@@ -9,6 +9,7 @@ import {AppComponent} from '../app.component';
 import {VIRTUAL_KEY} from '../external/external-events.component';
 import {PhraseComponent} from '../phrase/phrase.component';
 import {SpeakFasterService, TextPredictionResponse} from '../speakfaster-service';
+import {ContextualPhrase} from '../types/contextual_phrase';
 import {TextEntryBeginEvent, TextEntryEndEvent} from '../types/text-entry';
 
 export enum State {
@@ -37,8 +38,7 @@ export class QuickPhrasesComponent implements AfterViewInit, OnChanges,
   @Input() textEntryBeginSubject!: Subject<TextEntryBeginEvent>;
   @Input() textEntryEndSubject!: Subject<TextEntryEndEvent>;
   @Input() color: string = 'gray';
-  readonly phrases: string[] = [];
-  readonly phraseIds: string[] = [];
+  readonly phrases: ContextualPhrase[] = [];
   errorMessage: string|null = null;
 
   @ViewChildren('clickableButton')
@@ -56,6 +56,7 @@ export class QuickPhrasesComponent implements AfterViewInit, OnChanges,
     // contextual phrases ("quick phrases").
     this.speakFasterService
         .textPrediction({
+          userId: this.userId,
           contextTurns: [],
           textPrefix: '',
           timestamp: new Date().toISOString(),
@@ -66,12 +67,24 @@ export class QuickPhrasesComponent implements AfterViewInit, OnChanges,
             (data: TextPredictionResponse) => {
               this.state = State.RETRIEVED_PHRASES;
               this.phrases.splice(0);
-              this.phraseIds.splice(0);
               if (data.contextualPhrases) {
-                this.phrases.push(...data.contextualPhrases.map(
-                    phrase => phrase.text.trim()));
-                this.phraseIds.push(
-                    ...data.contextualPhrases.map(phrase => phrase.phraseId));
+                this.phrases.push(...data.contextualPhrases);
+                this.phrases.sort(
+                    (a: ContextualPhrase, b: ContextualPhrase) => {
+                      const dateA = new Date(a.createdTimestamp!).getTime();
+                      const dateB = new Date(b.createdTimestamp!).getTime();
+                      if (dateA === dateB) {
+                        if (a.text > b.text) {
+                          return 1;
+                        } else if (a.text < b.text) {
+                          return -1;
+                        } else {
+                          return 0;
+                        }
+                      } else {
+                        return dateB - dateA;
+                      }
+                    });
               }
               this.errorMessage = null;
               setTimeout(
@@ -123,17 +136,21 @@ export class QuickPhrasesComponent implements AfterViewInit, OnChanges,
   }
 
   onFavoriteButtonClicked(event: {phraseText: string, phraseIndex: number}) {
-    const phraseId = this.phraseIds[event.phraseIndex];
-    this.speakFasterService.deleteContextualPhrase({
-      userId: this.userId,
-      phraseId,
-    }).subscribe(data => {
-      this.retrievePhrases();
-      // TODO(cais): Add unit test.
-    }, error => {
-      // TODO(cais): Display error in UI.
-      console.error('Deleting quick phrase failed:', error);
-    });
+    const phraseId = this.phrases[event.phraseIndex].phraseId;
+    this.speakFasterService
+        .deleteContextualPhrase({
+          userId: this.userId,
+          phraseId,
+        })
+        .subscribe(
+            data => {
+              this.retrievePhrases();
+              // TODO(cais): Add unit test.
+            },
+            error => {
+              // TODO(cais): Display error in UI.
+              console.error('Deleting quick phrase failed:', error);
+            });
   }
 
   onSpeakOptionButtonClicked(event: {phraseText: string, phraseIndex: number}) {
@@ -194,7 +211,7 @@ export class QuickPhrasesComponent implements AfterViewInit, OnChanges,
       index: number, toInjectKeys: boolean,
       toTriggerInAppTextToSpeech: boolean = false) {
     let numKeypresses = 1;
-    const phrase = this.phrases[index].trim();
+    const phrase = this.phrases[index].text.trim();
     numKeypresses += phrase.length;
     this.textEntryBeginSubject.next({timestampMillis: Date.now()});
     this.textEntryEndSubject.next({

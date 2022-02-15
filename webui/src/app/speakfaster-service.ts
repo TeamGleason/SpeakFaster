@@ -46,6 +46,9 @@ export interface TextPredictionRequest {
   // Tags used to filter the responses. Used for the contextual phrases (quick
   // phrases). Undefined or empty array is interpreted as no filtering.
   allowedTags?: string[];
+
+  // ID of the user for which the text predictions are to be generated.
+  userId?: string;
 }
 
 export interface TextPredictionResponse {
@@ -191,6 +194,7 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
       Observable<TextPredictionResponse> {
     const {endpoint, headers, withCredentials} = this.getServerCallParams();
     const params: any = {
+      userId: textPredictionRequest.userId || '',
       mode: 'text_continuation',
       speechContent: textPredictionRequest.contextTurns.join('|'),
       textPrefix: textPredictionRequest.textPrefix,

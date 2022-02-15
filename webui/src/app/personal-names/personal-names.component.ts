@@ -66,6 +66,7 @@ export class PersonalNamesComponent implements OnInit {
   ngOnInit() {
     this.speakFasterService
         .textPrediction({
+          userId: this.userId,
           contextTurns: [],
           textPrefix: '',
           timestamp: new Date().toISOString(),

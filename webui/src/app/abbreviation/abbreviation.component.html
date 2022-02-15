@@ -49,6 +49,12 @@ mat-progress-spinner {
   padding-left: 3px;
 }
 
+.button-image {
+  margin-right: 5px;
+  max-width: 80%;
+  max-height: 80%;
+}
+
 .item {
   padding: 1px;
   width: 525px;
@@ -100,6 +106,12 @@ mat-progress-spinner {
   height: 66px;
   margin: 2px;
   width: 66px;
+}
+
+.action-button.repeat-button {
+  align-items: center;
+  display: flex;
+  flex-direction: row;
 }
 
 .edit-token {
@@ -260,5 +272,17 @@ mat-progress-spinner {
     [fillMaskRequest]="fillMaskRequest!"
     (refinementResult)="onRefinementResult($event)">
 </app-abbreviation-refinement-component>
+
+<button
+    #clickableButton
+    *ngIf="state === 'POST_CHOOSING_EXPANSION'"
+    class="action-button repeat-button"
+    (click)="onRepeatButtonClicked($event)">
+  <img
+      class="button-image"
+      src="/assets/images/repeat.png"
+      alt="Show options again" />
+  Show options again
+</button>
 
 </div>

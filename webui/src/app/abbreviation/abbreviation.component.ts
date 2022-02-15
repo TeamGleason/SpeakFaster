@@ -18,6 +18,7 @@ export enum State {
   CHOOSING_EXPANSION = 'CHOOSING_EXPANSION',
   SPELLING = 'SPELLING',
   REFINING_EXPANSION = 'REFINING_EXPANSION',
+  POST_CHOOSING_EXPANSION = 'POST_CHOOSING_EXPANSION',
 }
 
 // Abbreviation expansion can be triggered by entering the abbreviation followed
@@ -191,7 +192,7 @@ export class AbbreviationComponent implements OnDestroy, OnInit, AfterViewInit {
     phraseText: string; phraseIndex: number
   }) {
     if (this.state === State.CHOOSING_EXPANSION ||
-        this.state == State.SPELLING) {
+        this.state === State.SPELLING) {
       this.selectExpansionOption(event.phraseIndex, /* toInjectKeys= */ true);
     }
   }
@@ -208,6 +209,11 @@ export class AbbreviationComponent implements OnDestroy, OnInit, AfterViewInit {
     this.selectExpansionOption(
         event.phraseIndex, /* toInjectKeys= */ false,
         /* toTriggerInAppTextToSpeech= */ true);
+  }
+
+  onRepeatButtonClicked(event: Event) {
+    this.state = State.CHOOSING_EXPANSION;
+    this.cdr.detectChanges();
   }
 
   private phraseToChips(phraseText: string): InputBarChipsEvent {
@@ -267,18 +273,11 @@ export class AbbreviationComponent implements OnDestroy, OnInit, AfterViewInit {
       inAppTextToSpeechAudioConfig:
           toTriggerInAppTextToSpeech ? {volume_gain_db: 0} : undefined,
     });
-    // TODO(cais): Prevent selection in gap state.
-    setTimeout(
-        () => this.resetState(),
-        AbbreviationComponent._POST_SELECTION_DELAY_MILLIS);
+    this.state = State.POST_CHOOSING_EXPANSION;
   }
 
   private resetState() {
-    this.abbreviation = null;
     this.responseError = null;
-    if (this.abbreviationOptions.length > 0) {
-      this.abbreviationOptions.splice(0);
-    }
     this._selectedAbbreviationIndex = -1;
     this.editTokens.splice(0);
     this.replacementTokens.splice(0);

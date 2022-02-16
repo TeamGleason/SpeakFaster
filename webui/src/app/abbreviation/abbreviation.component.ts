@@ -43,6 +43,7 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
   private readonly instanceId =
       AbbreviationComponent._NAME + '_' + createUuid();
   private keypressListener: KeypressListener = this.listenToKeypress.bind(this);
+  @Input() userId!: string;
   @Input() contextStrings!: string[];
   @Input() textEntryEndSubject!: Subject<TextEntryEndEvent>;
   @Input()
@@ -146,7 +147,7 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
           this.textPredictions.splice(0);
           data.outputs.forEach(output => {
             const text = output.trim();
-            if (!text || text.match(/^[\s,;\.\!\?]+$/) ||
+            if (!text || text.match(/^[\s,;\.\!\?\_]+$/) ||
                 output.toLocaleLowerCase().indexOf('speaker') !== -1) {
               return;
             }

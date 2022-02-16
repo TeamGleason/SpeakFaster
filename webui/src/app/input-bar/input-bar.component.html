@@ -54,18 +54,6 @@
   color: #888;
 }
 
-.button-state-error {
-  background: red;
-}
-
-.button-state-pending {
-  background: orange;
-}
-
-.button-state-success {
-  background: green;
-}
-
 .chips-container {
   display: inline-flex;
 }
@@ -158,6 +146,7 @@
             (click)="onExpandButtonClicked($event)">
           Expand
         </button>
+        <!-- TODO(cais): Support AFTER_CUT keyword expansion. -->
 
         <button
             #clickableButton
@@ -183,21 +172,18 @@
           #clickableButton
           class="action-button speak-button">
         <app-speak-button-component
-            [phrase]="effectiveTextToSpeechPhrase"
+            [phrase]="effectivePhrase"
             (speakButtonClicked)="onSpeakAsIsButtonClicked($event)">
         </app-speak-button-component>
       </button>
 
       <button
           #clickableButton
-          class="action-button favorite-button"
-          [ngClass]="{
-              'button-state-pending': state === 'ADD_CONTEXTUAL_PHRASE_PENDING',
-              'button-state-success': state === 'ADD_CONTEXTUAL_PHRASE_SUCCESS',
-              'button-state-error': state === 'ADD_CONTEXTUAL_PHRASE_ERROR'
-            }"
-          (click)="onFavoriteButtonClicked($event)">
-        <img class="button-image" src="{{favoriteButtonImageUrl}}" alt="add phrase to favorite" />
+          class="action-button favorite-button">
+        <app-favorite-button-component
+            [userId]="userId"
+            [phrase]="effectivePhrase">
+        </app-favorite-button-component>
       </button>
     </div>
 

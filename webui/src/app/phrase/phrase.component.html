@@ -78,9 +78,14 @@
   <button
       #clickableButton
       *ngIf="showFavoriteButton"
-      class="action-button favorite-button"
-      (click)="onFavoriteButtonClicked($event)">
-    <img class="button-image" src="{{favoriteButtonImageUrl}}" alt="favorite phrase" />
+      class="action-button favorite-button">
+    <!-- <img class="button-image" src="{{favoriteButtonImageUrl}}" alt="favorite phrase" /> -->
+    <app-favorite-button-component
+        [isDeletion]="phraseId !== undefined && phraseId.length > 0"
+        [userId]="userId"
+        [phraseId]="phraseId"
+        [phrase]="phraseText">
+    </app-favorite-button-component>
   </button>
 
 </div>

@@ -315,7 +315,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
    * Compute the effective text-to-speech phrase, taking into account the
    * current UI state, such as directly-entered text and chips.
    */
-  get effectiveTextToSpeechPhrase(): string {
+  get effectivePhrase(): string {
     let text: string = '';
     if (this.state === State.CHOOSING_WORD_CHIP ||
         this.state === State.FOCUSED_ON_WORD_CHIP) {
@@ -338,7 +338,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   onSpeakAsIsButtonClicked(event?: Event) {
-    const text = this.effectiveTextToSpeechPhrase;
+    const text = this.effectivePhrase;
     if (!text) {
       return;
     }
@@ -350,41 +350,6 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
         volume_gain_db: 0,
       }
     });
-  }
-
-  onFavoriteButtonClicked(event: Event) {
-    const text = this.effectiveTextToSpeechPhrase;
-    if (!text) {
-      return;
-    }
-    this.state = State.ADD_CONTEXTUAL_PHRASE_PENDING;
-    this.speakFasterService
-        .addContextualPhrase({
-          userId: this.userId,
-          contextualPhrase: {
-            phraseId: '',  // For AddContextualPhraseRequest, this is ignored.
-            text,
-            tags: ['favorite'],  // TODO(cais): Do not hardcode this tag
-          }
-        })
-        .subscribe(
-            (data: AddContextualPhraseResponse) => {
-              this.state = State.ADD_CONTEXTUAL_PHRASE_SUCCESS;
-              setTimeout(() => {
-                this.textEntryEndSubject.next({
-                  text: '',
-                  timestampMillis: new Date().getTime(),
-                  isFinal: true,
-                  isAborted: true,
-                });
-                this.resetState();
-              }, InputBarComponent.STATE_REST_DELAY_MILLIS);
-            },
-            error => {
-              setTimeout(
-                  () => this.resetState(false),
-                  InputBarComponent.STATE_REST_DELAY_MILLIS);
-            });
   }
 
   private resetState(cleanText: boolean = true) {

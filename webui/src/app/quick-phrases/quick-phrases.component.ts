@@ -135,24 +135,6 @@ export class QuickPhrasesComponent implements AfterViewInit, OnChanges,
         /* toTriggerInAppTextToSpeech= */ false);
   }
 
-  onFavoriteButtonClicked(event: {phraseText: string, phraseIndex: number}) {
-    const phraseId = this.phrases[event.phraseIndex].phraseId;
-    this.speakFasterService
-        .deleteContextualPhrase({
-          userId: this.userId,
-          phraseId,
-        })
-        .subscribe(
-            data => {
-              this.retrievePhrases();
-              // TODO(cais): Add unit test.
-            },
-            error => {
-              // TODO(cais): Display error in UI.
-              console.error('Deleting quick phrase failed:', error);
-            });
-  }
-
   onSpeakOptionButtonClicked(event: {phraseText: string, phraseIndex: number}) {
     this.selectPhrase(
         event.phraseIndex, /* toInjectKeys= */ false,

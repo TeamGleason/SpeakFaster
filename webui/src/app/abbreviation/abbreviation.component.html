@@ -256,6 +256,7 @@ mat-progress-spinner {
           *ngFor="let abbreviationOption of abbreviationOptions; let i = index"
           #abbreviationOption
           class="item item{{i + 1}}"
+          [userId]="userId"
           [phraseText]="abbreviationOption"
           [phraseIndex]="i"
           [scaleFontSize]="true"

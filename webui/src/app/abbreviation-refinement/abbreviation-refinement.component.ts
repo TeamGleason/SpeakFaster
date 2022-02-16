@@ -42,8 +42,6 @@ export class AbbreviationRefinementComponent implements OnInit, AfterViewInit,
   @ViewChildren('clickableButton')
   clickableButtons!: QueryList<ElementRef<HTMLElement>>;
 
-  private readonly keypressListener: KeypressListener =
-      this.listenToKeypress.bind(this);
   private replacementIndex: number|null = null;
   private readonly _replacements: string[] = [];
 
@@ -77,7 +75,6 @@ export class AbbreviationRefinementComponent implements OnInit, AfterViewInit,
     if (this.clickableButtonsSubscription) {
       this.clickableButtonsSubscription.unsubscribe();
     }
-    ExternalEventsComponent.unregisterKeypressListener(this.keypressListener);
     updateButtonBoxesToEmpty(this.instanceId);
   }
 
@@ -122,35 +119,6 @@ export class AbbreviationRefinementComponent implements OnInit, AfterViewInit,
 
   onTryAgainButtonClicked(event: Event) {
     this.callFillMask();
-  }
-
-  public listenToKeypress(keySequence: string[], reconstructedText: string):
-      void {
-    // TODO(cais): Listen to replacement keys.
-
-    //   if (isPlainAlphanumericKey(event, 'Enter')) {
-    //     if (this.manualTokenString.trim().length > 0) {
-    //       this.emitExpansionWithTokenReplacement(this.manualTokenString.trim());
-    //       return true;
-    //     } else if (this.selectedTokenIndex !== null) {
-    //       // Use the original.
-    //       this.emitExpansionWithTokenReplacement(
-    //           this.editTokens[this.selectedTokenIndex]);
-    //       return true;
-    //     }
-    //   } else if (isTextContentKey(event)) {
-    //     this.manualTokenString += event.key.toLocaleLowerCase();
-    //     return true;
-    //   } else if (isPlainAlphanumericKey(event, 'Backspace')) {
-    //     if (this.manualTokenString.length > 0) {
-    //       this.manualTokenString =
-    //           this.manualTokenString.slice(0, this.manualTokenString.length -
-    //           1);
-    //       return true;
-    //     }
-    //   }
-    //   return false;
-    // }  // TODO(cais): Clean up.
   }
 
   get replacements(): string[] {

@@ -18,6 +18,8 @@ export class PhraseComponent implements AfterViewInit, OnDestroy {
   private readonly instanceId = PhraseComponent._NAME + '_' + createUuid();
   private static readonly BASE_FONT_SIZE_PX = 22;
   private static readonly FONT_SCALING_LENGTH_THRESHOLD = 32;
+  @Input() userId!: string;
+  @Input() phraseId?: string;
   @Input() color: string = '#093F3A';
   @Input() showFavoriteButton: boolean = false;
   @Input() favoriteButtonPerformsDeletion: boolean = false;
@@ -34,10 +36,6 @@ export class PhraseComponent implements AfterViewInit, OnDestroy {
   @Output()
   injectButtonClicked: EventEmitter<{phraseText: string, phraseIndex: number}> =
       new EventEmitter();
-  @Output()
-  favoriteButtonClicked:
-      EventEmitter<{phraseText: string, phraseIndex: number}> =
-          new EventEmitter();
 
   @ViewChild('phrase') phraseElement!: ElementRef<HTMLDivElement>;
   @ViewChildren('clickableButton')
@@ -102,24 +100,4 @@ export class PhraseComponent implements AfterViewInit, OnDestroy {
         {phraseText: this.phraseText, phraseIndex: this.phraseIndex});
   }
 
-  onFavoriteButtonClicked(event: Event) {
-    if (this.favoriteButtonPerformsDeletion && this.state === State.READY) {
-      this.state = State.CONFIRMING_DELETION;
-    } else {
-      this.favoriteButtonClicked.emit(
-          {phraseText: this.phraseText, phraseIndex: this.phraseIndex});
-    }
-  }
-
-  get favoriteButtonImageUrl(): string {
-    if (this.favoriteButtonPerformsDeletion) {
-      if (this.state === State.READY) {
-        return '/assets/images/delete.png';
-      } else {
-        return '/assets/images/delete_forever.png';
-      }
-    } else {
-      return '/assets/images/favorite.png';
-    }
-  }
 }

@@ -141,7 +141,8 @@
             #clickableButton
             *ngIf="(state === 'ENTERING_BASE_TEXT' ||
                     state === 'CHOOSING_PHRASES' ||
-                    state === 'FOCUSED_ON_LETTER_CHIP') && inputStringNonEmpty"
+                    state === 'FOCUSED_ON_LETTER_CHIP') &&
+                    inputStringNonEmpty && supportsAbbrevationExpansion"
             class="action-button expand-button"
             (click)="onExpandButtonClicked($event)">
           Expand
@@ -151,7 +152,8 @@
         <button
             #clickableButton
             *ngIf="(state === 'ENTERING_BASE_TEXT' ||
-                    state === 'CHOOSING_PHRASES') && inputStringNonEmpty"
+                    state === 'CHOOSING_PHRASES') && inputStringNonEmpty &&
+                   supportsAbbrevationExpansion"
             class="action-button expand-button"
             (click)="onSpellButtonClicked($event)">
           Spell

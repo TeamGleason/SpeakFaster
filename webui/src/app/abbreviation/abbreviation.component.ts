@@ -1,11 +1,11 @@
 import {AfterViewInit, ChangeDetectorRef, Component, ElementRef, Input, OnChanges, OnDestroy, OnInit, Output, QueryList, SimpleChanges, ViewChildren} from '@angular/core';
 import {Subject, Subscription} from 'rxjs';
-import {allItemsEqual, keySequenceEndsWith, limitStringLength} from 'src/utils/text-utils';
+import {allItemsEqual, limitStringLength} from 'src/utils/text-utils';
 import {createUuid} from 'src/utils/uuid';
 
 import {injectKeys, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from '../../utils/cefsharp';
 import {RefinementResult, RefinementType} from '../abbreviation-refinement/abbreviation-refinement.component';
-import {ExternalEventsComponent, KeypressListener, repeatVirtualKey, VIRTUAL_KEY} from '../external/external-events.component';
+import {ExternalEventsComponent, VIRTUAL_KEY} from '../external/external-events.component';
 import {InputBarControlEvent} from '../input-bar/input-bar.component';
 import {PersonalNamesComponent} from '../personal-names/personal-names.component';
 import {FillMaskRequest, SpeakFasterService, TextPredictionResponse} from '../speakfaster-service';
@@ -21,14 +21,6 @@ export enum State {
   POST_CHOOSING_EXPANSION = 'POST_CHOOSING_EXPANSION',
 }
 
-// Abbreviation expansion can be triggered by entering the abbreviation followed
-// by typing two consecutive spaces in the external app.
-// TODO(#49): This can be generalized and made configurable.
-// TODO(#49): Explore continuous AE without explicit trigger, perhaps
-// added by heuristics for detecting abbreviations vs. words.
-export const ABBRVIATION_EXPANSION_TRIGGER_COMBO_KEY: string[] =
-    [VIRTUAL_KEY.SPACE, VIRTUAL_KEY.SPACE];
-
 @Component({
   selector: 'app-abbreviation-component',
   templateUrl: './abbreviation.component.html',
@@ -42,7 +34,6 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
       6;  // TODO(cais): Make use.
   private readonly instanceId =
       AbbreviationComponent._NAME + '_' + createUuid();
-  private keypressListener: KeypressListener = this.listenToKeypress.bind(this);
   @Input() userId!: string;
   @Input() contextStrings!: string[];
   @Input() textEntryEndSubject!: Subject<TextEntryEndEvent>;
@@ -86,7 +77,6 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
       private cdr: ChangeDetectorRef) {}
 
   ngOnInit() {
-    ExternalEventsComponent.registerKeypressListener(this.keypressListener);
     this.abbreviationExpansionTriggersSubscription =
         this.abbreviationExpansionTriggers.subscribe(
             (event: InputAbbreviationChangedEvent) => {
@@ -104,7 +94,6 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
         });
     this.textEntryEndSubject.subscribe(event => {
       if (event.isFinal) {
-        // console.log('Calling ')
         this.resetState();  // TODO(cais): Add unit test.
       }
     });
@@ -158,7 +147,6 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
   }
 
   ngOnDestroy() {
-    ExternalEventsComponent.unregisterKeypressListener(this.keypressListener);
     if (this.abbreviationExpansionTriggersSubscription) {
       this.abbreviationExpansionTriggersSubscription.unsubscribe();
     }
@@ -166,58 +154,6 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
       this.fillMaskRequestTriggersSubscription.unsubscribe();
     }
     updateButtonBoxesToEmpty(this.instanceId);
-  }
-
-  public listenToKeypress(keySequence: string[], reconstructedText: string):
-      void {
-    this.reconstructedText = reconstructedText;
-    if (this.state === State.PRE_CHOOSING_EXPANSION) {
-      if (keySequenceEndsWith(
-              keySequence, ABBRVIATION_EXPANSION_TRIGGER_COMBO_KEY) &&
-          reconstructedText.trim().length > 0) {
-        let spaceIndex = reconstructedText.length - 1;
-        while (reconstructedText[spaceIndex] === ' ' && spaceIndex >= 0) {
-          spaceIndex--;
-        }
-        while (reconstructedText[spaceIndex] !== ' ' && spaceIndex >= 0) {
-          spaceIndex--;
-        }
-        let text = reconstructedText.slice(spaceIndex + 1);
-        let precedingText: string|undefined = spaceIndex > 0 ?
-            reconstructedText.slice(0, spaceIndex).trim() :
-            undefined;
-        if (precedingText === '') {
-          precedingText = undefined;
-        }
-        const eraserLength = text.length;
-        text = text.trim();
-        text = text.replace(/\n/g, '');
-        if (text.length > 0) {
-          // An abbreviation expansion has been triggered.
-          // TODO(#49): Support keywords in abbreviation (e.g.,
-          // "this event is going very well" --> "this e igvw")
-          const abbreviationSpec: AbbreviationSpec = {
-            tokens: text.split('').map(char => ({
-                                         value: char,
-                                         isKeyword: false,
-                                       })),
-            readableString: text,
-            eraserSequence:
-                repeatVirtualKey(VIRTUAL_KEY.BACKSPACE, eraserLength),
-            precedingText,
-            lineageId: createUuid(),
-          };
-          console.log('Abbreviation expansion triggered:', abbreviationSpec);
-          this.abbreviationExpansionTriggers.next(
-              {abbreviationSpec, requestExpansion: true});
-          return;
-        }
-      }
-    } else if (this.state === State.CHOOSING_EXPANSION) {
-      // TODO(cais): Add unit test.
-      // TODO(cais): Guard against irrelevant keys.
-      this.state = State.SPELLING;
-    }
   }
 
   onTryAgainButtonClicked(event: Event) {

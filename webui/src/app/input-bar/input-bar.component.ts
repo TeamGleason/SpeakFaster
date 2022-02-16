@@ -2,6 +2,7 @@
 import {AfterViewInit, Component, ElementRef, EventEmitter, Input, OnDestroy, OnInit, Output, QueryList, SimpleChanges, ViewChildren} from '@angular/core';
 import {Subject, Subscription} from 'rxjs';
 import {updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
+import {keySequenceEndsWith} from 'src/utils/text-utils';
 import {createUuid} from 'src/utils/uuid';
 
 import {ExternalEventsComponent, repeatVirtualKey, VIRTUAL_KEY} from '../external/external-events.component';
@@ -36,6 +37,14 @@ export interface InputBarControlEvent {
   // Clear all text and chips.
   clearAll?: boolean;
 }
+
+// Abbreviation expansion can be triggered by entering the abbreviation followed
+// by typing two consecutive spaces in the external app.
+// TODO(#49): This can be generalized and made configurable.
+// TODO(#49): Explore continuous AE without explicit trigger, perhaps
+// added by heuristics for detecting abbreviations vs. words.
+export const ABBRVIATION_EXPANSION_TRIGGER_COMBO_KEY: string[] =
+    [VIRTUAL_KEY.SPACE, VIRTUAL_KEY.SPACE];
 
 @Component({
   selector: 'app-input-bar-component',
@@ -143,6 +152,11 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     this.latestReconstructedString = reconstructedText;
     if (this.state === State.ENTERING_BASE_TEXT ||
         this.state === State.CHOOSING_PHRASES) {
+      if (keySequenceEndsWith(
+              keySequence, ABBRVIATION_EXPANSION_TRIGGER_COMBO_KEY)) {
+        this.triggerAbbreviationExpansion();
+        return;
+      }
       this.updateInputString(
           reconstructedText.slice(this.baseReconstructedText.length));
     } else if (this.state === State.AFTER_CUT) {
@@ -200,6 +214,10 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   onExpandButtonClicked(event?: Event) {
+    this.triggerAbbreviationExpansion();
+  }
+
+  private triggerAbbreviationExpansion() {
     const precedingText = '';
     const text = this.inputString.trim();
     const eraserLength = text.length;

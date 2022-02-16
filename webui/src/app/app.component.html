@@ -168,6 +168,7 @@ app-text-to-speech-component {
     <div class="main-right-pane">
       <app-context-component
         *ngIf="hasAccessToken() && appState === 'ABBREVIATION_EXPANSION'"
+        [userId]="userId"
         [textEntryEndSubject]="textEntryEndSubject"
         (contextStringsUpdated)="onContextStringsUpdated($event)"
         (contextStringsSelected)="onContextStringsSelected($event)"

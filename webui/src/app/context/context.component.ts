@@ -18,10 +18,10 @@ import {DEFAULT_CONTEXT_SIGNALS} from './default-context';
 export class ContextComponent implements OnInit, AfterViewInit {
   private static readonly _NAME = 'ContextComponent';
   // TODO(cais): Do not hardcode this user ID.
-  private userId = 'cais';
   private static readonly MAX_DISPLAYED_CONTEXT_COUNT = 2;
   private static readonly MAX_FOCUS_CONTEXT_SIGNALS = 2;
 
+  @Input() userId!: string;
   @Input() textEntryEndSubject!: Subject<TextEntryEndEvent>;
 
   private static readonly CONTEXT_POLLING_INTERVAL_MILLIS = 2 * 1000;
@@ -43,6 +43,9 @@ export class ContextComponent implements OnInit, AfterViewInit {
       private cdr: ChangeDetectorRef) {}
 
   ngOnInit() {
+    if (!this.userId) {
+      throw new Error('Empty user ID');
+    }
     this.focusContextIds.splice(0);
     this.textEntryEndSubject.subscribe((textInjection: TextEntryEndEvent) => {
       if (!textInjection.isFinal || textInjection.isAborted) {

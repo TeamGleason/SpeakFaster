@@ -43,8 +43,6 @@ export class PhraseComponent implements AfterViewInit, OnDestroy {
   @ViewChildren('clickableButton,phrase')
   clickableButtonsAndText!: QueryList<ElementRef<HTMLElement>>;
 
-  private state = State.READY;
-
   public updateButtonBoxesWithContainerRect(containerRect: DOMRect) {
     const clicakbleAreas = this.isTextClickable ? this.clickableButtonsAndText :
                                                   this.clickableButtons;

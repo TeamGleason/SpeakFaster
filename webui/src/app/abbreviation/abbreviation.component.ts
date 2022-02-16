@@ -6,7 +6,7 @@ import {createUuid} from 'src/utils/uuid';
 import {injectKeys, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from '../../utils/cefsharp';
 import {RefinementResult, RefinementType} from '../abbreviation-refinement/abbreviation-refinement.component';
 import {ExternalEventsComponent, KeypressListener, repeatVirtualKey, VIRTUAL_KEY} from '../external/external-events.component';
-import {InputBarChipsEvent} from '../input-bar/input-bar.component';
+import {InputBarControlEvent} from '../input-bar/input-bar.component';
 import {PersonalNamesComponent} from '../personal-names/personal-names.component';
 import {FillMaskRequest, SpeakFasterService, TextPredictionResponse} from '../speakfaster-service';
 import {AbbreviationSpec, InputAbbreviationChangedEvent} from '../types/abbreviation';
@@ -49,7 +49,7 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
   @Input()
   abbreviationExpansionTriggers!: Subject<InputAbbreviationChangedEvent>;
   @Input() fillMaskTriggers!: Subject<FillMaskRequest>;
-  @Input() inputBarChipsSubject!: Subject<InputBarChipsEvent>;
+  @Input() inputBarControlSubject!: Subject<InputBarControlEvent>;
 
   @ViewChildren('clickableButton')
   clickableButtons!: QueryList<ElementRef<HTMLElement>>;
@@ -229,7 +229,7 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
     // the button again.
     // TODO(cais): Add unit test.
     (event.target as HTMLButtonElement).blur();
-    this.inputBarChipsSubject.next({
+    this.inputBarControlSubject.next({
       chips: [{
         text: this.textPredictions[index],
       }],
@@ -254,7 +254,7 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
   }
 
   onTextClicked(event: {phraseText: string; phraseIndex: number}) {
-    this.inputBarChipsSubject.next(this.phraseToChips(event.phraseText));
+    this.inputBarControlSubject.next(this.phraseToChips(event.phraseText));
   }
 
   onSpeakOptionButtonClicked(event: {phraseText: string, phraseIndex: number}) {
@@ -272,7 +272,7 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
     this.cdr.detectChanges();
   }
 
-  private phraseToChips(phraseText: string): InputBarChipsEvent {
+  private phraseToChips(phraseText: string): InputBarControlEvent {
     const words: string[] =
         phraseText.trim().split(' ').filter(word => word.length > 0);
     return {
@@ -296,7 +296,7 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
       this.abbreviationOptions.splice(0);
       this.abbreviationOptions.push(refinementResult.phrase);
     }
-    this.inputBarChipsSubject.next(this.phraseToChips(refinementResult.phrase));
+    this.inputBarControlSubject.next(this.phraseToChips(refinementResult.phrase));
     this.state = State.CHOOSING_EXPANSION;
   }
 

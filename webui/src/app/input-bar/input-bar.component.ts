@@ -30,8 +30,11 @@ export interface InputBarChipSpec {
 }
 
 /** An event that updates the clickable chips in the input bar. */
-export interface InputBarChipsEvent {
-  chips: InputBarChipSpec[];
+export interface InputBarControlEvent {
+  chips?: InputBarChipSpec[];
+
+  // Clear all text and chips.
+  clearAll?: boolean;
 }
 
 @Component({
@@ -49,7 +52,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   @Input()
   abbreviationExpansionTriggers!: Subject<InputAbbreviationChangedEvent>;
   @Input() fillMaskTriggers!: Subject<FillMaskRequest>;
-  @Input() inputBarChipsSubject!: Subject<InputBarChipsEvent>;
+  @Input() inputBarControlSubject!: Subject<InputBarControlEvent>;
   @Output() inputStringChanged: EventEmitter<string> = new EventEmitter();
 
   private readonly _chips: InputBarChipSpec[] = [];
@@ -76,6 +79,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     this.textEntryEndSubjectSubscription = this.textEntryEndSubject.subscribe(
         (textInjection: TextEntryEndEvent) => {
           if (textInjection.isFinal) {
+            this.latestReconstructedString = '';
             this.resetState();
           } else {
             this.updateInputString(textInjection.text);
@@ -83,19 +87,25 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
         });
     ExternalEventsComponent.registerKeypressListener(this.keypressListener);
     this.inputBarChipsSubscription =
-        this.inputBarChipsSubject.subscribe((event: InputBarChipsEvent) => {
-          this._focusChipIndex = null;
-          this._chips.splice(0);
-          this._chips.push(...event.chips);
-          if (this._chipTypedText !== null) {
-            for (let i = 0; i < this._chipTypedText.length; ++i) {
-              if (this._chipTypedText[i] !== null) {
-                this._chips[i].text = this._chipTypedText[i]!;
+        this.inputBarControlSubject.subscribe((event: InputBarControlEvent) => {
+          if (event.clearAll) {
+            // TODO(cais): Add unit test.
+            this.baseReconstructedText = this.latestReconstructedString;
+            this.resetState(/* cleanText= */ true, /* resetBase= */ false);
+          } else if (event.chips !== undefined) {
+            this._focusChipIndex = null;
+            this._chips.splice(0);
+            this._chips.push(...event.chips);
+            if (this._chipTypedText !== null) {
+              for (let i = 0; i < this._chipTypedText.length; ++i) {
+                if (this._chipTypedText[i] !== null) {
+                  this._chips[i].text = this._chipTypedText[i]!;
+                }
               }
             }
-          }
-          if (this._chips.length > 0) {
-            this.state = State.CHOOSING_WORD_CHIP;
+            if (this._chips.length > 0) {
+              this.state = State.CHOOSING_WORD_CHIP;
+            }
           }
         });
     this.abbreviationExpansionTriggersSubscription =
@@ -132,6 +142,9 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     this.latestReconstructedString = reconstructedText;
     if (this.state === State.ENTERING_BASE_TEXT ||
         this.state === State.CHOOSING_PHRASES) {
+      console.log(
+          '*** listenToKeypress(): this.baseReconstructedText:', this.state,
+          JSON.stringify(this.baseReconstructedText));  // DEBUG
       this.updateInputString(
           reconstructedText.slice(this.baseReconstructedText.length));
     } else if (this.state === State.AFTER_CUT) {
@@ -247,7 +260,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
 
   onSpellButtonClicked(event: Event) {
     const abbreviation = this.inputString.trim();
-    this.inputBarChipsSubject.next({
+    this.inputBarControlSubject.next({
       chips: abbreviation.split('').map(char => ({text: char})),
     });
     this.state = State.CHOOSING_LETTER_CHIP;
@@ -352,14 +365,19 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  private resetState(cleanText: boolean = true) {
+  private resetState(clearText: boolean = true, resetBase: boolean = true) {
+    console.log('*** resetState():', clearText, resetBase);  // DEBUG
     this.state = State.ENTERING_BASE_TEXT;
     this._focusChipIndex = null;
     this._chipTypedText = null;
-    if (cleanText) {
+    if (clearText) {
       this.updateInputString('');
     }
+    if (!resetBase) {
+      return;
+    }
     this.baseReconstructedText = '';
+    console.log('*** reset baseReconstructedText');  // DEBUG
     this.cutText = '';
   }
 

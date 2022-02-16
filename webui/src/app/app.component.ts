@@ -6,7 +6,7 @@ import {bindCefSharpListener, registerExternalKeypressHook, resizeWindow, update
 import {createUuid} from '../utils/uuid';
 
 import {ExternalEventsComponent} from './external/external-events.component';
-import {InputBarChipsEvent} from './input-bar/input-bar.component';
+import {InputBarControlEvent} from './input-bar/input-bar.component';
 import {configureService, FillMaskRequest, SpeakFasterService} from './speakfaster-service';
 import {InputAbbreviationChangedEvent} from './types/abbreviation';
 import {AppState} from './types/app-state';
@@ -62,12 +62,12 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   textEntryEndSubject: Subject<TextEntryEndEvent> = new Subject();
   addContextualPhraseSubject: Subject<AddContextualPhraseRequest> =
       new Subject();
-  inputBarChipsSubject: Subject<InputBarChipsEvent> = new Subject();
+  inputBarControlSubject: Subject<InputBarControlEvent> = new Subject();
 
   // Context speech content used for AE and other text predictions.
   readonly contextStringsAvailable: string[] = [];
   readonly contextStringsSelected: string[] = [];
-  private inputString: string = '';
+  inputString: string = '';
 
   @ViewChildren('clickableButton')
   clickableButtons!: QueryList<ElementRef<HTMLElement>>;
@@ -150,6 +150,14 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private changeAppState(newState: AppState) {
+    if (this.appState === newState) {
+      return;
+    }
+    // TODO(cais): Debug the case of finishing an AE in InputBarComponent then
+    // switching to a QuickPhraseComponent to do filtering.
+    this.inputBarControlSubject.next({
+      clearAll: true,
+    });
     this.appState = newState;
     if (this.appState !== AppState.MINIBAR) {
       this.previousNonMinimizedAppState = this.appState;
@@ -189,6 +197,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   onInputStringChanged(str: string) {
+    console.log('*** onInputStringChanges():', str);  // DEBUG
     this.inputString = str;
   }
 

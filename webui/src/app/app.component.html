@@ -182,6 +182,7 @@ app-text-to-speech-component {
           [color]="getQuickPhrasesColor()"
           [textEntryBeginSubject]="textEntryBeginSubject"
           [textEntryEndSubject]="textEntryEndSubject"
+          [filterPrefix]="inputString.trim()"
       ></app-quick-phrases-component>
 
       <app-abbreviation-component
@@ -191,7 +192,7 @@ app-text-to-speech-component {
         [abbreviationExpansionTriggers]="abbreviationExpansionTriggers"
         [fillMaskTriggers]="fillMaskTriggers"
         [textEntryEndSubject]="textEntryEndSubject"
-        [inputBarChipsSubject]="inputBarChipsSubject"
+        [inputBarControlSubject]="inputBarControlSubject"
       ></app-abbreviation-component>
 
       <div class="bottom-area">
@@ -199,7 +200,7 @@ app-text-to-speech-component {
             [userId]="userId"
             [contextStrings]="contextStringsSelected"
             [textEntryEndSubject]="textEntryEndSubject"
-            [inputBarChipsSubject]="inputBarChipsSubject"
+            [inputBarControlSubject]="inputBarControlSubject"
             [abbreviationExpansionTriggers]="abbreviationExpansionTriggers"
             [fillMaskTriggers]="fillMaskTriggers"
             (inputStringChanged)="onInputStringChanged($event)"

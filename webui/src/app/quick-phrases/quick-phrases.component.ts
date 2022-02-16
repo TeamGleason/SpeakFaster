@@ -39,6 +39,7 @@ export class QuickPhrasesComponent implements AfterViewInit, OnChanges,
   @Input() textEntryBeginSubject!: Subject<TextEntryBeginEvent>;
   @Input() textEntryEndSubject!: Subject<TextEntryEndEvent>;
   @Input() color: string = 'gray';
+  @Input() filterPrefix: string = '';
   readonly phrases: ContextualPhrase[] = [];
   errorMessage: string|null = null;
 
@@ -163,6 +164,15 @@ export class QuickPhrasesComponent implements AfterViewInit, OnChanges,
           Math.max(minScrollY, phrasesContainer.scrollTop - this.SCROLL_STEP);
     }
     this.updatePhraseButtonBoxesWithContainerRect();
+  }
+
+  get filteredPhrases(): ContextualPhrase[] {
+    if (!this.filterPrefix) {
+      return this.phrases;
+    }
+    return this.phrases.filter(
+        phrase => phrase.text.toLowerCase().startsWith(
+            this.filterPrefix.toLowerCase()));
   }
 
   /**

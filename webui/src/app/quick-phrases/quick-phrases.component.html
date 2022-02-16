@@ -81,7 +81,7 @@ mat-progress-spinner {
       class="quick-phrases-container">
 
     <app-phrase-component
-        *ngFor="let phrase of phrases; let i = index"
+        *ngFor="let phrase of filteredPhrases; let i = index"
         #phraseOption
         class="item{{i + 1}}"
         [userId]="userId"
@@ -106,7 +106,7 @@ mat-progress-spinner {
     </div>
 
     <div
-        *ngIf="state === 'RETRIEVED_PHRASES' && phrases.length === 0"
+        *ngIf="state === 'RETRIEVED_PHRASES' && filteredPhrases.length === 0"
         class="no-quick-phrases">
         No quick phrases found
     </div>

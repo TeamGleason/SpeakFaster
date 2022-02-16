@@ -184,7 +184,7 @@ app-text-to-speech-component {
 
       <app-abbreviation-component
         *ngIf="hasAccessToken() && appState === 'ABBREVIATION_EXPANSION'"
-        [contextStrings]="contextStringsSelected"
+        [contextStrings]="contextStringsSelected.slice()"
         [abbreviationExpansionTriggers]="abbreviationExpansionTriggers"
         [fillMaskTriggers]="fillMaskTriggers"
         [textEntryEndSubject]="textEntryEndSubject"

@@ -1,6 +1,6 @@
-import {AfterViewInit, ChangeDetectorRef, Component, ElementRef, Input, OnDestroy, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
+import {AfterViewInit, ChangeDetectorRef, Component, ElementRef, Input, OnChanges, OnDestroy, OnInit, Output, QueryList, SimpleChanges, ViewChildren} from '@angular/core';
 import {Subject, Subscription} from 'rxjs';
-import {keySequenceEndsWith, limitStringLength} from 'src/utils/text-utils';
+import {allItemsEqual, keySequenceEndsWith, limitStringLength} from 'src/utils/text-utils';
 import {createUuid} from 'src/utils/uuid';
 
 import {injectKeys, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from '../../utils/cefsharp';
@@ -8,7 +8,7 @@ import {RefinementResult, RefinementType} from '../abbreviation-refinement/abbre
 import {ExternalEventsComponent, KeypressListener, repeatVirtualKey, VIRTUAL_KEY} from '../external/external-events.component';
 import {InputBarChipsEvent} from '../input-bar/input-bar.component';
 import {PersonalNamesComponent} from '../personal-names/personal-names.component';
-import {FillMaskRequest, SpeakFasterService} from '../speakfaster-service';
+import {FillMaskRequest, SpeakFasterService, TextPredictionResponse} from '../speakfaster-service';
 import {AbbreviationSpec, InputAbbreviationChangedEvent} from '../types/abbreviation';
 import {TextEntryEndEvent} from '../types/text-entry';
 
@@ -34,7 +34,8 @@ export const ABBRVIATION_EXPANSION_TRIGGER_COMBO_KEY: string[] =
   templateUrl: './abbreviation.component.html',
   providers: [SpeakFasterService],
 })
-export class AbbreviationComponent implements OnDestroy, OnInit, AfterViewInit {
+export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
+                                              AfterViewInit {
   private static readonly _NAME = 'AbbreviationComponent';
   private static readonly _POST_SELECTION_DELAY_MILLIS = 500;
   private static readonly _MAX_NUM_REPLACEMENT_TOKENS =
@@ -57,6 +58,9 @@ export class AbbreviationComponent implements OnDestroy, OnInit, AfterViewInit {
 
   @ViewChildren('tokenInput')
   tokenInputElements!: QueryList<ElementRef<HTMLElement>>;
+
+  // Typing-free phrase predictions, which gets populated without AE.
+  readonly textPredictions: string[] = [];
 
   reconstructedText: string = '';
   state = State.PRE_CHOOSING_EXPANSION;
@@ -110,6 +114,45 @@ export class AbbreviationComponent implements OnDestroy, OnInit, AfterViewInit {
     this.clickableButtons.changes.subscribe(
         (queryList: QueryList<ElementRef>) => {
           updateButtonBoxesForElements(this.instanceId, queryList);
+        });
+  }
+
+  ngOnChanges(changes: SimpleChanges) {
+    // TODO(cais): Add unit tests.
+    if (!changes.contextStrings) {
+      return;
+    }
+    if (changes.contextStrings.previousValue != null &&
+        allItemsEqual(
+            changes.contextStrings.previousValue,
+            changes.contextStrings.currentValue)) {
+      return;
+    }
+    if (!changes.contextStrings.currentValue ||
+        !changes.contextStrings.currentValue[0]) {
+      return;
+    }
+    this.speakFasterService
+        .textPrediction({
+          contextTurns: changes.contextStrings.currentValue,
+          textPrefix: '',
+          timestamp: new Date().toISOString(),
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        })
+        .subscribe((data: TextPredictionResponse) => {
+          if (!data.outputs) {
+            return;
+          }
+          this.textPredictions.splice(0);
+          data.outputs.forEach(output => {
+            const text = output.trim();
+            if (!text || text.match(/^[\s,;\.\!\?]+$/) ||
+                output.toLocaleLowerCase().indexOf('speaker') !== -1) {
+              return;
+            }
+            this.textPredictions.push(output);
+          });
+          this.cdr.detectChanges();
         });
   }
 
@@ -178,6 +221,18 @@ export class AbbreviationComponent implements OnDestroy, OnInit, AfterViewInit {
 
   onTryAgainButtonClicked(event: Event) {
     this.expandAbbreviation();
+  }
+
+  onTextPredictionButtonClicked(event: Event, index: number) {
+    // NOTE: blur() call prevents future space keys from inadvertently clicking
+    // the button again.
+    // TODO(cais): Add unit test.
+    (event.target as HTMLButtonElement).blur();
+    this.inputBarChipsSubject.next({
+      chips: [{
+        text: this.textPredictions[index],
+      }],
+    });
   }
 
   get isInputAbbreviationEmpty() {

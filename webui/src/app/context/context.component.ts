@@ -181,7 +181,7 @@ export class ContextComponent implements OnInit, AfterViewInit {
         .subscribe(
             data => {
               if (data.errorMessage != null) {
-                this.contextRetrievalError = data.errorMessage;
+                this.contextRetrievalError = 'Context retrieval error';
                 this.populateConversationTurnWithDefault();
                 return;
               }
@@ -224,7 +224,7 @@ export class ContextComponent implements OnInit, AfterViewInit {
             },
             error => {
               this.cleanUpContextSignals();
-              this.contextRetrievalError = JSON.stringify(error);
+              this.contextRetrievalError = 'Context retrieval error';
               // this.populateConversationTurnWithDefault();
             });
   }

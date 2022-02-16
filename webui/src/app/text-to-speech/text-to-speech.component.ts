@@ -10,7 +10,7 @@ const DEFAULT_LANGUAGE_CODE = 'en-US';
 const DEFAULT_AUDIO_ENCODING = 'LINEAR16';
 
 export interface TextToSpeechEvent {
-  state: 'PLAY'|'END'|'ERROR';
+  state: 'REQUESTING'|'PLAY'|'END'|'ERROR';
 
   errorMessage?: string;
 }
@@ -80,6 +80,9 @@ export class TextToSpeechComponent implements OnInit {
       // TODO(cais): Add unit test.
       return;
     }
+    TextToSpeechComponent.listeners.forEach(listener => {
+      listener({state: 'REQUESTING'});
+    });
     this.textToSpeechService
         .synthesizeSpeech({
           text,

@@ -138,6 +138,11 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
       this.updateInputString(
           this.cutText +
           reconstructedText.slice(this.baseReconstructedText.length));
+    } else if (this.state === State.CHOOSING_WORD_CHIP) {
+      this.cutText = this._chips.map(chip => chip.text).join(' ') + ' ';
+      this.inputString = this.cutText + lastKey;
+      this._chips.splice(0);
+      this.state = State.AFTER_CUT;
     } else if (this.state === State.CHOOSING_LETTER_CHIP) {
       // If there is a uniquely matching word, then choose it.
       const typedLetter = reconstructedText.slice(reconstructedText.length - 1)

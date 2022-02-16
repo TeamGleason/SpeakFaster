@@ -3,12 +3,12 @@
  * indicates ongoing TTS output.
  */
 import {Component, EventEmitter, Input, OnDestroy, OnInit, Output} from '@angular/core';
-import {createUuid} from 'src/utils/uuid';
 
 import {TextToSpeechComponent, TextToSpeechEvent, TextToSpeechListener} from '../text-to-speech/text-to-speech.component';
 
 export enum State {
   READY = 'READY',
+  REQUESTING = 'REQUESTING',
   PLAYING = 'PLAYING',
   ERROR = 'ERROR',
 }
@@ -39,7 +39,9 @@ export class SpeakButtonComponent implements OnInit, OnDestroy {
   }
 
   onTextToSpeechEvent(event: TextToSpeechEvent) {
-    if (event.state === 'PLAY') {
+    if (event.state === 'REQUESTING') {
+      this.state = State.REQUESTING;
+    } else if (event.state === 'PLAY') {
       this.state = State.PLAYING;
     } else if (event.state === 'END') {
       this.state = State.READY;

@@ -40,12 +40,12 @@ mat-progress-spinner {
   grid-auto-columns: minmax(0, 1fr);
   grid-auto-flow: column;
   grid-template-areas:
-    "a a a a b b b b"
-    "a a a a b b b b"
-    "c c c c d d d d"
-    "c c c c d d d d"
-    "e e e e f f f f"
-    "e e e e f f f f";
+    "a a a a d d d d"
+    "a a a a d d d d"
+    "b b b b e e e e"
+    "b b b b e e e e"
+    "c c c c f f f f"
+    "c c c c f f f f";
   padding-left: 3px;
 }
 
@@ -112,6 +112,10 @@ mat-progress-spinner {
   align-items: center;
   display: flex;
   flex-direction: row;
+}
+
+.action-button.text-prediction-button {
+  min-width: 80px;
 }
 
 .edit-token {
@@ -264,6 +268,17 @@ mat-progress-spinner {
       </app-phrase-component>
     </div>
   </div>
+</div>
+
+<div
+    *ngIf="state === 'PRE_CHOOSING_EXPANSION'">
+  <button
+      #clickableButton
+      *ngFor="let text of textPredictions; let i = index"
+      class="action-button text-prediction-button"
+      (click)="onTextPredictionButtonClicked($event, i)">
+    {{text}}
+  </button>
 </div>
 
 <app-abbreviation-refinement-component

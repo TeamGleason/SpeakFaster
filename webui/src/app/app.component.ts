@@ -197,7 +197,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   onInputStringChanged(str: string) {
-    console.log('*** onInputStringChanges():', str);  // DEBUG
     this.inputString = str;
   }
 

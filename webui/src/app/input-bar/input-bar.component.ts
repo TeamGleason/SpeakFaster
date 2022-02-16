@@ -143,9 +143,6 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     this.latestReconstructedString = reconstructedText;
     if (this.state === State.ENTERING_BASE_TEXT ||
         this.state === State.CHOOSING_PHRASES) {
-      console.log(
-          '*** listenToKeypress(): this.baseReconstructedText:', this.state,
-          JSON.stringify(this.baseReconstructedText));  // DEBUG
       this.updateInputString(
           reconstructedText.slice(this.baseReconstructedText.length));
     } else if (this.state === State.AFTER_CUT) {
@@ -367,7 +364,6 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private resetState(clearText: boolean = true, resetBase: boolean = true) {
-    console.log('*** resetState():', clearText, resetBase);  // DEBUG
     this.state = State.ENTERING_BASE_TEXT;
     this._focusChipIndex = null;
     this._chipTypedText = null;
@@ -378,7 +374,6 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
     this.baseReconstructedText = '';
-    console.log('*** reset baseReconstructedText');  // DEBUG
     this.cutText = '';
   }
 

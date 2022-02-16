@@ -344,9 +344,9 @@ export class ExternalEventsComponent implements OnInit {
       this.textEntryBeginSubject.next({timestampMillis: Date.now()});
     }
 
-    for (const listener of ExternalEventsComponent.keypressListeners) {
+    ExternalEventsComponent.keypressListeners.forEach(listener => {
       listener(this.keySequence, this._text);
-    }
+    });
 
     // TODO(cais): Take care of the up and down arrow keys.
     // TODO(cais): Track ctrl state.

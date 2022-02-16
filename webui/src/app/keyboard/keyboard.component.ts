@@ -51,7 +51,7 @@ export class KeyboardComponent {
     // First, call externalKeypressHook().
     if ((window as any).externalKeypressHook !== undefined) {
       try {
-        const vkCode = getVirtualkeyCode(event.key);
+        const vkCode: number = getVirtualkeyCode(event.key)[0];
         (window as any).externalKeypressHook(vkCode);
       } catch (error) {
       }

@@ -35,6 +35,7 @@ export class QuickPhrasesComponent implements AfterViewInit, OnChanges,
   // server call.
   @Input() userId!: string;
   @Input() allowedTags: string[] = [];
+  @Input() showDeleteButtons: boolean = false;
   @Input() textEntryBeginSubject!: Subject<TextEntryBeginEvent>;
   @Input() textEntryEndSubject!: Subject<TextEntryEndEvent>;
   @Input() color: string = 'gray';

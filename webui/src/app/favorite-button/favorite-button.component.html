@@ -25,12 +25,12 @@ mat-progress-spinner {
       *ngIf="state === 'READY' && !isDeletion"
       class="button-image"
       src="/assets/images/favorite.png"
-      alt="speak phrase as is" />
+      alt="add to favorite" />
   <img
-      *ngIf="state === 'READY' && isDeletion"
+      *ngIf="(state === 'READY' || state === 'RESTORED') && isDeletion"
       class="button-image"
       src="/assets/images/delete.png"
-      alt="speak phrase as is" />
+      alt="delete from favorite" />
 
   <mat-progress-spinner
       *ngIf="state === 'REQUESTING'"
@@ -38,13 +38,18 @@ mat-progress-spinner {
       [value]="50">
   </mat-progress-spinner>
   <img
-      *ngIf="state === 'SUCCESS'"
+      *ngIf="state === 'SUCCESS' && !isDeletion"
       class="button-image"
       src="/assets/images/success-circle.png"
-      alt="speak phrase as is" />
+      alt="success" />
+  <img
+      *ngIf="state === 'SUCCESS' && isDeletion"
+      class="button-image"
+      src="/assets/images/repeat.png"
+      alt="restore" />
   <img
       *ngIf="state === 'ERROR'"
       class="button-image"
       src="/assets/images/error-circle.png"
-      alt="speak phrase as is" />
+      alt="error" />
 </div>

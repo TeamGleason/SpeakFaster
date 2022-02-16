@@ -11,6 +11,7 @@ export enum State {
   READY = 'READY',
   REQUESTING = 'REQUESTING',
   SUCCESS = 'SUCCESS',
+  RESTORED = 'RESTORED',
   ERROR = 'ERROR',
 }
 
@@ -27,7 +28,6 @@ export class FavoriteButtonComponent implements OnInit, OnDestroy {
   @Input() phrase!: string;
   // Phrase ID: must be provided if isDeleteion is true.
   @Input() phraseId?: string;
-  @Output() deletionComplete: EventEmitter<string> = new EventEmitter();
 
   state: State = State.READY;
 
@@ -38,42 +38,18 @@ export class FavoriteButtonComponent implements OnInit, OnDestroy {
   ngOnDestroy() {}
 
   onFavoriteButtonClicked(event: Event) {
+    if (this.phrase.trim() === '') {
+      return;
+    }
     if (!this.userId) {
       throw new Error('Cannot add/delete phrase to favorite: Empty user ID');
     }
-    if (this.state !== State.READY || this.phrase.trim() === '') {
-      return;
-    }
-    if (this.isDeletion) {
-      if (!this.phraseId) {
-        throw new Error('Cannot delete phrase: Empty phrase ID');
-      }
-      console.log(
-          'Deleting:', this.userId, this.phraseId, this.phrase);  // DEBUG
+    if ((!this.isDeletion && this.state === State.READY) ||
+        (this.isDeletion && this.state === State.SUCCESS)) {
+      // This is a to-be-added phrase or a phrase that was just deleted.
+      // The action to perform is hence adding phrase.
       this.state = State.REQUESTING;
-      this.speakFasterService
-          .deleteContextualPhrase({
-            userId: this.userId,
-            phraseId: this.phraseId,
-          })
-          .subscribe(
-              data => {
-                this.state = State.SUCCESS;
-                this.scheduleReset();
-                // this.retrievePhrases();
-                // TODO(cais): Trigger reset in parent.
-                // TODO(cais): Add unit test.
-              },
-              error => {
-                // TODO(cais): Display error in UI.
-                this.state = State.ERROR;
-                this.scheduleReset();
-                console.error('Deleting quick phrase failed:', error);
-              });
-    } else {
-      // TODO(cais): Add unit test.
-      console.log('onFavoriteButtonClicked():', this.phrase);  // DEBUG
-      this.state = State.REQUESTING;
+      console.log('onFavoriteButtonClicked():', 100);
       this.speakFasterService
           .addContextualPhrase({
             userId: this.userId,
@@ -85,14 +61,56 @@ export class FavoriteButtonComponent implements OnInit, OnDestroy {
           })
           .subscribe(
               (data: AddContextualPhraseResponse) => {
-                this.state = State.SUCCESS;
-                this.scheduleReset();
+                if (data.errorMessage) {
+                  console.error(`Error during adding of contextual phrase: ${
+                      data.errorMessage}`);
+                  this.state = State.ERROR;
+                  return;
+                }
+                if (this.isDeletion) {
+                  this.state = State.RESTORED;
+                  this.phraseId = data.phraseId;
+                } else {
+                  this.state = State.SUCCESS;
+                  this.scheduleReset();
+                }
               },
               error => {
                 setTimeout(() => {
                   this.state = State.ERROR;
                   this.scheduleReset();
                 });
+              });
+    } else if (
+        this.isDeletion &&
+        (this.state === State.READY || this.state === State.RESTORED)) {
+      // This is a to-be-deleted phrase and it hasn't been deleted yet.
+      if (!this.phraseId) {
+        throw new Error('Cannot delete phrase: Empty phrase ID');
+      }
+      console.log('onFavoriteButtonClicked():', 200);
+      this.state = State.REQUESTING;
+      this.speakFasterService
+          .deleteContextualPhrase({
+            userId: this.userId,
+            phraseId: this.phraseId,
+          })
+          .subscribe(
+              data => {
+                if (data.errorMessage) {
+                  console.error(`Error during adding of contextual phrase: ${
+                    data.errorMessage}`);
+                  this.state = State.ERROR;
+                } else {
+                  this.state = State.SUCCESS;
+                }
+              },
+              error => {
+                console.log('onFavoriteButtonClicked():', 220);
+                // TODO(cais): Display error in UI.
+                this.state = State.ERROR;
+                this.scheduleReset();
+                console.error('Deleting quick phrase failed:', error);
               });
     }
   }

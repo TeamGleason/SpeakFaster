@@ -177,6 +177,7 @@ app-text-to-speech-component {
           *ngIf="hasAccessToken() && isQuickPhrasesAppState()"
           [userId]="userId"
           [allowedTags]="getQuickPhrasesAllowedTags()"
+          [showDeleteButtons]="getQuickPhrasesShowDeleteButtons()"
           [color]="getQuickPhrasesColor()"
           [textEntryBeginSubject]="textEntryBeginSubject"
           [textEntryEndSubject]="textEntryEndSubject"

@@ -299,7 +299,20 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       default:
         throw new Error(`Invalid app state: ${this.appState}`);
     }
-  };
+  }
+
+  getQuickPhrasesShowDeleteButtons(): boolean {
+    switch (this.appState) {
+      case AppState.QUICK_PHRASES_FAVORITE:
+        return true;
+      case AppState.QUICK_PHRASES_PARTNERS:
+        return false;
+      case AppState.QUICK_PHRASES_CARE:
+        return false;
+      default:
+        throw new Error(`Invalid app state: ${this.appState}`);
+    }
+  }
 
   getQuickPhrasesColor(): string {
     switch (this.appState) {

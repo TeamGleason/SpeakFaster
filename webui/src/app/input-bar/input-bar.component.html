@@ -99,9 +99,19 @@
 }
 
 .simulated-cursor {
+  animation: blink 1.1s linear infinite alternate;
   font-weight: 900;
   font-size: 30px;
   margin-left: 0.1em;
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
 }
 
 </style>

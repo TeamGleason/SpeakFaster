@@ -159,7 +159,8 @@ app-text-to-speech-component {
 
         <button
             #clickableButton
-            class="side-pane-button menu-button">
+            class="side-pane-button menu-button"
+            (click)="onSettingsButtonClicked($event)">
           <img class="button-image" src="/assets/images/menu.png" alt="menu" />
         </button>
       </div>
@@ -194,6 +195,11 @@ app-text-to-speech-component {
         [textEntryEndSubject]="textEntryEndSubject"
         [inputBarControlSubject]="inputBarControlSubject"
       ></app-abbreviation-component>
+
+      <app-settings-component
+          *ngIf="appState === 'SETTINGS'">
+
+      </app-settings-component>
 
       <div class="bottom-area">
         <app-input-bar-component

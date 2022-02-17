@@ -14,6 +14,7 @@ import {MiniBarModule} from './mini-bar/mini-bar.module';
 import {PartnerModule} from './partner/partner.module';
 import {PersonalNamesModule} from './personal-names/personal-names.module';
 import {QuickPhrasesModule} from './quick-phrases/quick-phrases.module';
+import {SettingsModule} from './settings/settings.module';
 import {TextPredictionModule} from './text-prediction/text-prediction.module';
 import {TextToSpeechModule} from './text-to-speech/text-to-speech.module';
 
@@ -33,6 +34,7 @@ import {TextToSpeechModule} from './text-to-speech/text-to-speech.module';
     PartnerModule,
     PersonalNamesModule,
     QuickPhrasesModule,
+    SettingsModule,
     TextPredictionModule,
     TextToSpeechModule,
   ],

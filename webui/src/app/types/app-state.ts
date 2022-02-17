@@ -12,4 +12,7 @@ export enum AppState {
   // Performing abbreviation expansion. Includes temporal quick phrase when
   // there is no context turn.
   ABBREVIATION_EXPANSION = 'ABBREVIATION_EXPANSION',
+
+  // The Settings page.
+  SETTINGS = 'SETTINGS',
 }

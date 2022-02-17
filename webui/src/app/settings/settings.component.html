@@ -1,0 +1,96 @@
+<style>
+
+:host {
+  background-color: black;
+  box-sizing: border-box;
+  color: #eee;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.option-button {
+  background: #333;
+  border: 2px solid #888;
+  border-radius: 5px;
+  color: #eee;
+  display: inline-block;
+  font-size: 24px;
+  height: 60px;
+  line-height: 32px;
+  margin: 10px;
+  min-width: 80px;
+  padding: 6px;
+  vertical-align: top;
+  width: fit-content;
+}
+
+.option-button.active-button {
+  background: darkgreen;
+}
+
+.section-title {
+  display: inline-block;
+  font-size: 16px;
+  width: 120px;
+}
+
+.settings-section {
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+  height: fit-content;
+  width: fit-content;
+}
+
+</style>
+
+<h2>Settings:</h2>
+
+<div class="settings-section">
+  <div class="section-title">Text-to-speech voice:</div>
+
+  <button
+      #clickableButton
+      class="option-button"
+      [ngClass]="{'active-button': appSettings.ttsVoiceType === 'PERSONALIZED'}"
+      (click)="setTtsVoiceType('PERSONALIZED')">
+    Personalized
+  </button>
+  <button
+      #clickableButton
+      class="option-button"
+      [ngClass]="{'active-button': appSettings.ttsVoiceType === 'GENERIC'}"
+      (click)="setTtsVoiceType('GENERIC')">
+    Generic
+  </button>
+</div>
+
+<div class="settings-section">
+  <div class="section-title">Text-to-speech volume:</div>
+
+  <button
+      #clickableButton
+      [ngClass]="{'active-button': appSettings.ttsVolume === 'QUIET'}"
+      class="option-button"
+      (click)="setTtsVolume('QUIET')">
+    Quiet
+  </button>
+  <button
+      #clickableButton
+      [ngClass]="{'active-button': appSettings.ttsVolume === 'MEDIUM'}"
+      class="option-button"
+      (click)="setTtsVolume('MEDIUM')">
+    Medium
+  </button>
+  <button
+      #clickableButton
+      [ngClass]="{'active-button': appSettings.ttsVolume === 'LOUD'}"
+      class="option-button"
+      (click)="setTtsVolume('LOUD')">
+    Loud
+  </button>
+
+
+</div>

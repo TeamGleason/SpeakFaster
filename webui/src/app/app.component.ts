@@ -10,7 +10,7 @@ import {InputBarControlEvent} from './input-bar/input-bar.component';
 import {configureService, FillMaskRequest, SpeakFasterService} from './speakfaster-service';
 import {InputAbbreviationChangedEvent} from './types/abbreviation';
 import {AppState} from './types/app-state';
-import {AddContextualPhraseRequest, DeleteContextualPhraseRequest} from './types/contextual_phrase';
+import {AddContextualPhraseRequest} from './types/contextual_phrase';
 import {TextEntryBeginEvent, TextEntryEndEvent} from './types/text-entry';
 
 
@@ -257,6 +257,10 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       default:
         break;
     }
+  }
+
+  onSettingsButtonClicked(event: Event) {
+    this.changeAppState(AppState.SETTINGS);
   }
 
   isQuickPhrasesAppState() {

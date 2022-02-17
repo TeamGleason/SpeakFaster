@@ -51,6 +51,7 @@ describe('TextToSpeechCmponent', () => {
              audio_config: {
                audio_encoding: 'LINEAR16',
                speaking_rate: 1.0,
+               volume_gain_db: 0,
              }
            }));
        textEntryEndSubject.next({
@@ -74,6 +75,7 @@ describe('TextToSpeechCmponent', () => {
           audio_config: {
             audio_encoding: 'LINEAR16',
             speaking_rate: 1.0,
+            volume_gain_db: 0,
           }
         }));
     textEntryEndSubject.next({
@@ -136,9 +138,7 @@ describe('TextToSpeechCmponent', () => {
            text: 'hi, there',
            timestampMillis: new Date().getTime(),
            isFinal: true,
-           inAppTextToSpeechAudioConfig: {
-             volume_gain_db: 0,
-           }
+           inAppTextToSpeechAudioConfig: {}
          });
          await fixture.whenStable();
          fixture.detectChanges();

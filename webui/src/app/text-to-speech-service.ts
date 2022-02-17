@@ -10,6 +10,8 @@ export interface AudioConfig {
 
   speaking_rate: number;
 
+  volume_gain_db: number;
+
   // TODO(cais): Add prosody parameters such as pitch.
 }
 
@@ -56,6 +58,7 @@ export class TextToSpeechService implements TextToSpeechServiceStub {
         language: request.language,
         audio_encoding: request.audio_config.audio_encoding,
         speaking_rate: request.audio_config.speaking_rate,
+        volume_gain_db: request.audio_config.volume_gain_db,
         access_token: request.access_token,
       },
     });

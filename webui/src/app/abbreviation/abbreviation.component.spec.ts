@@ -300,9 +300,6 @@ describe('AbbreviationComponent', () => {
        expect(events[0].text).toEqual('we took it in');
        expect(events[0].isFinal).toBeTrue();
        expect(events[0].timestampMillis).toBeGreaterThan(0);
-       expect(events[0].inAppTextToSpeechAudioConfig).toEqual({
-         volume_gain_db: 0
-       });
        // "wtii" as a length 4; the trigger keys has a lenght 2; additionally,
        // there is the selection key at the end.
        const expectedNumKeypresses = 4 + 2 + 1;

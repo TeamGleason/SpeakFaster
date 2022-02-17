@@ -376,7 +376,6 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
       timestampMillis: Date.now(),
       isFinal: true,
       inAppTextToSpeechAudioConfig: {
-        volume_gain_db: 0,
       }
     });
   }

@@ -215,7 +215,7 @@ export class QuickPhrasesComponent implements AfterViewInit, OnChanges,
       numKeypresses,
       numHumanKeypresses: 1,
       inAppTextToSpeechAudioConfig:
-          toTriggerInAppTextToSpeech ? {volume_gain_db: 0} : undefined,
+          toTriggerInAppTextToSpeech ? {} : undefined,
     });
     if (toInjectKeys) {
       const injectedKeys: Array<string|VIRTUAL_KEY> = [];

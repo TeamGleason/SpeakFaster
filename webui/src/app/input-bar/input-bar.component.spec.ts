@@ -101,7 +101,7 @@ describe('InputBarComponent', () => {
     expect(events[0].text).toEqual('hi');
     expect(events[0].isFinal).toEqual(true);
     expect(events[0].isAborted).toBeUndefined();
-    expect(events[0].inAppTextToSpeechAudioConfig).toEqual({volume_gain_db: 0});
+    expect(events[0].inAppTextToSpeechAudioConfig).toEqual({});
   });
 
   for (const textValue of ['', ' ', '\t']) {

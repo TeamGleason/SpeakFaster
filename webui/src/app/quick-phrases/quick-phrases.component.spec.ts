@@ -194,9 +194,7 @@ describe('QuickPhrasesComponent', () => {
         .toBeGreaterThan(beginEvents[0].timestampMillis);
     expect(endEvents[0].injectedKeys).toBeUndefined();
     expect(endEvents[0].isFinal).toEqual(true);
-    expect(endEvents[0].inAppTextToSpeechAudioConfig).toEqual({
-      volume_gain_db: 0
-    });
+    expect(endEvents[0].inAppTextToSpeechAudioConfig).toEqual({});
     expect(testListener.injectedKeysCalls.length).toEqual(0);
   });
 

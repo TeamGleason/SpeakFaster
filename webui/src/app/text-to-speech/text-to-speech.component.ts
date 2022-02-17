@@ -66,12 +66,7 @@ export class TextToSpeechComponent implements OnInit {
       }
       const ttsVoiceType = getAppSettings().ttsVoiceType;
       if (ttsVoiceType === 'PERSONALIZED') {
-        const {volume_gain_db} = event.inAppTextToSpeechAudioConfig;
-        if (volume_gain_db !== undefined && volume_gain_db !== 0) {
-          // TODO(#49): Support volume control.
-          throw new Error('Volume gain adjustment is not implemented yet.');
-        }
-        this.sendTextToSpeechRequest(event.text);
+        this.doCloudTextToSpeech(event.text);
       } else {
         this.doLocalTextToSpeech(event.text);
       }
@@ -79,9 +74,9 @@ export class TextToSpeechComponent implements OnInit {
   }
 
   /**
-   * Send server call for speech synthesis and then play the synthesized audio.
+   * Send Cloud call for speech synthesis and then play the synthesized audio.
    */
-  private sendTextToSpeechRequest(text: string) {
+  private doCloudTextToSpeech(text: string) {
     if (this.accessToken.length === 0) {
       this.errorMessage = 'no access token';
       TextToSpeechComponent.listeners.forEach(listener => {
@@ -98,6 +93,7 @@ export class TextToSpeechComponent implements OnInit {
           audio_config: {
             audio_encoding: DEFAULT_AUDIO_ENCODING,
             speaking_rate: 1.0,
+            volume_gain_db: this.getCloudTextToSpeechVolumeGainDb(),
           },
           access_token: this.accessToken,
         })
@@ -140,6 +136,8 @@ export class TextToSpeechComponent implements OnInit {
             });
   }
 
+
+
   /** Use local WebSpeech API to perform text-to-speech output. */
   private doLocalTextToSpeech(text: string) {
     const utterance = new SpeechSynthesisUtterance(text.trim());
@@ -150,16 +148,34 @@ export class TextToSpeechComponent implements OnInit {
     utterance.onend = () => {
       this.setListenersState('END');
     };
-    // NOTE: volume is between 0 and 1.
-    const volume = getAppSettings().ttsVolume;
-    if (volume === 'QUIET') {
-      utterance.volume = 0.2;
-    } else if (volume === 'MEDIUM') {
-      utterance.volume = 0.5;
-    } else {
-      utterance.volume = 1.0;
-    }
+    utterance.volume = this.getLocalTextToSpeechVolume();
     window.speechSynthesis.speak(utterance);
+  }
+
+  /** Get volume_gain_db for cloud text-to-speech. */
+  private getCloudTextToSpeechVolumeGainDb(): number {
+    // Unit: dB. Default is 0.
+    const volume = getAppSettings().ttsVolume;
+    switch (volume) {
+      case 'QUIET':
+        return -20.0;
+      case 'MEDIUM':
+        return 0.0;
+      case 'LOUD':
+        return 16.0;
+    }
+  }
+
+  private getLocalTextToSpeechVolume(): number {
+    const volume = getAppSettings().ttsVolume;
+    switch (volume) {
+      case 'QUIET':
+        return 0.2;
+      case 'MEDIUM':
+        return 0.5;
+      case 'LOUD':
+        return 1.0;
+    }
   }
 
   private setListenersState(state: TextToSpeechState, errorMessage?: string) {

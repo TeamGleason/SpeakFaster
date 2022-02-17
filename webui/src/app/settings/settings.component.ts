@@ -1,5 +1,5 @@
 /** Quick phrase list for direct selection. */
-import {AfterViewInit, ChangeDetectorRef, Component, ElementRef, Input, OnChanges, OnDestroy, QueryList, SimpleChanges, ViewChild, ViewChildren} from '@angular/core';
+import {AfterViewInit, ChangeDetectorRef, Component, ElementRef, Input, OnDestroy, QueryList, ViewChildren} from '@angular/core';
 import {updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
 import {createUuid} from 'src/utils/uuid';
 
@@ -13,6 +13,8 @@ export class SettingsComponent implements AfterViewInit, OnDestroy {
   private static readonly _NAME = 'SettingsComponent';
 
   private readonly instanceId = SettingsComponent._NAME + '_' + createUuid();
+
+  @Input() userId!: string;
 
   constructor(private cdr: ChangeDetectorRef) {}
 

@@ -263,7 +263,7 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
       numKeypresses,
       numHumanKeypresses: numKeypresses,
       inAppTextToSpeechAudioConfig:
-          toTriggerInAppTextToSpeech ? {volume_gain_db: 0} : undefined,
+          toTriggerInAppTextToSpeech ? {} : undefined,
     });
     this.state = State.POST_CHOOSING_EXPANSION;
   }

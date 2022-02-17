@@ -197,8 +197,8 @@ app-text-to-speech-component {
       ></app-abbreviation-component>
 
       <app-settings-component
-          *ngIf="appState === 'SETTINGS'">
-
+          *ngIf="appState === 'SETTINGS'"
+          [userId]="userId">
       </app-settings-component>
 
       <div class="bottom-area">

@@ -100,7 +100,8 @@ export class TextToSpeechComponent implements OnInit {
         .subscribe(
             data => {
               this.errorMessage = null;
-              const ttsAudioElement = this.ttsAudioElements.first.nativeElement;
+              const ttsAudioElement =
+                  this.ttsAudioElements.first.nativeElement as HTMLAudioElement;
               if (!ttsAudioElement.onplay) {
                 ttsAudioElement.onplay = () => {
                   this.setListenersState('PLAY');

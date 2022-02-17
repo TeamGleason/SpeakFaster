@@ -191,14 +191,16 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
       }
       updateButtonBoxesForElements(this.instanceId, this.buttons);
     } else if (this.state === State.FOCUSED_ON_LETTER_CHIP) {
-      if (lastKey === VIRTUAL_KEY.ENTER || lastKey === VIRTUAL_KEY.SPACE) {
-        this.onExpandButtonClicked();
+      const spelledString =
+          reconstructedText.slice(this.baseReconstructedText.length);
+      if ((lastKey === VIRTUAL_KEY.ENTER || lastKey === VIRTUAL_KEY.SPACE) &&
+          spelledString.trim() !== '') {
+        this.triggerAbbreviationExpansion();
       }
       if (this._chipTypedText === null) {
         this._chipTypedText = Array(this._chips.length).fill(null);
       }
-      this._chipTypedText[this._focusChipIndex!] =
-          reconstructedText.slice(this.baseReconstructedText.length);
+      this._chipTypedText[this._focusChipIndex!] = spelledString;
       updateButtonBoxesForElements(this.instanceId, this.buttons);
     } else if (this.state === State.FOCUSED_ON_WORD_CHIP) {
       if (lastKey === VIRTUAL_KEY.ENTER || lastKey === VIRTUAL_KEY.SPACE) {
@@ -375,8 +377,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
       text,
       timestampMillis: Date.now(),
       isFinal: true,
-      inAppTextToSpeechAudioConfig: {
-      }
+      inAppTextToSpeechAudioConfig: {}
     });
   }
 

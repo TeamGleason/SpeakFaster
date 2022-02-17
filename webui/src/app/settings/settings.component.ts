@@ -4,6 +4,7 @@ import {updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/
 import {createUuid} from 'src/utils/uuid';
 
 import {AppSettings, getAppSettings, setTtsVoiceType, setTtsVolume, TtsVoiceType, TtsVolume} from './settings';
+import {VERSION} from './version';
 
 @Component({
   selector: 'app-settings-component',
@@ -45,5 +46,13 @@ export class SettingsComponent implements AfterViewInit, OnDestroy {
   setTtsVolume(ttsVolume: TtsVolume) {
     setTtsVolume(ttsVolume);
     this.cdr.detectChanges();
+  }
+
+  onReloadAppButtonClicked(event: Event) {
+    window.location.reload(true);
+  }
+
+  get versionString(): string {
+    return VERSION;
   }
 }

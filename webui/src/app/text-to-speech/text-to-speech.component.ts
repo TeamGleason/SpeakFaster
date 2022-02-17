@@ -3,14 +3,17 @@ import {HttpErrorResponse} from '@angular/common/http';
 import {ChangeDetectorRef, Component, ElementRef, Input, OnInit, QueryList, ViewChildren} from '@angular/core';
 import {Subject} from 'rxjs';
 
+import {getAppSettings} from '../settings/settings';
 import {TextToSpeechErrorResponse, TextToSpeechService} from '../text-to-speech-service';
 import {TextEntryEndEvent} from '../types/text-entry';
 
 const DEFAULT_LANGUAGE_CODE = 'en-US';
 const DEFAULT_AUDIO_ENCODING = 'LINEAR16';
 
+export type TextToSpeechState = 'REQUESTING'|'PLAY'|'END'|'ERROR';
+
 export interface TextToSpeechEvent {
-  state: 'REQUESTING'|'PLAY'|'END'|'ERROR';
+  state: TextToSpeechState;
 
   errorMessage?: string;
 }
@@ -33,7 +36,6 @@ export class TextToSpeechComponent implements OnInit {
   ttsAudioElements!: QueryList<ElementRef<HTMLAudioElement>>;
 
   errorMessage?: string|null = null;
-  audioPlaying: boolean = false;
 
   constructor(
       public textToSpeechService: TextToSpeechService,
@@ -62,16 +64,24 @@ export class TextToSpeechComponent implements OnInit {
       if (!event.isFinal || event.inAppTextToSpeechAudioConfig === undefined) {
         return;
       }
-      const {volume_gain_db} = event.inAppTextToSpeechAudioConfig;
-      if (volume_gain_db !== undefined && volume_gain_db !== 0) {
-        // TODO(#49): Support volume control.
-        throw new Error('Volume gain adjustment is not implemented yet.');
+      const ttsVoiceType = getAppSettings().ttsVoiceType;
+      if (ttsVoiceType === 'PERSONALIZED') {
+        const {volume_gain_db} = event.inAppTextToSpeechAudioConfig;
+        if (volume_gain_db !== undefined && volume_gain_db !== 0) {
+          // TODO(#49): Support volume control.
+          throw new Error('Volume gain adjustment is not implemented yet.');
+        }
+        this.sendTextToSpeechRequest(event.text);
+      } else {
+        this.doLocalTextToSpeech(event.text);
       }
-      this.sendTextToSpeechRequest(event.text);
     });
   }
 
-  sendTextToSpeechRequest(text: string) {
+  /**
+   * Send server call for speech synthesis and then play the synthesized audio.
+   */
+  private sendTextToSpeechRequest(text: string) {
     if (this.accessToken.length === 0) {
       this.errorMessage = 'no access token';
       TextToSpeechComponent.listeners.forEach(listener => {
@@ -80,9 +90,7 @@ export class TextToSpeechComponent implements OnInit {
       // TODO(cais): Add unit test.
       return;
     }
-    TextToSpeechComponent.listeners.forEach(listener => {
-      listener({state: 'REQUESTING'});
-    });
+    this.setListenersState('REQUESTING');
     this.textToSpeechService
         .synthesizeSpeech({
           text,
@@ -99,17 +107,12 @@ export class TextToSpeechComponent implements OnInit {
               const ttsAudioElement = this.ttsAudioElements.first.nativeElement;
               if (!ttsAudioElement.onplay) {
                 ttsAudioElement.onplay = () => {
-                  TextToSpeechComponent.listeners.forEach(listener => {
-                    listener({state: 'PLAY'});
-                  });
-                  this.audioPlaying = true;
+                  this.setListenersState('PLAY');
+                  // TODO(cais): Add unit tests.
                 };
                 ttsAudioElement.onended = () => {
-                  TextToSpeechComponent.listeners.forEach(listener => {
-                    listener({state: 'END'});
-                  });
-                  // TODO(cais): Add unit test.
-                  this.audioPlaying = false;
+                  this.setListenersState('END');
+                  // TODO(cais): Add unit tests.
                 };
               }
               if (!data.audio_content) {
@@ -135,5 +138,33 @@ export class TextToSpeechComponent implements OnInit {
               });
               this.cdr.detectChanges();
             });
+  }
+
+  /** Use local WebSpeech API to perform text-to-speech output. */
+  private doLocalTextToSpeech(text: string) {
+    const utterance = new SpeechSynthesisUtterance(text.trim());
+    this.setListenersState('REQUESTING');
+    utterance.onstart = () => {
+      this.setListenersState('PLAY');
+    };
+    utterance.onend = () => {
+      this.setListenersState('END');
+    };
+    // NOTE: volume is between 0 and 1.
+    const volume = getAppSettings().ttsVolume;
+    if (volume === 'QUIET') {
+      utterance.volume = 0.2;
+    } else if (volume === 'MEDIUM') {
+      utterance.volume = 0.5;
+    } else {
+      utterance.volume = 1.0;
+    }
+    window.speechSynthesis.speak(utterance);
+  }
+
+  private setListenersState(state: TextToSpeechState, errorMessage?: string) {
+    TextToSpeechComponent.listeners.forEach(listener => {
+      listener({state, errorMessage: this.errorMessage || ''});
+    });
   }
 }

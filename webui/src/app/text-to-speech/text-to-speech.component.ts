@@ -159,7 +159,7 @@ export class TextToSpeechComponent implements OnInit {
     const volume = getAppSettings().ttsVolume;
     switch (volume) {
       case 'QUIET':
-        return -20.0;
+        return -10.0;
       case 'MEDIUM':
         return 0.0;
       case 'LOUD':

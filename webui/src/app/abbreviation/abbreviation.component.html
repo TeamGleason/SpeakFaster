@@ -9,6 +9,10 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+app-quick-phrases-component {
+  max-height: 100px;
+}
+
 mat-progress-spinner {
   display: inline-block;
   stroke: #ddd;
@@ -280,6 +284,16 @@ mat-progress-spinner {
       (click)="onTextPredictionButtonClicked($event, i)">
     {{text}}
   </button>
+
+  <app-quick-phrases-component
+      [userId]="userId"
+      [allowedTags]="['temporal']"
+      [maxNumPhrases]="3"
+      [showDeleteButtons]="false"
+      [textEntryBeginSubject]="textEntryBeginSubject"
+      [textEntryEndSubject]="textEntryEndSubject"
+  ></app-quick-phrases-component>
+
 </div>
 
 <app-abbreviation-refinement-component

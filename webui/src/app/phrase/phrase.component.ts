@@ -18,6 +18,7 @@ export class PhraseComponent implements AfterViewInit, OnDestroy {
   private readonly instanceId = PhraseComponent._NAME + '_' + createUuid();
   private static readonly BASE_FONT_SIZE_PX = 22;
   private static readonly FONT_SCALING_LENGTH_THRESHOLD = 32;
+  private static readonly MIN_FONT_SIZE_PX = 16;
   @Input() userId!: string;
   @Input() phraseId?: string;
   @Input() color: string = '#093F3A';
@@ -59,6 +60,9 @@ export class PhraseComponent implements AfterViewInit, OnDestroy {
           (this.phraseText.length /
            PhraseComponent.FONT_SCALING_LENGTH_THRESHOLD),
           1.1);
+      if (fontSizePx < PhraseComponent.MIN_FONT_SIZE_PX) {
+        fontSizePx = PhraseComponent.MIN_FONT_SIZE_PX;
+      }
       this.phraseElement.nativeElement.style.fontSize =
           `${fontSizePx.toFixed(1)}px`;
       const lineHeightPx = fontSizePx + 2;
@@ -97,5 +101,4 @@ export class PhraseComponent implements AfterViewInit, OnDestroy {
     this.injectButtonClicked.emit(
         {phraseText: this.phraseText, phraseIndex: this.phraseIndex});
   }
-
 }

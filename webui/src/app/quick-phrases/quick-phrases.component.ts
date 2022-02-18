@@ -40,6 +40,9 @@ export class QuickPhrasesComponent implements AfterViewInit, OnChanges,
   @Input() textEntryEndSubject!: Subject<TextEntryEndEvent>;
   @Input() color: string = 'gray';
   @Input() filterPrefix: string = '';
+  // Optional limit on the number of phrases displayed at a time.
+  // TODO(cais): Add unit test.
+  @Input() maxNumPhrases: number|null = null;
   readonly phrases: ContextualPhrase[] = [];
   errorMessage: string|null = null;
 
@@ -87,6 +90,10 @@ export class QuickPhrasesComponent implements AfterViewInit, OnChanges,
                         return dateB - dateA;
                       }
                     });
+                if (this.maxNumPhrases !== null &&
+                    this.phrases.length > this.maxNumPhrases) {
+                  this.phrases.splice(this.maxNumPhrases);
+                }
               }
               this.errorMessage = null;
               setTimeout(
@@ -214,8 +221,7 @@ export class QuickPhrasesComponent implements AfterViewInit, OnChanges,
       isFinal: true,
       numKeypresses,
       numHumanKeypresses: 1,
-      inAppTextToSpeechAudioConfig:
-          toTriggerInAppTextToSpeech ? {} : undefined,
+      inAppTextToSpeechAudioConfig: toTriggerInAppTextToSpeech ? {} : undefined,
     });
     if (toInjectKeys) {
       const injectedKeys: Array<string|VIRTUAL_KEY> = [];

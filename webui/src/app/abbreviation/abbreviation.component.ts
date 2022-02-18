@@ -5,12 +5,13 @@ import {createUuid} from 'src/utils/uuid';
 
 import {injectKeys, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from '../../utils/cefsharp';
 import {RefinementResult, RefinementType} from '../abbreviation-refinement/abbreviation-refinement.component';
-import {ExternalEventsComponent, VIRTUAL_KEY} from '../external/external-events.component';
+import {VIRTUAL_KEY} from '../external/external-events.component';
 import {InputBarControlEvent} from '../input-bar/input-bar.component';
 import {PersonalNamesComponent} from '../personal-names/personal-names.component';
 import {FillMaskRequest, SpeakFasterService, TextPredictionResponse} from '../speakfaster-service';
 import {AbbreviationSpec, InputAbbreviationChangedEvent} from '../types/abbreviation';
-import {TextEntryEndEvent} from '../types/text-entry';
+import {ContextualPhrase} from '../types/contextual_phrase';
+import {TextEntryBeginEvent, TextEntryEndEvent} from '../types/text-entry';
 
 export enum State {
   PRE_CHOOSING_EXPANSION = 'PRE_CHOOSING_EXPANSION',
@@ -29,13 +30,13 @@ export enum State {
 export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
                                               AfterViewInit {
   private static readonly _NAME = 'AbbreviationComponent';
-  private static readonly _POST_SELECTION_DELAY_MILLIS = 500;
-  private static readonly _MAX_NUM_REPLACEMENT_TOKENS =
-      6;  // TODO(cais): Make use.
+  private static readonly CONTEXTUAL_PHRASES_TAGS: string[] = ['temporal'];
+
   private readonly instanceId =
       AbbreviationComponent._NAME + '_' + createUuid();
   @Input() userId!: string;
   @Input() contextStrings!: string[];
+  @Input() textEntryBeginSubject!: Subject<TextEntryBeginEvent>;
   @Input() textEntryEndSubject!: Subject<TextEntryEndEvent>;
   @Input()
   abbreviationExpansionTriggers!: Subject<InputAbbreviationChangedEvent>;
@@ -232,7 +233,8 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
       this.abbreviationOptions.splice(0);
       this.abbreviationOptions.push(refinementResult.phrase);
     }
-    this.inputBarControlSubject.next(this.phraseToChips(refinementResult.phrase));
+    this.inputBarControlSubject.next(
+        this.phraseToChips(refinementResult.phrase));
     this.state = State.CHOOSING_EXPANSION;
   }
 
@@ -262,8 +264,7 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
       isFinal: true,
       numKeypresses,
       numHumanKeypresses: numKeypresses,
-      inAppTextToSpeechAudioConfig:
-          toTriggerInAppTextToSpeech ? {} : undefined,
+      inAppTextToSpeechAudioConfig: toTriggerInAppTextToSpeech ? {} : undefined,
     });
     this.state = State.POST_CHOOSING_EXPANSION;
   }
@@ -359,4 +360,5 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
   get refinementType(): RefinementType {
     return this.pendingRefinementType;
   }
+
 }

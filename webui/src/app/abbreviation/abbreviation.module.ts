@@ -4,6 +4,7 @@ import {BrowserModule} from '@angular/platform-browser';
 
 import {AbbreviationRefinementModule} from '../abbreviation-refinement/abbreviation-refinement.module';
 import {PhraseModule} from '../phrase/phrase.module';
+import {QuickPhrasesModule} from '../quick-phrases/quick-phrases.module';
 
 import {AbbreviationComponent} from './abbreviation.component';
 
@@ -13,6 +14,7 @@ import {AbbreviationComponent} from './abbreviation.component';
     AbbreviationRefinementModule,
     BrowserModule,
     MatProgressSpinnerModule,
+    QuickPhrasesModule,
     PhraseModule,
   ],
   exports: [AbbreviationComponent],

@@ -7,6 +7,7 @@ import {createUuid} from 'src/utils/uuid';
 
 import {AppComponent} from '../app.component';
 import {VIRTUAL_KEY} from '../external/external-events.component';
+import { InputBarControlEvent } from '../input-bar/input-bar.component';
 import {PhraseComponent} from '../phrase/phrase.component';
 import {SpeakFasterService, TextPredictionResponse} from '../speakfaster-service';
 import {ContextualPhrase} from '../types/contextual_phrase';
@@ -38,6 +39,7 @@ export class QuickPhrasesComponent implements AfterViewInit, OnChanges,
   @Input() showDeleteButtons: boolean = false;
   @Input() textEntryBeginSubject!: Subject<TextEntryBeginEvent>;
   @Input() textEntryEndSubject!: Subject<TextEntryEndEvent>;
+  @Input() inputBarControlSubject?: Subject<InputBarControlEvent>;
   @Input() color: string = 'gray';
   @Input() filterPrefix: string = '';
   // Optional limit on the number of phrases displayed at a time.
@@ -101,7 +103,7 @@ export class QuickPhrasesComponent implements AfterViewInit, OnChanges,
               this.cdr.detectChanges();
             },
             error => {
-              this.errorMessage = `Failed to get quick phrases for tags ${
+              this.errorMessage = `Failed to get quick phrases for tags: ${
                   this.allowedTags.join(',')}`;
               this.state = State.ERROR;
               setTimeout(

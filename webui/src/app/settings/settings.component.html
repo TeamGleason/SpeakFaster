@@ -19,6 +19,13 @@
   margin-bottom: 10px;
 }
 
+.header-section {
+  align-items: center;
+  border-bottom: 0.5px solid #444;
+  display: flex;
+  flex-direction: row;
+}
+
 .icon-image {
   align-self: center;
   margin: 10px;
@@ -69,9 +76,19 @@
 
 </style>
 
-<div class="app-title">
-  <img class="icon-image" src="/assets/images/minibar-icon.png">
-  SpeakFaster WebUI Prototype v{{versionString}}
+<div class="header-section">
+  <div class="app-title">
+    <img class="icon-image" src="/assets/images/minibar-icon.png">
+    SpeakFaster WebUI Prototype v{{versionString}}
+  </div>
+
+  <button
+      #clickableButton
+      class="option-button reload-button"
+      (click)="onReloadAppButtonClicked($event)">
+      <img class="icon-image" src="/assets/images/repeat.png">
+      Reload app
+  </button>
 </div>
 
 <div class="settings-section">
@@ -118,11 +135,3 @@
     Loud
   </button>
 </div>
-
-<button
-    #clickableButton
-    class="option-button reload-button"
-    (click)="onReloadAppButtonClicked($event)">
-    <img class="icon-image" src="/assets/images/repeat.png">
-    Reload app
-</button>

@@ -126,7 +126,9 @@ interface BoundObject {
   function updateButtonBoxes(componentName: string,
                              boxes: Array<[number, number, number, number]>);
 
+  function saveSettings(appSettings: AppSettings): boolean;
 
+  function loadSettings(): AppSettings|null;
 }
 ```
 
@@ -170,3 +172,10 @@ new clickable regions that have appeared since the last call.
 Calling `updateButtonBoxes()` n times with n different `componentName`s will
 cause n sets of clickable regions to be registered.
 
+### 2.4. Saving WebUI user settings to host and loading the settings from host
+
+The functions `saveSettings()` and `loadSettings()` can be used to serialized
+user settings (e.g., TTS voice and volume) to the host and loading the settings
+back from the host. Note that WebViews such as CefShar usually do not persist
+data stored in `localStorage` after the instance of WebView is destroyed, which
+necessitates settings storage at the host level.

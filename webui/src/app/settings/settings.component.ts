@@ -1,6 +1,6 @@
 /** Quick phrase list for direct selection. */
 import {AfterViewInit, ChangeDetectorRef, Component, ElementRef, Input, OnDestroy, OnInit, QueryList, ViewChildren} from '@angular/core';
-import {updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
+import {loadSettings, saveSettings, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
 import {createUuid} from 'src/utils/uuid';
 
 import {AppSettings, getAppSettings, setTtsVoiceType, setTtsVolume, TtsVoiceType, TtsVolume, updateSettings} from './settings';
@@ -69,6 +69,10 @@ export class SettingsComponent implements AfterViewInit, OnInit, OnDestroy {
       ...getAppSettings(),
       appVersion: VERSION,
     };
+    if (saveSettings(settingsObject)) {
+      console.log('Saved app settings via the CefSharp host bridge.');
+      return;
+    }
     localStorage.setItem(
         SettingsComponent.LOCAL_STORAGE_ITEM_NAME,
         JSON.stringify(settingsObject));
@@ -77,6 +81,11 @@ export class SettingsComponent implements AfterViewInit, OnInit, OnDestroy {
   }
 
   private loadSettings(): AppSettings|null {
+    const settings: AppSettings|null = loadSettings();
+    if (settings !== null) {
+      console.log('Loaded app settings from CefSharp host');
+      return settings;
+    }
     const serializedSettings: string|null =
         localStorage.getItem(SettingsComponent.LOCAL_STORAGE_ITEM_NAME);
     if (serializedSettings === null) {

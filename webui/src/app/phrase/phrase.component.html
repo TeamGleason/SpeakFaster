@@ -27,6 +27,7 @@
   align-self: center;
   display: inline-flex;
   flex: 5;
+  height: 65px;
   line-height: 65px;
   white-space: pre-wrap;
   vertical-align: middle;
@@ -80,7 +81,6 @@
       #clickableButton
       *ngIf="showFavoriteButton"
       class="action-button favorite-button">
-    <!-- <img class="button-image" src="{{favoriteButtonImageUrl}}" alt="favorite phrase" /> -->
     <app-favorite-button-component
         [isDeletion]="phraseId !== undefined && phraseId.length > 0"
         [userId]="userId"

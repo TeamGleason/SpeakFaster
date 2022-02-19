@@ -20,12 +20,11 @@ export class PhraseComponent implements AfterViewInit, OnDestroy {
   private static readonly FONT_SCALING_LENGTH_THRESHOLD = 32;
   private static readonly MIN_FONT_SIZE_PX = 16;
   @Input() userId!: string;
+  @Input() phraseText!: string;
+  @Input() phraseIndex!: number;
   @Input() phraseId?: string;
   @Input() color: string = '#093F3A';
   @Input() showFavoriteButton: boolean = false;
-  @Input() favoriteButtonPerformsDeletion: boolean = false;
-  @Input() phraseText!: string;
-  @Input() phraseIndex!: number;
   @Input() scaleFontSize = false;
   @Input() isTextClickable: boolean = false;
   @Output()

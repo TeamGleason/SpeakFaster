@@ -19,6 +19,10 @@ export function getAppSettings(): AppSettings {
   return appSettings;
 }
 
+export function updateSettings(settings: AppSettings) {
+  Object.assign(appSettings, settings);
+}
+
 export function setTtsVoiceType(ttsVoiceType: TtsVoiceType) {
   appSettings.ttsVoiceType = ttsVoiceType;
 }

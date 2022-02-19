@@ -75,6 +75,21 @@ export interface PartnerUsersResponse {
   user_ids: string[];
 }
 
+export interface GetLexiconRequest {
+  // Language code in ISO 639-1 format. E.g., 'en-us'.
+  languageCode: string;
+
+  // Subset name.
+  subset?: 'LEXICON_SUBSET_GIVEN_NAMES';
+
+  // Prefix string used to filter the words in the reponse.
+  prefix?: string;
+}
+
+export interface GetLexiconResponse {
+  words: string[];
+}
+
 /** Abstract interface for SpeakFaster service backend. */
 export interface SpeakFasterServiceStub {
   /** Simple ping service. Can be used to confirm backend is live. */
@@ -131,6 +146,11 @@ export interface SpeakFasterServiceStub {
    * partner.
    */
   getPartnerUsers(partnerEmail: string): Observable<PartnerUsersResponse>;
+
+  /**
+   * Get a lexicon of given language. Supports subsets and filtering by prefix.
+   */
+  getLexicon(request: GetLexiconRequest): Observable<GetLexiconResponse>;
 }
 
 /** Configuration for remote service. */
@@ -300,6 +320,20 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
       withCredentials,
       headers,
     })
+  }
+
+  getLexicon(request: GetLexiconRequest): Observable<GetLexiconResponse> {
+    const {endpoint, headers, withCredentials} = this.getServerCallParams();
+    return this.http.get<GetLexiconResponse>(endpoint, {
+      params: {
+        mode: 'get_lexicon',
+        languageCode: request.languageCode,
+        subset: request.subset || '',
+        prefix: request.prefix || '',
+      },
+      withCredentials,
+      headers,
+    });
   }
 
   private getServerCallParams(): {

@@ -279,8 +279,10 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   get nonMinimizedStatesAppStates(): AppState[] {
     return [
-      AppState.QUICK_PHRASES_CARE, AppState.QUICK_PHRASES_PARTNERS,
-      AppState.QUICK_PHRASES_FAVORITE, AppState.ABBREVIATION_EXPANSION
+      AppState.QUICK_PHRASES_CARE,
+      AppState.QUICK_PHRASES_PARTNERS,
+      AppState.QUICK_PHRASES_FAVORITE,
+      AppState.ABBREVIATION_EXPANSION,
     ];
   }
 
@@ -298,6 +300,11 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       default:
         throw new Error(`Invalid app state: ${this.appState}`);
     }
+  }
+
+  getSettingsStateImgSrc(isActive: boolean): string {
+    const activeStateString = isActive ? 'active' : 'inactive';
+    return `/assets/images/menu-${activeStateString}.png`;
   }
 
   getQuickPhrasesAllowedTags(): string[] {

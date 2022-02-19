@@ -161,7 +161,7 @@ app-text-to-speech-component {
             #clickableButton
             class="side-pane-button menu-button"
             (click)="onSettingsButtonClicked($event)">
-          <img class="button-image" src="/assets/images/menu.png" alt="menu" />
+          <img class="button-image" src="{{getSettingsStateImgSrc(appState === 'SETTINGS')}}" alt="menu" />
         </button>
       </div>
     </div>

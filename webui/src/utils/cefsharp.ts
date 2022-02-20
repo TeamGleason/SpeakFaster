@@ -132,11 +132,11 @@ export function registerExternalKeypressHook(callback: ExternalKeypressHook) {
 /**
  * Try saving settings through the CefSharp host bridge.
  *
- * The settings will be serialized ans stored in the host app.
+ * The settings will be serialized and stored by the host app.
  *
- * @returns `true` if and only if saving is successful
+ * @returns `true` if and only if saving is successful.
  */
-export function saveSettings(settings: AppSettings): boolean {
+export async function saveSettings(settings: AppSettings): Promise<boolean> {
   if ((window as any)[BOUND_LISTENER_NAME] == null) {
     console.warn(
         `Cannot call save settings ` +

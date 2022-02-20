@@ -1,14 +1,13 @@
 /** Data types and logic related to app settings. */
 
-import {VERSION} from "@angular/core";
-import {loadSettings, saveSettings} from "src/utils/cefsharp";
+import {VERSION} from '@angular/core';
+import {loadSettings, saveSettings} from 'src/utils/cefsharp';
 
 export type TtsVoiceType = 'PERSONALIZED'|'GENERIC';
 
 export type TtsVolume = 'QUIET'|'MEDIUM'|'LOUD';
 
-const LOCAL_STORAGE_ITEM_NAME =
-      `GoogleSpeakFasterWebUiSettings.json`;
+export const LOCAL_STORAGE_ITEM_NAME = 'GoogleSpeakFasterWebUiSettings.json';
 
 export interface AppSettings {
   ttsVoiceType: TtsVoiceType;
@@ -25,7 +24,7 @@ function getDefaultAppSettings(): AppSettings {
   };
 }
 
-async function ensureAppSettingsLoaded(): Promise<void> {
+export async function ensureAppSettingsLoaded(): Promise<void> {
   if (appSettings !== null) {
     return;
   }
@@ -34,6 +33,7 @@ async function ensureAppSettingsLoaded(): Promise<void> {
     return;
   }
   appSettings = getDefaultAppSettings();
+  await trySaveSettings();
 }
 
 /**
@@ -42,7 +42,7 @@ async function ensureAppSettingsLoaded(): Promise<void> {
  * 1. CefSharp host bridge.
  * 2. Browser local storage.
  **/
-async function tryLoadSettings(): Promise<AppSettings|null> {
+export async function tryLoadSettings(): Promise<AppSettings|null> {
   const settings: AppSettings|null = await loadSettings();
   if (settings !== null) {
     console.log('Loaded app settings from CefSharp host');
@@ -53,8 +53,8 @@ async function tryLoadSettings(): Promise<AppSettings|null> {
   if (serializedSettings === null) {
     return null;
   }
-  console.log(`Loaded app settings from local storage: ${
-      LOCAL_STORAGE_ITEM_NAME}`);
+  console.log(
+      `Loaded app settings from local storage: ${LOCAL_STORAGE_ITEM_NAME}`);
   return JSON.parse(serializedSettings);
 }
 
@@ -63,19 +63,18 @@ async function tryLoadSettings(): Promise<AppSettings|null> {
  * 1. CefSharp host bridge.
  * 2. Browser local storage.
  */
-async function trySaveSettings() {
+export async function trySaveSettings() {
   const settingsObject = {
     ...await getAppSettings(),
     appVersion: VERSION,
   };
-  if (saveSettings(settingsObject)) {
+  if (await saveSettings(settingsObject)) {
     console.log('Saved app settings via the CefSharp host bridge.');
     return;
   }
-  localStorage.setItem(
-      LOCAL_STORAGE_ITEM_NAME, JSON.stringify(settingsObject));
-  console.log(`Saved app settings at local storage: ${
-      LOCAL_STORAGE_ITEM_NAME}`);
+  localStorage.setItem(LOCAL_STORAGE_ITEM_NAME, JSON.stringify(settingsObject));
+  console.log(
+      `Saved app settings at local storage: ${LOCAL_STORAGE_ITEM_NAME}`);
 }
 
 /** Retrieve app settings. */
@@ -87,11 +86,15 @@ export async function getAppSettings(): Promise<AppSettings> {
 export async function setTtsVoiceType(ttsVoiceType: TtsVoiceType) {
   await ensureAppSettingsLoaded();
   appSettings!.ttsVoiceType = ttsVoiceType;
-  trySaveSettings();
+  await trySaveSettings();
 }
 
 export async function setTtsVolume(ttsVolume: TtsVolume) {
   await ensureAppSettingsLoaded();
   appSettings!.ttsVolume = ttsVolume;
   await trySaveSettings();
+}
+
+export function clearSettings(): void {
+  appSettings = null;
 }

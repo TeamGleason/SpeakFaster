@@ -162,7 +162,7 @@ describe('AppComponent', () => {
     await fixture.whenStable();
     const leftNavButtons =
         fixture.debugElement.queryAll(By.css('.side-pane-button'));
-    leftNavButtons[0].nativeElement.click();
+    leftNavButtons[1].nativeElement.click();
     await fixture.whenStable();
 
     expect(fixture.componentInstance.appState)
@@ -179,7 +179,7 @@ describe('AppComponent', () => {
     await fixture.whenStable();
     const leftNavButtons =
         fixture.debugElement.queryAll(By.css('.side-pane-button'));
-    leftNavButtons[0].nativeElement.click();
+    leftNavButtons[1].nativeElement.click();
     fixture.detectChanges();
     await fixture.whenStable();
     const minimizeButton =

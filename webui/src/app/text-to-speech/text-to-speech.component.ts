@@ -3,7 +3,7 @@ import {HttpErrorResponse} from '@angular/common/http';
 import {ChangeDetectorRef, Component, ElementRef, Input, OnInit, QueryList, ViewChildren} from '@angular/core';
 import {Subject} from 'rxjs';
 
-import {getAppSettings} from '../settings/settings';
+import {AppSettings, getAppSettings} from '../settings/settings';
 import {TextToSpeechErrorResponse, TextToSpeechService} from '../text-to-speech-service';
 import {TextEntryEndEvent} from '../types/text-entry';
 
@@ -59,16 +59,17 @@ export class TextToSpeechComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.textEntryEndSubject.subscribe(event => {
+    this.textEntryEndSubject.subscribe(async event => {
       // TODO(cais): Add unit test.
       if (!event.isFinal || event.inAppTextToSpeechAudioConfig === undefined) {
         return;
       }
-      const ttsVoiceType = getAppSettings().ttsVoiceType;
+      const appSettings = await getAppSettings();
+      const ttsVoiceType = appSettings.ttsVoiceType;
       if (ttsVoiceType === 'PERSONALIZED') {
-        this.doCloudTextToSpeech(event.text);
+        this.doCloudTextToSpeech(event.text, appSettings);
       } else {
-        this.doLocalTextToSpeech(event.text);
+        this.doLocalTextToSpeech(event.text, appSettings);
       }
     });
   }
@@ -76,7 +77,7 @@ export class TextToSpeechComponent implements OnInit {
   /**
    * Send Cloud call for speech synthesis and then play the synthesized audio.
    */
-  private doCloudTextToSpeech(text: string) {
+  private doCloudTextToSpeech(text: string, appSettings: AppSettings) {
     if (this.accessToken.length === 0) {
       this.errorMessage = 'no access token';
       TextToSpeechComponent.listeners.forEach(listener => {
@@ -93,7 +94,7 @@ export class TextToSpeechComponent implements OnInit {
           audio_config: {
             audio_encoding: DEFAULT_AUDIO_ENCODING,
             speaking_rate: 1.0,
-            volume_gain_db: this.getCloudTextToSpeechVolumeGainDb(),
+            volume_gain_db: this.getCloudTextToSpeechVolumeGainDb(appSettings),
           },
           access_token: this.accessToken,
         })
@@ -140,7 +141,7 @@ export class TextToSpeechComponent implements OnInit {
 
 
   /** Use local WebSpeech API to perform text-to-speech output. */
-  private doLocalTextToSpeech(text: string) {
+  private doLocalTextToSpeech(text: string, appSettings: AppSettings) {
     const utterance = new SpeechSynthesisUtterance(text.trim());
     this.setListenersState('REQUESTING');
     utterance.onstart = () => {
@@ -149,14 +150,14 @@ export class TextToSpeechComponent implements OnInit {
     utterance.onend = () => {
       this.setListenersState('END');
     };
-    utterance.volume = this.getLocalTextToSpeechVolume();
+    utterance.volume = this.getLocalTextToSpeechVolume(appSettings);
     window.speechSynthesis.speak(utterance);
   }
 
   /** Get volume_gain_db for cloud text-to-speech. */
-  private getCloudTextToSpeechVolumeGainDb(): number {
+  private getCloudTextToSpeechVolumeGainDb(appSettings: AppSettings): number {
     // Unit: dB. Default is 0.
-    const volume = getAppSettings().ttsVolume;
+    const volume = appSettings.ttsVolume;
     switch (volume) {
       case 'QUIET':
         return -10.0;
@@ -167,8 +168,8 @@ export class TextToSpeechComponent implements OnInit {
     }
   }
 
-  private getLocalTextToSpeechVolume(): number {
-    const volume = getAppSettings().ttsVolume;
+  private getLocalTextToSpeechVolume(appSettings: AppSettings): number {
+    const volume = appSettings.ttsVolume;
     switch (volume) {
       case 'QUIET':
         return 0.2;

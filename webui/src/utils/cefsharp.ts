@@ -155,16 +155,22 @@ export function saveSettings(settings: AppSettings): boolean {
  *     (see `saveSettings()`), the deserialized settings object. Else, returns
  *     `null`.
  */
-export function loadSettings(): AppSettings|null {
+export async function loadSettings(): Promise<AppSettings|null> {
   if ((window as any)[BOUND_LISTENER_NAME] == null) {
     console.warn(
         `Cannot call load settings ` +
         `because object ${BOUND_LISTENER_NAME} is not found`);
+    return null;
   }
-  const appSettings =
-      ((window as any)[BOUND_LISTENER_NAME] as any).loadSettings();
+  const appSettings: string =
+      await ((window as any)[BOUND_LISTENER_NAME] as any).loadSettings();
+  console.log('appSettings string:', appSettings);  // DEBUG
   if (!appSettings) {
     return null;
   }
-  return JSON.parse(appSettings) as AppSettings;
+  try {
+    return JSON.parse(appSettings) as AppSettings;
+  } catch (error) {
+    return null;
+  }
 }

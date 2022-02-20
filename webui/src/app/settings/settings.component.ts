@@ -1,9 +1,9 @@
 /** Quick phrase list for direct selection. */
 import {AfterViewInit, ChangeDetectorRef, Component, ElementRef, Input, OnDestroy, OnInit, QueryList, ViewChildren} from '@angular/core';
-import {loadSettings, saveSettings, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
+import {updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
 import {createUuid} from 'src/utils/uuid';
 
-import {AppSettings, getAppSettings, setTtsVoiceType, setTtsVolume, TtsVoiceType, TtsVolume, updateSettings} from './settings';
+import {AppSettings, getAppSettings, setTtsVoiceType, setTtsVolume, TtsVoiceType, TtsVolume} from './settings';
 import {VERSION} from './version';
 
 @Component({
@@ -12,10 +12,9 @@ import {VERSION} from './version';
 })
 export class SettingsComponent implements AfterViewInit, OnInit, OnDestroy {
   private static readonly _NAME = 'SettingsComponent';
-  private static readonly LOCAL_STORAGE_ITEM_NAME =
-      `GoogleSpeakFasterWebUiSettings.json`;
 
   private readonly instanceId = SettingsComponent._NAME + '_' + createUuid();
+  appSettings: AppSettings|null = null;
 
   @Input() userId!: string;
 
@@ -25,10 +24,13 @@ export class SettingsComponent implements AfterViewInit, OnInit, OnDestroy {
   clickableButtons!: QueryList<ElementRef<HTMLElement>>;
 
   ngOnInit() {
-    const loadedSettings = this.loadSettings();
-    if (loadedSettings !== null) {
-      updateSettings(loadedSettings)
-    }
+    this.refreshSettings();
+  }
+
+  private async refreshSettings() {
+    const appSettings = await getAppSettings();
+    this.appSettings = {...appSettings};
+    this.cdr.detectChanges();
   }
 
   ngAfterViewInit() {
@@ -43,57 +45,19 @@ export class SettingsComponent implements AfterViewInit, OnInit, OnDestroy {
     updateButtonBoxesToEmpty(this.instanceId);
   }
 
-  get appSettings(): AppSettings {
-    return getAppSettings();
-  }
-
   setTtsVoiceType(ttsVoiceType: TtsVoiceType) {
     setTtsVoiceType(ttsVoiceType);
-    this.saveSettings();
-    this.cdr.detectChanges();
+    this.refreshSettings();
   }
 
   setTtsVolume(ttsVolume: TtsVolume) {
     setTtsVolume(ttsVolume);
-    this.saveSettings();
-    this.cdr.detectChanges();
+    this.refreshSettings();
   }
 
   onReloadAppButtonClicked(event: Event) {
     // Force reload.
     window.location.reload(true);
-  }
-
-  private saveSettings() {
-    const settingsObject = {
-      ...getAppSettings(),
-      appVersion: VERSION,
-    };
-    if (saveSettings(settingsObject)) {
-      console.log('Saved app settings via the CefSharp host bridge.');
-      return;
-    }
-    localStorage.setItem(
-        SettingsComponent.LOCAL_STORAGE_ITEM_NAME,
-        JSON.stringify(settingsObject));
-    console.log(`Saved app settings at local storage: ${
-        SettingsComponent.LOCAL_STORAGE_ITEM_NAME}`);
-  }
-
-  private loadSettings(): AppSettings|null {
-    const settings: AppSettings|null = loadSettings();
-    if (settings !== null) {
-      console.log('Loaded app settings from CefSharp host');
-      return settings;
-    }
-    const serializedSettings: string|null =
-        localStorage.getItem(SettingsComponent.LOCAL_STORAGE_ITEM_NAME);
-    if (serializedSettings === null) {
-      return null;
-    }
-    console.log(`Loaded app settings from local storage: ${
-        SettingsComponent.LOCAL_STORAGE_ITEM_NAME}`);
-    return JSON.parse(serializedSettings);
   }
 
   get versionString(): string {

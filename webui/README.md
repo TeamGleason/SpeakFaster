@@ -126,9 +126,9 @@ interface BoundObject {
   function updateButtonBoxes(componentName: string,
                              boxes: Array<[number, number, number, number]>);
 
-  function saveSettings(appSettings: AppSettings): boolean;
+  async function saveSettings(appSettings: AppSettings): boolean;
 
-  function loadSettings(): AppSettings|null;
+  async function loadSettings(): AppSettings|null;
 }
 ```
 

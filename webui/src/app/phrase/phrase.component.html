@@ -27,8 +27,7 @@
   align-self: center;
   display: inline-flex;
   flex: 5;
-  height: 65px;
-  line-height: 65px;
+  height: 100%;
   white-space: pre-wrap;
   vertical-align: middle;
 }
@@ -48,6 +47,10 @@
   white-space: nowrap;
 }
 
+.phrase-text {
+  align-self: center;
+}
+
 .speak-button {
   width: 70px;
 }
@@ -57,12 +60,12 @@
 <div class="phrase-container"
   style="background-color: {{color}}">
 
-  <span
+  <div
       #phrase
       class="phrase"
       (click)="onTextClicked($event)">
-    {{phraseText}}
-  </span>
+    <span class="phrase-text">{{phraseText}}</span>
+  </div>
   <button
       #clickableButton
       class="action-button speak-button"

@@ -7,6 +7,4 @@ describe('version', () => {
     expect(typeof VERSION).toEqual('string');
     expect(VERSION).toMatch(/[0-9]+\.[0-9]+\.[0-9]+/);
   });
-
-
 });

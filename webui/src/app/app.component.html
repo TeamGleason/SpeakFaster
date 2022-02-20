@@ -130,6 +130,13 @@ app-text-to-speech-component {
     <div class="main-left-pane">
       <div class="side-pane-button-container">
         <button
+            #clickableButton
+            class="side-pane-button minimize-button"
+            (click)="onMinimizeButtonClicked($event)">
+          <img class="button-image" src="/assets/images/close.png" alt="minimize" />
+        </button>
+
+        <button
             *ngFor="let quickPhrasesAppState of nonMinimizedStatesAppStates"
             #clickableButton
             class="side-pane-button"
@@ -142,9 +149,9 @@ app-text-to-speech-component {
 
         <button
             #clickableButton
-            class="side-pane-button minimize-button"
-            (click)="onMinimizeButtonClicked($event)">
-          <img class="button-image" src="/assets/images/minimize.png" alt="minimize" />
+            class="side-pane-button menu-button"
+            (click)="onSettingsButtonClicked($event)">
+          <img class="button-image" src="{{getSettingsStateImgSrc(appState === 'SETTINGS')}}" alt="menu" />
         </button>
       </div>
     </div>
@@ -170,6 +177,10 @@ app-text-to-speech-component {
         [abbreviationExpansionTriggers]="abbreviationExpansionTriggers"
         [textEntryEndSubject]="textEntryEndSubject"
       ></app-abbreviation-component>
+
+      <app-settings-component
+          *ngIf="appState === 'SETTINGS'">
+      </app-settings-component>
 
       <div class="bottom-area">
         <app-input-bar-component

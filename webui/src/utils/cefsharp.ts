@@ -46,7 +46,8 @@ export function updateButtonBoxesForElements(
     const boxes: Array<[number, number, number, number]> = [];
     elements.forEach(elementRef => {
       const box = elementRef.nativeElement.getBoundingClientRect();
-      if (containerRect == null || isRectVisibleInsideContainer(box, containerRect)) {
+      if (containerRect == null ||
+          isRectVisibleInsideContainer(box, containerRect)) {
         boxes.push([box.left, box.top, box.right, box.bottom]);
       }
     });
@@ -152,7 +153,6 @@ export async function loadSettings(): Promise<AppSettings|null> {
   }
   const appSettings: string =
       await ((window as any)[BOUND_LISTENER_NAME] as any).loadSettings();
-  console.log('appSettings string:', appSettings);  // DEBUG
   if (!appSettings) {
     return null;
   }

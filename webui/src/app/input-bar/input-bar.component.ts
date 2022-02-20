@@ -37,13 +37,13 @@ export interface InputBarControlEvent {
   clearAll?: boolean;
 }
 
-// Abbreviation expansion can be triggered by entering the abbreviation followed
-// by typing two consecutive spaces in the external app.
+// Abbreviation expansion can be triggered by entering any of the the
+// abbreviation following key sequences.
 // TODO(#49): This can be generalized and made configurable.
 // TODO(#49): Explore continuous AE without explicit trigger, perhaps
 // added by heuristics for detecting abbreviations vs. words.
-export const ABBRVIATION_EXPANSION_TRIGGER_COMBO_KEY: string[] =
-    [VIRTUAL_KEY.SPACE, VIRTUAL_KEY.SPACE];
+export const ABBRVIATION_EXPANSION_TRIGGER_KEY_SEQUENCES: Array<string[]> =
+    [[VIRTUAL_KEY.SPACE, VIRTUAL_KEY.SPACE], [VIRTUAL_KEY.ENTER]];
 
 @Component({
   selector: 'app-input-bar-component',
@@ -149,11 +149,11 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
       void {
     const lastKey = keySequence[keySequence.length - 1];
     this.latestReconstructedString = reconstructedText;
-    console.log('### listenToKeypres(): 100');  // DEBUG
     if (this.state === State.ENTERING_BASE_TEXT ||
         this.state === State.CHOOSING_PHRASES) {
-      if (keySequenceEndsWith(
-              keySequence, ABBRVIATION_EXPANSION_TRIGGER_COMBO_KEY)) {
+      if (ABBRVIATION_EXPANSION_TRIGGER_KEY_SEQUENCES.some(
+              triggerKeySeqwuence =>
+                  keySequenceEndsWith(keySequence, triggerKeySeqwuence))) {
         this.triggerAbbreviationExpansion();
         return;
       }

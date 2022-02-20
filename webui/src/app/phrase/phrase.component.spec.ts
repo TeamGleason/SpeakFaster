@@ -68,23 +68,6 @@ describe('PhraseComponent', () => {
     expect(emittedEvents).toEqual([{phraseText: 'my phrase', phraseIndex: 2}]);
   });
 
-  it('shows favorite button, which when clicked, fires favoriteButtonClicked',
-     () => {
-       fixture.componentInstance.showFavoriteButton = true;
-       const emittedEvents: Array<{phraseText: string, phraseIndex: number}> =
-           [];
-       fixture.componentInstance.favoriteButtonClicked.subscribe((event) => {
-         emittedEvents.push(event);
-       });
-       fixture.detectChanges();
-       const favoriteButton = fixture.nativeElement.querySelector(
-                                  '.favorite-button') as HTMLButtonElement;
-       favoriteButton.click();
-       expect(emittedEvents).toEqual([
-         {phraseText: 'my phrase', phraseIndex: 2}
-       ]);
-     });
-
   for (const [showFavoriteButton, expectedNumButtons] of [
            [false, 2], [true, 3]] as Array<[boolean, number]>) {
     it(`calls updateButtonBoxes: showFavoriteButton=${showFavoriteButton}`,

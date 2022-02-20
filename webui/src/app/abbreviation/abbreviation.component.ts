@@ -30,7 +30,8 @@ export enum State {
 export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
                                               AfterViewInit {
   private static readonly _NAME = 'AbbreviationComponent';
-  private static readonly CONTEXTUAL_PHRASES_TAGS: string[] = ['temporal'];
+  private static readonly _VALID_TEXT_CONTINUATION_REGEX =
+      /^[A-Za-z0-9][A-Za-z0-9\-\.\,\;\!\?\'\" ]+$/;
 
   private readonly instanceId =
       AbbreviationComponent._NAME + '_' + createUuid();
@@ -137,7 +138,9 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
           this.textPredictions.splice(0);
           data.outputs.forEach(output => {
             const text = output.trim();
-            if (!text || text.match(/^[\s,;\.\!\?\_]+$/) ||
+            if (!text ||
+                !text.match(
+                    AbbreviationComponent._VALID_TEXT_CONTINUATION_REGEX) ||
                 output.toLocaleLowerCase().indexOf('speaker') !== -1) {
               return;
             }
@@ -360,5 +363,4 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
   get refinementType(): RefinementType {
     return this.pendingRefinementType;
   }
-
 }

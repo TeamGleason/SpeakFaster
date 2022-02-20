@@ -1,5 +1,5 @@
 /** An input bar, with related functional buttons. */
-import {AfterViewInit, Component, ElementRef, EventEmitter, Input, OnDestroy, OnInit, Output, QueryList, SimpleChanges, ViewChildren} from '@angular/core';
+import {AfterViewInit, Component, ElementRef, EventEmitter, Input, OnDestroy, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
 import {Subject, Subscription} from 'rxjs';
 import {updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
 import {keySequenceEndsWith} from 'src/utils/text-utils';
@@ -8,7 +8,6 @@ import {createUuid} from 'src/utils/uuid';
 import {ExternalEventsComponent, repeatVirtualKey, VIRTUAL_KEY} from '../external/external-events.component';
 import {FillMaskRequest, SpeakFasterService} from '../speakfaster-service';
 import {AbbreviationSpec, AbbreviationToken, InputAbbreviationChangedEvent} from '../types/abbreviation';
-import {AddContextualPhraseResponse} from '../types/contextual_phrase';
 import {TextEntryEndEvent} from '../types/text-entry';
 
 export enum State {
@@ -150,6 +149,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
       void {
     const lastKey = keySequence[keySequence.length - 1];
     this.latestReconstructedString = reconstructedText;
+    console.log('### listenToKeypres(): 100');  // DEBUG
     if (this.state === State.ENTERING_BASE_TEXT ||
         this.state === State.CHOOSING_PHRASES) {
       if (keySequenceEndsWith(
@@ -200,8 +200,13 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
       if (this._chipTypedText === null) {
         this._chipTypedText = Array(this._chips.length).fill(null);
       }
-      this._chipTypedText[this._focusChipIndex!] = spelledString;
-      updateButtonBoxesForElements(this.instanceId, this.buttons);
+      // Word is already being spelled out.
+      if (spelledString.length === 0) {
+        this.baseReconstructedText = this.latestReconstructedString;
+      } else {
+        this._chipTypedText[this._focusChipIndex!] = spelledString;
+        updateButtonBoxesForElements(this.instanceId, this.buttons);
+      }
     } else if (this.state === State.FOCUSED_ON_WORD_CHIP) {
       if (lastKey === VIRTUAL_KEY.ENTER || lastKey === VIRTUAL_KEY.SPACE) {
         this.onSpeakAsIsButtonClicked();
@@ -240,7 +245,6 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
         const isSpelled =
             this._chipTypedText !== null && this._chipTypedText[i] !== null;
         if (isSpelled) {
-          // Word is spelled out.
           if (pendingChars) {
             tokens.push({
               value: pendingChars,

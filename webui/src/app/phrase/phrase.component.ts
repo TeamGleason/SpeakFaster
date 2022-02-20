@@ -92,11 +92,15 @@ export class PhraseComponent implements AfterViewInit, OnDestroy {
   }
 
   onSpeakButtonClicked(event: Event) {
+    (event.target as HTMLButtonElement).blur();
+    // TODO(cais): Add unit test.
     this.speakButtonClicked.emit(
         {phraseText: this.phraseText, phraseIndex: this.phraseIndex});
   }
 
   onInjectButtonClicked(event: Event) {
+    (event.target as HTMLButtonElement).blur();
+    // TODO(cais): Add unit test.
     this.injectButtonClicked.emit(
         {phraseText: this.phraseText, phraseIndex: this.phraseIndex});
   }

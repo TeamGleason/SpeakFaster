@@ -10,7 +10,6 @@ import {InputBarControlEvent} from '../input-bar/input-bar.component';
 import {PersonalNamesComponent} from '../personal-names/personal-names.component';
 import {FillMaskRequest, SpeakFasterService, TextPredictionResponse} from '../speakfaster-service';
 import {AbbreviationSpec, InputAbbreviationChangedEvent} from '../types/abbreviation';
-import {ContextualPhrase} from '../types/contextual_phrase';
 import {TextEntryBeginEvent, TextEntryEndEvent} from '../types/text-entry';
 
 export enum State {

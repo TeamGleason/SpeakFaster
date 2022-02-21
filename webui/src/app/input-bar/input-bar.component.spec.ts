@@ -4,7 +4,7 @@ import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {By} from '@angular/platform-browser';
 import {Subject} from 'rxjs';
 
-import {VIRTUAL_KEY} from '../external/external-events.component';
+import {repeatVirtualKey, VIRTUAL_KEY} from '../external/external-events.component';
 import {SpeakFasterService} from '../speakfaster-service';
 import {InputAbbreviationChangedEvent} from '../types/abbreviation';
 import {TextEntryEndEvent} from '../types/text-entry';
@@ -60,7 +60,7 @@ fdescribe('InputBarComponent', () => {
   });
 
   it('initially displays cursor', () => {
-    expect(fixture.debugElement.query(By.css('.simullated-cursor')))
+    expect(fixture.debugElement.query(By.css('.simulated-cursor')))
         .not.toBeNull();
   });
 
@@ -74,26 +74,26 @@ fdescribe('InputBarComponent', () => {
            [[VIRTUAL_KEY.ENTER, 'b'], ' b', 'b'],
            [[VIRTUAL_KEY.SPACE, VIRTUAL_KEY.ENTER, 'b'], ' b', 'b'],
   ] as Array<[string[], string, string]>) {
-    fit(`entering keys cause text and buttons to be displayed: ` +
-            `key sequence = ${JSON.stringify(keySequence)}`,
-        () => {
-          for (let i = 0; i < keySequence.length; ++i) {
-            fixture.componentInstance.listenToKeypress(
-                keySequence.slice(0, i + 1), reconstructedText.slice(0, i + 1));
-            fixture.detectChanges();
-          }
+    it(`entering keys cause text and buttons to be displayed: ` +
+           `key sequence = ${JSON.stringify(keySequence)}`,
+       () => {
+         for (let i = 0; i < keySequence.length; ++i) {
+           fixture.componentInstance.listenToKeypress(
+               keySequence.slice(0, i + 1), reconstructedText.slice(0, i + 1));
+           fixture.detectChanges();
+         }
 
-          const inputText = fixture.debugElement.query(By.css('.input-text'));
-          expect(inputText.nativeElement.innerText).toEqual(expectedText);
-          expect(fixture.debugElement.query(By.css('.expand-button')))
-              .not.toBeNull();
-          expect(fixture.debugElement.query(By.css('.spell-button')))
-              .not.toBeNull();
-          expect(fixture.debugElement.query(By.css('.abort-button')))
-              .not.toBeNull();
-          expect(fixture.debugElement.query(By.css('.simulated-cursor')))
-              .not.toBeNull();
-        });
+         const inputText = fixture.debugElement.query(By.css('.input-text'));
+         expect(inputText.nativeElement.innerText).toEqual(expectedText);
+         expect(fixture.debugElement.query(By.css('.expand-button')))
+             .not.toBeNull();
+         expect(fixture.debugElement.query(By.css('.spell-button')))
+             .not.toBeNull();
+         expect(fixture.debugElement.query(By.css('.abort-button')))
+             .not.toBeNull();
+         expect(fixture.debugElement.query(By.css('.simulated-cursor')))
+             .not.toBeNull();
+       });
   }
 
   it('clicking abort button clears state', () => {
@@ -113,11 +113,19 @@ fdescribe('InputBarComponent', () => {
     expect(fixture.debugElement.query(By.css('.abort-button'))).toBeNull();
   });
 
-  for (const [keySequence, reconstructedText, expectedAbbreviationString] of [
-           [['x', 'y', VIRTUAL_KEY.SPACE, VIRTUAL_KEY.SPACE], 'xy  ', 'xy'],
-           [['x', 'y', VIRTUAL_KEY.ENTER], 'xy\n', 'xy'],
-           [['x', 'y', VIRTUAL_KEY.SPACE, VIRTUAL_KEY.ENTER], 'xy \n', 'xy'],
-  ] as Array<[string[], string, string]>) {
+  for (const
+           [keySequence, reconstructedText, expectedAbbreviationString,
+            expectdEraserSequenceLength] of
+               [[
+                 ['x', 'y', VIRTUAL_KEY.SPACE, VIRTUAL_KEY.SPACE], 'xy  ', 'xy',
+                 4
+               ],
+                [['x', 'y', VIRTUAL_KEY.ENTER], 'xy\n', 'xy', 3],
+                [
+                  ['x', 'y', VIRTUAL_KEY.SPACE, VIRTUAL_KEY.ENTER], 'xy \n',
+                  'xy', 4
+                ],
+  ] as Array<[string[], string, string, number]>) {
     it(`key sequence triggers AE: ` +
            `key sequence: ${JSON.stringify(keySequence)}`,
        () => {
@@ -133,13 +141,64 @@ fdescribe('InputBarComponent', () => {
          }
 
          expect(events.length).toEqual(1);
-         expect(events[0].abbreviationSpec.readableString)
+         const {abbreviationSpec} = events[0];
+         expect(abbreviationSpec.readableString)
              .toEqual(expectedAbbreviationString);
+         expect(abbreviationSpec.tokens.length).toEqual(1);
+         expect(abbreviationSpec.tokens[0].value)
+             .toEqual(expectedAbbreviationString);
+         expect(abbreviationSpec.tokens[0].isKeyword).toEqual(false);
+         // TODO(cais): Fix logic around Enter key and reinstate the following.
+         //  expect(abbreviationSpec.eraserSequence)
+         //      .toEqual(repeatVirtualKey(
+         //          VIRTUAL_KEY.BACKSPACE, expectdEraserSequenceLength));
+         expect(abbreviationSpec.lineageId.length).toBeGreaterThan(0);
          expect(events[0].requestExpansion).toEqual(true);
        });
   }
 
-  // TODO(cais): Test clicking Expand button.
+  for (const
+           [keySequence, reconstructedText, expectedAbbreviationString,
+            expectedEraserSequenceLength] of
+               [[['x', 'y'], 'xy  ', 'xy', 2],
+                [['a', VIRTUAL_KEY.SPACE, 'x', 'y'], 'a xy', 'xy', 4],
+                [['x', 'y', VIRTUAL_KEY.SPACE], 'xy ', 'xy', 3],
+                [[VIRTUAL_KEY.SPACE, 'x', 'y'], ' xy ', 'xy', 3],
+  ] as Array<[string[], string, string, number]>) {
+    it(`clicking expand button triggers AE: ` +
+           `key sequence: ${JSON.stringify(keySequence)}`,
+       () => {
+         const events: InputAbbreviationChangedEvent[] = [];
+         abbreviationExpansionTriggers.subscribe(
+             (event: InputAbbreviationChangedEvent) => {
+               events.push(event);
+             });
+         for (let i = 0; i < keySequence.length; ++i) {
+           fixture.componentInstance.listenToKeypress(
+               keySequence.slice(0, i + 1), reconstructedText.slice(0, i + 1));
+           fixture.detectChanges();
+         }
+         const expandbutton =
+             fixture.debugElement.query(By.css('.expand-button'));
+         expandbutton.nativeElement.click();
+         fixture.detectChanges();
+
+         expect(events.length).toEqual(1);
+         const {abbreviationSpec} = events[0];
+         expect(abbreviationSpec.readableString)
+             .toEqual(expectedAbbreviationString);
+         expect(abbreviationSpec.tokens.length).toEqual(1);
+         expect(abbreviationSpec.tokens[0].value)
+             .toEqual(expectedAbbreviationString);
+         expect(abbreviationSpec.tokens[0].isKeyword).toEqual(false);
+         expect(abbreviationSpec.eraserSequence)
+             .toEqual(repeatVirtualKey(
+                 VIRTUAL_KEY.BACKSPACE, expectedEraserSequenceLength));
+         expect(abbreviationSpec.lineageId.length).toBeGreaterThan(0);
+         expect(events[0].requestExpansion).toEqual(true);
+       });
+  }
+
   // TODO(Cais): Test clicking Spell button.
   // TODO(cais): Test hiding spell and expand button when space is present.
   // TODO(cais): Test spelling.
@@ -148,8 +207,7 @@ fdescribe('InputBarComponent', () => {
   // TODO(cais): Test speak button.
   // TODO(cais): Test TTS button.
 
-
-
+  // TODO(cais): Clean up.
   // it('non-final text entry event updates input box value', () => {
   //   textEntryEndSubject.next({
   //     text: 'foo ',
@@ -201,7 +259,8 @@ fdescribe('InputBarComponent', () => {
   //   textEntryEndSubject.subscribe(event => {
   //     events.push(event);
   //   });
-  //   const speakButton = fixture.debugElement.query(By.css('.speak-button'));
+  //   const speakButton =
+  //   fixture.debugElement.query(By.css('.speak-button'));
   //   speakButton.nativeElement.click();
 
   //   expect(events.length).toEqual(1);

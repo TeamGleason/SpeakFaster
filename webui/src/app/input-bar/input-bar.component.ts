@@ -226,18 +226,18 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private triggerAbbreviationExpansion() {
     const precedingText = '';
-    const text = this.inputString.trim();
-    const eraserLength = text.length;
+    const textTokens = this.inputString.trim().split(' ');
+    const text = textTokens[textTokens.length - 1];
+    const eraserLength = this.inputString.length;
+
     let abbreviationSpec: AbbreviationSpec = {
-      tokens: text.split('').map(char => ({
-                                   value: char,
-                                   isKeyword: false,
-                                 })),
+      tokens: [{value: text, isKeyword: false}],
       readableString: text,
       eraserSequence: repeatVirtualKey(VIRTUAL_KEY.BACKSPACE, eraserLength),
       precedingText,
       lineageId: createUuid(),
     };
+
     if (this.state === State.FOCUSED_ON_LETTER_CHIP) {
       const tokens: AbbreviationToken[] = [];
       let pendingChars: string = '';

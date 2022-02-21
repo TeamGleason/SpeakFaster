@@ -176,6 +176,6 @@ cause n sets of clickable regions to be registered.
 
 The functions `saveSettings()` and `loadSettings()` can be used to serialized
 user settings (e.g., TTS voice and volume) to the host and loading the settings
-back from the host. Note that WebViews such as CefShar usually do not persist
+back from the host. Note that WebViews such as CefSharp usually do not persist
 data stored in `localStorage` after the instance of WebView is destroyed, which
 necessitates settings storage at the host level.

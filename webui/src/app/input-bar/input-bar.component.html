@@ -186,14 +186,13 @@
             #clickableButton
             *ngIf="inputStringIsNotEmpty"
             class="action-button abort-button"
-            (click)="onClearButtonClicked($event)">
+            (click)="onAbortButtonClicked($event)">
           X
         </button>
 
         <div
             *ngIf="inputStringExceedsAbbreviationExpansionLimit"
-            class="length-limit-exceeded"
-            (click)="onClearButtonClicked($event)">
+            class="length-limit-exceeded">
           AE length limit exceeded
         </div>
       </div>

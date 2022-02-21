@@ -75,7 +75,6 @@ fdescribe('InputBarComponent', () => {
   function enterKeysIntoComponent(
       keySequence: Array<string|VIRTUAL_KEY>, reconstructedText: string,
       baseLength = 0): void {
-
     for (let i = 0; i < keySequence.length; ++i) {
       const currentKeySequence = keySequence.slice(0, i + 1)
       fixture.componentInstance.listenToKeypress(
@@ -403,6 +402,7 @@ fdescribe('InputBarComponent', () => {
     const spellSequence = ['a', 'c', 'k', VIRTUAL_KEY.SPACE];
     const spellReconstructedText = reconstructedText + spellSequence.join('');
     enterKeysIntoComponent(spellSequence, spellReconstructedText, 3);
+
     expect(inputAbbreviationChangeEvents.length).toEqual(1);
     expect(inputAbbreviationChangeEvents[0].requestExpansion).toBeTrue();
     const {abbreviationSpec} = inputAbbreviationChangeEvents[0];
@@ -415,11 +415,74 @@ fdescribe('InputBarComponent', () => {
     expect(tokens[1]).toEqual({value: 'ack', isKeyword: true});
   });
 
+  it('clicking abort after clicking spell resets state', () => {
+    const keySequence = ['a', 'b', 'a'];
+    const reconstructedText = keySequence.join('');
+    enterKeysIntoComponent(keySequence, reconstructedText);
+    const spellButton = fixture.debugElement.query(By.css('.spell-button'));
+    spellButton.nativeElement.click();
+    fixture.detectChanges();
+    const abortButton = fixture.debugElement.query(By.css('.abort-button'));
+    abortButton.nativeElement.click();
+    fixture.detectChanges();
+
+    const chips =
+        fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'));
+    expect(chips.length).toEqual(0);
+
+    expect(fixture.debugElement.query(By.css('.expand-button'))).not.toBeNull();
+    expect(fixture.debugElement.query(By.css('.spell-button'))).not.toBeNull();
+    const expandButton = fixture.debugElement.query(By.css('.expand-button'));
+    expandButton.nativeElement.click();
+
+    expect(inputAbbreviationChangeEvents.length).toEqual(1);
+    expect(inputAbbreviationChangeEvents[0].requestExpansion).toBeTrue();
+    const {abbreviationSpec} = inputAbbreviationChangeEvents[0];
+    expect(abbreviationSpec.tokens.length).toEqual(1);
+    expect(abbreviationSpec.tokens[0].value).toEqual('aba');
+    expect(abbreviationSpec.tokens[0].isKeyword).toBeFalse();
+    expect(abbreviationSpec.readableString).toEqual('aba');
+  });
+
+  it('clicking abort during spelling resets state', () => {
+    const keySequence = ['a', 'b', 'a'];
+    const reconstructedText = keySequence.join('');
+    enterKeysIntoComponent(keySequence, reconstructedText);
+    const spellButton = fixture.debugElement.query(By.css('.spell-button'));
+    spellButton.nativeElement.click();
+    fixture.detectChanges();
+    const chips =
+        fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'));
+    chips[2].nativeElement.click();
+    fixture.detectChanges();
+    const spellSequence = ['a', 'c', 'k'];
+    const spellReconstructedText = reconstructedText + spellSequence.join('');
+    enterKeysIntoComponent(spellSequence, spellReconstructedText, 3);
+    const abortButton = fixture.debugElement.query(By.css('.abort-button'));
+    abortButton.nativeElement.click();
+    fixture.detectChanges();
+
+    expect(fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'))
+               .length)
+        .toEqual(0);
+
+    expect(fixture.debugElement.query(By.css('.expand-button'))).not.toBeNull();
+    expect(fixture.debugElement.query(By.css('.spell-button'))).not.toBeNull();
+    const expandButton = fixture.debugElement.query(By.css('.expand-button'));
+    expandButton.nativeElement.click();
+
+    expect(inputAbbreviationChangeEvents.length).toEqual(1);
+    expect(inputAbbreviationChangeEvents[0].requestExpansion).toBeTrue();
+    const {abbreviationSpec} = inputAbbreviationChangeEvents[0];
+    expect(abbreviationSpec.tokens.length).toEqual(1);
+    expect(abbreviationSpec.tokens[0].value).toEqual('aba');
+    expect(abbreviationSpec.tokens[0].isKeyword).toBeFalse();
+    expect(abbreviationSpec.readableString).toEqual('aba');
+  });
+
   // TODO(cais): Backspaces during spelling.
-  // TODO(cais): Abort during spelling.
   // TODO(cais): Test spelling with non-matching and ambiguous key.
-  // TODO(Cais): Test chip state.
-  //    Chip injection.
+  // TODO(Cais): Test chip state during refinement.
   // TODO(cais): Test speak button.
   // TODO(cais): Test TTS button.
 });

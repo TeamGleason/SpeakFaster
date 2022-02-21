@@ -358,7 +358,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  onClearButtonClicked(event: Event) {
+  onAbortButtonClicked(event: Event) {
     if (this.state === State.ENTERING_BASE_TEXT ||
         this.state === State.CHOOSING_PHRASES ||
         this.state === State.AFTER_CUT) {
@@ -370,7 +370,9 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
       });
     } else if (
         this.state === State.CHOOSING_WORD_CHIP ||
-        this.state === State.FOCUSED_ON_WORD_CHIP) {
+        this.state === State.FOCUSED_ON_WORD_CHIP ||
+        this.state === State.CHOOSING_LETTER_CHIP ||
+        this.state === State.FOCUSED_ON_LETTER_CHIP) {
       this.state = State.ENTERING_BASE_TEXT;
     }
   }

@@ -164,7 +164,6 @@ export async function loadSettings(): Promise<AppSettings|null> {
   }
   const appSettings: string =
       await ((window as any)[BOUND_LISTENER_NAME] as any).loadSettings();
-  console.log('appSettings string:', appSettings);  // DEBUG
   if (!appSettings) {
     return null;
   }

@@ -2,6 +2,7 @@
 
 import {ElementRef, QueryList} from '@angular/core';
 import {getVirtualkeyCode, VIRTUAL_KEY} from 'src/app/external/external-events.component';
+import {AppSettings} from 'src/app/settings/settings';
 
 const CEFSHARP_OBJECT_NAME = 'CefSharp';
 export const BOUND_LISTENER_NAME = 'boundListener';
@@ -45,7 +46,8 @@ export function updateButtonBoxesForElements(
     const boxes: Array<[number, number, number, number]> = [];
     elements.forEach(elementRef => {
       const box = elementRef.nativeElement.getBoundingClientRect();
-      if (containerRect == null || isRectVisibleInsideContainer(box, containerRect)) {
+      if (containerRect == null ||
+          isRectVisibleInsideContainer(box, containerRect)) {
         boxes.push([box.left, box.top, box.right, box.bottom]);
       }
     });
@@ -114,4 +116,49 @@ export type ExternalKeypressHook = (vkCode: number) => void;
 
 export function registerExternalKeypressHook(callback: ExternalKeypressHook) {
   (window as any)['externalKeypressHook'] = callback;
+}
+
+/**
+ * Try saving settings through the CefSharp host bridge.
+ *
+ * The settings will be serialized and stored by the host app.
+ *
+ * @returns `true` if and only if saving is successful.
+ */
+export async function saveSettings(settings: AppSettings): Promise<boolean> {
+  if ((window as any)[BOUND_LISTENER_NAME] == null) {
+    console.warn(
+        `Cannot call save settings ` +
+        `because object ${BOUND_LISTENER_NAME} is not found`);
+    return false;
+  }
+  ((window as any)[BOUND_LISTENER_NAME] as any)
+      .saveSettings(JSON.stringify(settings));
+  return true;
+}
+
+/**
+ * Try loading settings from the CefSharp host bridge.
+ *
+ * @returns If the host bridge exists and the host has previously saved settings
+ *     (see `saveSettings()`), the deserialized settings object. Else, returns
+ *     `null`.
+ */
+export async function loadSettings(): Promise<AppSettings|null> {
+  if ((window as any)[BOUND_LISTENER_NAME] == null) {
+    console.warn(
+        `Cannot call load settings ` +
+        `because object ${BOUND_LISTENER_NAME} is not found`);
+    return null;
+  }
+  const appSettings: string =
+      await ((window as any)[BOUND_LISTENER_NAME] as any).loadSettings();
+  if (!appSettings) {
+    return null;
+  }
+  try {
+    return JSON.parse(appSettings) as AppSettings;
+  } catch (error) {
+    return null;
+  }
 }

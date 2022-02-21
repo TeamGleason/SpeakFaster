@@ -209,9 +209,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       case 'QUICK_PHRASES_FAVORITE':
         this.changeAppState(AppState.QUICK_PHRASES_FAVORITE);
         break;
-      case 'QUICK_PHRASES_TEMPORAL':
-        this.changeAppState(AppState.QUICK_PHRASES_TEMPORAL);
-        break;
       case 'QUICK_PHRASES_PARTNERS':
         this.changeAppState(AppState.QUICK_PHRASES_PARTNERS);
         break;
@@ -226,18 +223,20 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     }
   }
 
+  onSettingsButtonClicked(event: Event) {
+    this.changeAppState(AppState.SETTINGS);
+  }
+
   isQuickPhrasesAppState() {
     return this.appState === AppState.QUICK_PHRASES_FAVORITE ||
-        this.appState === AppState.QUICK_PHRASES_TEMPORAL ||
         this.appState === AppState.QUICK_PHRASES_PARTNERS ||
         this.appState === AppState.QUICK_PHRASES_CARE;
   }
 
   get nonMinimizedStatesAppStates(): AppState[] {
     return [
-      AppState.QUICK_PHRASES_FAVORITE, AppState.QUICK_PHRASES_TEMPORAL,
-      AppState.QUICK_PHRASES_PARTNERS, AppState.QUICK_PHRASES_CARE,
-      AppState.ABBREVIATION_EXPANSION
+      AppState.QUICK_PHRASES_FAVORITE, AppState.QUICK_PHRASES_PARTNERS,
+      AppState.QUICK_PHRASES_CARE, AppState.ABBREVIATION_EXPANSION
     ];
   }
 
@@ -246,8 +245,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     switch (appState) {
       case AppState.QUICK_PHRASES_FAVORITE:
         return `/assets/images/quick-phrases-favorite-${activeStateString}.png`;
-      case AppState.QUICK_PHRASES_TEMPORAL:
-        return `/assets/images/quick-phrases-temporal-${activeStateString}.png`;
       case AppState.QUICK_PHRASES_PARTNERS:
         return `/assets/images/quick-phrases-partners-${activeStateString}.png`;
       case AppState.QUICK_PHRASES_CARE:
@@ -259,12 +256,15 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     }
   }
 
+  getSettingsStateImgSrc(isActive: boolean): string {
+    const activeStateString = isActive ? 'active' : 'inactive';
+    return `/assets/images/menu-${activeStateString}.png`;
+  }
+
   getQuickPhrasesAllowedTags(): string[] {
     switch (this.appState) {
       case AppState.QUICK_PHRASES_FAVORITE:
         return ['favorite'];
-      case AppState.QUICK_PHRASES_TEMPORAL:
-        return ['temporal'];
       case AppState.QUICK_PHRASES_PARTNERS:
         return ['partner'];
       case AppState.QUICK_PHRASES_CARE:
@@ -278,8 +278,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     switch (this.appState) {
       case AppState.QUICK_PHRASES_FAVORITE:
         return '#473261';
-      case AppState.QUICK_PHRASES_TEMPORAL:
-        return '#603819';
       case AppState.QUICK_PHRASES_PARTNERS:
         return '#3F0909';
       case AppState.QUICK_PHRASES_CARE:

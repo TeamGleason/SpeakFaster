@@ -104,8 +104,7 @@ describe('AppComponent', () => {
 
   for (const appState
            of [AppState.QUICK_PHRASES_CARE, AppState.QUICK_PHRASES_FAVORITE,
-               AppState.QUICK_PHRASES_PARTNERS,
-               AppState.QUICK_PHRASES_TEMPORAL]) {
+               AppState.QUICK_PHRASES_PARTNERS]) {
     it(`shows QuickPhrasesComponent when AppState is ${appState}`, async () => {
       fixture.componentInstance.onNewAccessToken('foo-access-token');
       fixture.componentInstance.appState = AppState.QUICK_PHRASES_CARE;
@@ -163,7 +162,7 @@ describe('AppComponent', () => {
     await fixture.whenStable();
     const leftNavButtons =
         fixture.debugElement.queryAll(By.css('.side-pane-button'));
-    leftNavButtons[0].nativeElement.click();
+    leftNavButtons[1].nativeElement.click();
     await fixture.whenStable();
 
     expect(fixture.componentInstance.appState)
@@ -180,7 +179,7 @@ describe('AppComponent', () => {
     await fixture.whenStable();
     const leftNavButtons =
         fixture.debugElement.queryAll(By.css('.side-pane-button'));
-    leftNavButtons[0].nativeElement.click();
+    leftNavButtons[1].nativeElement.click();
     fixture.detectChanges();
     await fixture.whenStable();
     const minimizeButton =

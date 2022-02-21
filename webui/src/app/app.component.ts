@@ -273,7 +273,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     return this.contextStringsAvailable.length > 0;
   }
 
-  get inputStringNonEmpty(): boolean {
+  get inputStringIsCompatibleWithAbbreviationExpansion(): boolean {
     return this.inputString.trim().length > 0;
   }
 

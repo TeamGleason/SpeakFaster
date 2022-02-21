@@ -52,6 +52,15 @@ export const ABBRVIATION_EXPANSION_TRIGGER_KEY_SEQUENCES: Array<string[]> =
 export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   private static readonly _NAME = 'InputBarComponent';
   private readonly instanceId = InputBarComponent._NAME + '_' + createUuid();
+  // Maximum allowed length of the abbreviation (proper) part of the input
+  // string. For example, in the abbreviation with leading keywords ("how are
+  // yd"), the "yd" part is the abbreviaton proper and it has a length of 2.
+  private static readonly ABBREVIATION_MAX_PROPER_LENGTH = 10;
+  // Maximum number of allowed leading (head) keywords.
+  private static readonly ABBREVIATION_MAX_HEAD_KEYWORDS = 4;
+  // Maximum allowed length of the entire abbreviation, including the leading
+  // keywords.
+  private static readonly ABBREVIATION_MAX_TOTAL_LENGTH = 50;
   private static readonly STATE_REST_DELAY_MILLIS = 2000;
 
   @Input() userId!: string;
@@ -151,7 +160,8 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     this.latestReconstructedString = reconstructedText;
     if (this.state === State.ENTERING_BASE_TEXT ||
         this.state === State.CHOOSING_PHRASES) {
-      if (ABBRVIATION_EXPANSION_TRIGGER_KEY_SEQUENCES.some(
+      if (this.inputStringIsCompatibleWithAbbreviationExpansion &&
+          ABBRVIATION_EXPANSION_TRIGGER_KEY_SEQUENCES.some(
               triggerKeySeqwuence =>
                   keySequenceEndsWith(keySequence, triggerKeySeqwuence))) {
         this.triggerAbbreviationExpansion();
@@ -226,17 +236,9 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private triggerAbbreviationExpansion() {
     const precedingText = '';
-    const textTokens = this.inputString.trim().split(' ');
-    const text = textTokens[textTokens.length - 1];
     const eraserLength = this.inputString.length;
 
-    let abbreviationSpec: AbbreviationSpec = {
-      tokens: [{value: text, isKeyword: false}],
-      readableString: text,
-      eraserSequence: repeatVirtualKey(VIRTUAL_KEY.BACKSPACE, eraserLength),
-      precedingText,
-      lineageId: createUuid(),
-    };
+    let abbreviationSpec = this.getNonSpellingAbbreviationExpansion();
 
     if (this.state === State.FOCUSED_ON_LETTER_CHIP) {
       const tokens: AbbreviationToken[] = [];
@@ -278,6 +280,36 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     console.log('Abbreviation expansion triggered:', abbreviationSpec);
     this.abbreviationExpansionTriggers.next(
         {abbreviationSpec, requestExpansion: true});
+  }
+
+  private getNonSpellingAbbreviationExpansion(): AbbreviationSpec {
+    const textTokens =
+        this.inputString.trim().split(' ').filter(token => token.length > 0);
+    const headKeywords: string[] = [];
+    if (textTokens.length > 1) {
+      headKeywords.push(...textTokens.slice(0, textTokens.length - 1));
+    }
+    const abbrevText = textTokens[textTokens.length - 1];
+    const eraserLength = this.inputString.length;
+    const tokens: AbbreviationToken[] = [];
+    let readableString: string = '';
+    headKeywords.forEach(keyword => {
+      tokens.push({
+        value: keyword,
+        isKeyword: true,
+      });
+      readableString += keyword + ' ';
+    });
+    readableString += abbrevText;
+    tokens.push({
+      value: abbrevText,
+      isKeyword: false,
+    })
+    return {
+      tokens, readableString, precedingText: '',
+          eraserSequence: repeatVirtualKey(VIRTUAL_KEY.BACKSPACE, eraserLength),
+          lineageId: createUuid(),
+    }
   }
 
   onSpellButtonClicked(event: Event) {
@@ -417,8 +449,28 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     return this._chips[index].text;
   }
 
-  get inputStringNonEmpty(): boolean {
-    return this.inputString.trim().length > 0;
+  get inputStringIsNotEmpty(): boolean {
+    const trimmedLength = this.inputString.trim().length;
+    return trimmedLength > 0;
+  }
+
+  /**
+   * Whether the current input text in the input bar is compatible with
+   * abbreviation expansion.
+   */
+  get inputStringIsCompatibleWithAbbreviationExpansion(): boolean {
+    return this.inputString.trim().length > 0 &&
+        !this.inputStringExceedsAbbreviationExpansionLimit;
+  }
+
+  get inputStringExceedsAbbreviationExpansionLimit(): boolean {
+    const trimmedLength = this.inputString.trim().length;
+    const tokens = this.inputString.trim().split(' ');
+    const lastToken = tokens[tokens.length - 1];
+    const lastTokenLength = lastToken.length;
+    return trimmedLength > InputBarComponent.ABBREVIATION_MAX_TOTAL_LENGTH ||
+        tokens.length > InputBarComponent.ABBREVIATION_MAX_HEAD_KEYWORDS + 1 ||
+        lastTokenLength > InputBarComponent.ABBREVIATION_MAX_PROPER_LENGTH;
   }
 
   get chips(): InputBarChipSpec[] {

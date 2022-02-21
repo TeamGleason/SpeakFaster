@@ -96,7 +96,7 @@ fdescribe('InputBarComponent', () => {
        });
   }
 
-  it('clicking abort button clears state', () => {
+  it('clicking abort button clears state: no head keywords', () => {
     fixture.componentInstance.listenToKeypress(['a', 'b'], 'ab');
     fixture.detectChanges();
     const abortButton = fixture.debugElement.query(By.css('.abort-button'));
@@ -161,7 +161,6 @@ fdescribe('InputBarComponent', () => {
            [keySequence, reconstructedText, expectedAbbreviationString,
             expectedEraserSequenceLength] of
                [[['x', 'y'], 'xy  ', 'xy', 2],
-                [['a', VIRTUAL_KEY.SPACE, 'x', 'y'], 'a xy', 'xy', 4],
                 [['x', 'y', VIRTUAL_KEY.SPACE], 'xy ', 'xy', 3],
                 [[VIRTUAL_KEY.SPACE, 'x', 'y'], ' xy ', 'xy', 3],
   ] as Array<[string[], string, string, number]>) {
@@ -198,6 +197,123 @@ fdescribe('InputBarComponent', () => {
          expect(events[0].requestExpansion).toEqual(true);
        });
   }
+
+  it('long input abbreviation disables AE buttons and shows notice', () => {
+    // Length 11.
+    const keySequence = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k'];
+    const reconstructedText = keySequence.join('');
+    for (let i = 0; i < keySequence.length; ++i) {
+      fixture.componentInstance.listenToKeypress(
+          keySequence.slice(0, i + 1), reconstructedText.slice(0, i + 1));
+      fixture.detectChanges();
+    }
+
+    expect(fixture.debugElement.query(By.css('.expand-button'))).toBeNull();
+    expect(fixture.debugElement.query(By.css('.spell-button'))).toBeNull();
+    expect(fixture.debugElement.query(By.css('.abort-button'))).not.toBeNull();
+    expect(fixture.debugElement.query(By.css('.length-limit-exceeded')))
+        .not.toBeNull();
+  });
+
+  it('long input abbreviation followed by trigger sequence does not trigger AE',
+     () => {
+       const events: InputAbbreviationChangedEvent[] = [];
+       abbreviationExpansionTriggers.subscribe(
+           (event: InputAbbreviationChangedEvent) => {
+             events.push(event);
+           });
+       // Length 11, excluding the two space keys.
+       const keySequence = [
+         'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k',
+         VIRTUAL_KEY.SPACE, VIRTUAL_KEY.SPACE
+       ];
+       const reconstructedText = keySequence.join('');
+       for (let i = 0; i < keySequence.length; ++i) {
+         fixture.componentInstance.listenToKeypress(
+             keySequence.slice(0, i + 1), reconstructedText.slice(0, i + 1));
+         fixture.detectChanges();
+       }
+
+       expect(events.length).toEqual(0);
+     });
+
+  it('input abbreviation with head keywords triggers AE', () => {
+    const events: InputAbbreviationChangedEvent[] = [];
+    abbreviationExpansionTriggers.subscribe(
+        (event: InputAbbreviationChangedEvent) => {
+          events.push(event);
+        });
+    const keySequence = [
+      'a',
+      VIRTUAL_KEY.SPACE,
+      'g',
+      'o',
+      'o',
+      'd',
+      VIRTUAL_KEY.SPACE,
+      't',
+      'i',
+      'a',
+      't',
+      'h',
+      's',
+      VIRTUAL_KEY.SPACE,
+      VIRTUAL_KEY.SPACE,
+    ];
+    const reconstructedText = keySequence.join('');
+    for (let i = 0; i < keySequence.length; ++i) {
+      fixture.componentInstance.listenToKeypress(
+          keySequence.slice(0, i + 1), reconstructedText.slice(0, i + 1));
+      fixture.detectChanges();
+    }
+
+    expect(events.length).toEqual(1);
+    const {abbreviationSpec} = events[0];
+    expect(abbreviationSpec.readableString).toEqual('a good tiaths');
+    const {tokens} = abbreviationSpec;
+    expect(tokens.length).toEqual(3);
+    expect(tokens[0]).toEqual({value: 'a', isKeyword: true});
+    expect(tokens[1]).toEqual({value: 'good', isKeyword: true});
+    expect(tokens[2]).toEqual({value: 'tiaths', isKeyword: false});
+  });
+
+  it('clicking abort button clears state: no head keywords', () => {
+    const keySequence = [
+      'a',
+      VIRTUAL_KEY.SPACE,
+      'g',
+      'o',
+      'o',
+      'd',
+      VIRTUAL_KEY.SPACE,
+      't',
+      'i',
+      'a',
+      't',
+      'h',
+      's',
+      VIRTUAL_KEY.SPACE,
+      VIRTUAL_KEY.SPACE,
+    ];
+    const reconstructedText = keySequence.join('');
+    for (let i = 0; i < keySequence.length; ++i) {
+      fixture.componentInstance.listenToKeypress(
+          keySequence.slice(0, i + 1), reconstructedText.slice(0, i + 1));
+      fixture.detectChanges();
+    }
+    const abortButton = fixture.debugElement.query(By.css('.abort-button'));
+    abortButton.nativeElement.click();
+    fixture.detectChanges();
+
+    const inputText = fixture.debugElement.query(By.css('.input-text'));
+    expect(inputText.nativeElement.innerText).toEqual('');
+    expect(fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'))
+               .length)
+        .toEqual(0);
+    expect(fixture.debugElement.query(By.css('.expand-button'))).toBeNull();
+    expect(fixture.debugElement.query(By.css('.spell-button'))).toBeNull();
+    expect(fixture.debugElement.query(By.css('.abort-button'))).toBeNull();
+  });
 
   // TODO(Cais): Test clicking Spell button.
   // TODO(cais): Test hiding spell and expand button when space is present.

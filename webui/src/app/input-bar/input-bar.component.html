@@ -26,7 +26,7 @@
 
 .action-button.abort-button {
   background: #525453;
-  width: 60px;
+  min-width: 60px;
 }
 
 .action-button.expand-button {
@@ -83,6 +83,19 @@
   min-width: 100%;
   padding: 0 4px;
   width: 100%;
+}
+
+.length-limit-exceeded {
+  background: orange;
+  border-radius: 4px;;
+  color: black;
+  display: inline-block;
+  font-size: 14px;
+  height: 48px;
+  line-height: 16px;
+  max-width: 80px;
+  text-align: center;
+  white-space: pre-line;
 }
 
 .main-area {
@@ -152,7 +165,7 @@
             *ngIf="(state === 'ENTERING_BASE_TEXT' ||
                     state === 'CHOOSING_PHRASES' ||
                     state === 'FOCUSED_ON_LETTER_CHIP') &&
-                    inputStringNonEmpty && supportsAbbrevationExpansion"
+                    inputStringIsCompatibleWithAbbreviationExpansion && supportsAbbrevationExpansion"
             class="action-button expand-button"
             (click)="onExpandButtonClicked($event)">
           Expand
@@ -162,7 +175,7 @@
         <button
             #clickableButton
             *ngIf="(state === 'ENTERING_BASE_TEXT' ||
-                    state === 'CHOOSING_PHRASES') && inputStringNonEmpty &&
+                    state === 'CHOOSING_PHRASES') && inputStringIsCompatibleWithAbbreviationExpansion &&
                    supportsAbbrevationExpansion"
             class="action-button spell-button"
             (click)="onSpellButtonClicked($event)">
@@ -171,11 +184,18 @@
 
         <button
             #clickableButton
-            *ngIf="inputStringNonEmpty"
+            *ngIf="inputStringIsNotEmpty"
             class="action-button abort-button"
             (click)="onClearButtonClicked($event)">
           X
         </button>
+
+        <div
+            *ngIf="inputStringExceedsAbbreviationExpansionLimit"
+            class="length-limit-exceeded"
+            (click)="onClearButtonClicked($event)">
+          AE length limit exceeded
+        </div>
       </div>
     </div>
 

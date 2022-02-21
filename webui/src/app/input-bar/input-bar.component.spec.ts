@@ -1,10 +1,11 @@
 /** Unit tests for InputBarComponent. */
-import {ElementRef, Injectable} from '@angular/core';
+import {ElementRef, Injectable, QueryList} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {By} from '@angular/platform-browser';
 import {Subject} from 'rxjs';
 
 import {repeatVirtualKey, VIRTUAL_KEY} from '../external/external-events.component';
+import {InputBarChipComponent} from '../input-bar-chip/input-bar-chip.component';
 import {SpeakFasterService} from '../speakfaster-service';
 import {InputAbbreviationChangedEvent} from '../types/abbreviation';
 import {TextEntryEndEvent} from '../types/text-entry';
@@ -22,9 +23,19 @@ fdescribe('InputBarComponent', () => {
   let abbreviationExpansionTriggers: Subject<InputAbbreviationChangedEvent>;
   let fixture: ComponentFixture<InputBarComponent>;
   let speakFasterServiceForTest: SpeakFasterServiceForTest;
+  let inputAbbreviationChangeEvents: InputAbbreviationChangedEvent[];
 
   beforeEach(async () => {
+    textEntryEndSubject = new Subject();
+    inputBarControlSubject = new Subject();
+    abbreviationExpansionTriggers = new Subject();
     speakFasterServiceForTest = new SpeakFasterServiceForTest();
+    inputAbbreviationChangeEvents = [];
+    abbreviationExpansionTriggers.subscribe(
+        (event: InputAbbreviationChangedEvent) => {
+          inputAbbreviationChangeEvents.push(event);
+        });
+
     await TestBed
         .configureTestingModule({
           imports: [InputBarModule],
@@ -34,9 +45,6 @@ fdescribe('InputBarComponent', () => {
           ],
         })
         .compileComponents();
-    textEntryEndSubject = new Subject();
-    inputBarControlSubject = new Subject();
-    abbreviationExpansionTriggers = new Subject();
     fixture = TestBed.createComponent(InputBarComponent);
     fixture.componentInstance.userId = 'testuser';
     fixture.componentInstance.contextStrings = ['How are you'];
@@ -64,6 +72,18 @@ fdescribe('InputBarComponent', () => {
         .not.toBeNull();
   });
 
+  function enterKeysIntoComponent(
+      keySequence: Array<string|VIRTUAL_KEY>, reconstructedText: string,
+      baseLength = 0): void {
+
+    for (let i = 0; i < keySequence.length; ++i) {
+      const currentKeySequence = keySequence.slice(0, i + 1)
+      fixture.componentInstance.listenToKeypress(
+          currentKeySequence, reconstructedText.slice(0, baseLength + i + 1));
+      fixture.detectChanges();
+    }
+  }
+
   for (const [keySequence, reconstructedText, expectedText] of [
            [['b'], 'b', 'b'],
            [['b', 'a'], 'ba', 'ba'],
@@ -77,11 +97,7 @@ fdescribe('InputBarComponent', () => {
     it(`entering keys cause text and buttons to be displayed: ` +
            `key sequence = ${JSON.stringify(keySequence)}`,
        () => {
-         for (let i = 0; i < keySequence.length; ++i) {
-           fixture.componentInstance.listenToKeypress(
-               keySequence.slice(0, i + 1), reconstructedText.slice(0, i + 1));
-           fixture.detectChanges();
-         }
+         enterKeysIntoComponent(keySequence, reconstructedText);
 
          const inputText = fixture.debugElement.query(By.css('.input-text'));
          expect(inputText.nativeElement.innerText).toEqual(expectedText);
@@ -129,31 +145,22 @@ fdescribe('InputBarComponent', () => {
     it(`key sequence triggers AE: ` +
            `key sequence: ${JSON.stringify(keySequence)}`,
        () => {
-         const events: InputAbbreviationChangedEvent[] = [];
-         abbreviationExpansionTriggers.subscribe(
-             (event: InputAbbreviationChangedEvent) => {
-               events.push(event);
-             });
-         for (let i = 0; i < keySequence.length; ++i) {
-           fixture.componentInstance.listenToKeypress(
-               keySequence.slice(0, i + 1), reconstructedText.slice(0, i + 1));
-           fixture.detectChanges();
-         }
+         enterKeysIntoComponent(keySequence, reconstructedText);
 
-         expect(events.length).toEqual(1);
-         const {abbreviationSpec} = events[0];
+         expect(inputAbbreviationChangeEvents.length).toEqual(1);
+         const {abbreviationSpec} = inputAbbreviationChangeEvents[0];
          expect(abbreviationSpec.readableString)
              .toEqual(expectedAbbreviationString);
          expect(abbreviationSpec.tokens.length).toEqual(1);
          expect(abbreviationSpec.tokens[0].value)
              .toEqual(expectedAbbreviationString);
          expect(abbreviationSpec.tokens[0].isKeyword).toEqual(false);
-         // TODO(cais): Fix logic around Enter key and reinstate the following.
-         //  expect(abbreviationSpec.eraserSequence)
-         //      .toEqual(repeatVirtualKey(
-         //          VIRTUAL_KEY.BACKSPACE, expectdEraserSequenceLength));
+         expect(abbreviationSpec.eraserSequence)
+             .toEqual(repeatVirtualKey(
+                 VIRTUAL_KEY.BACKSPACE, expectdEraserSequenceLength));
          expect(abbreviationSpec.lineageId.length).toBeGreaterThan(0);
-         expect(events[0].requestExpansion).toEqual(true);
+         expect(inputAbbreviationChangeEvents[0].requestExpansion)
+             .toEqual(true);
        });
   }
 
@@ -167,23 +174,14 @@ fdescribe('InputBarComponent', () => {
     it(`clicking expand button triggers AE: ` +
            `key sequence: ${JSON.stringify(keySequence)}`,
        () => {
-         const events: InputAbbreviationChangedEvent[] = [];
-         abbreviationExpansionTriggers.subscribe(
-             (event: InputAbbreviationChangedEvent) => {
-               events.push(event);
-             });
-         for (let i = 0; i < keySequence.length; ++i) {
-           fixture.componentInstance.listenToKeypress(
-               keySequence.slice(0, i + 1), reconstructedText.slice(0, i + 1));
-           fixture.detectChanges();
-         }
+         enterKeysIntoComponent(keySequence, reconstructedText);
          const expandbutton =
              fixture.debugElement.query(By.css('.expand-button'));
          expandbutton.nativeElement.click();
          fixture.detectChanges();
 
-         expect(events.length).toEqual(1);
-         const {abbreviationSpec} = events[0];
+         expect(inputAbbreviationChangeEvents.length).toEqual(1);
+         const {abbreviationSpec} = inputAbbreviationChangeEvents[0];
          expect(abbreviationSpec.readableString)
              .toEqual(expectedAbbreviationString);
          expect(abbreviationSpec.tokens.length).toEqual(1);
@@ -194,7 +192,8 @@ fdescribe('InputBarComponent', () => {
              .toEqual(repeatVirtualKey(
                  VIRTUAL_KEY.BACKSPACE, expectedEraserSequenceLength));
          expect(abbreviationSpec.lineageId.length).toBeGreaterThan(0);
-         expect(events[0].requestExpansion).toEqual(true);
+         expect(inputAbbreviationChangeEvents[0].requestExpansion)
+             .toEqual(true);
        });
   }
 
@@ -202,11 +201,7 @@ fdescribe('InputBarComponent', () => {
     // Length 11.
     const keySequence = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k'];
     const reconstructedText = keySequence.join('');
-    for (let i = 0; i < keySequence.length; ++i) {
-      fixture.componentInstance.listenToKeypress(
-          keySequence.slice(0, i + 1), reconstructedText.slice(0, i + 1));
-      fixture.detectChanges();
-    }
+    enterKeysIntoComponent(keySequence, reconstructedText);
 
     expect(fixture.debugElement.query(By.css('.expand-button'))).toBeNull();
     expect(fixture.debugElement.query(By.css('.spell-button'))).toBeNull();
@@ -217,90 +212,63 @@ fdescribe('InputBarComponent', () => {
 
   it('long input abbreviation followed by trigger sequence does not trigger AE',
      () => {
-       const events: InputAbbreviationChangedEvent[] = [];
-       abbreviationExpansionTriggers.subscribe(
-           (event: InputAbbreviationChangedEvent) => {
-             events.push(event);
-           });
        // Length 11, excluding the two space keys.
        const keySequence = [
          'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k',
          VIRTUAL_KEY.SPACE, VIRTUAL_KEY.SPACE
        ];
        const reconstructedText = keySequence.join('');
-       for (let i = 0; i < keySequence.length; ++i) {
-         fixture.componentInstance.listenToKeypress(
-             keySequence.slice(0, i + 1), reconstructedText.slice(0, i + 1));
-         fixture.detectChanges();
-       }
+       enterKeysIntoComponent(keySequence, reconstructedText);
 
-       expect(events.length).toEqual(0);
+       expect(inputAbbreviationChangeEvents.length).toEqual(0);
      });
 
   it('input abbreviation with head keywords triggers AE', () => {
-    const events: InputAbbreviationChangedEvent[] = [];
-    abbreviationExpansionTriggers.subscribe(
-        (event: InputAbbreviationChangedEvent) => {
-          events.push(event);
-        });
     const keySequence = [
-      'a',
-      VIRTUAL_KEY.SPACE,
-      'g',
-      'o',
-      'o',
-      'd',
-      VIRTUAL_KEY.SPACE,
-      't',
-      'i',
-      'a',
-      't',
-      'h',
-      's',
-      VIRTUAL_KEY.SPACE,
-      VIRTUAL_KEY.SPACE,
+      'a', VIRTUAL_KEY.SPACE, 'g', 'o', 'o', 'd', VIRTUAL_KEY.SPACE, 't', 'i',
+      'a', 't', 'h', 's', VIRTUAL_KEY.SPACE, VIRTUAL_KEY.SPACE
     ];
     const reconstructedText = keySequence.join('');
-    for (let i = 0; i < keySequence.length; ++i) {
-      fixture.componentInstance.listenToKeypress(
-          keySequence.slice(0, i + 1), reconstructedText.slice(0, i + 1));
-      fixture.detectChanges();
-    }
+    enterKeysIntoComponent(keySequence, reconstructedText);
 
-    expect(events.length).toEqual(1);
-    const {abbreviationSpec} = events[0];
+    expect(inputAbbreviationChangeEvents.length).toEqual(1);
+    expect(inputAbbreviationChangeEvents[0].requestExpansion).toBeTrue();
+    const {abbreviationSpec} = inputAbbreviationChangeEvents[0];
     expect(abbreviationSpec.readableString).toEqual('a good tiaths');
     const {tokens} = abbreviationSpec;
     expect(tokens.length).toEqual(3);
     expect(tokens[0]).toEqual({value: 'a', isKeyword: true});
     expect(tokens[1]).toEqual({value: 'good', isKeyword: true});
     expect(tokens[2]).toEqual({value: 'tiaths', isKeyword: false});
+    expect(abbreviationSpec.lineageId.length).toBeGreaterThan(0);
+    expect(abbreviationSpec.eraserSequence)
+        .toEqual(repeatVirtualKey(VIRTUAL_KEY.BACKSPACE, keySequence.length));
+  });
+
+  it('too many head keywords disable expand and spell buttons', () => {
+    const keySequence = [
+      'a', VIRTUAL_KEY.SPACE, 'b', 'i', 'g', VIRTUAL_KEY.SPACE, 'a', 'n', 'd',
+      VIRTUAL_KEY.SPACE, 'r', 'e', 'd', VIRTUAL_KEY.SPACE, 'a', 'n',
+      'd',  // Five keywords up to this point.
+      VIRTUAL_KEY.SPACE, 'd'
+    ];
+    const reconstructedText = keySequence.join('');
+    enterKeysIntoComponent(keySequence, reconstructedText);
+
+    expect(fixture.debugElement.query(By.css('.expand-button'))).toBeNull();
+    expect(fixture.debugElement.query(By.css('.spell-button'))).toBeNull();
+    expect(fixture.debugElement.query(By.css('.abort-button'))).not.toBeNull();
+    expect(fixture.debugElement.query(By.css('.length-limit-exceeded')))
+        .not.toBeNull();
   });
 
   it('clicking abort button clears state: no head keywords', () => {
     const keySequence = [
-      'a',
-      VIRTUAL_KEY.SPACE,
-      'g',
-      'o',
-      'o',
-      'd',
-      VIRTUAL_KEY.SPACE,
-      't',
-      'i',
-      'a',
-      't',
-      'h',
-      's',
-      VIRTUAL_KEY.SPACE,
-      VIRTUAL_KEY.SPACE,
+      'a', VIRTUAL_KEY.SPACE, 'b', 'i', 'g', VIRTUAL_KEY.SPACE, 'a', 'n', 'd',
+      VIRTUAL_KEY.SPACE, 'r', 'e', 'd', VIRTUAL_KEY.SPACE, 'a'
     ];
     const reconstructedText = keySequence.join('');
-    for (let i = 0; i < keySequence.length; ++i) {
-      fixture.componentInstance.listenToKeypress(
-          keySequence.slice(0, i + 1), reconstructedText.slice(0, i + 1));
-      fixture.detectChanges();
-    }
+    enterKeysIntoComponent(keySequence, reconstructedText);
     const abortButton = fixture.debugElement.query(By.css('.abort-button'));
     abortButton.nativeElement.click();
     fixture.detectChanges();
@@ -313,94 +281,145 @@ fdescribe('InputBarComponent', () => {
     expect(fixture.debugElement.query(By.css('.expand-button'))).toBeNull();
     expect(fixture.debugElement.query(By.css('.spell-button'))).toBeNull();
     expect(fixture.debugElement.query(By.css('.abort-button'))).toBeNull();
+    expect(fixture.debugElement.query(By.css('.length-limit-exceeded')))
+        .toBeNull();
   });
 
-  // TODO(Cais): Test clicking Spell button.
-  // TODO(cais): Test hiding spell and expand button when space is present.
-  // TODO(cais): Test spelling.
+  it('clicking spell button injects chips', () => {
+    const keySequence = ['a', 'c', 'e'];
+    const reconstructedText = keySequence.join('');
+    enterKeysIntoComponent(keySequence, reconstructedText);
+    const spellButton = fixture.debugElement.query(By.css('.spell-button'));
+    spellButton.nativeElement.click();
+    fixture.detectChanges();
+
+    const chips =
+        fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'));
+    expect(chips.length).toEqual(3);
+    expect((chips[0].componentInstance as InputBarChipComponent).text)
+        .toEqual('a');
+    expect((chips[1].componentInstance as InputBarChipComponent).text)
+        .toEqual('c');
+    expect((chips[2].componentInstance as InputBarChipComponent).text)
+        .toEqual('e');
+    expect(fixture.debugElement.query(By.css('.expand-button'))).toBeNull();
+    expect(fixture.debugElement.query(By.css('.spell-button'))).toBeNull();
+    expect(fixture.debugElement.query(By.css('.length-limit-exceeded')))
+    expect(fixture.debugElement.query(By.css('.abort-button'))).not.toBeNull();
+  });
+
+  it('spelling word updates chips', () => {
+    const keySequence = ['a', 'b', 'c'];
+    const reconstructedText = keySequence.join('');
+    enterKeysIntoComponent(keySequence, reconstructedText);
+    const spellButton = fixture.debugElement.query(By.css('.spell-button'));
+    spellButton.nativeElement.click();
+    fixture.detectChanges();
+    const spellSequence = ['b', 'i', 't'];
+    const spellReconstructedText = reconstructedText + spellSequence.join('');
+    enterKeysIntoComponent(spellSequence, spellReconstructedText, 3);
+
+    const chips =
+        fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'));
+    expect(chips.length).toEqual(3);
+    expect((chips[0].componentInstance as InputBarChipComponent).text)
+        .toEqual('a');
+    expect((chips[1].componentInstance as InputBarChipComponent).text)
+        .toEqual('bit');
+    expect((chips[2].componentInstance as InputBarChipComponent).text)
+        .toEqual('c');
+    expect(fixture.debugElement.query(By.css('.expand-button'))).not.toBeNull();
+    expect(fixture.debugElement.query(By.css('.spell-button'))).toBeNull();
+    expect(fixture.debugElement.query(By.css('.length-limit-exceeded')))
+    expect(fixture.debugElement.query(By.css('.abort-button'))).not.toBeNull();
+    expect(inputAbbreviationChangeEvents.length).toEqual(0);
+  });
+
+  for (const triggerKey of [VIRTUAL_KEY.SPACE, VIRTUAL_KEY.ENTER]) {
+    it('spelling word then enter trigger key triggers AE: ' +
+           `trigger key = ${triggerKey}`,
+       () => {
+         const keySequence = ['a', 'b', 'c'];
+         const reconstructedText = keySequence.join('');
+         enterKeysIntoComponent(keySequence, reconstructedText);
+         const spellButton =
+             fixture.debugElement.query(By.css('.spell-button'));
+         spellButton.nativeElement.click();
+         fixture.detectChanges();
+         const spellSequence = ['b', 'i', 't', VIRTUAL_KEY.SPACE];
+         const spellReconstructedText =
+             spellSequence.join('') + reconstructedText;
+         enterKeysIntoComponent(spellSequence, spellReconstructedText);
+
+         expect(inputAbbreviationChangeEvents.length).toEqual(1);
+         expect(inputAbbreviationChangeEvents[0].requestExpansion).toBeTrue();
+         const {abbreviationSpec} = inputAbbreviationChangeEvents[0];
+         expect(abbreviationSpec.tokens.length).toEqual(3);
+         expect(abbreviationSpec.readableString).toEqual('a bit c');
+         // TODO(cais): Make assertion about eraseSequence with spelling.
+         const {tokens} = abbreviationSpec;
+         expect(tokens[0]).toEqual({value: 'a', isKeyword: false});
+         expect(tokens[1]).toEqual({value: 'bit', isKeyword: true});
+         expect(tokens[2]).toEqual({value: 'c', isKeyword: false});
+       });
+  }
+
+  it('clicking expand button after spelling triggers AE', () => {
+    const keySequence = ['a', 'b', 'c'];
+    const reconstructedText = keySequence.join('');
+    enterKeysIntoComponent(keySequence, reconstructedText);
+    const spellButton = fixture.debugElement.query(By.css('.spell-button'));
+    spellButton.nativeElement.click();
+    fixture.detectChanges();
+    const spellSequence = ['b', 'i', 't'];
+    const spellReconstructedText = spellSequence.join('') + reconstructedText;
+    enterKeysIntoComponent(spellSequence, spellReconstructedText);
+    const expandButton = fixture.debugElement.query(By.css('.expand-button'));
+    expandButton.nativeElement.click();
+
+    expect(inputAbbreviationChangeEvents.length).toEqual(1);
+    expect(inputAbbreviationChangeEvents[0].requestExpansion).toBeTrue();
+    const {abbreviationSpec} = inputAbbreviationChangeEvents[0];
+    expect(abbreviationSpec.tokens.length).toEqual(3);
+    expect(abbreviationSpec.readableString).toEqual('a bit c');
+    // TODO(cais): Make assertion about eraseSequence with spelling.
+    const {tokens} = abbreviationSpec;
+    expect(tokens[0]).toEqual({value: 'a', isKeyword: false});
+    expect(tokens[1]).toEqual({value: 'bit', isKeyword: true});
+    expect(tokens[2]).toEqual({value: 'c', isKeyword: false});
+  });
+
+  it('clicking chip then spell and trigger AE works', () => {
+    const keySequence = ['a', 'b', 'a'];
+    const reconstructedText = keySequence.join('');
+    enterKeysIntoComponent(keySequence, reconstructedText);
+    const spellButton = fixture.debugElement.query(By.css('.spell-button'));
+    spellButton.nativeElement.click();
+    fixture.detectChanges();
+    const chips =
+        fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'));
+    chips[2].nativeElement.click();
+    fixture.detectChanges();
+    const spellSequence = ['a', 'c', 'k', VIRTUAL_KEY.SPACE];
+    const spellReconstructedText = reconstructedText + spellSequence.join('');
+    enterKeysIntoComponent(spellSequence, spellReconstructedText, 3);
+    expect(inputAbbreviationChangeEvents.length).toEqual(1);
+    expect(inputAbbreviationChangeEvents[0].requestExpansion).toBeTrue();
+    const {abbreviationSpec} = inputAbbreviationChangeEvents[0];
+    expect(abbreviationSpec.tokens.length).toEqual(2);
+    expect(abbreviationSpec.readableString).toEqual('ab ack');
+    // TODO(cais): Make assertion about eraseSequence with spelling, after
+    // fixing the logic.
+    const {tokens} = abbreviationSpec;
+    expect(tokens[0]).toEqual({value: 'ab', isKeyword: false});
+    expect(tokens[1]).toEqual({value: 'ack', isKeyword: true});
+  });
+
+  // TODO(cais): Backspaces during spelling.
+  // TODO(cais): Abort during spelling.
+  // TODO(cais): Test spelling with non-matching and ambiguous key.
   // TODO(Cais): Test chip state.
   //    Chip injection.
   // TODO(cais): Test speak button.
   // TODO(cais): Test TTS button.
-
-  // TODO(cais): Clean up.
-  // it('non-final text entry event updates input box value', () => {
-  //   textEntryEndSubject.next({
-  //     text: 'foo ',
-  //     timestampMillis: new Date().getTime(),
-  //     isFinal: false,
-  //   });
-  //   fixture.detectChanges();
-
-  //   const input = fixture.debugElement.query(By.css('.input-box')) as
-  //       ElementRef<HTMLInputElement>;
-  //   expect(input.nativeElement.value).toEqual('foo ');
-  // });
-
-  // for (const isAborted of [false, true]) {
-  //   it(`final text entry event updates input box: isAborted=${isAborted}`,
-  //      () => {
-  //        textEntryEndSubject.next({
-  //          text: 'it is',
-  //          timestampMillis: new Date().getTime(),
-  //          isFinal: false,
-  //        });
-  //        textEntryEndSubject.next({
-  //          text: 'it is done',
-  //          timestampMillis: new Date().getTime(),
-  //          isFinal: true,
-  //          isAborted,
-  //        });
-  //        fixture.detectChanges();
-
-  //        const input = fixture.debugElement.query(By.css('.input-box')) as
-  //            ElementRef<HTMLInputElement>;
-  //        expect(input.nativeElement.value).toEqual('');
-  //      });
-  // }
-
-  // it('listening to keypress updates input box value', () => {
-  //   fixture.componentInstance.listenToKeypress(['h', 'e'], 'he');
-  //   fixture.detectChanges();
-
-  //   const input = fixture.debugElement.query(By.css('.input-box')) as
-  //       ElementRef<HTMLInputElement>;
-  //   expect(input.nativeElement.value).toEqual('he');
-  // });
-
-  // it('clicking speak button with non-empty text triggers TTS', () => {
-  //   fixture.componentInstance.listenToKeypress(['h', 'i'], 'hi');
-  //   fixture.detectChanges();
-  //   const events: TextEntryEndEvent[] = [];
-  //   textEntryEndSubject.subscribe(event => {
-  //     events.push(event);
-  //   });
-  //   const speakButton =
-  //   fixture.debugElement.query(By.css('.speak-button'));
-  //   speakButton.nativeElement.click();
-
-  //   expect(events.length).toEqual(1);
-  //   expect(events[0].text).toEqual('hi');
-  //   expect(events[0].isFinal).toEqual(true);
-  //   expect(events[0].isAborted).toBeUndefined();
-  //   expect(events[0].inAppTextToSpeechAudioConfig).toEqual({});
-  // });
-
-  // for (const textValue of ['', ' ', '\t']) {
-  //   it(`'clicking speak button with empty text has no effect: ` +
-  //          `value=${JSON.stringify(textValue)}`,
-  //      () => {
-  //        fixture.componentInstance.inputString = textValue;
-  //        fixture.detectChanges();
-  //        const events: TextEntryEndEvent[] = [];
-  //        textEntryEndSubject.subscribe(event => {
-  //          events.push(event);
-  //        });
-  //        const speakButton =
-  //            fixture.debugElement.query(By.css('.speak-button'));
-  //        speakButton.nativeElement.click();
-
-  //        expect(events).toEqual([]);
-  //      });
-  // }
 });

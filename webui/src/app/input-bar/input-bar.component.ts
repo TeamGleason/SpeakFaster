@@ -160,6 +160,8 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     this.latestReconstructedString = reconstructedText;
     if (this.state === State.ENTERING_BASE_TEXT ||
         this.state === State.CHOOSING_PHRASES) {
+      this.updateInputString(
+          reconstructedText.slice(this.baseReconstructedText.length));
       if (this.inputStringIsCompatibleWithAbbreviationExpansion &&
           ABBRVIATION_EXPANSION_TRIGGER_KEY_SEQUENCES.some(
               triggerKeySeqwuence =>
@@ -167,8 +169,6 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
         this.triggerAbbreviationExpansion();
         return;
       }
-      this.updateInputString(
-          reconstructedText.slice(this.baseReconstructedText.length));
     } else if (this.state === State.AFTER_CUT) {
       this.updateInputString(
           this.cutText +
@@ -190,7 +190,6 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
       }
       if (matchingChipIndices.length === 1) {
         this.state = State.FOCUSED_ON_LETTER_CHIP;
-        // TODO(cais): Add unit test.
         this.baseReconstructedText = this.latestReconstructedString.slice(
             0, this.latestReconstructedString.length - 1);
         this._focusChipIndex = matchingChipIndices[0];
@@ -239,7 +238,6 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     const eraserLength = this.inputString.length;
 
     let abbreviationSpec = this.getNonSpellingAbbreviationExpansion();
-
     if (this.state === State.FOCUSED_ON_LETTER_CHIP) {
       const tokens: AbbreviationToken[] = [];
       let pendingChars: string = '';
@@ -274,7 +272,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
         readableString: tokens.map(token => token.value).join(' '),
         precedingText,
         eraserSequence: repeatVirtualKey(VIRTUAL_KEY.BACKSPACE, eraserLength),
-        lineageId: createUuid(),  // TODO(cais): Is this correct?
+        lineageId: createUuid(),
       };
     }
     console.log('Abbreviation expansion triggered:', abbreviationSpec);
@@ -324,7 +322,6 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     this._focusChipIndex = index;
     this.baseReconstructedText = this.latestReconstructedString;
     if (this.state === State.CHOOSING_LETTER_CHIP) {
-      // TODO(cais): Add unit tests.
       this.state = State.FOCUSED_ON_LETTER_CHIP;
     } else if (
         this.state === State.CHOOSING_WORD_CHIP ||

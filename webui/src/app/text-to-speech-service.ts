@@ -5,11 +5,19 @@ import {HttpClient} from '@angular/common/http';
 import {Injectable} from '@angular/core';
 import {Observable} from 'rxjs';
 
+/** Audio configuration for text-to-speech. */
 export interface AudioConfig {
   audio_encoding: 'LINEAR16';
 
+  // Speaking rate. 1.0 corresponds to baseline.
+  // values <1.0 and >0.0 means slower than baseline.
+  // Values >1.0 means faster than baseline.
   speaking_rate: number;
 
+  // Volume (sound intensity) of the requested audio, in decibels
+  // (dB). 0 means no additional gain relative to baseline.
+  // Values <0 means intensity lower (quieter) than baseline.
+  // Values >0 means intensity higher (louder) than baseline.
   volume_gain_db: number;
 
   // TODO(cais): Add prosody parameters such as pitch.

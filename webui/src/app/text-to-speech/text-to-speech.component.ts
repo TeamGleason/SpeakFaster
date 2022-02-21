@@ -20,6 +20,32 @@ export interface TextToSpeechEvent {
 
 export type TextToSpeechListener = (event: TextToSpeechEvent) => void;
 
+export function getCloudTextToSpeechVolumeGainDb(appSettings: AppSettings):
+    number {
+  // Unit: dB. Default is 0.
+  const volume = appSettings.ttsVolume;
+  switch (volume) {
+    case 'QUIET':
+      return -10.0;
+    case 'MEDIUM':
+      return 0.0;
+    case 'LOUD':
+      return 16.0;
+  }
+}
+
+export function getLocalTextToSpeechVolume(appSettings: AppSettings): number {
+  const volume = appSettings.ttsVolume;
+  switch (volume) {
+    case 'QUIET':
+      return 0.2;
+    case 'MEDIUM':
+      return 0.5;
+    case 'LOUD':
+      return 1.0;
+  }
+}
+
 @Component({
   selector: 'app-text-to-speech-component',
   templateUrl: './text-to-speech.component.html',
@@ -29,13 +55,12 @@ export class TextToSpeechComponent implements OnInit {
   private static readonly listeners: TextToSpeechListener[] = [];
 
   @Input() textEntryEndSubject!: Subject<TextEntryEndEvent>;
-  // @Input() textToSpeechEventSubject!: Subject<TextToSpeechEvent>;
   @Input() accessToken!: string;
 
   @ViewChildren('ttsAudio')
   ttsAudioElements!: QueryList<ElementRef<HTMLAudioElement>>;
-
-  errorMessage?: string|null = null;
+  private _audioPlayCallCount: number = 0;
+  private audioPlayDisabledForTest = false;
 
   constructor(
       public textToSpeechService: TextToSpeechService,
@@ -46,7 +71,6 @@ export class TextToSpeechComponent implements OnInit {
       return;
     }
     TextToSpeechComponent.listeners.push(listener);
-    // TODO(cais): Add unit test.
   }
 
   public static unregisterTextToSpeechListener(listener: TextToSpeechListener) {
@@ -55,12 +79,14 @@ export class TextToSpeechComponent implements OnInit {
       return;
     }
     TextToSpeechComponent.listeners.splice(index, 1);
-    // TODO(cais): Add unit test.
+  }
+
+  public static clearTextToSpeechListener() {
+    TextToSpeechComponent.listeners.splice(0);
   }
 
   ngOnInit() {
     this.textEntryEndSubject.subscribe(async event => {
-      // TODO(cais): Add unit test.
       if (!event.isFinal || event.inAppTextToSpeechAudioConfig === undefined) {
         return;
       }
@@ -79,11 +105,9 @@ export class TextToSpeechComponent implements OnInit {
    */
   private doCloudTextToSpeech(text: string, appSettings: AppSettings) {
     if (this.accessToken.length === 0) {
-      this.errorMessage = 'no access token';
       TextToSpeechComponent.listeners.forEach(listener => {
-        listener({state: 'ERROR', errorMessage: this.errorMessage || ''});
+        listener({state: 'ERROR', errorMessage: 'No access token'});
       });
-      // TODO(cais): Add unit test.
       return;
     }
     this.setListenersState('REQUESTING');
@@ -94,51 +118,52 @@ export class TextToSpeechComponent implements OnInit {
           audio_config: {
             audio_encoding: DEFAULT_AUDIO_ENCODING,
             speaking_rate: 1.0,
-            volume_gain_db: this.getCloudTextToSpeechVolumeGainDb(appSettings),
+            volume_gain_db: getCloudTextToSpeechVolumeGainDb(appSettings),
           },
           access_token: this.accessToken,
         })
         .subscribe(
             data => {
-              this.errorMessage = null;
               const ttsAudioElement =
                   this.ttsAudioElements.first.nativeElement as HTMLAudioElement;
               if (!ttsAudioElement.onplay) {
                 ttsAudioElement.onplay = () => {
                   this.setListenersState('PLAY');
-                  // TODO(cais): Add unit tests.
                 };
                 ttsAudioElement.onended = () => {
                   this.setListenersState('END');
-                  // TODO(cais): Add unit tests.
                 };
               }
               if (!data.audio_content) {
-                this.errorMessage = 'audio is empty';
+                TextToSpeechComponent.listeners.forEach(listener => {
+                  listener({state: 'ERROR', errorMessage: 'Audio is empty'});
+                });
+                ;
                 return;
               }
               ttsAudioElement.src =
                   'data:audio/wav;base64,' + data.audio_content;
-              ttsAudioElement.play();
+              if (!this.audioPlayDisabledForTest) {
+                ttsAudioElement.play();
+              }
+              this._audioPlayCallCount++;
               this.cdr.detectChanges();
             },
             (error: HttpErrorResponse) => {
+              let errorMessage = '';
               if (error.error &&
                   (error.error as TextToSpeechErrorResponse).error_message) {
-                this.errorMessage =
+                errorMessage =
                     (error.error as TextToSpeechErrorResponse).error_message;
               } else {
-                this.errorMessage = `${error.statusText}`;
+                errorMessage = `${error.statusText}`;
               }
               TextToSpeechComponent.listeners.forEach(listener => {
-                listener(
-                    {state: 'ERROR', errorMessage: this.errorMessage || ''});
+                listener({state: 'ERROR', errorMessage});
               });
               this.cdr.detectChanges();
             });
   }
-
-
 
   /** Use local WebSpeech API to perform text-to-speech output. */
   private doLocalTextToSpeech(text: string, appSettings: AppSettings) {
@@ -150,39 +175,21 @@ export class TextToSpeechComponent implements OnInit {
     utterance.onend = () => {
       this.setListenersState('END');
     };
-    utterance.volume = this.getLocalTextToSpeechVolume(appSettings);
+    utterance.volume = getLocalTextToSpeechVolume(appSettings);
     window.speechSynthesis.speak(utterance);
-  }
-
-  /** Get volume_gain_db for cloud text-to-speech. */
-  private getCloudTextToSpeechVolumeGainDb(appSettings: AppSettings): number {
-    // Unit: dB. Default is 0.
-    const volume = appSettings.ttsVolume;
-    switch (volume) {
-      case 'QUIET':
-        return -10.0;
-      case 'MEDIUM':
-        return 0.0;
-      case 'LOUD':
-        return 16.0;
-    }
-  }
-
-  private getLocalTextToSpeechVolume(appSettings: AppSettings): number {
-    const volume = appSettings.ttsVolume;
-    switch (volume) {
-      case 'QUIET':
-        return 0.2;
-      case 'MEDIUM':
-        return 0.5;
-      case 'LOUD':
-        return 1.0;
-    }
   }
 
   private setListenersState(state: TextToSpeechState, errorMessage?: string) {
     TextToSpeechComponent.listeners.forEach(listener => {
-      listener({state, errorMessage: this.errorMessage || ''});
+      listener({state, errorMessage});
     });
+  }
+
+  public disableAudioElementPlayForTest() {
+    this.audioPlayDisabledForTest = true;
+  }
+
+  get audioPlayCallCount(): number {
+    return this._audioPlayCallCount;
   }
 }

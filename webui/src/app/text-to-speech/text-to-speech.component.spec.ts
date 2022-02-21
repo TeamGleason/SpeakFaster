@@ -1,11 +1,11 @@
 /** Unit tests for TextToSpeechComponent. */
 import {HttpClientModule} from '@angular/common/http';
-import {ComponentFixture, TestBed} from '@angular/core/testing';
+import {ComponentFixture, fakeAsync, TestBed, tick} from '@angular/core/testing';
 import {of, Subject, throwError} from 'rxjs';
 
 import {TextEntryEndEvent} from '../types/text-entry';
 
-import {TextToSpeechComponent} from './text-to-speech.component';
+import {getCloudTextToSpeechVolumeGainDb, getLocalTextToSpeechVolume, TextToSpeechComponent, TextToSpeechEvent, TextToSpeechListener} from './text-to-speech.component';
 import {TextToSpeechModule} from './text-to-speech.module';
 
 describe('TextToSpeechCmponent', () => {
@@ -15,7 +15,7 @@ describe('TextToSpeechCmponent', () => {
 
   beforeEach(async () => {
     textEntryEndSubject = new Subject();
-    // textToSpeechServiceForTest = new TextToSpeechServiceForTest();
+    TextToSpeechComponent.clearTextToSpeechListener();
     await TestBed
         .configureTestingModule({
           imports: [TextToSpeechModule, HttpClientModule],
@@ -27,125 +27,144 @@ describe('TextToSpeechCmponent', () => {
     component.textEntryEndSubject = textEntryEndSubject;
     fixture.detectChanges();
     component.accessToken = 'test_token';
+    component.disableAudioElementPlayForTest();
     jasmine.getEnv().allowRespy(true);
   });
 
-  it('Initially shows no error message', () => {
-    const errorMessage = fixture.nativeElement.querySelector('.error-message');
-    expect(errorMessage).toBeNull();
-  });
-
-  it('Initially audio element src is empty string', () => {
-    const audioElement =
-        fixture.nativeElement.querySelector('audio') as HTMLAudioElement;
-    expect(audioElement.src).toEqual('');
-  });
-
-  it('On textEntryEndEvent with TTS audio config, sets audio element src',
-     async () => {
-       const audioElement =
-           fixture.nativeElement.querySelector('audio') as HTMLAudioElement;
+  it('registerTextToSpeechListener registers listeners and gets TTS events',
+     fakeAsync(() => {
        spyOn(component.textToSpeechService, 'synthesizeSpeech')
            .and.returnValue(of({
              audio_content: '0123abcd',
              audio_config: {
                audio_encoding: 'LINEAR16',
                speaking_rate: 1.0,
-               volume_gain_db: 0,
+               volume_gain_db: 0.0,
              }
            }));
+       const recordedEvents: TextToSpeechEvent[] = [];
+       const listener: TextToSpeechListener = (event: TextToSpeechEvent) => {
+         recordedEvents.push(event);
+       };
+       TextToSpeechComponent.registerTextToSpeechListener(listener);
        textEntryEndSubject.next({
-         text: 'hi, there',
+         text: 'Hi there',
          timestampMillis: new Date().getTime(),
          isFinal: true,
-         inAppTextToSpeechAudioConfig: {
-           volume_gain_db: 0,
-         }
+         inAppTextToSpeechAudioConfig: {}
        });
-       await fixture.whenStable();
-       expect(audioElement.src).toEqual('data:audio/wav;base64,0123abcd');
-     });
+       tick();
 
-  it('Empty audio content: shows error message', async () => {
-    const audioElement =
-        fixture.nativeElement.querySelector('audio') as HTMLAudioElement;
-    spyOn(component.textToSpeechService, 'synthesizeSpeech')
-        .and.returnValue(of({
-          audio_content: '',
-          audio_config: {
-            audio_encoding: 'LINEAR16',
-            speaking_rate: 1.0,
-            volume_gain_db: 0,
-          }
-        }));
-    textEntryEndSubject.next({
-      text: 'hi, there',
-      timestampMillis: new Date().getTime(),
-      isFinal: true,
-      inAppTextToSpeechAudioConfig: {
-        volume_gain_db: 0,
-      }
-    });
-    await fixture.whenStable();
-    fixture.detectChanges();
-    const errorMessage =
-        fixture.nativeElement.querySelector('.error-message') as HTMLDivElement;
-    expect(errorMessage.innerText).toEqual('TTS error: audio is empty');
-  });
+       expect(recordedEvents.length).toEqual(1);
+       expect(recordedEvents[0])
+           .toEqual({state: 'REQUESTING', errorMessage: undefined});
+       expect(component.audioPlayCallCount).toEqual(1);
+       expect(component.ttsAudioElements.first.nativeElement.src)
+           .toEqual('data:audio/wav;base64,0123abcd');
+     }));
 
-  it('textEntryEndEvent without audio config does not set audio element',
-     async () => {
-       const audioElement =
-           fixture.nativeElement.querySelector('audio') as HTMLAudioElement;
+  it('unregisterTextToSpeechListener unregisters listener', fakeAsync(() => {
+       spyOn(component.textToSpeechService, 'synthesizeSpeech')
+           .and.returnValue(of({
+             audio_content: '0123abcd',
+             audio_config: {
+               audio_encoding: 'LINEAR16',
+               speaking_rate: 1.0,
+               volume_gain_db: 0.0,
+             }
+           }));
+       const recordedEvents: TextToSpeechEvent[] = [];
+       const listener: TextToSpeechListener = (event: TextToSpeechEvent) => {
+         recordedEvents.push(event);
+       };
+       TextToSpeechComponent.registerTextToSpeechListener(listener);
+       TextToSpeechComponent.unregisterTextToSpeechListener(listener);
        textEntryEndSubject.next({
-         text: 'hi, there',
+         text: 'Hi there',
          timestampMillis: new Date().getTime(),
          isFinal: true,
+         inAppTextToSpeechAudioConfig: {}
        });
-       await fixture.whenStable();
-       expect(audioElement.src).toEqual('');
-     });
+       tick();
 
-  it('textEntryEndEvent with audio config without access token sets error message',
-     async () => {
-       component.accessToken = '';
+       expect(recordedEvents.length).toEqual(0);
+     }));
+
+  it('listener is notified of audio data empty error', fakeAsync(() => {
+       spyOn(component.textToSpeechService, 'synthesizeSpeech')
+           .and.returnValue(of({
+             audio_content: '',
+             audio_config: {
+               audio_encoding: 'LINEAR16',
+               speaking_rate: 1.0,
+               volume_gain_db: 0.0,
+             }
+           }));
+       const recordedEvents: TextToSpeechEvent[] = [];
+       const listener: TextToSpeechListener = (event: TextToSpeechEvent) => {
+         recordedEvents.push(event);
+       };
+       TextToSpeechComponent.registerTextToSpeechListener(listener);
        textEntryEndSubject.next({
-         text: 'hi, there',
+         text: 'Hi there',
          timestampMillis: new Date().getTime(),
          isFinal: true,
-         inAppTextToSpeechAudioConfig: {volume_gain_db: 0}
+         inAppTextToSpeechAudioConfig: {}
        });
-       await fixture.whenStable();
-       fixture.detectChanges();
-       const errorMessage = fixture.nativeElement.querySelector(
-                                '.error-message') as HTMLDivElement;
-       expect(errorMessage.innerText).toEqual('TTS error: no access token');
-     });
+       tick();
 
-  for (const [errorObject, expectedErrorText] of [
-           [{error: {error_message: 'foo error'}}, 'TTS error: foo error'],
-           [{statusText: 'bar error'}, 'TTS error: bar error']] as
-       Array<[any, string]>) {
-    it(`synthesizeSpeech call error shows error message: ${expectedErrorText}`,
-       async () => {
-         const audioElement =
-             fixture.nativeElement.querySelector('audio') as HTMLAudioElement;
-         spyOn(component.textToSpeechService, 'synthesizeSpeech')
-             .and.callFake(() => {
-               return throwError(errorObject);
-             });
-         textEntryEndSubject.next({
-           text: 'hi, there',
-           timestampMillis: new Date().getTime(),
-           isFinal: true,
-           inAppTextToSpeechAudioConfig: {}
-         });
-         await fixture.whenStable();
-         fixture.detectChanges();
-         expect(audioElement.src).toEqual('');
-         const errorMessage = fixture.nativeElement.querySelector(
-                                  '.error-message') as HTMLDivElement;
-         expect(errorMessage.innerText).toEqual(expectedErrorText);
+       expect(recordedEvents.length).toEqual(2);
+       expect(recordedEvents[0])
+           .toEqual({state: 'REQUESTING', errorMessage: undefined});
+       expect(recordedEvents[1])
+           .toEqual({state: 'ERROR', errorMessage: 'Audio is empty'});
+     }));
+
+  it('listener is notified of error from service', fakeAsync(() => {
+       spyOn(component.textToSpeechService, 'synthesizeSpeech')
+           .and.returnValue(
+               throwError({error: {error_message: 'foo audio error'}}));
+       const recordedEvents: TextToSpeechEvent[] = [];
+       const listener: TextToSpeechListener = (event: TextToSpeechEvent) => {
+         recordedEvents.push(event);
+       };
+       TextToSpeechComponent.registerTextToSpeechListener(listener);
+       textEntryEndSubject.next({
+         text: 'Hi there',
+         timestampMillis: new Date().getTime(),
+         isFinal: true,
+         inAppTextToSpeechAudioConfig: {}
+       });
+       tick();
+
+       expect(recordedEvents.length).toEqual(2);
+       expect(recordedEvents[0])
+           .toEqual({state: 'REQUESTING', errorMessage: undefined});
+       expect(recordedEvents[1])
+           .toEqual({state: 'ERROR', errorMessage: 'foo audio error'});
+     }));
+
+  for (const [ttsVolume, expectedGainDb] of [
+           ['QUIET', -10], ['MEDIUM', 0], ['LOUD', 16]] as
+       Array<['QUIET' | 'MEDIUM' | 'LOUD', number]>) {
+    it('getCloudTextToSpeechVolumeGainDb returns correct values: ' + ttsVolume,
+       () => {
+         expect(getCloudTextToSpeechVolumeGainDb({
+           ttsVoiceType: 'PERSONALIZED',
+           ttsVolume: ttsVolume,
+         })).toEqual(expectedGainDb);
+       });
+  }
+
+  for (const [ttsVolume, expectedGainDb] of [
+           ['QUIET', 0.2], ['MEDIUM', 0.5], ['LOUD', 1.0]] as
+       Array<['QUIET' | 'MEDIUM' | 'LOUD', number]>) {
+    it('getLocalTextToSpeechVolume returns correct values: ' + ttsVolume,
+       () => {
+         expect(getLocalTextToSpeechVolume({
+           ttsVoiceType: 'GENERIC',
+           ttsVolume: ttsVolume,
+         })).toEqual(expectedGainDb);
        });
   }
 });

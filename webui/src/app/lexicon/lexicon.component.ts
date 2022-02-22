@@ -1,7 +1,12 @@
 /** Component processing personal names in text. */
 import {Component, Input, OnInit} from '@angular/core';
+import {Subject} from 'rxjs';
 
 import {GetLexiconResponse, SpeakFasterService, TextPredictionResponse} from '../speakfaster-service';
+
+export interface LoadLexiconRequest {
+  prefix: string;
+}
 
 export function canonicalizeName(name: string): string {
   name = name.trim();
@@ -24,13 +29,19 @@ export function chooseStringRandomly(strings: string[]): string {
   providers: [SpeakFasterService],
 })
 export class LexiconComponent implements OnInit {
-  //   private static readonly listeners: TextToSpeechListener[] = [];
   private static readonly PERSONAL_NAMES_TAG = 'partner-name';
   private static GIVEN_NAMES: string[]|null = null;
-  private static readonly registeredNames: string[] = [];
+  private static readonly REGISTERED_NAMES: string[] = [];
+  private static readonly FULL_LEXICON_BY_PREFIX:
+      {[prefix: string]: string[]} = {};
 
+  /**
+   * Replace personal names in input string with registered, user-specific
+   * personal names.
+   */
   public static replacePersonNamesWithKnownValues(inputString: string): string {
-    if (LexiconComponent.registerName.length === 0) {
+    if (LexiconComponent.GIVEN_NAMES === null ||
+        LexiconComponent.GIVEN_NAMES.length === 0) {
       return inputString;
     }
     if (LexiconComponent.GIVEN_NAMES === null ||
@@ -46,11 +57,11 @@ export class LexiconComponent implements OnInit {
         canonicalWord = canonicalWord.slice(0, canonicalWord.length - 1);
       }
       if (LexiconComponent.GIVEN_NAMES.indexOf(canonicalWord) !== -1 &&
-          LexiconComponent.registeredNames.length > 0) {
+          LexiconComponent.REGISTERED_NAMES.length > 0) {
         // This is given name.
         const initialLetter = canonicalWord.slice(0, 1).toLocaleLowerCase();
         const matchingRegisteredNames =
-            LexiconComponent.registeredNames.filter(name => {
+            LexiconComponent.REGISTERED_NAMES.filter(name => {
               return name.toLocaleLowerCase().startsWith(initialLetter);
             });
         if (matchingRegisteredNames.length > 0) {
@@ -62,17 +73,45 @@ export class LexiconComponent implements OnInit {
     return words.join(' ');
   }
 
+  /**
+   * Determines if input string is a valid word in the lexicon.
+   * If lexicon is not loaded, return false. If lexicon is loaded, returns true
+   * if and only if `inputString` matches any of the words in the lexicon in a
+   * case-insensitive way.
+   */
+  public static isValidWord(inputString: string): boolean {
+    if (inputString.length === 0) {
+      return false;
+    }
+    inputString = inputString.toLocaleLowerCase();
+    const firstLetter = inputString[0];
+    if (LexiconComponent.FULL_LEXICON_BY_PREFIX[firstLetter] === undefined) {
+      return false;
+    }
+    // TODO(cais): Add unit tests.
+    return LexiconComponent.FULL_LEXICON_BY_PREFIX[firstLetter].indexOf(
+               inputString) !== -1;
+  }
+
+
   @Input() userId!: string;
+  @Input() languageCode!: string;
+  @Input() loadPrefixedLexiconRequestSubject!: Subject<LoadLexiconRequest>;
 
   errorMessage?: string|null = null;
 
   constructor(public speakFasterService: SpeakFasterService) {}
 
   ngOnInit() {
+    this.loadPrefixedLexiconRequestSubject.subscribe(
+        (request: LoadLexiconRequest) => {
+          this.loadPrefixedLexicon(request.prefix);
+        });
+
     if (LexiconComponent.GIVEN_NAMES === null) {
       this.speakFasterService
           .getLexicon({
-            languageCode: 'en-us',
+            languageCode: this.languageCode,
             subset: 'LEXICON_SUBSET_GIVEN_NAMES',
           })
           .subscribe((response: GetLexiconResponse) => {
@@ -98,24 +137,50 @@ export class LexiconComponent implements OnInit {
           });
           console.log(
               'Reigstered personal names:',
-              JSON.stringify(LexiconComponent.registeredNames));
+              JSON.stringify(LexiconComponent.REGISTERED_NAMES));
         });
   }
 
   private static registerName(name: string): void {
     name = canonicalizeName(name);
-    if (LexiconComponent.registeredNames.indexOf(name) !== -1) {
+    if (LexiconComponent.REGISTERED_NAMES.indexOf(name) !== -1) {
       return;
     }
-    LexiconComponent.registeredNames.push(name);
+    LexiconComponent.REGISTERED_NAMES.push(name);
   }
 
   private static unregisterName(name: string): void {
     name = canonicalizeName(name);
-    const index = LexiconComponent.registeredNames.indexOf(name);
+    const index = LexiconComponent.REGISTERED_NAMES.indexOf(name);
     if (index === -1) {
       return;
     }
-    LexiconComponent.registeredNames.splice(index, 1);
+    LexiconComponent.REGISTERED_NAMES.splice(index, 1);
+  }
+
+  /** Loads the full (non-subset) lexicon for given prefix. */
+  private loadPrefixedLexicon(prefix: string) {
+    if (prefix.length === 0) {
+      throw new Error('Prefix cannot be empty');
+    }
+    if (prefix.length !== 1) {
+      throw new Error(`Prefix string must have length 1; got ${prefix.length}`);
+    }
+    if (LexiconComponent.FULL_LEXICON_BY_PREFIX[prefix] !== undefined) {
+      // Already loaded.
+      return;
+    }
+    this.speakFasterService
+        .getLexicon({
+          languageCode: this.languageCode,
+          prefix,
+        })
+        .subscribe((response: GetLexiconResponse) => {
+          if (LexiconComponent.FULL_LEXICON_BY_PREFIX[prefix] !== undefined) {
+            return;
+          }
+          LexiconComponent.FULL_LEXICON_BY_PREFIX[prefix] =
+              response.words.map(word => word.toLocaleLowerCase());
+        });
   }
 }

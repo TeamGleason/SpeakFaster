@@ -7,6 +7,7 @@ import {createUuid} from '../utils/uuid';
 
 import {ExternalEventsComponent} from './external/external-events.component';
 import {InputBarControlEvent} from './input-bar/input-bar.component';
+import {LoadLexiconRequest} from './lexicon/lexicon.component';
 import {configureService, FillMaskRequest, SpeakFasterService} from './speakfaster-service';
 import {InputAbbreviationChangedEvent} from './types/abbreviation';
 import {AppState} from './types/app-state';
@@ -39,6 +40,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   @ViewChild('contentWrapper') contentWrapper!: ElementRef<HTMLDivElement>;
 
+  readonly languageCode = 'en-us';
   appState: AppState = AppState.ABBREVIATION_EXPANSION;
   private previousNonMinimizedAppState: AppState = this.appState;
 
@@ -63,6 +65,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   addContextualPhraseSubject: Subject<AddContextualPhraseRequest> =
       new Subject();
   inputBarControlSubject: Subject<InputBarControlEvent> = new Subject();
+  loadPrefixedLexiconRequestSubject: Subject<LoadLexiconRequest> = new Subject();
 
   // Context speech content used for AE and other text predictions.
   readonly contextStringsAvailable: string[] = [];

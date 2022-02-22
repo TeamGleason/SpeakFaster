@@ -6,7 +6,8 @@ import {keySequenceEndsWith} from 'src/utils/text-utils';
 import {createUuid} from 'src/utils/uuid';
 
 import {ExternalEventsComponent, repeatVirtualKey, VIRTUAL_KEY} from '../external/external-events.component';
-import {FillMaskRequest, SpeakFasterService} from '../speakfaster-service';
+import {LexiconComponent, LoadLexiconRequest} from '../lexicon/lexicon.component';
+import {FillMaskRequest, GetLexiconRequest, SpeakFasterService} from '../speakfaster-service';
 import {AbbreviationSpec, AbbreviationToken, InputAbbreviationChangedEvent} from '../types/abbreviation';
 import {TextEntryEndEvent} from '../types/text-entry';
 
@@ -65,12 +66,14 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
 
   @Input() userId!: string;
   @Input() contextStrings!: string[];
+  @Input() languageCode!: string;
   @Input() textEntryEndSubject!: Subject<TextEntryEndEvent>;
   @Input() supportsAbbrevationExpansion!: boolean;
   @Input()
   abbreviationExpansionTriggers!: Subject<InputAbbreviationChangedEvent>;
   @Input() fillMaskTriggers!: Subject<FillMaskRequest>;
   @Input() inputBarControlSubject!: Subject<InputBarControlEvent>;
+  @Input() loadPrefixedLexiconRequestSubject!: Subject<LoadLexiconRequest>;
   @Output() inputStringChanged: EventEmitter<string> = new EventEmitter();
 
   private readonly _chips: InputBarChipSpec[] = [];
@@ -128,7 +131,11 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
         });
     this.abbreviationExpansionTriggersSubscription =
         this.abbreviationExpansionTriggers.subscribe(event => {
-          this.state = State.CHOOSING_PHRASES;
+          if (this.state === State.FOCUSED_ON_LETTER_CHIP) {
+            // TODO(cais): Add unit tests.
+          } else {
+            this.state = State.CHOOSING_PHRASES;
+          }
         });
   }
 
@@ -197,6 +204,9 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
           this._chipTypedText = Array(this._chips.length).fill(null);
         }
         this._chipTypedText[this._focusChipIndex] = typedLetter;
+        this.loadPrefixedLexiconRequestSubject.next({
+          prefix: typedLetter,
+        });
       }
       updateButtonBoxesForElements(this.instanceId, this.buttons);
     } else if (this.state === State.FOCUSED_ON_LETTER_CHIP) {
@@ -215,6 +225,11 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
       } else {
         this._chipTypedText[this._focusChipIndex!] = spelledString;
         updateButtonBoxesForElements(this.instanceId, this.buttons);
+        if (LexiconComponent.isValidWord(spelledString)) {
+          console.log(
+              `Spelled string is valid word '${spelledString}': trigger AE`);
+          this.triggerAbbreviationExpansion();
+        }
       }
     } else if (this.state === State.FOCUSED_ON_WORD_CHIP) {
       if (lastKey === VIRTUAL_KEY.ENTER || lastKey === VIRTUAL_KEY.SPACE) {
@@ -238,7 +253,9 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     const eraserLength = this.inputString.length;
 
     let abbreviationSpec = this.getNonSpellingAbbreviationExpansion();
+    console.log('*** A100');  // DEBUG
     if (this.state === State.FOCUSED_ON_LETTER_CHIP) {
+      console.log('*** A110');  // DEBUG
       const tokens: AbbreviationToken[] = [];
       let pendingChars: string = '';
       for (let i = 0; i < this._chips.length; ++i) {
@@ -321,8 +338,13 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   onChipClicked(index: number) {
     this._focusChipIndex = index;
     this.baseReconstructedText = this.latestReconstructedString;
-    if (this.state === State.CHOOSING_LETTER_CHIP) {
+    if (this.state === State.CHOOSING_LETTER_CHIP ||
+        this.state === State.FOCUSED_ON_LETTER_CHIP) {
       this.state = State.FOCUSED_ON_LETTER_CHIP;
+      const firstLetter = this._chips[index].text[0];
+      this.loadPrefixedLexiconRequestSubject.next({
+        prefix: firstLetter,
+      });
     } else if (
         this.state === State.CHOOSING_WORD_CHIP ||
         this.state === State.FOCUSED_ON_WORD_CHIP) {
@@ -404,9 +426,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   onSpeakAsIsButtonClicked(event?: Event) {
-    console.log('*** onSpeak()');  // DEBUG
     const text = this.effectivePhrase;
-    console.log('*** text = ', text);  // DEBUG
     if (!text) {
       return;
     }
@@ -434,7 +454,6 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private updateInputString(newStringValue: string) {
     this.inputString = newStringValue;
-    // TODO(cais): Add unit test.
     this.inputStringChanged.next(this.inputString);
     updateButtonBoxesForElements(this.instanceId, this.buttons);
   }

@@ -131,7 +131,9 @@ app-text-to-speech-component {
 
   <app-lexicon-component
       *ngIf="hasAccessToken()"
+      [languageCode]="languageCode"
       [userId]="userId"
+      [loadPrefixedLexiconRequestSubject]="loadPrefixedLexiconRequestSubject"
   ></app-lexicon-component>
 
   <div
@@ -207,9 +209,11 @@ app-text-to-speech-component {
         <app-input-bar-component
             [userId]="userId"
             [contextStrings]="contextStringsSelected"
+            [languageCode]="languageCode"
             [textEntryEndSubject]="textEntryEndSubject"
             [supportsAbbrevationExpansion]="appState === 'ABBREVIATION_EXPANSION'"
             [inputBarControlSubject]="inputBarControlSubject"
+            [loadPrefixedLexiconRequestSubject]="loadPrefixedLexiconRequestSubject"
             [abbreviationExpansionTriggers]="abbreviationExpansionTriggers"
             [fillMaskTriggers]="fillMaskTriggers"
             (inputStringChanged)="onInputStringChanged($event)"

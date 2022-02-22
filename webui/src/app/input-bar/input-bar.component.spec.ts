@@ -6,6 +6,7 @@ import {Subject} from 'rxjs';
 
 import {repeatVirtualKey, VIRTUAL_KEY} from '../external/external-events.component';
 import {InputBarChipComponent} from '../input-bar-chip/input-bar-chip.component';
+import {LoadLexiconRequest} from '../lexicon/lexicon.component';
 import {FillMaskRequest, SpeakFasterService} from '../speakfaster-service';
 import {InputAbbreviationChangedEvent} from '../types/abbreviation';
 import {TextEntryEndEvent} from '../types/text-entry';
@@ -21,17 +22,20 @@ fdescribe('InputBarComponent', () => {
   let textEntryEndSubject: Subject<TextEntryEndEvent>;
   let inputBarControlSubject: Subject<InputBarControlEvent>;
   let abbreviationExpansionTriggers: Subject<InputAbbreviationChangedEvent>;
+  let loadPrefixedLexiconRequestSubject: Subject<LoadLexiconRequest>;
   let fillMaskTriggers: Subject<FillMaskRequest>;
   let fixture: ComponentFixture<InputBarComponent>;
   let speakFasterServiceForTest: SpeakFasterServiceForTest;
   let textEntryEndEvents: TextEntryEndEvent[];
   let inputAbbreviationChangeEvents: InputAbbreviationChangedEvent[];
+  let LoadLexiconRequests: LoadLexiconRequest[];
   let fillMaskRequests: FillMaskRequest[];
 
   beforeEach(async () => {
     textEntryEndSubject = new Subject();
     inputBarControlSubject = new Subject();
     abbreviationExpansionTriggers = new Subject();
+    loadPrefixedLexiconRequestSubject = new Subject();
     fillMaskTriggers = new Subject();
     speakFasterServiceForTest = new SpeakFasterServiceForTest();
     textEntryEndEvents = [];
@@ -42,6 +46,11 @@ fdescribe('InputBarComponent', () => {
     abbreviationExpansionTriggers.subscribe(
         (event: InputAbbreviationChangedEvent) => {
           inputAbbreviationChangeEvents.push(event);
+        });
+    LoadLexiconRequests = [];
+    loadPrefixedLexiconRequestSubject.subscribe(
+        (request: LoadLexiconRequest) => {
+          LoadLexiconRequests.push(request);
         });
     fillMaskRequests = [];
     fillMaskTriggers
@@ -67,6 +76,8 @@ fdescribe('InputBarComponent', () => {
     fixture.componentInstance.fillMaskTriggers = fillMaskTriggers;
     fixture.componentInstance.abbreviationExpansionTriggers =
         abbreviationExpansionTriggers;
+    fixture.componentInstance.loadPrefixedLexiconRequestSubject =
+        loadPrefixedLexiconRequestSubject;
     fixture.detectChanges();
   });
 
@@ -319,6 +330,7 @@ fdescribe('InputBarComponent', () => {
     expect(fixture.debugElement.query(By.css('.spell-button'))).toBeNull();
     expect(fixture.debugElement.query(By.css('.length-limit-exceeded')))
     expect(fixture.debugElement.query(By.css('.abort-button'))).not.toBeNull();
+    expect(LoadLexiconRequests.length).toEqual(0);
   });
 
   it('spelling word updates chips', () => {
@@ -346,6 +358,8 @@ fdescribe('InputBarComponent', () => {
     expect(fixture.debugElement.query(By.css('.length-limit-exceeded')))
     expect(fixture.debugElement.query(By.css('.abort-button'))).not.toBeNull();
     expect(inputAbbreviationChangeEvents.length).toEqual(0);
+    expect(LoadLexiconRequests.length).toEqual(1);
+    expect(LoadLexiconRequests[0]).toEqual({prefix: 'b'});
   });
 
   for (const triggerKey of [VIRTUAL_KEY.SPACE, VIRTUAL_KEY.ENTER]) {
@@ -427,6 +441,8 @@ fdescribe('InputBarComponent', () => {
     const {tokens} = abbreviationSpec;
     expect(tokens[0]).toEqual({value: 'ab', isKeyword: false});
     expect(tokens[1]).toEqual({value: 'ack', isKeyword: true});
+    expect(LoadLexiconRequests.length).toEqual(1);
+    expect(LoadLexiconRequests[0]).toEqual({prefix: 'a'});
   });
 
   it('clicking abort after clicking spell resets state', () => {
@@ -578,6 +594,7 @@ fdescribe('InputBarComponent', () => {
     expect(textEntryEndEvents[0].text).toEqual('i felt great');
   });
 
+  // TODO(cais): Test spelling valid word triggers AE, with debounce.
   // TODO(cais): Backspaces during spelling.
   // TODO(cais): Test spelling with non-matching and ambiguous key.
   // TODO(cais): Test favorite button.

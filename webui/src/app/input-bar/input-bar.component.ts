@@ -1,13 +1,14 @@
 /** An input bar, with related functional buttons. */
 import {AfterViewInit, Component, ElementRef, EventEmitter, Input, OnDestroy, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
 import {Subject, Subscription} from 'rxjs';
+import {debounceTime} from 'rxjs/operators';
 import {updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
 import {keySequenceEndsWith} from 'src/utils/text-utils';
 import {createUuid} from 'src/utils/uuid';
 
 import {ExternalEventsComponent, repeatVirtualKey, VIRTUAL_KEY} from '../external/external-events.component';
 import {LexiconComponent, LoadLexiconRequest} from '../lexicon/lexicon.component';
-import {FillMaskRequest, GetLexiconRequest, SpeakFasterService} from '../speakfaster-service';
+import {FillMaskRequest, SpeakFasterService} from '../speakfaster-service';
 import {AbbreviationSpec, AbbreviationToken, InputAbbreviationChangedEvent} from '../types/abbreviation';
 import {TextEntryEndEvent} from '../types/text-entry';
 
@@ -62,7 +63,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   // Maximum allowed length of the entire abbreviation, including the leading
   // keywords.
   private static readonly ABBREVIATION_MAX_TOTAL_LENGTH = 50;
-  private static readonly STATE_REST_DELAY_MILLIS = 2000;
+  private static readonly IN_FLIGHT_AE_TRIGGER_DEBOUNCE_MILLIS = 600;
 
   @Input() userId!: string;
   @Input() contextStrings!: string[];
@@ -92,7 +93,10 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   private textEntryEndSubjectSubscription?: Subscription;
   private inputBarChipsSubscription?: Subscription;
   private abbreviationExpansionTriggersSubscription?: Subscription;
+  private inFlightAbbreviationExpansionTriggerSubscription?: Subscription;
   private keypressListener = this.listenToKeypress.bind(this);
+  private readonly inFlightAbbreviationExpansionTriggers:
+      Subject<InputAbbreviationChangedEvent> = new Subject();
 
   constructor(public speakFasterService: SpeakFasterService) {}
 
@@ -110,7 +114,6 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     this.inputBarChipsSubscription =
         this.inputBarControlSubject.subscribe((event: InputBarControlEvent) => {
           if (event.clearAll) {
-            // TODO(cais): Add unit test.
             this.baseReconstructedText = this.latestReconstructedString;
             this.resetState(/* cleanText= */ true, /* resetBase= */ false);
           } else if (event.chips !== undefined) {
@@ -137,6 +140,13 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
             this.state = State.CHOOSING_PHRASES;
           }
         });
+    this.inFlightAbbreviationExpansionTriggerSubscription =
+        this.inFlightAbbreviationExpansionTriggers
+            .pipe(debounceTime(
+                InputBarComponent.IN_FLIGHT_AE_TRIGGER_DEBOUNCE_MILLIS))
+            .subscribe((event: InputAbbreviationChangedEvent) => {
+              this.abbreviationExpansionTriggers.next(event);
+            });
   }
 
   ngAfterViewInit() {
@@ -156,6 +166,9 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     }
     if (this.abbreviationExpansionTriggersSubscription) {
       this.abbreviationExpansionTriggersSubscription.unsubscribe();
+    }
+    if (this.inFlightAbbreviationExpansionTriggerSubscription) {
+      this.inFlightAbbreviationExpansionTriggerSubscription.unsubscribe();
     }
     updateButtonBoxesToEmpty(this.instanceId);
     ExternalEventsComponent.unregisterKeypressListener(this.keypressListener);
@@ -225,10 +238,10 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
       } else {
         this._chipTypedText[this._focusChipIndex!] = spelledString;
         updateButtonBoxesForElements(this.instanceId, this.buttons);
-        if (LexiconComponent.isValidWord(spelledString)) {
+        if (LexiconComponent.isValidWord(spelledString.trim())) {
           console.log(
               `Spelled string is valid word '${spelledString}': trigger AE`);
-          this.triggerAbbreviationExpansion();
+          this.triggerAbbreviationExpansion(/* isInFlight= */ true);
         }
       }
     } else if (this.state === State.FOCUSED_ON_WORD_CHIP) {
@@ -248,14 +261,12 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     this.triggerAbbreviationExpansion();
   }
 
-  private triggerAbbreviationExpansion() {
+  private triggerAbbreviationExpansion(isInFlight: boolean = false) {
     const precedingText = '';
     const eraserLength = this.inputString.length;
 
     let abbreviationSpec = this.getNonSpellingAbbreviationExpansion();
-    console.log('*** A100');  // DEBUG
     if (this.state === State.FOCUSED_ON_LETTER_CHIP) {
-      console.log('*** A110');  // DEBUG
       const tokens: AbbreviationToken[] = [];
       let pendingChars: string = '';
       for (let i = 0; i < this._chips.length; ++i) {
@@ -293,8 +304,15 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
       };
     }
     console.log('Abbreviation expansion triggered:', abbreviationSpec);
-    this.abbreviationExpansionTriggers.next(
-        {abbreviationSpec, requestExpansion: true});
+    const abbreviationChangeEvent: InputAbbreviationChangedEvent = {
+      abbreviationSpec,
+      requestExpansion: true
+    };
+    if (isInFlight) {
+      this.inFlightAbbreviationExpansionTriggers.next(abbreviationChangeEvent);
+    } else {
+      this.abbreviationExpansionTriggers.next(abbreviationChangeEvent);
+    }
   }
 
   private getNonSpellingAbbreviationExpansion(): AbbreviationSpec {
@@ -527,6 +545,5 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     } else {
       return '/assets/images/favorite.png';
     }
-    // TODO(cais): Implement favoriting phrases.
   }
 }

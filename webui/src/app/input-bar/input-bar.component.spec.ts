@@ -53,12 +53,11 @@ fdescribe('InputBarComponent', () => {
           LoadLexiconRequests.push(request);
         });
     fillMaskRequests = [];
-    fillMaskTriggers
-        .subscribe(request => {
-          fillMaskRequests.push(request);
-        })
+    fillMaskTriggers.subscribe(request => {
+      fillMaskRequests.push(request);
+    });
 
-            await TestBed
+    await TestBed
         .configureTestingModule({
           imports: [InputBarModule],
           declarations: [InputBarComponent],
@@ -445,6 +444,64 @@ fdescribe('InputBarComponent', () => {
     expect(LoadLexiconRequests[0]).toEqual({prefix: 'a'});
   });
 
+  it('irrelevant keypresses during spelling are ignored', () => {
+    const keySequence = ['a', 'b', 'c'];
+    const reconstructedText = keySequence.join('');
+    enterKeysIntoComponent(keySequence, reconstructedText);
+    const spellButton = fixture.debugElement.query(By.css('.spell-button'));
+    spellButton.nativeElement.click();
+    fixture.detectChanges();
+    // The first three keys ('x', 'y' and 'z') are irrelevant and hence must be
+    // ignored.
+    const spellSequence = ['x', 'y', 'z', 'b', 'i', 't'];
+    const spellReconstructedText = reconstructedText + spellSequence.join('');
+    enterKeysIntoComponent(spellSequence, spellReconstructedText, 3);
+
+    const chips =
+        fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'));
+    expect(chips.length).toEqual(3);
+    expect((chips[0].componentInstance as InputBarChipComponent).text)
+        .toEqual('a');
+    expect((chips[1].componentInstance as InputBarChipComponent).text)
+        .toEqual('bit');
+    expect((chips[2].componentInstance as InputBarChipComponent).text)
+        .toEqual('c');
+
+    const expandButton = fixture.debugElement.query(By.css('.expand-button'));
+    expandButton.nativeElement.click();
+    expect(inputAbbreviationChangeEvents.length).toEqual(1);
+    expect(inputAbbreviationChangeEvents[0].requestExpansion).toBeTrue();
+    const {abbreviationSpec} = inputAbbreviationChangeEvents[0];
+    expect(abbreviationSpec.readableString).toEqual('a bit c');
+    expect(abbreviationSpec.tokens.length).toEqual(3);
+    // TODO(cais): Sort out the eraser sequence when there are irrelevant keys.
+    // expect(abbreviationSpec.eraserSequence)
+    //     .toEqual(repeatVirtualKey(VIRTUAL_KEY.BACKSPACE, 9));
+  });
+
+  it('ambiguous keypress during spelling are ignored', () => {
+    const keySequence = ['c', 'b', 'c'];  // Noticie the duplicate letters c.
+    const reconstructedText = keySequence.join('');
+    enterKeysIntoComponent(keySequence, reconstructedText);
+    const spellButton = fixture.debugElement.query(By.css('.spell-button'));
+    spellButton.nativeElement.click();
+    fixture.detectChanges();
+    const spellSequence = ['c', 'c', 'c'];
+    const spellReconstructedText = reconstructedText + spellSequence.join('');
+    enterKeysIntoComponent(spellSequence, spellReconstructedText, 3);
+
+    const chips =
+        fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'));
+    expect(chips.length).toEqual(3);
+    expect(chips.length).toEqual(3);
+    expect((chips[0].componentInstance as InputBarChipComponent).text)
+        .toEqual('c');
+    expect((chips[1].componentInstance as InputBarChipComponent).text)
+        .toEqual('b');
+    expect((chips[2].componentInstance as InputBarChipComponent).text)
+        .toEqual('c');
+  });
+
   it('clicking abort after clicking spell resets state', () => {
     const keySequence = ['a', 'b', 'a'];
     const reconstructedText = keySequence.join('');
@@ -596,6 +653,5 @@ fdescribe('InputBarComponent', () => {
 
   // TODO(cais): Test spelling valid word triggers AE, with debounce.
   // TODO(cais): Backspaces during spelling.
-  // TODO(cais): Test spelling with non-matching and ambiguous key.
   // TODO(cais): Test favorite button.
 });

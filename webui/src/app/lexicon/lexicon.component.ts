@@ -19,22 +19,22 @@ export function chooseStringRandomly(strings: string[]): string {
 }
 
 @Component({
-  selector: 'app-personal-names-component',
-  templateUrl: './personal-names.component.html',
+  selector: 'app-lexicon-component',
+  templateUrl: './lexicon.component.html',
   providers: [SpeakFasterService],
 })
-export class PersonalNamesComponent implements OnInit {
+export class LexiconComponent implements OnInit {
   //   private static readonly listeners: TextToSpeechListener[] = [];
   private static readonly PERSONAL_NAMES_TAG = 'partner-name';
   private static GIVEN_NAMES: string[]|null = null;
   private static readonly registeredNames: string[] = [];
 
   public static replacePersonNamesWithKnownValues(inputString: string): string {
-    if (PersonalNamesComponent.registerName.length === 0) {
+    if (LexiconComponent.registerName.length === 0) {
       return inputString;
     }
-    if (PersonalNamesComponent.GIVEN_NAMES === null ||
-        PersonalNamesComponent.GIVEN_NAMES.length === 0) {
+    if (LexiconComponent.GIVEN_NAMES === null ||
+        LexiconComponent.GIVEN_NAMES.length === 0) {
       return inputString;
     }
     const words = inputString.split(' ').filter(word => word.length > 0);
@@ -45,12 +45,12 @@ export class PersonalNamesComponent implements OnInit {
         punctuation = canonicalWord.slice(canonicalWord.length - 1);
         canonicalWord = canonicalWord.slice(0, canonicalWord.length - 1);
       }
-      if (PersonalNamesComponent.GIVEN_NAMES.indexOf(canonicalWord) !== -1 &&
-          PersonalNamesComponent.registeredNames.length > 0) {
+      if (LexiconComponent.GIVEN_NAMES.indexOf(canonicalWord) !== -1 &&
+          LexiconComponent.registeredNames.length > 0) {
         // This is given name.
         const initialLetter = canonicalWord.slice(0, 1).toLocaleLowerCase();
         const matchingRegisteredNames =
-            PersonalNamesComponent.registeredNames.filter(name => {
+            LexiconComponent.registeredNames.filter(name => {
               return name.toLocaleLowerCase().startsWith(initialLetter);
             });
         if (matchingRegisteredNames.length > 0) {
@@ -69,17 +69,17 @@ export class PersonalNamesComponent implements OnInit {
   constructor(public speakFasterService: SpeakFasterService) {}
 
   ngOnInit() {
-    if (PersonalNamesComponent.GIVEN_NAMES === null) {
+    if (LexiconComponent.GIVEN_NAMES === null) {
       this.speakFasterService
           .getLexicon({
             languageCode: 'en-us',
             subset: 'LEXICON_SUBSET_GIVEN_NAMES',
           })
           .subscribe((response: GetLexiconResponse) => {
-            if (PersonalNamesComponent.GIVEN_NAMES !== null) {
+            if (LexiconComponent.GIVEN_NAMES !== null) {
               return;
             }
-            PersonalNamesComponent.GIVEN_NAMES = response.words.slice();
+            LexiconComponent.GIVEN_NAMES = response.words.slice();
           });
     }
 
@@ -90,32 +90,32 @@ export class PersonalNamesComponent implements OnInit {
           textPrefix: '',
           timestamp: new Date().toISOString(),
           timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-          allowedTags: [PersonalNamesComponent.PERSONAL_NAMES_TAG],
+          allowedTags: [LexiconComponent.PERSONAL_NAMES_TAG],
         })
         .subscribe((data: TextPredictionResponse) => {
           data.contextualPhrases?.forEach(phrase => {
-            PersonalNamesComponent.registerName(phrase.text);
+            LexiconComponent.registerName(phrase.text);
           });
           console.log(
               'Reigstered personal names:',
-              JSON.stringify(PersonalNamesComponent.registeredNames));
+              JSON.stringify(LexiconComponent.registeredNames));
         });
   }
 
   private static registerName(name: string): void {
     name = canonicalizeName(name);
-    if (PersonalNamesComponent.registeredNames.indexOf(name) !== -1) {
+    if (LexiconComponent.registeredNames.indexOf(name) !== -1) {
       return;
     }
-    PersonalNamesComponent.registeredNames.push(name);
+    LexiconComponent.registeredNames.push(name);
   }
 
   private static unregisterName(name: string): void {
     name = canonicalizeName(name);
-    const index = PersonalNamesComponent.registeredNames.indexOf(name);
+    const index = LexiconComponent.registeredNames.indexOf(name);
     if (index === -1) {
       return;
     }
-    PersonalNamesComponent.registeredNames.splice(index, 1);
+    LexiconComponent.registeredNames.splice(index, 1);
   }
 }

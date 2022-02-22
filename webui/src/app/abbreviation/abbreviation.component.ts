@@ -7,7 +7,7 @@ import {injectKeys, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from
 import {RefinementResult, RefinementType} from '../abbreviation-refinement/abbreviation-refinement.component';
 import {VIRTUAL_KEY} from '../external/external-events.component';
 import {InputBarControlEvent} from '../input-bar/input-bar.component';
-import {PersonalNamesComponent} from '../personal-names/personal-names.component';
+import {LexiconComponent} from '../lexicon/lexicon.component';
 import {FillMaskRequest, SpeakFasterService, TextPredictionResponse} from '../speakfaster-service';
 import {AbbreviationSpec, InputAbbreviationChangedEvent} from '../types/abbreviation';
 import {TextEntryBeginEvent, TextEntryEndEvent} from '../types/text-entry';
@@ -307,7 +307,7 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
               if (data.exactMatches != null) {
                 data.exactMatches.forEach(exactMatch => {
                   const replaced =
-                      PersonalNamesComponent.replacePersonNamesWithKnownValues(
+                      LexiconComponent.replacePersonNamesWithKnownValues(
                           exactMatch);
                   if (this.abbreviationOptions.indexOf(replaced) === -1) {
                     this.abbreviationOptions.push(replaced);

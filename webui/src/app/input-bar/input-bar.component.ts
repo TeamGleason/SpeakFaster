@@ -404,7 +404,9 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   onSpeakAsIsButtonClicked(event?: Event) {
+    console.log('*** onSpeak()');  // DEBUG
     const text = this.effectivePhrase;
+    console.log('*** text = ', text);  // DEBUG
     if (!text) {
       return;
     }

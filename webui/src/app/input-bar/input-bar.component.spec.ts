@@ -6,7 +6,7 @@ import {Subject} from 'rxjs';
 
 import {repeatVirtualKey, VIRTUAL_KEY} from '../external/external-events.component';
 import {InputBarChipComponent} from '../input-bar-chip/input-bar-chip.component';
-import {SpeakFasterService} from '../speakfaster-service';
+import {FillMaskRequest, SpeakFasterService} from '../speakfaster-service';
 import {InputAbbreviationChangedEvent} from '../types/abbreviation';
 import {TextEntryEndEvent} from '../types/text-entry';
 
@@ -21,22 +21,35 @@ fdescribe('InputBarComponent', () => {
   let textEntryEndSubject: Subject<TextEntryEndEvent>;
   let inputBarControlSubject: Subject<InputBarControlEvent>;
   let abbreviationExpansionTriggers: Subject<InputAbbreviationChangedEvent>;
+  let fillMaskTriggers: Subject<FillMaskRequest>;
   let fixture: ComponentFixture<InputBarComponent>;
   let speakFasterServiceForTest: SpeakFasterServiceForTest;
+  let textEntryEndEvents: TextEntryEndEvent[];
   let inputAbbreviationChangeEvents: InputAbbreviationChangedEvent[];
+  let fillMaskRequests: FillMaskRequest[];
 
   beforeEach(async () => {
     textEntryEndSubject = new Subject();
     inputBarControlSubject = new Subject();
     abbreviationExpansionTriggers = new Subject();
+    fillMaskTriggers = new Subject();
     speakFasterServiceForTest = new SpeakFasterServiceForTest();
+    textEntryEndEvents = [];
+    textEntryEndSubject.subscribe(event => {
+      textEntryEndEvents.push(event);
+    })
     inputAbbreviationChangeEvents = [];
     abbreviationExpansionTriggers.subscribe(
         (event: InputAbbreviationChangedEvent) => {
           inputAbbreviationChangeEvents.push(event);
         });
+    fillMaskRequests = [];
+    fillMaskTriggers
+        .subscribe(request => {
+          fillMaskRequests.push(request);
+        })
 
-    await TestBed
+            await TestBed
         .configureTestingModule({
           imports: [InputBarModule],
           declarations: [InputBarComponent],
@@ -51,6 +64,7 @@ fdescribe('InputBarComponent', () => {
     fixture.componentInstance.supportsAbbrevationExpansion = true;
     fixture.componentInstance.textEntryEndSubject = textEntryEndSubject;
     fixture.componentInstance.inputBarControlSubject = inputBarControlSubject;
+    fixture.componentInstance.fillMaskTriggers = fillMaskTriggers;
     fixture.componentInstance.abbreviationExpansionTriggers =
         abbreviationExpansionTriggers;
     fixture.detectChanges();
@@ -480,9 +494,91 @@ fdescribe('InputBarComponent', () => {
     expect(abbreviationSpec.readableString).toEqual('aba');
   });
 
+  it('chips are shown during refinement', () => {
+    inputBarControlSubject.next({
+      chips: [
+        {
+          text: 'i',
+        },
+        {
+          text: 'feel',
+        },
+        {
+          text: 'great',
+        }
+      ]
+    });
+    fixture.detectChanges();
+
+    const chips =
+        fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'));
+    expect(chips.length).toEqual(3);
+    expect((chips[0].componentInstance as InputBarChipComponent).text)
+        .toEqual('i');
+    expect((chips[1].componentInstance as InputBarChipComponent).text)
+        .toEqual('feel');
+    expect((chips[2].componentInstance as InputBarChipComponent).text)
+        .toEqual('great');
+    expect(fillMaskRequests.length).toEqual(0);
+  });
+
+  it('clicking chip during refinement triggers fillMask', () => {
+    inputBarControlSubject.next({
+      chips: [
+        {
+          text: 'i',
+        },
+        {
+          text: 'feel',
+        },
+        {
+          text: 'great',
+        }
+      ]
+    });
+    fixture.detectChanges();
+    const chips =
+        fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'))
+    chips[2].nativeElement.click();
+
+    expect(fillMaskRequests.length).toEqual(1);
+    expect(fillMaskRequests[0]).toEqual({
+      speechContent: 'How are you',
+      phraseWithMask: 'i feel _',
+      maskInitial: 'g',
+    });
+  });
+
+  it('types keys during refinement registers manual revision', () => {
+    inputBarControlSubject.next({
+      chips: [
+        {
+          text: 'i',
+        },
+        {
+          text: 'feel',
+        },
+        {
+          text: 'great',
+        }
+      ]
+    });
+    fixture.detectChanges();
+    const keySequence = ['f', 'e', 'l', 't', VIRTUAL_KEY.SPACE];
+    const reconstructedText = keySequence.join('');
+    const chips =
+        fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'))
+    chips[1].nativeElement.click();
+    enterKeysIntoComponent(keySequence, reconstructedText);
+    const speakButton = fixture.debugElement.query(By.css('.speak-button'))
+                            .query(By.css('.speak-button'));
+    speakButton.nativeElement.click();
+
+    expect(textEntryEndEvents.length).toEqual(1);
+    expect(textEntryEndEvents[0].text).toEqual('i felt great');
+  });
+
   // TODO(cais): Backspaces during spelling.
   // TODO(cais): Test spelling with non-matching and ambiguous key.
-  // TODO(Cais): Test chip state during refinement.
-  // TODO(cais): Test speak button.
-  // TODO(cais): Test TTS button.
+  // TODO(cais): Test favorite button.
 });

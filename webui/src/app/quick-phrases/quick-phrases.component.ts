@@ -7,7 +7,7 @@ import {createUuid} from 'src/utils/uuid';
 
 import {AppComponent} from '../app.component';
 import {VIRTUAL_KEY} from '../external/external-events.component';
-import { InputBarControlEvent } from '../input-bar/input-bar.component';
+import {InputBarControlEvent} from '../input-bar/input-bar.component';
 import {PhraseComponent} from '../phrase/phrase.component';
 import {SpeakFasterService, TextPredictionResponse} from '../speakfaster-service';
 import {ContextualPhrase} from '../types/contextual_phrase';
@@ -75,7 +75,15 @@ export class QuickPhrasesComponent implements AfterViewInit, OnChanges,
               this.state = State.RETRIEVED_PHRASES;
               this.phrases.splice(0);
               if (data.contextualPhrases) {
-                this.phrases.push(...data.contextualPhrases);
+                for (const phrase of data.contextualPhrases) {
+                  if (this.phrases.some(
+                          existingPhrase =>
+                              existingPhrase.text.toLocaleLowerCase() ===
+                              phrase.text.toLocaleLowerCase())) {
+                    continue;
+                  }
+                  this.phrases.push(phrase);
+                }
                 this.phrases.sort(
                     (a: ContextualPhrase, b: ContextualPhrase) => {
                       const dateA = new Date(a.createdTimestamp!).getTime();

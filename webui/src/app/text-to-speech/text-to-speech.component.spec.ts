@@ -2,6 +2,7 @@
 import {HttpClientModule} from '@angular/common/http';
 import {ComponentFixture, fakeAsync, TestBed, tick} from '@angular/core/testing';
 import {of, Subject, throwError} from 'rxjs';
+import {BOUND_LISTENER_NAME} from 'src/utils/cefsharp';
 
 import {TextEntryEndEvent} from '../types/text-entry';
 
@@ -14,6 +15,7 @@ describe('TextToSpeechCmponent', () => {
   let textEntryEndSubject: Subject<TextEntryEndEvent>;
 
   beforeEach(async () => {
+    (window as any)[BOUND_LISTENER_NAME] = undefined;
     textEntryEndSubject = new Subject();
     TextToSpeechComponent.clearTextToSpeechListener();
     await TestBed

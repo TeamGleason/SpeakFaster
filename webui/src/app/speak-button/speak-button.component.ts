@@ -43,16 +43,12 @@ export class SpeakButtonComponent implements OnInit, OnDestroy {
   onTextToSpeechEvent(event: TextToSpeechEvent) {
     if (event.state === 'REQUESTING') {
       this.state = State.REQUESTING;
-      this.cdr.detectChanges();
     } else if (event.state === 'PLAY') {
       this.state = State.PLAYING;
-      this.cdr.detectChanges();
     } else if (event.state === 'END') {
       this.state = State.READY;
-      this.cdr.detectChanges();
     } else if (event.state === 'ERROR') {
       this.state = State.ERROR;
-      this.cdr.detectChanges();
       setTimeout(() => {
         if (this.state === State.ERROR) {
           this.state = State.READY;
@@ -60,6 +56,7 @@ export class SpeakButtonComponent implements OnInit, OnDestroy {
         }
       }, SpeakButtonComponent.ERROR_STATE_DELAY_MILLIS);
     }
+    this.cdr.detectChanges();
   }
 
   onSpeakButtonClicked(event: Event) {

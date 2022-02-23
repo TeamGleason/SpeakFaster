@@ -2,7 +2,7 @@
  * A button for speaking a phrase (TTS output). Supports animation that
  * indicates ongoing TTS output.
  */
-import {Component, EventEmitter, Input, OnDestroy, OnInit, Output} from '@angular/core';
+import {ChangeDetectorRef, Component, EventEmitter, Input, OnDestroy, OnInit, Output} from '@angular/core';
 
 import {TextToSpeechComponent, TextToSpeechEvent, TextToSpeechListener} from '../text-to-speech/text-to-speech.component';
 
@@ -28,6 +28,8 @@ export class SpeakButtonComponent implements OnInit, OnDestroy {
   private textToSpeechListener: TextToSpeechListener =
       this.onTextToSpeechEvent.bind(this);
 
+  constructor(private cdr: ChangeDetectorRef) {}
+
   ngOnInit() {
     TextToSpeechComponent.registerTextToSpeechListener(
         this.textToSpeechListener);
@@ -48,15 +50,18 @@ export class SpeakButtonComponent implements OnInit, OnDestroy {
     } else if (event.state === 'ERROR') {
       this.state = State.ERROR;
       setTimeout(() => {
-        this.state = State.READY;
+        if (this.state === State.ERROR) {
+          this.state = State.READY;
+          this.cdr.detectChanges();
+        }
       }, SpeakButtonComponent.ERROR_STATE_DELAY_MILLIS);
     }
+    this.cdr.detectChanges();
   }
 
   onSpeakButtonClicked(event: Event) {
     if (this.state === State.READY) {
       this.speakButtonClicked.emit(event);
-      // TODO(cais): Add unit test.
     }
   }
 }

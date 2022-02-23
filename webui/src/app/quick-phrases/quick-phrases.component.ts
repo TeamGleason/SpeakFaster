@@ -187,9 +187,11 @@ export class QuickPhrasesComponent implements AfterViewInit, OnChanges,
     if (!this.filterPrefix) {
       return this.phrases;
     }
-    return this.phrases.filter(
-        phrase => phrase.text.toLowerCase().startsWith(
-            this.filterPrefix.toLowerCase()));
+    return this.phrases.filter(phrase => {
+      const words = phrase.text.split(' ');
+      const filter = this.filterPrefix.toLowerCase();
+      return words.some(word => word.startsWith(filter));
+    });
   }
 
   /**

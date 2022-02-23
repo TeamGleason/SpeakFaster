@@ -1,9 +1,8 @@
 import {AfterViewInit, Component, ElementRef, EventEmitter, Input, OnChanges, OnInit, Output, QueryList, SimpleChanges, ViewChildren} from '@angular/core';
-import {Subject, Subscription} from 'rxjs';
+import {Subscription} from 'rxjs';
 import {updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
 import {createUuid} from 'src/utils/uuid';
 
-import {ExternalEventsComponent, KeypressListener} from '../external/external-events.component';
 import {FillMaskRequest, FillMaskResponse, SpeakFasterService} from '../speakfaster-service';
 
 enum State {
@@ -32,6 +31,7 @@ export class AbbreviationRefinementComponent implements OnInit, AfterViewInit,
   private static readonly _NAME = 'AbbreviationRefinementComponent';
   private readonly instanceId =
       AbbreviationRefinementComponent._NAME + '_' + createUuid();
+  private static readonly VALID_WORD_REGEX = /^[A-Za-z]+[,;\-\.\?\!]$/;
 
   @Input() refinementType: RefinementType = 'REPLACE_TOKEN';
   @Input() fillMaskRequest!: FillMaskRequest;
@@ -85,15 +85,20 @@ export class AbbreviationRefinementComponent implements OnInit, AfterViewInit,
             (data: FillMaskResponse) => {
               this._replacements.splice(0);
               if (data.results) {
-                this._replacements.push(
-                    ...data.results.map(word => word.trim()));
-                // TODO(cais): Discard punctuation and deduplicate.
-                // TODO(cais): Discard items that are the same as the original
-                // one. .filter(
-                //   result => result.trim().toLowerCase() !==
-                //       this._tokens[index].trim().toLocaleLowerCase()));
+                for (let word of data.results) {
+                  word = word.trim();
+                  if (word.match(
+                          AbbreviationRefinementComponent.VALID_WORD_REGEX)) {
+                    continue;
+                  }
+                  // Remove punctuation.
+                  word = word.replace(/[\.\,\;\-\!\?\_]/g, '');
+                  if (this._replacements.indexOf(word) === -1) {
+                    this._replacements.push(word);
+                  }
+                }
+                this.state = State.CHOOSING_TOKEN_REPLACEMNT;
               }
-              this.state = State.CHOOSING_TOKEN_REPLACEMNT;
             },
             error => {
               this.state = State.ERROR;

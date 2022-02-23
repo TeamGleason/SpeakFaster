@@ -34,6 +34,7 @@ export class LexiconComponent implements OnInit {
   private static readonly REGISTERED_NAMES: string[] = [];
   private static readonly FULL_LEXICON_BY_PREFIX:
       {[prefix: string]: string[]} = {};
+  private static readonly VALID_WORD_REGEX = /[A-Za-z]+[,;\-\.\?\!]/;
 
   /**
    * Replace personal names in input string with registered, user-specific
@@ -52,7 +53,7 @@ export class LexiconComponent implements OnInit {
     for (let i = 0; i < words.length; ++i) {
       let canonicalWord = canonicalizeName(words[i]);
       let punctuation = '';
-      if (canonicalWord.match(/[A-Za-z]+[,;\-\.\?\!]/)) {
+      if (canonicalWord.match(LexiconComponent.VALID_WORD_REGEX)) {
         punctuation = canonicalWord.slice(canonicalWord.length - 1);
         canonicalWord = canonicalWord.slice(0, canonicalWord.length - 1);
       }

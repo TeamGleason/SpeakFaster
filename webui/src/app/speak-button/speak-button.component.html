@@ -1,0 +1,43 @@
+<style>
+mat-progress-spinner {
+  display: inline-block;
+  stroke: #ddd;
+  zoom: 0.3;
+}
+
+.button-image {
+  max-width: 50%;
+  max-height: 50%;
+}
+
+.speak-button {
+  border-radius: 8px;
+  overflow: hidden;
+  background-color: transparent;
+}
+
+</style>
+
+<div
+    class="speak-button"
+    (click)="onSpeakButtonClicked($event)">
+  <img
+      *ngIf="state === 'READY'"
+      class="button-image"
+      src="/assets/images/speak.png"
+      alt="speak phrase as is" />
+  <mat-progress-spinner
+      *ngIf="state === 'REQUESTING'"
+      [mode]="'indeterminate'"
+      [value]="50">
+  </mat-progress-spinner>
+  <img
+      *ngIf="state === 'PLAYING'"
+      class="button-image"
+      src="/assets/images/speak-animation.gif" />
+  <img
+      *ngIf="state === 'ERROR'"
+      class="button-image"
+      src="/assets/images/error-circle.png" />
+</div>
+

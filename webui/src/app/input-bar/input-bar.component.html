@@ -81,7 +81,10 @@ input[type="text"]:disabled{
       #clickableButton
       class="action-button speak-button"
       (click)="onSpeakAsIsButtonClicked($event)">
-      <img class="button-image" src="/assets/images/speak.png" alt="speak phrase as is" />
+    <app-speak-button-component
+        [phrase]="effectivePhrase"
+        (speakButtonClicked)="onSpeakAsIsButtonClicked($event)">
+    </app-speak-button-component>
   </button>
 
   <button

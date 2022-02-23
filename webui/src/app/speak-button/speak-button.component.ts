@@ -62,7 +62,6 @@ export class SpeakButtonComponent implements OnInit, OnDestroy {
   onSpeakButtonClicked(event: Event) {
     if (this.state === State.READY) {
       this.speakButtonClicked.emit(event);
-      // TODO(cais): Add unit test.
     }
   }
 }

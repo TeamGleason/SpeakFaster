@@ -175,7 +175,10 @@
         <button
             #clickableButton
             *ngIf="(state === 'ENTERING_BASE_TEXT' ||
-                    state === 'CHOOSING_PHRASES') && inputStringIsCompatibleWithAbbreviationExpansion &&
+                    state === 'CHOOSING_PHRASES' ||
+                    state === 'CHOOSING_WORD_CHIP' ||
+                    state === 'FOCUSED_ON_WORD_CHIP') &&
+                   inputStringIsCompatibleWithAbbreviationExpansion &&
                    supportsAbbrevationExpansion"
             class="action-button spell-button"
             (click)="onSpellButtonClicked($event)">

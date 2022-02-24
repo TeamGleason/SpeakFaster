@@ -11,7 +11,7 @@ import {FillMaskRequest, SpeakFasterService} from '../speakfaster-service';
 import {InputAbbreviationChangedEvent} from '../types/abbreviation';
 import {TextEntryEndEvent} from '../types/text-entry';
 
-import {InputBarComponent, InputBarControlEvent} from './input-bar.component';
+import {InputBarComponent, InputBarControlEvent, State} from './input-bar.component';
 import {InputBarModule} from './input-bar.module';
 
 @Injectable()
@@ -649,6 +649,88 @@ fdescribe('InputBarComponent', () => {
 
     expect(textEntryEndEvents.length).toEqual(1);
     expect(textEntryEndEvents[0].text).toEqual('i felt great');
+  });
+
+  it('spell button is shown during word refinement', () => {
+    fixture.componentInstance.inputString = 'ifg';
+    inputBarControlSubject.next({
+      chips: [
+        {
+          text: 'i',
+        },
+        {
+          text: 'feel',
+        },
+        {
+          text: 'great',
+        }
+      ]
+    });
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.state).toEqual(State.CHOOSING_WORD_CHIP);
+    const spellButton = fixture.debugElement.query(By.css('.spell-button'));
+    expect(spellButton).not.toBeNull();
+  });
+
+  it('spell button is shown when word chip is chosen', () => {
+    fixture.componentInstance.inputString = 'ifg';
+    inputBarControlSubject.next({
+      chips: [
+        {
+          text: 'i',
+        },
+        {
+          text: 'feel',
+        },
+        {
+          text: 'great',
+        }
+      ]
+    });
+    fixture.detectChanges();
+    const chips =
+        fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'))
+    chips[1].nativeElement.click();
+
+    expect(fixture.componentInstance.state).toEqual(State.FOCUSED_ON_WORD_CHIP);
+    const spellButton = fixture.debugElement.query(By.css('.spell-button'));
+    expect(spellButton).not.toBeNull();
+  });
+
+  it('clicking spell under word refinement enters spelling mode', () => {
+    fixture.componentInstance.inputString = 'ifg';
+    inputBarControlSubject.next({
+      chips: [
+        {
+          text: 'i',
+        },
+        {
+          text: 'feel',
+        },
+        {
+          text: 'great',
+        }
+      ]
+    });
+    fixture.detectChanges();
+    const wordChips =
+        fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'))
+    wordChips[1].nativeElement.click();
+    const spellButton = fixture.debugElement.query(By.css('.spell-button'));
+    spellButton.nativeElement.click();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.state).toEqual(State.CHOOSING_LETTER_CHIP);
+    const letterChips =
+        fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'))
+    expect(letterChips.length).toEqual(3);
+    expect((letterChips[0].componentInstance as InputBarChipComponent).text)
+        .toEqual('i');
+    expect((letterChips[1].componentInstance as InputBarChipComponent).text)
+        .toEqual('f');
+    expect((letterChips[2].componentInstance as InputBarChipComponent).text)
+        .toEqual('g');
   });
 
   // TODO(cais): Test spelling valid word triggers AE, with debounce.

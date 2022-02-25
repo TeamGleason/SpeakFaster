@@ -4,6 +4,7 @@
  */
 import {Component, EventEmitter, Input, OnDestroy, OnInit, Output} from '@angular/core';
 
+import {getContextualPhraseStats, getPhraseStats, HttpEventLogger} from '../event-logger/event-logger-impl';
 import {SpeakFasterService} from '../speakfaster-service';
 import {AddContextualPhraseResponse} from '../types/contextual_phrase';
 
@@ -31,7 +32,9 @@ export class FavoriteButtonComponent implements OnInit, OnDestroy {
 
   state: State = State.READY;
 
-  constructor(public speakFasterService: SpeakFasterService) {}
+  constructor(
+      public speakFasterService: SpeakFasterService,
+      private eventLogger: HttpEventLogger) {}
 
   ngOnInit() {}
 
@@ -49,21 +52,25 @@ export class FavoriteButtonComponent implements OnInit, OnDestroy {
       // This is a to-be-added phrase or a phrase that was just deleted.
       // The action to perform is hence adding phrase.
       this.state = State.REQUESTING;
-      console.log('onFavoriteButtonClicked():', 100);
+      const contextualPhrase = {
+        phraseId: '',  // For AddContextualPhraseRequest, this is ignored.
+        text: this.phrase.trim(),
+        tags: ['favorite'],  // TODO(cais): Do not hardcode this tag
+      };
+      this.eventLogger.logContextualPhraseAdd(
+          getContextualPhraseStats(contextualPhrase));
       this.speakFasterService
           .addContextualPhrase({
             userId: this.userId,
-            contextualPhrase: {
-              phraseId: '',  // For AddContextualPhraseRequest, this is ignored.
-              text: this.phrase.trim(),
-              tags: ['favorite'],  // TODO(cais): Do not hardcode this tag
-            }
+            contextualPhrase,
           })
           .subscribe(
               (data: AddContextualPhraseResponse) => {
                 if (data.errorMessage) {
                   console.error(`Error during adding of contextual phrase: ${
                       data.errorMessage}`);
+                  this.eventLogger.logContextualPhraseAddError(
+                      data.errorMessage);
                   this.state = State.ERROR;
                   return;
                 }
@@ -76,6 +83,7 @@ export class FavoriteButtonComponent implements OnInit, OnDestroy {
                 }
               },
               error => {
+                this.eventLogger.logContextualPhraseAddError('');
                 setTimeout(() => {
                   this.state = State.ERROR;
                   this.scheduleReset();
@@ -88,8 +96,8 @@ export class FavoriteButtonComponent implements OnInit, OnDestroy {
       if (!this.phraseId) {
         throw new Error('Cannot delete phrase: Empty phrase ID');
       }
-      console.log('onFavoriteButtonClicked():', 200);
       this.state = State.REQUESTING;
+      this.eventLogger.logContextualPhraseDelete(getPhraseStats(this.phrase));
       this.speakFasterService
           .deleteContextualPhrase({
             userId: this.userId,
@@ -99,15 +107,17 @@ export class FavoriteButtonComponent implements OnInit, OnDestroy {
               data => {
                 if (data.errorMessage) {
                   console.error(`Error during adding of contextual phrase: ${
-                    data.errorMessage}`);
+                      data.errorMessage}`);
+                  this.eventLogger.logContextualPhraseDeleteError(
+                      data.errorMessage);
                   this.state = State.ERROR;
                 } else {
                   this.state = State.SUCCESS;
                 }
               },
               error => {
-                console.log('onFavoriteButtonClicked():', 220);
                 // TODO(cais): Display error in UI.
+                this.eventLogger.logContextualPhraseDeleteError('');
                 this.state = State.ERROR;
                 this.scheduleReset();
                 console.error('Deleting quick phrase failed:', error);

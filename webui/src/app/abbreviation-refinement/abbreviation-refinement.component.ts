@@ -3,6 +3,7 @@ import {Subscription} from 'rxjs';
 import {updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
 import {createUuid} from 'src/utils/uuid';
 
+import {getAbbreviationExpansionResponseStats, HttpEventLogger} from '../event-logger/event-logger-impl';
 import {FillMaskRequest, FillMaskResponse, SpeakFasterService} from '../speakfaster-service';
 
 enum State {
@@ -51,7 +52,9 @@ export class AbbreviationRefinementComponent implements OnInit, AfterViewInit,
   state: State = State.REQUEST_ONGOING;
   private clickableButtonsSubscription?: Subscription;
 
-  constructor(public speakFasterService: SpeakFasterService) {}
+  constructor(
+      public speakFasterService: SpeakFasterService,
+      private eventLogger: HttpEventLogger) {}
 
   ngOnInit() {}
 
@@ -83,6 +86,8 @@ export class AbbreviationRefinementComponent implements OnInit, AfterViewInit,
     this.speakFasterService.fillMask(this.fillMaskRequest)
         .subscribe(
             (data: FillMaskResponse) => {
+              this.eventLogger.logAbbreviationExpansionWordRefinemenResponse(
+                  getAbbreviationExpansionResponseStats(data.results));
               this._replacements.splice(0);
               if (data.results) {
                 for (let word of data.results) {
@@ -108,9 +113,11 @@ export class AbbreviationRefinementComponent implements OnInit, AfterViewInit,
   }
 
   onReplacementButtonClicked(event: Event, index: number) {
+    const replacement = this._replacements[index];
+    this.eventLogger.logAbbreviationExpansionWordRefinementSelection(
+        replacement.length, index);
     this.refinementResult.emit({
-      phrase: this.fillMaskRequest.phraseWithMask.replace(
-          '_', this._replacements[index]),
+      phrase: this.fillMaskRequest.phraseWithMask.replace('_', replacement),
       isAbort: false,
     });
   }

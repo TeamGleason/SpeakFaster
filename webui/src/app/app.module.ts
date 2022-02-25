@@ -10,7 +10,6 @@ import {ExternalEventsModule} from './external/external-events.module';
 import {InputBarModule} from './input-bar/input-bar.module';
 import {KeyboardModule} from './keyboard/keyboard.module';
 import {LexiconModule} from './lexicon/lexicon.module';
-import {LoggerModule} from './logger/logger.module';
 import {MetricsModule} from './metrics/metrics.module';
 import {MiniBarModule} from './mini-bar/mini-bar.module';
 import {PartnerModule} from './partner/partner.module';
@@ -31,7 +30,6 @@ import {TextToSpeechModule} from './text-to-speech/text-to-speech.module';
     ExternalEventsModule,
     KeyboardModule,
     LexiconModule,
-    LoggerModule,
     MetricsModule,
     MiniBarModule,
     PartnerModule,

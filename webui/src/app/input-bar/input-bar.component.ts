@@ -6,6 +6,7 @@ import {updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/
 import {keySequenceEndsWith} from 'src/utils/text-utils';
 import {createUuid} from 'src/utils/uuid';
 
+import {getPhraseStats, HttpEventLogger} from '../event-logger/event-logger-impl';
 import {ExternalEventsComponent, repeatVirtualKey, VIRTUAL_KEY} from '../external/external-events.component';
 import {LexiconComponent, LoadLexiconRequest} from '../lexicon/lexicon.component';
 import {FillMaskRequest, SpeakFasterService} from '../speakfaster-service';
@@ -98,7 +99,9 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly inFlightAbbreviationExpansionTriggers:
       Subject<InputAbbreviationChangedEvent> = new Subject();
 
-  constructor(public speakFasterService: SpeakFasterService) {}
+  constructor(
+      public speakFasterService: SpeakFasterService,
+      private eventLogger: HttpEventLogger) {}
 
   ngOnInit() {
     this.textEntryEndSubjectSubscription = this.textEntryEndSubject.subscribe(
@@ -129,6 +132,8 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
             }
             if (this._chips.length > 0) {
               this.state = State.CHOOSING_WORD_CHIP;
+              this.eventLogger.logAbbreviationExpansionStartWordRefinementMode(
+                  getPhraseStats(this._chips.map(chip => chip.text).join(' ')));
             }
           }
         });
@@ -209,6 +214,8 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
         }
       }
       if (matchingChipIndices.length === 1) {
+        this.eventLogger.logAbbreviationExpansionSpellingChipSelection(
+            this._chips.length, matchingChipIndices[0]);
         this.state = State.FOCUSED_ON_LETTER_CHIP;
         this.baseReconstructedText = this.latestReconstructedString.slice(
             0, this.latestReconstructedString.length - 1);
@@ -351,6 +358,8 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
       chips: abbreviation.split('').map(char => ({text: char})),
     });
     this.state = State.CHOOSING_LETTER_CHIP;
+    this.eventLogger.logAbbreviationExpansionStartSpellingMode(
+        abbreviation.length);
   }
 
   onChipClicked(index: number) {
@@ -358,6 +367,8 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     this.baseReconstructedText = this.latestReconstructedString;
     if (this.state === State.CHOOSING_LETTER_CHIP ||
         this.state === State.FOCUSED_ON_LETTER_CHIP) {
+      this.eventLogger.logAbbreviationExpansionSpellingChipSelection(
+          this._chips.length, index);
       this.state = State.FOCUSED_ON_LETTER_CHIP;
       const firstLetter = this._chips[index].text[0];
       this.loadPrefixedLexiconRequestSubject.next({
@@ -378,6 +389,9 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
       tokens[index] = '_';
       const phraseWithMask = tokens.join(' ');
       const maskInitial = this._chips[index].text[0];
+      this.eventLogger.logAbbreviatonExpansionWordRefinementRequest(
+          getPhraseStats(this._chips.map(chip => chip.text).join(' ')),
+          this._focusChipIndex);
       this.fillMaskTriggers.next({
         speechContent: this.contextStrings.join('|'),
         phraseWithMask,
@@ -448,6 +462,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!text) {
       return;
     }
+    this.eventLogger.logInputBarSpeakButtonClick(getPhraseStats(text));
     this.textEntryEndSubject.next({
       text,
       timestampMillis: Date.now(),

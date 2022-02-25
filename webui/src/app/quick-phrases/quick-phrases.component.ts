@@ -6,6 +6,7 @@ import {allItemsEqual} from 'src/utils/text-utils';
 import {createUuid} from 'src/utils/uuid';
 
 import {AppComponent} from '../app.component';
+import {getContextualPhraseStats, HttpEventLogger} from '../event-logger/event-logger-impl';
 import {VIRTUAL_KEY} from '../external/external-events.component';
 import {InputBarControlEvent} from '../input-bar/input-bar.component';
 import {PhraseComponent} from '../phrase/phrase.component';
@@ -56,7 +57,7 @@ export class QuickPhrasesComponent implements AfterViewInit, OnChanges,
 
   constructor(
       public speakFasterService: SpeakFasterService,
-      private cdr: ChangeDetectorRef) {}
+      private eventLogger: HttpEventLogger, private cdr: ChangeDetectorRef) {}
 
   private retrievePhrases(): void {
     // Using empty text prefix and empty conversation turns means retrieving
@@ -242,6 +243,9 @@ export class QuickPhrasesComponent implements AfterViewInit, OnChanges,
       injectedKeys.push(VIRTUAL_KEY.SPACE);  // Append a space at the end.
       injectKeys(injectedKeys);
     }
+    this.eventLogger.logContextualPhraseSelection(
+        getContextualPhraseStats(this.phrases[index]),
+        toTriggerInAppTextToSpeech ? 'TTS' : 'INJECTION');
   }
 
   private appResizeCallback() {

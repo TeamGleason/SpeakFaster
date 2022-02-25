@@ -6,6 +6,7 @@ import {Observable, of, Subject, throwError} from 'rxjs';
 import {createUuid} from 'src/utils/uuid';
 
 import * as cefSharp from '../../utils/cefsharp';
+import {HttpEventLogger} from '../event-logger/event-logger-impl';
 import {SpeakFasterService, TextPredictionRequest, TextPredictionResponse} from '../speakfaster-service';
 import {TestListener} from '../test-utils/test-cefsharp-listener';
 import {ContextualPhrase} from '../types/contextual_phrase';
@@ -98,7 +99,8 @@ describe('QuickPhrasesComponent', () => {
           imports: [QuickPhrasesModule],
           declarations: [QuickPhrasesComponent],
           providers: [
-            {provide: SpeakFasterService, useValue: speakFasterServiceForTest}
+            {provide: SpeakFasterService, useValue: speakFasterServiceForTest},
+            {provide: HttpEventLogger, useValue: new HttpEventLogger(null)},
           ],
         })
         .compileComponents();

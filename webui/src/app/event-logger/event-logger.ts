@@ -1,6 +1,5 @@
 /** Abstract interface and related type definitions for app usage logging. */
 
-import {VIRTUAL_KEY} from '../external/external-events.component';
 import {AppState} from '../types/app-state';
 
 // Whether the selected text is for text-to-speech (TTS) output or injection
@@ -18,9 +17,9 @@ export interface PhraseStats {
   numPunctuation: number;
 }
 
-export interface QuickPhraseStats extends PhraseStats {
+export interface ContextualPhraseStats extends PhraseStats {
   // Tags attached to the quick phrase.
-  tags: string[];
+  tags?: string[];
 }
 
 export interface AbbreviationExpansionRequestStats {
@@ -48,7 +47,7 @@ export interface AbbreviationExpansionResponseStats {
 // Name of an app setting.
 export type SettingName = 'TtsVoiceType'|'TtsVolume';
 
-export interface AppUsageLogger {
+export interface EventLogger {
   /** Log the starting of a new (non-companion) session (opening the app). */
   logSessionStart(): Promise<void>;
 
@@ -62,77 +61,82 @@ export interface AppUsageLogger {
   logCompanionSessionEnd(): Promise<void>;
 
   /** Log app state change (e.g., switching to a new tab, or going into the */
-  logAppStageChange(appState: AppState): Promise<void>;
+  logAppStageChange(oldState: AppState, newState: AppState): Promise<void>;
 
   /**
-   * Log a keypress.
-   * @param vkCode must be `null` unless it is VIRTUAL_KEY (e.g., space,
-   *     backspace).
-   * @param appState: AppState in which this keypress happened.
+   * Log a keypress. The text content keys will not be logged for their content
+   * (e.g, alphanumeric keys and puncutation keys). Only special keys such as
+   * Enter, Space, Backspace, Ctrl and Shift will be logged for their content.
    */
-  logKeypress(vkCode: null|VIRTUAL_KEY, appState: AppState): Promise<void>;
+  logKeypress(keyboardEvent: KeyboardEvent): Promise<void>;
+
+  /** Log the clicking of the speak button in the input bar. */
+  logInputBarSpeakButtonClick(phraseStats: PhraseStats): Promise<void>;
 
   /**
    * Log the selection of a quick phrase for output.
-   * @param quickPhraseLength Character length of the selected quick phrase.
-   * @param numWords Number of words in the selected quick phrase.
+   * @param contextualPhraseStats
    * @param textSelectionType Type of text selection.
-   * @param appState App state in which the quick-phrase selection happened.
    */
-  logQuickPhraseSelection(
-      quickPhraseLength: number, numWords: number,
-      textSelectionType: TextSelectionType, appState: AppState): Promise<void>;
+  logContextualPhraseSelection(
+      contextualPhraseStats: ContextualPhraseStats,
+      textSelectionType: TextSelectionType): Promise<void>;
 
   /** Log the addition of a quick phrase. */
-  logQuickPhraseAdd(quickPhraseStats: QuickPhraseStats, appState: AppState):
+  logContextualPhraseAdd(contextualPhraseStats: ContextualPhraseStats):
       Promise<void>;
 
   /** Log an error in handling add-quick-phrase request. */
-  logQuickPhraseAddError(errorMessage: string, appState: AppState):
-      Promise<void>;
+  logContextualPhraseAddError(errorMessage: string): Promise<void>;
 
   /** Log the deletion of a quick phrase. */
-  logQuickPhraseDelete(quickPhraseStats: QuickPhraseStats, appState: AppState):
-      Promise<void>;
+  logContextualPhraseDelete(phraseStats: PhraseStats): Promise<void>;
 
   /** Log an error in handling delete-quick-phrase request. */
-  logQuickPhraseDeleteError(errorMessage: string, appState: AppState):
-      Promise<void>;
+  logContextualPhraseDeleteError(errorMessage: string): Promise<void>;
 
-  /** Log the restoration of a quick phrase after deletion. */
-  logQuickPhraseRestore(quickPhraseStats: QuickPhraseStats, appState: AppState):
-      Promise<void>;
-
-  /** Log abbreviaton expansion request. */
+  /** Log abbreviation expansion request. */
   logAbbreviationExpansionRequest(stats: AbbreviationExpansionRequestStats):
       Promise<void>;
 
-  /** Log abbreviaton expansion response. */
-  logAbbreviatoinExpansionResponse(stats: AbbreviationExpansionResponseStats):
+  /** Log abbreviation expansion response. */
+  logAbbreviationExpansionResponse(stats: AbbreviationExpansionResponseStats):
       Promise<void>;
 
   /** Log selection of abbreviation expansion option. */
-  logAbbreviationExpansionSelection(phraseStats: PhraseStats): Promise<void>;
+  logAbbreviationExpansionSelection(
+      phraseStats: PhraseStats,
+      textSelectionType: TextSelectionType): Promise<void>;
 
   /** Log entering word-refinement mode for abbreviation expansion. */
-  logAbbreviationExpansionStartWordRefinementMode(): Promise<void>;
+  logAbbreviationExpansionStartWordRefinementMode(phraseStats: PhraseStats):
+      Promise<void>;
 
   /** Log a word refinement request for abbreviation expansion. */
   logAbbreviatonExpansionWordRefinementRequest(
       phraseStats: PhraseStats, wordIndex: number): Promise<void>;
 
+  /** Log a response to a word refinement request for abbreviation expansion. */
   logAbbreviationExpansionWordRefinemenResponse(
       stats: AbbreviationExpansionResponseStats): Promise<void>;
 
+  /**
+   * Log the selection of a replacement (refinement) word during
+   * abbreviation-expansion word refinement.
+   */
+  logAbbreviationExpansionWordRefinementSelection(
+      wordLength: number, wordIndex: number): Promise<void>;
+
   /** Log entering spelling mode for abbreviation expansion. */
-  logAbbreviationExpansionStartSpellingMode(): Promise<void>;
+  logAbbreviationExpansionStartSpellingMode(abbreviationLength: number):
+      Promise<void>;
 
   /**
    * Log the selection of a letter chip for the spelling mode of abbreviation
    * expansion.
    */
-  logAbbreviationExpansionSpellingChipSelectio(
-      phraseStats: PhraseStats, wordIndex: number): Promise<void>;
+  logAbbreviationExpansionSpellingChipSelection(
+      abbreviationLength: number, wordIndex: number): Promise<void>;
 
   /**
    * Log the mode abort during abbreviation expansion, e.g., abort from word

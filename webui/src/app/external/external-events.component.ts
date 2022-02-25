@@ -32,6 +32,7 @@ const MIN_GAZE_KEYPRESS_MILLIS = 200;
 export enum VIRTUAL_KEY {
   BACKSPACE = 'Backspace',
   ENTER = 'Enter',
+  ALT = 'Alt',
   SPACE = ' ',
   END = 'End',
   HOME = 'Home',
@@ -58,6 +59,7 @@ export enum VIRTUAL_KEY {
 export const VKCODE_SPECIAL_KEYS: {[vkCode: number]: VIRTUAL_KEY} = {
   8: VIRTUAL_KEY.BACKSPACE,
   13: VIRTUAL_KEY.ENTER,
+  18: VIRTUAL_KEY.ALT,
   32: VIRTUAL_KEY.SPACE,
   35: VIRTUAL_KEY.END,
   36: VIRTUAL_KEY.HOME,

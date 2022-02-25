@@ -5,6 +5,8 @@ import {Subject} from 'rxjs';
 import {bindCefSharpListener, registerExternalKeypressHook, resizeWindow, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from '../utils/cefsharp';
 import {createUuid} from '../utils/uuid';
 
+import {registerAppState} from './app-state-registry';
+import {HttpEventLogger} from './event-logger/event-logger-impl';
 import {ExternalEventsComponent} from './external/external-events.component';
 import {InputBarControlEvent} from './input-bar/input-bar.component';
 import {LoadLexiconRequest} from './lexicon/lexicon.component';
@@ -65,7 +67,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   addContextualPhraseSubject: Subject<AddContextualPhraseRequest> =
       new Subject();
   inputBarControlSubject: Subject<InputBarControlEvent> = new Subject();
-  loadPrefixedLexiconRequestSubject: Subject<LoadLexiconRequest> = new Subject();
+  loadPrefixedLexiconRequestSubject: Subject<LoadLexiconRequest> =
+      new Subject();
 
   // Context speech content used for AE and other text predictions.
   readonly contextStringsAvailable: string[] = [];
@@ -77,9 +80,14 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   constructor(
       private route: ActivatedRoute,
-      public speakFasterService: SpeakFasterService) {}
+      public speakFasterService: SpeakFasterService,
+      public eventLogger: HttpEventLogger) {
+    this.eventLogger.setUserId(this._userId);
+    console.log('Event logger session ID:', this.eventLogger.sessionId);
+  }
 
   ngOnInit() {
+    registerAppState(this.appState);
     bindCefSharpListener();
     this.route.queryParams.subscribe(params => {
       if (params['partner']) {
@@ -133,10 +141,12 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
           updateButtonBoxesForElements(this.instanceId, queryList);
         });
     AppComponent.registerAppResizeCallback(this.appResizeCallback.bind(this));
+    this.eventLogger.logSessionStart();
   }
 
   ngOnDestroy() {
     updateButtonBoxesToEmpty(this.instanceId);
+    this.eventLogger.logSessionEnd();
   }
 
   private appResizeCallback() {
@@ -156,12 +166,14 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     if (this.appState === newState) {
       return;
     }
+    this.eventLogger.logAppStageChange(this.appState, newState);
     // TODO(cais): Debug the case of finishing an AE in InputBarComponent then
     // switching to a QuickPhraseComponent to do filtering.
     this.inputBarControlSubject.next({
       clearAll: true,
     });
     this.appState = newState;
+    registerAppState(this.appState);
     if (this.appState !== AppState.MINIBAR) {
       this.previousNonMinimizedAppState = this.appState;
     }

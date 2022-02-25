@@ -5,6 +5,7 @@ import {createUuid} from 'src/utils/uuid';
 
 import {injectKeys, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from '../../utils/cefsharp';
 import {RefinementResult, RefinementType} from '../abbreviation-refinement/abbreviation-refinement.component';
+import {getAbbreviationExpansionRequestStats, getAbbreviationExpansionResponseStats, getPhraseStats, HttpEventLogger} from '../event-logger/event-logger-impl';
 import {VIRTUAL_KEY} from '../external/external-events.component';
 import {InputBarControlEvent} from '../input-bar/input-bar.component';
 import {LexiconComponent} from '../lexicon/lexicon.component';
@@ -75,7 +76,7 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
 
   constructor(
       public speakFasterService: SpeakFasterService,
-      private cdr: ChangeDetectorRef) {}
+      private eventLogger: HttpEventLogger, private cdr: ChangeDetectorRef) {}
 
   ngOnInit() {
     this.abbreviationExpansionTriggersSubscription =
@@ -268,6 +269,8 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
       numHumanKeypresses: numKeypresses,
       inAppTextToSpeechAudioConfig: toTriggerInAppTextToSpeech ? {} : undefined,
     });
+    this.eventLogger.logAbbreviationExpansionSelection(
+        getPhraseStats(text), toTriggerInAppTextToSpeech ? 'TTS' : 'INJECTION');
     this.state = State.POST_CHOOSING_EXPANSION;
   }
 
@@ -294,6 +297,9 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
     const usedContextStrings = this.usedContextStrings;
     const numSamples = this.getNumSamples(this.abbreviation);
     const usedContextString = usedContextStrings.join('|');
+    this.eventLogger.logAbbreviationExpansionRequest(
+        getAbbreviationExpansionRequestStats(
+            this.abbreviation, usedContextStrings));
     console.log(
         `Calling expandAbbreviation() (numSamples=${numSamples}):` +
         `context='${usedContextString}'; ` +
@@ -304,6 +310,8 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
             this.abbreviation.precedingText)
         .subscribe(
             data => {
+              this.eventLogger.logAbbreviationExpansionResponse(
+                  getAbbreviationExpansionResponseStats(data.exactMatches));
               if (data.exactMatches != null) {
                 data.exactMatches.forEach(exactMatch => {
                   const replaced =
@@ -320,6 +328,8 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
               this.cdr.detectChanges();
             },
             error => {
+              this.eventLogger.logAbbreviationExpansionResponse(
+                  getAbbreviationExpansionResponseStats(undefined, 'error'));
               this.state = State.CHOOSING_EXPANSION;
               this.receivedEmptyOptions = false;
               this.responseError = error.message;

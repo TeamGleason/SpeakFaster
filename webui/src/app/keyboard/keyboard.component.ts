@@ -1,5 +1,6 @@
 import {Component, HostListener} from '@angular/core';
 
+import {HttpEventLogger} from '../event-logger/event-logger-impl';
 import {getVirtualkeyCode} from '../external/external-events.component';
 
 // The return value indicates whether the event has been handled.
@@ -46,8 +47,11 @@ export class KeyboardComponent {
     }
   }
 
+  constructor(private eventLogger: HttpEventLogger) {}
+
   @HostListener('document:keydown', ['$event'])
   onKeydown(event: KeyboardEvent) {
+    this.eventLogger.logKeypress(event);
     // First, call externalKeypressHook().
     if ((window as any).externalKeypressHook !== undefined) {
       try {

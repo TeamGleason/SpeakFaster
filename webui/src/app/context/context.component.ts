@@ -4,6 +4,7 @@ import {AfterViewInit, ChangeDetectorRef, Component, EventEmitter, Input, OnInit
 import {Subject, Subscription, timer} from 'rxjs';
 
 import {ConversationTurnComponent} from '../conversation-turn/conversation-turn.component';
+import {getPhraseStats, HttpEventLogger} from '../event-logger/event-logger-impl';
 import {SpeakFasterService} from '../speakfaster-service';
 import {ConversationTurnContextSignal, getConversationTurnContextSignal} from '../types/context';
 import {TextEntryEndEvent} from '../types/text-entry';
@@ -40,7 +41,7 @@ export class ContextComponent implements OnInit, AfterViewInit {
 
   constructor(
       private speakFasterService: SpeakFasterService,
-      private cdr: ChangeDetectorRef) {}
+      private eventLogger: HttpEventLogger, private cdr: ChangeDetectorRef) {}
 
   ngOnInit() {
     if (!this.userId) {
@@ -210,6 +211,9 @@ export class ContextComponent implements OnInit, AfterViewInit {
                 }
                 this.contextSignals.push(
                     (contextSignal as ConversationTurnContextSignal));
+                this.eventLogger.logIncomingContextualTurn(getPhraseStats(
+                    (contextSignal as ConversationTurnContextSignal)
+                        .conversationTurn.speechContent));
               }
               this.limitContextItemsCount();
               this.cleanUpAndSortFocusContextIds();

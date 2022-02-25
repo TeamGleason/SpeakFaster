@@ -2,6 +2,7 @@ import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {By} from '@angular/platform-browser';
 import {Subject} from 'rxjs';
 
+import {HttpEventLogger} from '../event-logger/event-logger-impl';
 import {TextEntryEndEvent} from '../types/text-entry';
 
 import {ContextComponent} from './context.component';
@@ -16,6 +17,9 @@ describe('ContextComponent', () => {
         .configureTestingModule({
           imports: [ContextModule],
           declarations: [ContextComponent],
+          providers: [
+            {provide: HttpEventLogger, useValue: new HttpEventLogger(null)},
+          ]
         })
         .compileComponents();
     textEntryEndSubject = new Subject();

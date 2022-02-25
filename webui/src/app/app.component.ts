@@ -5,6 +5,8 @@ import {Subject} from 'rxjs';
 import {bindCefSharpListener, registerExternalKeypressHook, resizeWindow, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from '../utils/cefsharp';
 import {createUuid} from '../utils/uuid';
 
+import {registerAppState} from './app-state-registry';
+import {HttpEventLogger} from './event-logger/event-logger-impl';
 import {ExternalEventsComponent} from './external/external-events.component';
 import {configureService, SpeakFasterService} from './speakfaster-service';
 import {InputAbbreviationChangedEvent} from './types/abbreviation';
@@ -37,6 +39,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   @ViewChild('contentWrapper') contentWrapper!: ElementRef<HTMLDivElement>;
 
+  readonly languageCode = 'en-us';
   appState: AppState = AppState.ABBREVIATION_EXPANSION;
   private previousNonMinimizedAppState: AppState = this.appState;
 
@@ -46,6 +49,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   // an automatically authorized browser context.)
   private useAccessToken = true;
 
+  // TODO(cais): Control with URL parameter.
+  private _userId: string = 'testuser';
   private _endpoint: string = '';
   private _accessToken: string = '';
 
@@ -61,9 +66,14 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   constructor(
       private route: ActivatedRoute,
-      public speakFasterService: SpeakFasterService) {}
+      public speakFasterService: SpeakFasterService,
+      public eventLogger: HttpEventLogger) {
+    this.eventLogger.setUserId(this._userId);
+    console.log('Event logger session ID:', this.eventLogger.sessionId);
+}
 
   ngOnInit() {
+    registerAppState(this.appState);
     bindCefSharpListener();
     this.route.queryParams.subscribe(params => {
       if (params['partner']) {
@@ -126,10 +136,12 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
           updateButtonBoxesForElements(this.instanceId, queryList);
         });
     AppComponent.registerAppResizeCallback(this.appResizeCallback.bind(this));
+    this.eventLogger.logSessionStart();
   }
 
   ngOnDestroy() {
     updateButtonBoxesToEmpty(this.instanceId);
+    this.eventLogger.logSessionEnd();
   }
 
   private appResizeCallback() {
@@ -146,6 +158,10 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private changeAppState(newState: AppState) {
+    if (this.appState === newState) {
+      return;
+    }
+    this.eventLogger.logAppStageChange(this.appState, newState);
     this.appState = newState;
     if (this.appState !== AppState.MINIBAR) {
       this.previousNonMinimizedAppState = this.appState;

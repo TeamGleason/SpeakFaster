@@ -4,6 +4,7 @@ import {ChangeDetectorRef, Component, EventEmitter, Input, OnInit, Output, Query
 import {Subject} from 'rxjs';
 
 import {ConversationTurnComponent} from '../conversation-turn/conversation-turn.component';
+import {getPhraseStats, HttpEventLogger} from '../event-logger/event-logger-impl';
 import {ConversationTurnContextSignal, getConversationTurnContextSignal} from '../types/context';
 import {TextEntryEndEvent} from '../types/text-entry';
 
@@ -31,7 +32,9 @@ export class ContextComponent implements OnInit {
 
   private readonly focusContextIds: string[] = [];
 
-  constructor(private cdr: ChangeDetectorRef) {}
+  constructor(
+      private eventLogger: HttpEventLogger,
+      private cdr: ChangeDetectorRef) {}
 
   ngOnInit() {
     this.focusContextIds.splice(0);

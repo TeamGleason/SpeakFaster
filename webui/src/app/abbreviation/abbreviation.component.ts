@@ -4,6 +4,7 @@ import {keySequenceEndsWith, limitStringLength} from 'src/utils/text-utils';
 import {createUuid} from 'src/utils/uuid';
 
 import {injectKeys, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from '../../utils/cefsharp';
+import {getAbbreviationExpansionRequestStats, getAbbreviationExpansionResponseStats, getPhraseStats, HttpEventLogger} from '../event-logger/event-logger-impl';
 import {ExternalEventsComponent, KeypressListener, repeatVirtualKey, VIRTUAL_KEY} from '../external/external-events.component';
 import {SpeakFasterService} from '../speakfaster-service';
 import {AbbreviationSpec, InputAbbreviationChangedEvent} from '../types/abbreviation';
@@ -63,7 +64,7 @@ export class AbbreviationComponent implements OnDestroy, OnInit, AfterViewInit {
 
   constructor(
       public speakFasterService: SpeakFasterService,
-      private cdr: ChangeDetectorRef) {}
+      private eventLogger: HttpEventLogger, private cdr: ChangeDetectorRef) {}
 
   ngOnInit() {
     ExternalEventsComponent.registerKeypressListener(this.keypressListener);
@@ -237,6 +238,8 @@ export class AbbreviationComponent implements OnDestroy, OnInit, AfterViewInit {
       injectedKeys.push(VIRTUAL_KEY.SPACE);  // Append a space at the end.
       injectKeys(injectedKeys);
     }
+    this.eventLogger.logAbbreviationExpansionSelection(
+        getPhraseStats(text), toTriggerInAppTextToSpeech ? 'TTS' : 'INJECTION');
     // TODO(cais): Prevent selection in gap state.
     setTimeout(
         () => this.resetState(),
@@ -278,6 +281,9 @@ export class AbbreviationComponent implements OnDestroy, OnInit, AfterViewInit {
     // TODO(#49): Limit by token length?
     const numSamples = this.getNumSamples(this.abbreviation);
     const usedContextString = usedContextStrings.join('|');
+    this.eventLogger.logAbbreviationExpansionRequest(
+        getAbbreviationExpansionRequestStats(
+            this.abbreviation, usedContextStrings));
     console.log(
         `Calling expandAbbreviation() (numSamples=${numSamples}):` +
         `context='${usedContextString}'; ` +
@@ -288,6 +294,8 @@ export class AbbreviationComponent implements OnDestroy, OnInit, AfterViewInit {
             this.abbreviation.precedingText)
         .subscribe(
             data => {
+              this.eventLogger.logAbbreviationExpansionResponse(
+                  getAbbreviationExpansionResponseStats(data.exactMatches));
               if (data.exactMatches != null) {
                 this.abbreviationOptions.push(...data.exactMatches);
               }
@@ -296,6 +304,8 @@ export class AbbreviationComponent implements OnDestroy, OnInit, AfterViewInit {
               this.cdr.detectChanges();
             },
             error => {
+              this.eventLogger.logAbbreviationExpansionResponse(
+                  getAbbreviationExpansionResponseStats(undefined, 'error'));
               this.state = State.CHOOSING_EXPANSION;
               this.receivedEmptyOptions = false;
               this.responseError = error.message;

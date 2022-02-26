@@ -28,9 +28,9 @@ export type EventName =
     'AbbreviationExpansionWordRefinementResponse'|
     'AbbreviationExpansionWordRefinementSelection'|'AppStateChange'|
     'ContextualPhraseAdd'|'ContextualPhraseAddError'|'ContextualPhraseDelete'|
-    'ContextualPhraseDeleteError'|'IncomingContextualTurn'|
-    'InputBarSpeakButtonClick'|'Keypress'|'SessionEnd'|'SessionStart'|
-    'SettingsChange';
+    'ContextualPhraseDeleteError'|'ContextualPhraseSelection'|
+    'IncomingContextualTurn'|'InputBarSpeakButtonClick'|'Keypress'|'SessionEnd'|
+    'SessionStart'|'SettingsChange';
 
 export type EventLogEntry = {
   userId: string;
@@ -224,7 +224,7 @@ export class HttpEventLogger implements EventLogger {
           timestamp: this.getUtcEpochMillis(),
           timezone: this.timezone,
           sessionId: this.sessionId,
-          eventName: 'ContextualPhraseAdd',
+          eventName: 'ContextualPhraseSelection',
           eventData: JSON.stringify({contextualPhraseStats, textSelectionType}),
           appState: getAppState(),
         })

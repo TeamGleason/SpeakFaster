@@ -4,6 +4,7 @@ import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {By} from '@angular/platform-browser';
 import {Subject} from 'rxjs';
 
+import {HttpEventLogger} from '../event-logger/event-logger-impl';
 import {repeatVirtualKey, VIRTUAL_KEY} from '../external/external-events.component';
 import {InputBarChipComponent} from '../input-bar-chip/input-bar-chip.component';
 import {LoadLexiconRequest} from '../lexicon/lexicon.component';
@@ -62,7 +63,8 @@ fdescribe('InputBarComponent', () => {
           imports: [InputBarModule],
           declarations: [InputBarComponent],
           providers: [
-            {provide: SpeakFasterService, useValue: speakFasterServiceForTest}
+            {provide: SpeakFasterService, useValue: speakFasterServiceForTest},
+            {provide: HttpEventLogger, useValue: new HttpEventLogger(null)},
           ],
         })
         .compileComponents();
@@ -451,8 +453,8 @@ fdescribe('InputBarComponent', () => {
     const spellButton = fixture.debugElement.query(By.css('.spell-button'));
     spellButton.nativeElement.click();
     fixture.detectChanges();
-    // The first three keys ('x', 'y' and 'z') are irrelevant and hence must be
-    // ignored.
+    // The first three keys ('x', 'y' and 'z') are irrelevant and hence must
+    // be ignored.
     const spellSequence = ['x', 'y', 'z', 'b', 'i', 't'];
     const spellReconstructedText = reconstructedText + spellSequence.join('');
     enterKeysIntoComponent(spellSequence, spellReconstructedText, 3);
@@ -474,8 +476,8 @@ fdescribe('InputBarComponent', () => {
     const {abbreviationSpec} = inputAbbreviationChangeEvents[0];
     expect(abbreviationSpec.readableString).toEqual('a bit c');
     expect(abbreviationSpec.tokens.length).toEqual(3);
-    // TODO(cais): Sort out the eraser sequence when there are irrelevant keys.
-    // expect(abbreviationSpec.eraserSequence)
+    // TODO(cais): Sort out the eraser sequence when there are irrelevant
+    // keys. expect(abbreviationSpec.eraserSequence)
     //     .toEqual(repeatVirtualKey(VIRTUAL_KEY.BACKSPACE, 9));
   });
 

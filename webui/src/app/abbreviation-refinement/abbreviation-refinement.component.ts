@@ -102,8 +102,8 @@ export class AbbreviationRefinementComponent implements OnInit, AfterViewInit,
                     this._replacements.push(word);
                   }
                 }
-                this.state = State.CHOOSING_TOKEN_REPLACEMNT;
               }
+              this.state = State.CHOOSING_TOKEN_REPLACEMNT;
             },
             error => {
               this.state = State.ERROR;

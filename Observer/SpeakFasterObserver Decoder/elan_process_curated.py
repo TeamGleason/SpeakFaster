@@ -32,6 +32,10 @@ SPEKAER_MAP_COLUMN_HEADS = ("RealName", "Pseudonym")
 REDACTED_KEY = "[RedactedKey]"
 REDACTED_SPEKAER_ID = "redacted"
 EXPECTED_BACKGROUND_SPEECH_KEY = "[BackgroundSpeech]"
+UNINTELLIGIBLE_LABEL_STRING = "Unintelligible"
+UNINTELLIGIBLE_ARTICULATION_KEY = "[%s:Articulation]" % UNINTELLIGIBLE_LABEL_STRING
+UNINTELLIGIBLE_CROSSTALK_KEY = "[%s:Crosstalk]" % UNINTELLIGIBLE_LABEL_STRING
+UNINTELLIGIBLE_NOISE_KEY = "[%s:Noise]" % UNINTELLIGIBLE_LABEL_STRING
 _REDACT_TIME_RANGE_REGEX = re.compile("\[Redacted[A-Za-z]*?:.*?\]")
 
 
@@ -315,7 +319,10 @@ def apply_speaker_map_and_redaction_masks(rows, realname_to_pseudonym):
               pseudonymized_content)
         label = pseudonymized_content.strip()[
             :pseudonymized_content.strip().index("]") + 1]
-        if label not in (EXPECTED_BACKGROUND_SPEECH_KEY,):
+        if label not in (EXPECTED_BACKGROUND_SPEECH_KEY,
+                         UNINTELLIGIBLE_ARTICULATION_KEY,
+                         UNINTELLIGIBLE_CROSSTALK_KEY,
+                         UNINTELLIGIBLE_NOISE_KEY):
           raise ValueError(
               "Found unrecognized label at the beginning of: %s" %
               pseudonymized_content)

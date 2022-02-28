@@ -229,7 +229,31 @@ class ApplySpeakerMapGetKeypressRedactionsTest(tf.test.TestCase):
         [5.2, 6.0, "SpeechTranscript",
         "[BackgroundSpeech] Random content [Speaker:Partner005]"])
 
-  def testCatchesUnpairedSquareBracket(self):
+  def testUnintelligibleArticulationTag_isRecognized(self):
+    rows = [
+        [5.2, 6.0, "SpeechTranscript",
+         "[Unintelligible:Articulation] Random content [Speaker:Danielle]"]]
+    ranges = elan_process_curated.apply_speaker_map_and_redaction_masks(
+        rows, self._realname_to_pseudonym)
+    self.assertEqual(ranges, [])
+
+  def testUnintelligibleCrosstalkTag_isRecognized(self):
+    rows = [
+        [5.2, 6.0, "SpeechTranscript",
+         "[Unintelligible:Crosstalk] Random content [Speaker:Danielle]"]]
+    ranges = elan_process_curated.apply_speaker_map_and_redaction_masks(
+        rows, self._realname_to_pseudonym)
+    self.assertEqual(ranges, [])
+
+  def testUnintelligibleNoiseTag_isRecognized(self):
+    rows = [
+        [5.2, 6.0, "SpeechTranscript",
+         "[Unintelligible:Noise] Random content [Speaker:Danielle]"]]
+    ranges = elan_process_curated.apply_speaker_map_and_redaction_masks(
+        rows, self._realname_to_pseudonym)
+    self.assertEqual(ranges, [])
+
+  def testInvalidInitialLabelCausesValueError(self):
     rows = [
         [5.2, 6.0, "SpeechTranscript",
         # Notice the typo here.

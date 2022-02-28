@@ -5,6 +5,7 @@ import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {By} from '@angular/platform-browser';
 
 import {BOUND_LISTENER_NAME} from '../../utils/cefsharp';
+import {HttpEventLogger} from '../event-logger/event-logger-impl';
 
 import {clearSettings, getAppSettings, LOCAL_STORAGE_ITEM_NAME} from './settings';
 import {SettingsComponent} from './settings.component';
@@ -21,7 +22,7 @@ describe('SettingsComponent', () => {
         .configureTestingModule({
           imports: [SettingsModule],
           declarations: [SettingsComponent],
-          providers: [],
+          providers: [{provide: HttpEventLogger, useValue: new HttpEventLogger(null)}],
         })
         .compileComponents();
     fixture = TestBed.createComponent(SettingsComponent);

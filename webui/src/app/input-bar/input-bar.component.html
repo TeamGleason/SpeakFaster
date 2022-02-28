@@ -82,7 +82,7 @@ input[type="text"]:disabled{
       class="action-button speak-button"
       (click)="onSpeakAsIsButtonClicked($event)">
     <app-speak-button-component
-        [phrase]="effectivePhrase"
+        [phrase]="inputString"
         (speakButtonClicked)="onSpeakAsIsButtonClicked($event)">
     </app-speak-button-component>
   </button>

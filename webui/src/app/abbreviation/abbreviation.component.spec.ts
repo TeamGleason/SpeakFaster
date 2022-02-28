@@ -7,6 +7,7 @@ import {of, Subject} from 'rxjs';
 import {createUuid} from 'src/utils/uuid';
 
 import * as cefSharp from '../../utils/cefsharp';
+import {HttpEventLogger} from '../event-logger/event-logger-impl';
 import {ExternalEventsComponent, repeatVirtualKey, VIRTUAL_KEY} from '../external/external-events.component';
 import {TestListener} from '../test-utils/test-cefsharp-listener';
 import {AbbreviationSpec, InputAbbreviationChangedEvent} from '../types/abbreviation';
@@ -29,6 +30,9 @@ describe('AbbreviationComponent', () => {
         .configureTestingModule({
           imports: [AbbreviationModule, HttpClientModule],
           declarations: [AbbreviationComponent],
+          providers: [
+            {provide: HttpEventLogger, useValue: new HttpEventLogger(null)},
+          ]
         })
         .compileComponents();
     abbreviationExpansionTriggers = new Subject();

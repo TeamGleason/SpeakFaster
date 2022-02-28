@@ -6,6 +6,7 @@ import * as cefSharp from '../utils/cefsharp';
 
 import {AppComponent} from './app.component';
 import {AuthModule} from './auth/auth.module';
+import {HttpEventLogger} from './event-logger/event-logger-impl';
 import {ExternalEventsModule} from './external/external-events.module';
 import {MetricsModule} from './metrics/metrics.module';
 import {MiniBarModule} from './mini-bar/mini-bar.module';
@@ -29,6 +30,9 @@ describe('AppComponent', () => {
             RouterTestingModule,
           ],
           declarations: [AppComponent],
+          providers: [
+            {provide: HttpEventLogger, useValue: new HttpEventLogger(null)},
+          ]
         })
         .compileComponents();
     fixture = TestBed.createComponent(AppComponent);

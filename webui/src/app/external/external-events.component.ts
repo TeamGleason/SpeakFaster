@@ -32,6 +32,7 @@ const MIN_GAZE_KEYPRESS_MILLIS = 200;
 export enum VIRTUAL_KEY {
   BACKSPACE = 'Backspace',
   ENTER = 'Enter',
+  ALT = 'Alt',
   SPACE = ' ',
   END = 'End',
   HOME = 'Home',
@@ -344,9 +345,9 @@ export class ExternalEventsComponent implements OnInit {
       this.textEntryBeginSubject.next({timestampMillis: Date.now()});
     }
 
-    for (const listener of ExternalEventsComponent.keypressListeners) {
+    ExternalEventsComponent.keypressListeners.forEach(listener => {
       listener(this.keySequence, this._text);
-    }
+    });
 
     // TODO(cais): Take care of the up and down arrow keys.
     // TODO(cais): Track ctrl state.

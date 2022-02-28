@@ -3,6 +3,8 @@ import {AfterViewInit, ChangeDetectorRef, Component, ElementRef, Input, OnDestro
 import {updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
 import {createUuid} from 'src/utils/uuid';
 
+import {HttpEventLogger} from '../event-logger/event-logger-impl';
+
 import {AppSettings, getAppSettings, setTtsVoiceType, setTtsVolume, TtsVoiceType, TtsVolume} from './settings';
 import {VERSION} from './version';
 
@@ -18,7 +20,8 @@ export class SettingsComponent implements AfterViewInit, OnInit, OnDestroy {
 
   @Input() userId!: string;
 
-  constructor(private cdr: ChangeDetectorRef) {}
+  constructor(
+      private cdr: ChangeDetectorRef, private eventLogger: HttpEventLogger) {}
 
   @ViewChildren('clickableButton')
   clickableButtons!: QueryList<ElementRef<HTMLElement>>;
@@ -47,11 +50,13 @@ export class SettingsComponent implements AfterViewInit, OnInit, OnDestroy {
 
   setTtsVoiceType(ttsVoiceType: TtsVoiceType) {
     setTtsVoiceType(ttsVoiceType);
+    this.eventLogger.logSettingsChange('TtsVoiceType');
     this.refreshSettings();
   }
 
   setTtsVolume(ttsVolume: TtsVolume) {
     setTtsVolume(ttsVolume);
+    this.eventLogger.logSettingsChange('TtsVolume');
     this.refreshSettings();
   }
 

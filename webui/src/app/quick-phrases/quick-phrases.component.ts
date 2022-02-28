@@ -131,16 +131,23 @@ export class QuickPhrasesComponent implements AfterViewInit, OnChanges,
   }
 
   ngOnChanges(changes: SimpleChanges) {
-    if (!changes.allowedTags) {
+    if (!changes.allowedTags && !changes.filterPrefix) {
       return;
     }
-    if (changes.allowedTags.previousValue &&
-        allItemsEqual(
-            changes.allowedTags.previousValue,
-            changes.allowedTags.currentValue)) {
-      return;
+    if (changes.filterPrefix &&
+        changes.filterPrefix.previousValue !==
+            changes.filterPrefix.currentValue) {
+      setTimeout(() => this.updatePhraseButtonBoxesWithContainerRect(), 0);
     }
-    this.retrievePhrases();
+    if (changes.allowedTags) {
+      if (changes.allowedTags.previousValue &&
+          allItemsEqual(
+              changes.allowedTags.previousValue,
+              changes.allowedTags.currentValue)) {
+        return;
+      }
+      this.retrievePhrases();
+    }
   }
 
   ngOnDestroy() {
@@ -189,7 +196,7 @@ export class QuickPhrasesComponent implements AfterViewInit, OnChanges,
       return this.phrases;
     }
     return this.phrases.filter(phrase => {
-      const words = phrase.text.split(' ');
+      const words = phrase.text.toLocaleLowerCase().split(' ');
       const filter = this.filterPrefix.toLowerCase();
       return words.some(word => word.startsWith(filter));
     });

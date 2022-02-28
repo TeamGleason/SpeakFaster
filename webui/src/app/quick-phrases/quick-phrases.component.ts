@@ -231,7 +231,7 @@ export class QuickPhrasesComponent implements AfterViewInit, OnChanges,
       index: number, toInjectKeys: boolean,
       toTriggerInAppTextToSpeech: boolean = false) {
     let numKeypresses = 1;
-    const phrase = this.phrases[index].text.trim();
+    const phrase = this.filteredPhrases[index].text.trim();
     numKeypresses += phrase.length;
     this.textEntryBeginSubject.next({timestampMillis: Date.now()});
     this.textEntryEndSubject.next({

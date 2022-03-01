@@ -105,9 +105,6 @@ export class HttpEventLogger implements EventLogger {
   constructor(private http: HttpClient|null) {};
 
   setUserId(userId: string) {
-    if (this._userId) {
-      throw new Error('Session ID is already set. Cannot set it again');
-    }
     if (userId.length === 0) {
       throw new Error('User ID is empty.')
     }

@@ -71,6 +71,12 @@ export interface FillMaskResponse {
   results: string[];
 }
 
+export interface GetUserIdResponse {
+  user_id?: string;
+
+  error?: string;
+}
+
 export interface PartnerUsersResponse {
   user_ids: string[];
 }
@@ -140,6 +146,12 @@ export interface SpeakFasterServiceStub {
   registerContext(
       userId: string, speechContent: string, startTimestamp?: Date,
       timezone?: string): Observable<RegisterContextResponse>;
+
+  /**
+   * Given user email, get pseudonymized user ID.
+   * @param partnerEmail
+   */
+  getUserId(userEmail: string): Observable<GetUserIdResponse>;
 
   /**
    * Given partner identity, retrieve list of AAC users associated with the
@@ -311,6 +323,17 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
     });
   }
 
+  getUserId(userEmail: string): Observable<GetUserIdResponse> {
+    const {headers, withCredentials} = this.getServerCallParams();
+    return this.http.get<GetUserIdResponse>('/get_user_id', {
+      params: {
+        user_email: userEmail,
+      },
+      withCredentials,
+      headers,
+    });
+  }
+
   getPartnerUsers(partnerEmail: string): Observable<PartnerUsersResponse> {
     const {headers, withCredentials} = this.getServerCallParams();
     return this.http.get<PartnerUsersResponse>('/partner_users', {
@@ -319,7 +342,7 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
       },
       withCredentials,
       headers,
-    })
+    });
   }
 
   getLexicon(request: GetLexiconRequest): Observable<GetLexiconResponse> {

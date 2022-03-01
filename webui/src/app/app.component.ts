@@ -10,7 +10,7 @@ import {HttpEventLogger} from './event-logger/event-logger-impl';
 import {ExternalEventsComponent} from './external/external-events.component';
 import {InputBarControlEvent} from './input-bar/input-bar.component';
 import {LoadLexiconRequest} from './lexicon/lexicon.component';
-import {configureService, FillMaskRequest, SpeakFasterService} from './speakfaster-service';
+import {configureService, FillMaskRequest, GetUserIdResponse, SpeakFasterService} from './speakfaster-service';
 import {InputAbbreviationChangedEvent} from './types/abbreviation';
 import {AppState} from './types/app-state';
 import {AddContextualPhraseRequest} from './types/contextual_phrase';
@@ -52,7 +52,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   // an automatically authorized browser context.)
   private useAccessToken = true;
 
-  private _userId: string = 'testuser';  // Can be overridden by URL params later.
+  private _userId: string =
+      'testuser';  // Can be overridden by URL params later.
   private _userGivenName: string|null = null;
   private _userEmail: string|null = null;
   private _endpoint: string = '';
@@ -110,14 +111,27 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
         })
       }
       // TODO(cais): Add unit tests.
-      const userId = params['user_id'];
-      if (userId && userId !== this._userId) {
-        this._userId = userId;
-        this.eventLogger.logSessionStart();
-      }
       const userEmail = params['user_email'];
       if (userEmail && userEmail !== this._userEmail) {
         this._userEmail = userEmail;
+        this.speakFasterService.getUserId(userEmail).subscribe(
+            (response: GetUserIdResponse) => {
+              if (response.error) {
+                console.error(
+                    `Failed to convert user email to user ID: response error: ${
+                        response.error}`);
+              }
+              if (response.user_id) {
+                this._userId = response.user_id;
+                console.log('Got user ID from email address:', this.userId);
+                this.eventLogger.setUserId(this.userId);
+                this.eventLogger.logSessionStart();
+              }
+            },
+            error => {
+              console.error(
+                  'Failed to convert user email to user ID:', this.userEmail);
+            });
       }
       const userGivenName = params['user_given_name'];
       if (userGivenName && userGivenName !== this._userGivenName) {

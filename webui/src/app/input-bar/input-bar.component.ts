@@ -285,7 +285,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     const divElement = this.inputTextDiv.nativeElement;
     const maxWidth = Number(divElement.style.maxWidth.replace('px', ''));
     const actualWidth = divElement.getBoundingClientRect().width;
-    if (actualWidth > maxWidth * 0.9) {
+    if (actualWidth >= maxWidth * 0.98) {
       const fontSize =
           INPUT_TEXT_BASE_FONT_SIZE / INPUT_TEXT_FONT_SIZE_SCALING_FIACTOR;
       const lineHeight = fontSize * 1.1;

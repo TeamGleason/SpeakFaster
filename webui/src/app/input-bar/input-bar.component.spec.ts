@@ -735,6 +735,7 @@ fdescribe('InputBarComponent', () => {
         .toEqual('g');
   });
 
+  // TODO(cais): Test AFTER_CUT state: text selection and AE.
   // TODO(cais): Test spelling valid word triggers AE, with debounce.
   // TODO(cais): Backspaces during spelling.
   // TODO(cais): Test favorite button.

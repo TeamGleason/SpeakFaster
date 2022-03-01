@@ -164,7 +164,8 @@
             #clickableButton
             *ngIf="(state === 'ENTERING_BASE_TEXT' ||
                     state === 'CHOOSING_PHRASES' ||
-                    state === 'FOCUSED_ON_LETTER_CHIP') &&
+                    state === 'FOCUSED_ON_LETTER_CHIP' ||
+                    state === 'AFTER_CUT') &&
                     inputStringIsCompatibleWithAbbreviationExpansion && supportsAbbrevationExpansion"
             class="action-button expand-button"
             (click)="onExpandButtonClicked($event)">

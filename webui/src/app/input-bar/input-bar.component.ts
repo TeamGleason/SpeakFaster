@@ -184,9 +184,16 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     const lastKey = keySequence[keySequence.length - 1];
     this.latestReconstructedString = reconstructedText;
     if (this.state === State.ENTERING_BASE_TEXT ||
-        this.state === State.CHOOSING_PHRASES) {
-      this.updateInputString(
-          reconstructedText.slice(this.baseReconstructedText.length));
+        this.state === State.CHOOSING_PHRASES ||
+        this.state === State.AFTER_CUT) {
+      if (this.state === State.AFTER_CUT) {
+        this.updateInputString(
+            this.cutText +
+            reconstructedText.slice(this.baseReconstructedText.length));
+      } else {
+        this.updateInputString(
+            reconstructedText.slice(this.baseReconstructedText.length));
+      }
       if (this.inputStringIsCompatibleWithAbbreviationExpansion &&
           ABBRVIATION_EXPANSION_TRIGGER_KEY_SEQUENCES.some(
               triggerKeySeqwuence =>
@@ -194,10 +201,6 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
         this.triggerAbbreviationExpansion();
         return;
       }
-    } else if (this.state === State.AFTER_CUT) {
-      this.updateInputString(
-          this.cutText +
-          reconstructedText.slice(this.baseReconstructedText.length));
     } else if (this.state === State.CHOOSING_WORD_CHIP) {
       this.cutText = this._chips.map(chip => chip.text).join(' ') + ' ';
       this.inputString = this.cutText + lastKey;

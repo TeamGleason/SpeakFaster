@@ -1,6 +1,6 @@
 /** Quick phrase list for direct selection. */
 import {AfterViewInit, ChangeDetectorRef, Component, ElementRef, Input, OnDestroy, OnInit, QueryList, ViewChildren} from '@angular/core';
-import {updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
+import {requestQuitApp, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
 import {createUuid} from 'src/utils/uuid';
 
 import {HttpEventLogger} from '../event-logger/event-logger-impl';
@@ -19,6 +19,8 @@ export class SettingsComponent implements AfterViewInit, OnInit, OnDestroy {
   appSettings: AppSettings|null = null;
 
   @Input() userId!: string;
+  @Input() userEmail!: string|null;
+  @Input() userGivenName!: string|null;
 
   constructor(
       private cdr: ChangeDetectorRef, private eventLogger: HttpEventLogger) {}
@@ -63,6 +65,10 @@ export class SettingsComponent implements AfterViewInit, OnInit, OnDestroy {
   onReloadAppButtonClicked(event: Event) {
     // Force reload.
     window.location.reload(true);
+  }
+
+  onQuitAppButtonClicked(even: Event) {
+    requestQuitApp();
   }
 
   get versionString(): string {

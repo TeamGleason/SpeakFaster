@@ -70,7 +70,10 @@ Under the AAC user mode, the following URL parameters must be provided:
 2. `user_given_name`: This is the given name of the user. It can be obtained
    during Google OAuth2 authentication with a proper scope and provided to
    the WebUI.
-3. `endpoint`: This is the URL to the API endpoint that serves features such as
+3. `user_id`: The integer user ID from Google OAuth2.
+4. `user_email`: The email address the user used to sign in, obtained from
+   Google OAuth2.
+5. `endpoint`: This is the URL to the API endpoint that serves features such as
    abbreviation expansion and text prediction.
 
 Optional URL parameters include:
@@ -129,6 +132,8 @@ interface BoundObject {
   async function saveSettings(appSettings: AppSettings): boolean;
 
   async function loadSettings(): AppSettings|null;
+
+  function requestAppQuit(): void;
 }
 ```
 
@@ -179,3 +184,8 @@ user settings (e.g., TTS voice and volume) to the host and loading the settings
 back from the host. Note that WebViews such as CefSharp usually do not persist
 data stored in `localStorage` after the instance of WebView is destroyed, which
 necessitates settings storage at the host level.
+
+### 2.5. Requesting app quit
+
+To request the host app to close the WebUI and quit as a whole, call
+`requestAppQuit()`.

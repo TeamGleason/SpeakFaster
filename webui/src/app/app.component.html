@@ -202,7 +202,9 @@ app-text-to-speech-component {
 
       <app-settings-component
           *ngIf="appState === 'SETTINGS'"
-          [userId]="userId">
+          [userId]="userId"
+          [userEmail]="userEmail"
+          [userGivenName]="userGivenName">
       </app-settings-component>
 
       <div class="bottom-area">

@@ -52,8 +52,9 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   // an automatically authorized browser context.)
   private useAccessToken = true;
 
-  // TODO(cais): Control with URL parameter.
-  private _userId: string = 'testuser';
+  private _userId: string = 'testuser';  // Can be overridden by URL params later.
+  private _userGivenName: string|null = null;
+  private _userEmail: string|null = null;
   private _endpoint: string = '';
   private _accessToken: string = '';
   isSpelling = false;
@@ -107,6 +108,20 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
           endpoint: this._endpoint,
           accessToken: '',
         })
+      }
+      // TODO(cais): Add unit tests.
+      const userId = params['user_id'];
+      if (userId && userId !== this._userId) {
+        this._userId = userId;
+        this.eventLogger.logSessionStart();
+      }
+      const userEmail = params['user_email'];
+      if (userEmail && userEmail !== this._userEmail) {
+        this._userEmail = userEmail;
+      }
+      const userGivenName = params['user_given_name'];
+      if (userGivenName && userGivenName !== this._userGivenName) {
+        this._userGivenName = userGivenName;
       }
     });
   }
@@ -185,6 +200,14 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   get userId(): string {
     return this._userId;
+  }
+
+  get userEmail(): string|null {
+    return this._userEmail;
+  }
+
+  get userGivenName(): string|null {
+    return this._userGivenName;
   }
 
   get showMetrics(): boolean {

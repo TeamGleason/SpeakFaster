@@ -173,3 +173,14 @@ export async function loadSettings(): Promise<AppSettings|null> {
     return null;
   }
 }
+
+/** Request the host app to quit. */
+export function requestQuitApp(): void {
+  if ((window as any)[BOUND_LISTENER_NAME] == null) {
+    console.warn(
+        `Cannot call requestQuitApp() ` +
+        `because object ${BOUND_LISTENER_NAME} is not found`);
+    return;
+  }
+  ((window as any)[BOUND_LISTENER_NAME] as any).requestQuitApp();
+}

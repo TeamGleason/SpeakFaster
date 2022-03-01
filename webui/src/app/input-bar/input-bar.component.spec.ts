@@ -115,9 +115,9 @@ fdescribe('InputBarComponent', () => {
            [['b', 'a', VIRTUAL_KEY.BACKSPACE], 'b', 'b'],
            [['b', 'a', VIRTUAL_KEY.BACKSPACE, 'c'], 'bc', 'bc'],
            [['b', VIRTUAL_KEY.SPACE], 'b ', 'b '],
-           [[VIRTUAL_KEY.SPACE, 'b'], ' b', 'b'],
-           [[VIRTUAL_KEY.ENTER, 'b'], ' b', 'b'],
-           [[VIRTUAL_KEY.SPACE, VIRTUAL_KEY.ENTER, 'b'], ' b', 'b'],
+           [[VIRTUAL_KEY.SPACE, 'b'], ' b', ' b'],
+           [[VIRTUAL_KEY.ENTER, 'b'], ' b', ' b'],
+           [[VIRTUAL_KEY.SPACE, VIRTUAL_KEY.ENTER, 'b'], ' b', ' b'],
   ] as Array<[string[], string, string]>) {
     it(`entering keys cause text and buttons to be displayed: ` +
            `key sequence = ${JSON.stringify(keySequence)}`,

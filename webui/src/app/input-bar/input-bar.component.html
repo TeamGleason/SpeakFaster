@@ -85,6 +85,15 @@
   width: 100%;
 }
 
+.input-text {
+  color: white;
+  display: inline-block;
+  line-height: 30px;
+  overflow-wrap: break-word;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 .length-limit-exceeded {
   background: orange;
   border-radius: 4px;;
@@ -139,7 +148,7 @@
                  state !== 'FOCUSED_ON_LETTER_CHIP' &&
                  state !== 'CHOOSING_WORD_CHIP' &&
                  state !== 'FOCUSED_ON_WORD_CHIP'">
-        <span class="input-text">{{inputString}}</span>
+        <span #inputText class="input-text">{{inputString}}</span>
         <span class="simulated-cursor">|</span>
       </div>
       <div

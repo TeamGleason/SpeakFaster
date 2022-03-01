@@ -1,5 +1,5 @@
 /** An input bar, with related functional buttons. */
-import {AfterViewInit, Component, ElementRef, EventEmitter, Input, OnDestroy, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
+import {AfterViewInit, Component, ElementRef, EventEmitter, Input, OnDestroy, OnInit, Output, QueryList, ViewChild, ViewChildren} from '@angular/core';
 import {Subject, Subscription} from 'rxjs';
 import {debounceTime} from 'rxjs/operators';
 import {updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
@@ -48,6 +48,10 @@ export interface InputBarControlEvent {
 export const ABBRVIATION_EXPANSION_TRIGGER_KEY_SEQUENCES: Array<string[]> =
     [[VIRTUAL_KEY.SPACE, VIRTUAL_KEY.SPACE], [VIRTUAL_KEY.ENTER]];
 
+const INPUT_TEXT_MAX_WIDTH = 700;
+const INPUT_TEXT_BASE_FONT_SIZE = 30;
+const INPUT_TEXT_FONT_SIZE_SCALING_FIACTOR = 1.5;
+
 @Component({
   selector: 'app-input-bar-component',
   templateUrl: './input-bar.component.html',
@@ -82,6 +86,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   private _focusChipIndex: number|null = null;
   private _chipTypedText: Array<string|null>|null = null;
 
+  @ViewChild('inputText') inputTextDiv!: ElementRef<HTMLDivElement>;
   @ViewChildren('clickableButton')
   buttons!: QueryList<ElementRef<HTMLButtonElement>>;
 
@@ -160,6 +165,10 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
         (queryList: QueryList<ElementRef<HTMLButtonElement>>) => {
           updateButtonBoxesForElements(this.instanceId, queryList);
         });
+    this.inputTextDiv.nativeElement.style.maxWidth =
+        `${INPUT_TEXT_MAX_WIDTH}px`;
+    this.inputTextDiv.nativeElement.style.fontSize =
+        `${INPUT_TEXT_BASE_FONT_SIZE}px`;
   }
 
   ngOnDestroy() {
@@ -199,7 +208,6 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
               triggerKeySeqwuence =>
                   keySequenceEndsWith(keySequence, triggerKeySeqwuence))) {
         this.triggerAbbreviationExpansion();
-        return;
       }
     } else if (this.state === State.CHOOSING_WORD_CHIP) {
       this.cutText = this._chips.map(chip => chip.text).join(' ') + ' ';
@@ -265,6 +273,29 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
           reconstructedText.slice(this.baseReconstructedText.length);
       updateButtonBoxesForElements(this.instanceId, this.buttons);
     }
+    this.scaleInputTextFontSize();
+  }
+
+  private scaleInputTextFontSize(): void {
+    // TODO(cais): Limit on over all text length.
+    // TODO(cais): Add unit tests.
+    if (!this.inputTextDiv) {
+      return;
+    }
+    const divElement = this.inputTextDiv.nativeElement;
+    const maxWidth = Number(divElement.style.maxWidth.replace('px', ''));
+    const actualWidth = divElement.getBoundingClientRect().width;
+    if (actualWidth > maxWidth * 0.9) {
+      const fontSize =
+          INPUT_TEXT_BASE_FONT_SIZE / INPUT_TEXT_FONT_SIZE_SCALING_FIACTOR;
+      const lineHeight = fontSize * 1.1;
+      divElement.style.fontSize = `${fontSize.toFixed(1)}px`;
+      divElement.style.lineHeight = `${lineHeight.toFixed(1)}px`;
+    } else {
+      divElement.style.fontSize = `${INPUT_TEXT_BASE_FONT_SIZE}px`;
+      divElement.style.lineHeight = `${INPUT_TEXT_BASE_FONT_SIZE}px`;
+    }
+    divElement.style.maxWidth = `${INPUT_TEXT_MAX_WIDTH}px`;
   }
 
   onExpandButtonClicked(event?: Event) {

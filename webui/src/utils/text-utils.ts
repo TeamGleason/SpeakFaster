@@ -53,3 +53,9 @@ export function isAlphanumericChar(str: string): boolean {
   str = str.toLowerCase();
   return str >= 'a' && str <= 'z' || str >= '0' && str <= '9';
 }
+
+/** Determine whether a string ends with sentence-end punctuation. */
+export function endsWithSentenceEndPunctuation(text: string): boolean {
+  text = text.trim();
+  return text.match(/.*[\.\!\?]$/) !== null;
+}

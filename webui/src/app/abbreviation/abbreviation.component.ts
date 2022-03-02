@@ -1,6 +1,6 @@
 import {AfterViewInit, ChangeDetectorRef, Component, ElementRef, Input, OnChanges, OnDestroy, OnInit, Output, QueryList, SimpleChanges, ViewChildren} from '@angular/core';
 import {Subject, Subscription} from 'rxjs';
-import {allItemsEqual, limitStringLength} from 'src/utils/text-utils';
+import {allItemsEqual, endsWithSentenceEndPunctuation, limitStringLength} from 'src/utils/text-utils';
 import {createUuid} from 'src/utils/uuid';
 
 import {injectKeys, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from '../../utils/cefsharp';
@@ -258,6 +258,9 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
       const injectedKeys: Array<string|VIRTUAL_KEY> =
           this.abbreviation!.eraserSequence || [];
       injectedKeys.push(...text.split(''));
+      if (!endsWithSentenceEndPunctuation(text)) {
+        injectedKeys.push(VIRTUAL_KEY.PERIOD);
+      }
       injectedKeys.push(VIRTUAL_KEY.SPACE);  // Append a space at the end.
       injectKeys(injectedKeys);
     }
@@ -270,7 +273,8 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
       inAppTextToSpeechAudioConfig: toTriggerInAppTextToSpeech ? {} : undefined,
     });
     this.eventLogger.logAbbreviationExpansionSelection(
-        getPhraseStats(text), toTriggerInAppTextToSpeech ? 'TTS' : 'INJECTION');
+        getPhraseStats(text), index, this.abbreviationOptions.length,
+        toTriggerInAppTextToSpeech ? 'TTS' : 'INJECTION');
     this.state = State.POST_CHOOSING_EXPANSION;
   }
 

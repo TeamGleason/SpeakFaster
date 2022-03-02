@@ -29,8 +29,9 @@ export type EventName =
     'AbbreviationExpansionWordRefinementSelection'|'AppStateChange'|
     'ContextualPhraseAdd'|'ContextualPhraseAddError'|'ContextualPhraseDelete'|
     'ContextualPhraseDeleteError'|'ContextualPhraseSelection'|
-    'IncomingContextualTurn'|'InputBarSpeakButtonClick'|'Keypress'|'SessionEnd'|
-    'SessionStart'|'SettingsChange';
+    'IncomingContextualTurn'|'InputBarInjectButtonClick'|
+    'InputBarSpeakButtonClick'|'Keypress'|'SessionEnd'|'SessionStart'|
+    'SettingsChange';
 
 export type EventLogEntry = {
   userId: string;
@@ -212,6 +213,21 @@ export class HttpEventLogger implements EventLogger {
         .toPromise();
   }
 
+  async logInputBarInjectButtonClick(phraseStats: PhraseStats) {
+    await this
+        .logEvent({
+          userId: this._userId!,
+          timestamp: this.getUtcEpochMillis(),
+          timezone: this.timezone,
+          sessionId: this.sessionId,
+          eventName: 'InputBarInjectButtonClick',
+          eventData: JSON.stringify({phraseStats}),
+          appState: getAppState(),
+        })
+        .pipe(first())
+        .toPromise();
+  }
+
   async logContextualPhraseSelection(
       contextualPhraseStats: ContextualPhraseStats,
       textSelectionType: TextSelectionType) {
@@ -322,7 +338,8 @@ export class HttpEventLogger implements EventLogger {
   }
 
   async logAbbreviationExpansionSelection(
-      phraseStats: PhraseStats, textSelectionType: TextSelectionType) {
+      phraseStats: PhraseStats, index: number, numOptions: number,
+      textSelectionType: TextSelectionType) {
     await this
         .logEvent({
           userId: this._userId!,
@@ -330,7 +347,8 @@ export class HttpEventLogger implements EventLogger {
           timezone: this.timezone,
           sessionId: this.sessionId,
           eventName: 'AbbreviationExpansionSelection',
-          eventData: JSON.stringify({phraseStats, textSelectionType}),
+          eventData: JSON.stringify(
+              {phraseStats, index, numOptions, textSelectionType}),
           appState: getAppState(),
         })
         .pipe(first())

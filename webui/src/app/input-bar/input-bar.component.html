@@ -34,6 +34,10 @@
   width: 100px;
 }
 
+.action-button.inject-button {
+  background-color: rgb(101, 183, 211);
+}
+
 .base-text-area {
   display: inline-block;
 }
@@ -63,7 +67,7 @@
   flex-direction: row;
   padding: 0 0 5px;
   vertical-align: middle;
-  width: 1050px;
+  width: 1100px;
 }
 
 .favorite-button {
@@ -219,6 +223,13 @@
             [phrase]="effectivePhrase"
             (speakButtonClicked)="onSpeakAsIsButtonClicked($event)">
         </app-speak-button-component>
+      </button>
+
+      <button
+          #clickableButton
+          class="action-button inject-button"
+          (click)="onInjectButtonClicked($event)">
+        <img class="button-image" src="/assets/images/inject.png" alt="inject phrase" />
       </button>
 
       <button

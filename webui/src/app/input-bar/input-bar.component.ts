@@ -2,8 +2,8 @@
 import {AfterViewInit, Component, ElementRef, EventEmitter, Input, OnDestroy, OnInit, Output, QueryList, ViewChild, ViewChildren} from '@angular/core';
 import {Subject, Subscription} from 'rxjs';
 import {debounceTime} from 'rxjs/operators';
-import {updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
-import {keySequenceEndsWith} from 'src/utils/text-utils';
+import {injectKeys, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
+import {endsWithSentenceEndPunctuation, keySequenceEndsWith} from 'src/utils/text-utils';
 import {createUuid} from 'src/utils/uuid';
 
 import {getPhraseStats, HttpEventLogger} from '../event-logger/event-logger-impl';
@@ -50,7 +50,7 @@ export const ABBRVIATION_EXPANSION_TRIGGER_KEY_SEQUENCES: Array<string[]> =
 
 const INPUT_TEXT_BASE_FONT_SIZE = 30;
 const INPUT_TEXT_FONT_SIZE_SCALING_FACTORS = [1.0, 1 / 1.3, 1 / 1.6, 1 / 1.8];
-const INPUT_TEXT_FONT_SIZE_SCALING_LENGTH_TICKS = [0, 50, 150, 300];
+const INPUT_TEXT_FONT_SIZE_SCALING_LENGTH_TICKS = [0, 50, 120, 280];
 
 @Component({
   selector: 'app-input-bar-component',
@@ -224,6 +224,8 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
         this.eventLogger.logAbbreviationExpansionSpellingChipSelection(
             this._chips.length, matchingChipIndices[0]);
         this.state = State.FOCUSED_ON_LETTER_CHIP;
+        // Signal to soft keyboard a word boundary. TODO(cais): Decide.
+        injectKeys([VIRTUAL_KEY.SPACE]);
         this.baseReconstructedText = this.latestReconstructedString.slice(
             0, this.latestReconstructedString.length - 1);
         this._focusChipIndex = matchingChipIndices[0];
@@ -290,8 +292,6 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     if (numSteps >= INPUT_TEXT_FONT_SIZE_SCALING_FACTORS.length) {
       numSteps = INPUT_TEXT_FONT_SIZE_SCALING_FACTORS.length - 1;
     }
-    // const maxWidth = Number(divElement.style.maxWidth.replace('px', ''));
-    // const actualWidth = divElement.getBoundingClientRect().width;
     const fontSizeScalingFactor =
         INPUT_TEXT_FONT_SIZE_SCALING_FACTORS[numSteps];
     if (numSteps > 0) {
@@ -303,7 +303,6 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
       divElement.style.fontSize = `${INPUT_TEXT_BASE_FONT_SIZE}px`;
       divElement.style.lineHeight = `${INPUT_TEXT_BASE_FONT_SIZE}px`;
     }
-    // divElement.style.maxWidth = `${INPUT_TEXT_MAX_WIDTH}px`;
   }
 
   onExpandButtonClicked(event?: Event) {
@@ -412,6 +411,8 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
       this.eventLogger.logAbbreviationExpansionSpellingChipSelection(
           this._chips.length, index);
       this.state = State.FOCUSED_ON_LETTER_CHIP;
+      // Signal to soft keyboard a word boundary. TODO(cais): Decide.
+      injectKeys([VIRTUAL_KEY.SPACE]);
       const firstLetter = this._chips[index].text[0];
       this.loadPrefixedLexiconRequestSubject.next({
         prefix: firstLetter,
@@ -510,6 +511,26 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
       timestampMillis: Date.now(),
       isFinal: true,
       inAppTextToSpeechAudioConfig: {}
+    });
+  }
+
+  onInjectButtonClicked(event?: Event) {
+    let text = this.effectivePhrase;
+    if (!text) {
+      return;
+    }
+    if (!endsWithSentenceEndPunctuation(text)) {
+      text += '.';
+    }
+    text += ' ';
+    this.eventLogger.logInputBarInjectButtonClick(getPhraseStats(text));
+    const injectedKeys: Array<string|VIRTUAL_KEY> = [];
+    injectedKeys.push(...text.split(''));
+    this.textEntryEndSubject.next({
+      text,
+      timestampMillis: Date.now(),
+      isFinal: true,
+      injectedKeys,
     });
   }
 

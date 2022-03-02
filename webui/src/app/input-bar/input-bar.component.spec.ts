@@ -735,6 +735,54 @@ fdescribe('InputBarComponent', () => {
         .toEqual('g');
   });
 
+  it('clicking inject text button injects keypresses with added final period',
+     () => {
+       const keySequence =
+           ['a', 'l', 'l', VIRTUAL_KEY.SPACE, 'g', 'o', 'o', 'd'];
+       const reconstructedText = 'all good';
+       enterKeysIntoComponent(keySequence, reconstructedText);
+       const injectButton =
+           fixture.debugElement.query(By.css('.inject-button'));
+       injectButton.nativeElement.click();
+
+       expect(textEntryEndEvents.length).toEqual(1);
+       const event = textEntryEndEvents[0];
+       expect(event.isFinal).toBeTrue();
+       expect(event.text).toEqual('all good. ');
+       expect(event.injectedKeys).toEqual([
+         'a', 'l', 'l', VIRTUAL_KEY.SPACE, 'g', 'o', 'o', 'd',
+         VIRTUAL_KEY.PERIOD, VIRTUAL_KEY.SPACE
+       ]);
+       expect(event.inAppTextToSpeechAudioConfig).toBeUndefined();
+       expect(event.timestampMillis).toBeGreaterThan(0);
+     });
+
+  it('clicking inject text button injects keypresses without added final period',
+     () => {
+       const keySequence = [
+         'a', 'l', 'l', VIRTUAL_KEY.SPACE, 'g', 'o', 'o', 'd',
+         VIRTUAL_KEY.PERIOD
+       ];
+       const reconstructedText = 'all good';
+       enterKeysIntoComponent(keySequence, reconstructedText);
+       const injectButton =
+           fixture.debugElement.query(By.css('.inject-button'));
+       injectButton.nativeElement.click();
+
+       expect(textEntryEndEvents.length).toEqual(1);
+       const event = textEntryEndEvents[0];
+       expect(event.isFinal).toBeTrue();
+       expect(event.text).toEqual('all good. ');
+       expect(event.injectedKeys).toEqual([
+         'a', 'l', 'l', VIRTUAL_KEY.SPACE, 'g', 'o', 'o', 'd',
+         VIRTUAL_KEY.PERIOD, VIRTUAL_KEY.SPACE
+       ]);
+       expect(event.inAppTextToSpeechAudioConfig).toBeUndefined();
+       expect(event.timestampMillis).toBeGreaterThan(0);
+     });
+
+
+
   // TODO(cais): Test AFTER_CUT state: text selection and AE.
   // TODO(cais): Test spelling valid word triggers AE, with debounce.
   // TODO(cais): Backspaces during spelling.

@@ -2,7 +2,7 @@ import {AfterViewInit, Component, ElementRef, OnDestroy, OnInit, QueryList, View
 import {ActivatedRoute} from '@angular/router';
 import {Subject} from 'rxjs';
 
-import {bindCefSharpListener, registerExternalKeypressHook, resizeWindow, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from '../utils/cefsharp';
+import {bindCefSharpListener, registerExternalAccessTokenHook, registerExternalKeypressHook, resizeWindow, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from '../utils/cefsharp';
 import {createUuid} from '../utils/uuid';
 
 import {registerAppState} from './app-state-registry';
@@ -146,6 +146,10 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   ngAfterViewInit() {
+    registerExternalAccessTokenHook((externalAccessToken: string) => {
+      console.log(`Received new external access token: ${externalAccessToken}`);
+      this.onNewAccessToken(externalAccessToken);
+    });
     registerExternalKeypressHook(
         this.externalEventsComponent.externalKeypressHook.bind(
             this.externalEventsComponent));

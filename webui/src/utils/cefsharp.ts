@@ -129,6 +129,19 @@ export function registerExternalKeypressHook(callback: ExternalKeypressHook) {
   (window as any)['externalKeypressHook'] = callback;
 }
 
+export type ExternalAccessTokenHook = (accessToken: string) => void;
+
+/**
+ * Hook used to receive access token from external sources (e.g., the host
+ * app). The host app may periodically poll for new access tokens by using
+ * a refresh token and this hook is the mechanism through which the new
+ * access token is provided to the WebUI.
+ */
+export function registerExternalAccessTokenHook(
+    callback: ExternalAccessTokenHook) {
+  (window as any)['externalAccessTokenHook'] = callback;
+}
+
 /**
  * Try saving settings through the CefSharp host bridge.
  *

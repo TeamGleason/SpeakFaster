@@ -48,9 +48,9 @@ export interface InputBarControlEvent {
 export const ABBRVIATION_EXPANSION_TRIGGER_KEY_SEQUENCES: Array<string[]> =
     [[VIRTUAL_KEY.SPACE, VIRTUAL_KEY.SPACE], [VIRTUAL_KEY.ENTER]];
 
-const INPUT_TEXT_MAX_WIDTH = 700;
 const INPUT_TEXT_BASE_FONT_SIZE = 30;
-const INPUT_TEXT_FONT_SIZE_SCALING_FIACTOR = 1.5;
+const INPUT_TEXT_FONT_SIZE_SCALING_FACTORS = [1.0, 1 / 1.3, 1 / 1.6, 1 / 1.8];
+const INPUT_TEXT_FONT_SIZE_SCALING_LENGTH_TICKS = [0, 50, 150, 300];
 
 @Component({
   selector: 'app-input-bar-component',
@@ -165,10 +165,6 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
         (queryList: QueryList<ElementRef<HTMLButtonElement>>) => {
           updateButtonBoxesForElements(this.instanceId, queryList);
         });
-    this.inputTextDiv.nativeElement.style.maxWidth =
-        `${INPUT_TEXT_MAX_WIDTH}px`;
-    this.inputTextDiv.nativeElement.style.fontSize =
-        `${INPUT_TEXT_BASE_FONT_SIZE}px`;
   }
 
   ngOnDestroy() {
@@ -283,11 +279,23 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
     const divElement = this.inputTextDiv.nativeElement;
-    const maxWidth = Number(divElement.style.maxWidth.replace('px', ''));
-    const actualWidth = divElement.getBoundingClientRect().width;
-    if (actualWidth >= maxWidth * 0.98) {
-      const fontSize =
-          INPUT_TEXT_BASE_FONT_SIZE / INPUT_TEXT_FONT_SIZE_SCALING_FIACTOR;
+    const textLength = this.inputString.length;
+    let i = INPUT_TEXT_FONT_SIZE_SCALING_LENGTH_TICKS.length - 1;
+    for (; i >= 0; --i) {
+      if (textLength >= INPUT_TEXT_FONT_SIZE_SCALING_LENGTH_TICKS[i]) {
+        break;
+      }
+    }
+    let numSteps = i;
+    if (numSteps >= INPUT_TEXT_FONT_SIZE_SCALING_FACTORS.length) {
+      numSteps = INPUT_TEXT_FONT_SIZE_SCALING_FACTORS.length - 1;
+    }
+    // const maxWidth = Number(divElement.style.maxWidth.replace('px', ''));
+    // const actualWidth = divElement.getBoundingClientRect().width;
+    const fontSizeScalingFactor =
+        INPUT_TEXT_FONT_SIZE_SCALING_FACTORS[numSteps];
+    if (numSteps > 0) {
+      const fontSize = INPUT_TEXT_BASE_FONT_SIZE * fontSizeScalingFactor;
       const lineHeight = fontSize * 1.1;
       divElement.style.fontSize = `${fontSize.toFixed(1)}px`;
       divElement.style.lineHeight = `${lineHeight.toFixed(1)}px`;
@@ -295,7 +303,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
       divElement.style.fontSize = `${INPUT_TEXT_BASE_FONT_SIZE}px`;
       divElement.style.lineHeight = `${INPUT_TEXT_BASE_FONT_SIZE}px`;
     }
-    divElement.style.maxWidth = `${INPUT_TEXT_MAX_WIDTH}px`;
+    // divElement.style.maxWidth = `${INPUT_TEXT_MAX_WIDTH}px`;
   }
 
   onExpandButtonClicked(event?: Event) {

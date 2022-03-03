@@ -26,7 +26,6 @@ export function chooseStringRandomly(strings: string[]): string {
 @Component({
   selector: 'app-lexicon-component',
   templateUrl: './lexicon.component.html',
-  providers: [SpeakFasterService],
 })
 export class LexiconComponent implements OnInit {
   private static readonly PERSONAL_NAMES_TAG = 'partner-name';
@@ -41,10 +40,6 @@ export class LexiconComponent implements OnInit {
    * personal names.
    */
   public static replacePersonNamesWithKnownValues(inputString: string): string {
-    if (LexiconComponent.GIVEN_NAMES === null ||
-        LexiconComponent.GIVEN_NAMES.length === 0) {
-      return inputString;
-    }
     if (LexiconComponent.GIVEN_NAMES === null ||
         LexiconComponent.GIVEN_NAMES.length === 0) {
       return inputString;
@@ -89,7 +84,6 @@ export class LexiconComponent implements OnInit {
     if (LexiconComponent.FULL_LEXICON_BY_PREFIX[firstLetter] === undefined) {
       return false;
     }
-    // TODO(cais): Add unit tests.
     return LexiconComponent.FULL_LEXICON_BY_PREFIX[firstLetter].indexOf(
                inputString) !== -1;
   }
@@ -137,7 +131,7 @@ export class LexiconComponent implements OnInit {
             LexiconComponent.registerName(phrase.text);
           });
           console.log(
-              'Reigstered personal names:',
+              'Registered personal names:',
               JSON.stringify(LexiconComponent.REGISTERED_NAMES));
         });
   }

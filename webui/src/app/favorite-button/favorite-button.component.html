@@ -1,0 +1,60 @@
+<style>
+mat-progress-spinner {
+  display: inline-block;
+  stroke: #ddd;
+  zoom: 0.3;
+}
+
+.button-image {
+  max-width: 50%;
+  max-height: 50%;
+}
+
+.speak-button {
+  border-radius: 8px;
+  overflow: hidden;
+  background-color: transparent;
+}
+
+</style>
+
+<div
+    class="favorite-button"
+    (click)="onFavoriteButtonClicked($event)">
+  <img
+      *ngIf="state === 'READY' && !isDeletion && !sendAsUserFeedback"
+      class="button-image"
+      src="/assets/images/favorite.png"
+      alt="add to favorite" />
+  <img
+      *ngIf="state === 'READY' && !isDeletion && sendAsUserFeedback"
+      class="button-image"
+      src="/assets/images/add-comment.png"
+      alt="add to favorite" />
+  <img
+      *ngIf="(state === 'READY' || state === 'RESTORED') && isDeletion"
+      class="button-image"
+      src="/assets/images/delete.png"
+      alt="delete from favorite" />
+
+  <mat-progress-spinner
+      *ngIf="state === 'REQUESTING'"
+      [mode]="'indeterminate'"
+      [value]="50">
+  </mat-progress-spinner>
+  <img
+      *ngIf="state === 'SUCCESS' && !isDeletion"
+      class="button-image"
+      src="/assets/images/success-circle.png"
+      alt="success" />
+  <img
+      *ngIf="state === 'SUCCESS' && isDeletion"
+      class="button-image"
+      src="/assets/images/repeat.png"
+      alt="restore" />
+  <img
+      *ngIf="state === 'ERROR'"
+      class="button-image"
+      src="/assets/images/error-circle.png"
+      alt="error" />
+</div>

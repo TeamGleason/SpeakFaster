@@ -13,7 +13,7 @@ import {AbbreviationSpec} from '../types/abbreviation';
 import {AppState} from '../types/app-state';
 import {ContextualPhrase} from '../types/contextual_phrase';
 
-import {AbbreviationExpansionRequestStats, AbbreviationExpansionResponseStats, ContextualPhraseStats, EventLogger, PhraseStats, SettingName, TextSelectionType} from './event-logger';
+import {AbbreviationExpansionRequestStats, AbbreviationExpansionResponseStats, ContextualPhraseStats, EventLogger, PhraseStats, SettingName, TextSelectionType, UserFeedback} from './event-logger';
 
 const EVENT_LOGS_ENDPOINT = '/event_logs';
 const PUNCTUATION_REGEX = /^[,\.\!\?\-\;\(\)\[\]\{\}]$/;
@@ -29,8 +29,9 @@ export type EventName =
     'AbbreviationExpansionWordRefinementSelection'|'AppStateChange'|
     'ContextualPhraseAdd'|'ContextualPhraseAddError'|'ContextualPhraseDelete'|
     'ContextualPhraseDeleteError'|'ContextualPhraseSelection'|
-    'IncomingContextualTurn'|'InputBarSpeakButtonClick'|'Keypress'|'SessionEnd'|
-    'SessionStart'|'SettingsChange';
+    'IncomingContextualTurn'|'InputBarInjectButtonClick'|
+    'InputBarSpeakButtonClick'|'Keypress'|'SessionEnd'|'SessionStart'|
+    'SettingsChange'|'UserFeedback';
 
 export type EventLogEntry = {
   userId: string;
@@ -478,6 +479,22 @@ export class HttpEventLogger implements EventLogger {
           sessionId: this.sessionId,
           eventName: 'SettingsChange',
           eventData: JSON.stringify({settingName}),
+          appState: getAppState(),
+        })
+        .pipe(first())
+        .toPromise();
+  }
+
+  async logUserFeedback(userFeedback: UserFeedback) {
+    this.ensureUserIdSet();
+    await this
+        .logEvent({
+          userId: this._userId!,
+          timestamp: this.getUtcEpochMillis(),
+          timezone: this.timezone,
+          sessionId: this.sessionId,
+          eventName: 'UserFeedback',
+          eventData: JSON.stringify(userFeedback),
           appState: getAppState(),
         })
         .pipe(first())

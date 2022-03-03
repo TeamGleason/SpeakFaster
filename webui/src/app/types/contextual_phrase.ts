@@ -41,4 +41,47 @@ export interface ContextualPhrase {
   // The presence of a conversation partner, as specified by the unique ID for
   // the partner, as a contextual signal.
   partnerId?: string;
+
+  // Creation timestamp for the quick phrase, in ISO format. Assume UTC time
+  // zone.
+  createdTimestamp?: string;
+
+  // Last modified timestamp (if any), in ISO format. Assume UTC time zone.
+  lastModifiedTimestamp?: string;
+}
+
+// Request to add a contextual phrase (i.e., "quick phrase").
+export interface AddContextualPhraseRequest {
+  // ID of the user that the quick phrase is for.
+  userId: string;
+
+  // The content of the contextual phrase to be added.
+  contextualPhrase: ContextualPhrase;
+}
+
+// Response to a request to add a contextual phrase.
+export interface AddContextualPhraseResponse {
+  // A unique ID of the added phrase. Populated if and only if the
+  // add-contextual-phrase is successful.
+  phraseId?: string;
+
+  errorMessage?: string;
+}
+
+// Request to delete an existing contextual phrase (i.e., "quick phrase").
+export interface DeleteContextualPhraseRequest {
+  // The ID Of the user the to-be-deleted phrase belongs to.
+  userId: string;
+
+  // The unique ID of the to-be-deleted phrase.
+  phraseId: string;
+}
+
+// Response to a request to delete an existing contextual phrase.
+export interface DeleteContextualPhraseResponse {
+  // Echo of the deleted contextual phrase. Populated if and only if the
+  // deletion is successful.
+  phraseId?: string
+
+  errorMessage?: string;
 }

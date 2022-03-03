@@ -1,4 +1,10 @@
 <style>
+
+:host {
+  display: flex;
+  flex-direction: column;
+}
+
 mat-progress-spinner {
   display: inline-block;
   stroke: #ddd;
@@ -10,10 +16,22 @@ mat-progress-spinner {
   max-height: 50%;
 }
 
+.button-image.add-comment-button-image {
+  max-width: 32%;
+  max-height: 32%;
+}
+
 .speak-button {
   border-radius: 8px;
   overflow: hidden;
   background-color: transparent;
+}
+
+.user-feedback-tag {
+  font-size: 12px;
+  margin: 1px;
+  max-height: 14px;
+  line-height: 14px;
 }
 
 </style>
@@ -22,10 +40,20 @@ mat-progress-spinner {
     class="favorite-button"
     (click)="onFavoriteButtonClicked($event)">
   <img
-      *ngIf="state === 'READY' && !isDeletion"
+      *ngIf="state === 'READY' && !isDeletion && !sendAsUserFeedback"
       class="button-image"
       src="/assets/images/favorite.png"
       alt="add to favorite" />
+  <img
+      *ngIf="state === 'READY' && !isDeletion && sendAsUserFeedback"
+      class="button-image add-comment-button-image"
+      src="/assets/images/add-comment.png"
+      alt="add to favorite" />
+  <div
+      *ngIf="state === 'READY' && !isDeletion && sendAsUserFeedback"
+      class="user-feedback-tag">
+    Feedback
+  </div>
   <img
       *ngIf="(state === 'READY' || state === 'RESTORED') && isDeletion"
       class="button-image"

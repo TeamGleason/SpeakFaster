@@ -214,6 +214,7 @@ app-text-to-speech-component {
             [languageCode]="languageCode"
             [textEntryEndSubject]="textEntryEndSubject"
             [supportsAbbrevationExpansion]="appState === 'ABBREVIATION_EXPANSION'"
+            [favoriteButtonSendsUserFeedback]="appState === 'SETTINGS'"
             [inputBarControlSubject]="inputBarControlSubject"
             [loadPrefixedLexiconRequestSubject]="loadPrefixedLexiconRequestSubject"
             [abbreviationExpansionTriggers]="abbreviationExpansionTriggers"

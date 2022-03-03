@@ -75,6 +75,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   @Input() languageCode!: string;
   @Input() textEntryEndSubject!: Subject<TextEntryEndEvent>;
   @Input() supportsAbbrevationExpansion!: boolean;
+  @Input() favoriteButtonSendsUserFeedback: boolean = false;
   @Input()
   abbreviationExpansionTriggers!: Subject<InputAbbreviationChangedEvent>;
   @Input() fillMaskTriggers!: Subject<FillMaskRequest>;

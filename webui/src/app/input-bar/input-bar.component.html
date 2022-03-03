@@ -49,8 +49,8 @@
 }
 
 .button-image {
-  max-width: 50%;
-  max-height: 50%;
+  max-width: 55%;
+  max-height: 55%;
 }
 
 .button-shortcut-key {
@@ -122,6 +122,10 @@
   display: flex;
   flex-direction: row;
   width: fit-content;
+}
+
+.send-user-feedback {
+  font-size: 16px;
 }
 
 .simulated-cursor {
@@ -237,7 +241,8 @@
           class="action-button favorite-button">
         <app-favorite-button-component
             [userId]="userId"
-            [phrase]="effectivePhrase">
+            [phrase]="effectivePhrase"
+            [sendAsUserFeedback]="favoriteButtonSendsUserFeedback">
         </app-favorite-button-component>
       </button>
     </div>

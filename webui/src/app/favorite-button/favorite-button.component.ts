@@ -23,12 +23,14 @@ export enum State {
 export class FavoriteButtonComponent implements OnInit, OnDestroy {
   private static readonly _NAME = 'FavoriteButtonComopnent';
   private static readonly STATE_DELAY_MILLIS = 2000;
+  private static readonly DEFAULT_CONTEXTUAL_PHRASE_TAG = 'favorite';
 
   @Input() isDeletion: boolean = false;
   @Input() userId!: string;
   @Input() phrase!: string;
   // Phrase ID: must be provided if isDeleteion is true.
   @Input() phraseId?: string;
+  @Input() sendAsUserFeedback: boolean = false;
 
   state: State = State.READY;
 
@@ -52,43 +54,62 @@ export class FavoriteButtonComponent implements OnInit, OnDestroy {
       // This is a to-be-added phrase or a phrase that was just deleted.
       // The action to perform is hence adding phrase.
       this.state = State.REQUESTING;
-      const contextualPhrase = {
-        phraseId: '',  // For AddContextualPhraseRequest, this is ignored.
-        text: this.phrase.trim(),
-        tags: ['favorite'],  // TODO(cais): Do not hardcode this tag
-      };
-      this.eventLogger.logContextualPhraseAdd(
-          getContextualPhraseStats(contextualPhrase));
-      this.speakFasterService
-          .addContextualPhrase({
-            userId: this.userId,
-            contextualPhrase,
-          })
-          .subscribe(
-              (data: AddContextualPhraseResponse) => {
-                if (data.errorMessage) {
-                  console.error(`Error during adding of contextual phrase: ${
-                      data.errorMessage}`);
-                  this.eventLogger.logContextualPhraseAddError(
-                      data.errorMessage);
-                  this.state = State.ERROR;
-                  return;
-                }
-                if (this.isDeletion) {
-                  this.state = State.RESTORED;
-                  this.phraseId = data.phraseId;
-                } else {
+      if (this.sendAsUserFeedback) {
+        // Send as user feedback.
+        this.eventLogger
+            .logUserFeedback({
+              feedbackMessage: this.phrase.trim(),
+            })
+            .then(
+                () => {
                   this.state = State.SUCCESS;
                   this.scheduleReset();
-                }
-              },
-              error => {
-                this.eventLogger.logContextualPhraseAddError('');
-                setTimeout(() => {
+                },
+                () => {
                   this.state = State.ERROR;
                   this.scheduleReset();
                 });
-              });
+      } else {
+        // Add contextual phrase.
+        const contextualPhrase = {
+          phraseId: '',  // For AddContextualPhraseRequest, this is ignored.
+          text: this.phrase.trim(),
+          tags: [FavoriteButtonComponent.DEFAULT_CONTEXTUAL_PHRASE_TAG],
+        };
+        this.eventLogger.logContextualPhraseAdd(
+            getContextualPhraseStats(contextualPhrase));
+        this.speakFasterService
+            .addContextualPhrase({
+              userId: this.userId,
+              contextualPhrase,
+            })
+            .subscribe(
+                (data: AddContextualPhraseResponse) => {
+                  if (data.errorMessage) {
+                    console.error(`Error during adding of contextual phrase: ${
+                        data.errorMessage}`);
+                    this.eventLogger.logContextualPhraseAddError(
+                        data.errorMessage);
+                    this.state = State.ERROR;
+                    this.scheduleReset();
+                    return;
+                  }
+                  if (this.isDeletion) {
+                    this.state = State.RESTORED;
+                    this.phraseId = data.phraseId;
+                  } else {
+                    this.state = State.SUCCESS;
+                    this.scheduleReset();
+                  }
+                },
+                error => {
+                  this.eventLogger.logContextualPhraseAddError('');
+                  setTimeout(() => {
+                    this.state = State.ERROR;
+                    this.scheduleReset();
+                  });
+                });
+      }
     } else if (
         this.isDeletion &&
         (this.state === State.READY || this.state === State.RESTORED)) {

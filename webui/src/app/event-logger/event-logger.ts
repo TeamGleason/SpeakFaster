@@ -47,6 +47,11 @@ export interface AbbreviationExpansionResponseStats {
 // Name of an app setting.
 export type SettingName = 'TtsVoiceType'|'TtsVolume';
 
+export interface UserFeedback {
+  // The feedback message that the user typed.
+  feedbackMessage: string;
+}
+
 export interface EventLogger {
   /** Log the starting of a new (non-companion) session (opening the app). */
   logSessionStart(): Promise<void>;
@@ -161,4 +166,7 @@ export interface EventLogger {
 
   /** Log settings change. */
   logSettingsChange(settingName: SettingName): Promise<void>;
+
+  /** Log user feedback. */
+  logUserFeedback(userFeedback: UserFeedback): Promise<void>;
 }

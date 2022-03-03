@@ -8,6 +8,8 @@ import os
 
 import pytz
 
+ASR_TSV_FILENAME = "asr.tsv"
+
 MERGED_TSV_FILENAME = "merged.tsv"
 CONCATENATED_AUDIO_FILENAME = "concatenated_audio.wav"
 SCREENSHOTS_MP4_FILENAME = "screenshots.mp4"

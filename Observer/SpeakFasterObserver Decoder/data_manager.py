@@ -946,14 +946,14 @@ def _show_session_info(window,
     session_list.Widget.yview_moveto(_UI_STATE["session_yview"])
 
 
-def _open_folder(dir_path):
-  """Open a folder using operating system-specific affordance."""
+def _open_file_or_folder(file_or_dir_path):
+  """Open a file or folder using operating system-specific affordance."""
   if sys.platform == "win32":
-    subprocess.Popen(["start", dir_path], shell=True)
+    subprocess.Popen(["start", file_or_dir_path], shell=True)
   elif sys.platform == "darwin":
-    subprocess.Popen(["open", dir_path])
+    subprocess.Popen(["open", file_or_dir_path])
   else:  # Linux-like platforms.
-    subprocess.Popen(["xdg-open", dir_path])
+    subprocess.Popen(["xdg-open", file_or_dir_path])
 
 
 def upload_curated_freeform_text(window,
@@ -1043,8 +1043,11 @@ def main():
       [
           sg.Text("Sessions:", size=(15, 2), key="SESSION_TITLE"),
           session_listbox,
-          sg.Button("Open session folder", key="OPEN_SESSION_FOLDER"),
-          sg.Button("Refresh session state", key="REFRESH_SESSION_STATE"),
+          sg.Column([
+              [sg.Button("Open session folder", key="OPEN_SESSION_FOLDER")],
+              [sg.Button("Refresh session state", key="REFRESH_SESSION_STATE")],
+              [sg.Button("Show raw ASR", key="OPEN_RAW_ASR")],
+          ]),
       ],
       [
           sg.Text("Sessions ownership:", size=(15, 2), key="SESSION_OWNERSHIP_TITLE"),
@@ -1161,6 +1164,7 @@ def main():
     elif event in ("SESSION_LIST",
                    "OPEN_SESSION_FOLDER",
                    "REFRESH_SESSION_STATE",
+                   "OPEN_RAW_ASR",
                    "CLAIM_SESSION",
                    "UNCLAIM_SESSION",
                    "DOWNLOAD_SESSION_TO_LOCAL",
@@ -1183,7 +1187,7 @@ def main():
       if event == "OPEN_SESSION_FOLDER":
         session_dir_path = data_manager.get_local_session_dir(session_prefix)
         if os.path.isdir(session_dir_path):
-          _open_folder(session_dir_path)
+          _open_file_or_folder(session_dir_path)
         else:
           sg.Popup(
               "Local session directory not found. Download the session first",
@@ -1192,6 +1196,17 @@ def main():
       elif event == "REFRESH_SESSION_STATE":
         _show_session_info(window, data_manager, session_container_prefixes,
                            session_prefixes)
+        continue
+      elif event == "OPEN_RAW_ASR":
+        session_dir_path = data_manager.get_local_session_dir(session_prefix)
+        asr_tsv_path = os.path.join(session_dir_path, file_naming.ASR_TSV_FILENAME)
+        if os.path.isfile(asr_tsv_path):
+          _open_file_or_folder(asr_tsv_path)
+        else:
+          sg.Popup(
+              "Local file not found: %s. "
+              "Make sure the session is preprocessed and downloaded." % asr_tsv_path,
+              modal=True)
         continue
       elif event == "CLAIM_SESSION":
         data_manager.claim_session(session_prefix)

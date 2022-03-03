@@ -11,9 +11,10 @@
 }
 
 app-quick-phrases-component {
-  bottom: 0px;
+  bottom: 0;
   display: block;
   left: 0;
+  margin-bottom: 0;
   max-height: 100px;
   position: absolute;
 }
@@ -119,8 +120,13 @@ mat-progress-spinner {
 
 .action-button.repeat-button {
   align-items: center;
+  background-color: rgb(122, 102, 7);
+  bottom: 0;
   display: flex;
   flex-direction: row;
+  margin-bottom: 0;
+  position: absolute;
+  right: 0;
 }
 
 .action-button.text-prediction-button {
@@ -281,7 +287,8 @@ mat-progress-spinner {
 </div>
 
 <div
-    *ngIf="state === 'PRE_CHOOSING_EXPANSION'">
+    *ngIf="state === 'PRE_CHOOSING_EXPANSION' ||
+           state === 'POST_CHOOSING_EXPANSION'">
   <button
       #clickableButton
       *ngFor="let text of textPredictions; let i = index"

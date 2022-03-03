@@ -47,7 +47,7 @@
   color: gold;
   border-radius: 5px;
   display: inline-block;
-  font-size: 24px;
+  font-size: 21px;
   margin-right: 10px;
   padding: 2px 5px;
 }
@@ -87,8 +87,9 @@
 </style>
 
 <button #button class="conversation-turn" [ngClass]="{'focused-turn': isFocus}">
-  <div *ngIf="!turn.isTts && turn.speakerId != null &&
-              turn.speakerId.length > 0" class="speaker-tag">
+  <div
+      *ngIf="!turn.isTts && turn.speakerId != null && turn.speakerId.length > 0"
+      class="speaker-tag">
     {{turn.speakerId}}
   </div>
   <div *ngIf="showTimestamp && !turn.isHardcoded" class="time-tag">

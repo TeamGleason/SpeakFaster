@@ -137,14 +137,16 @@ export interface SpeakFasterServiceStub {
    * Register a conversation turn as a context signal.
    * @param userId the ID of the user to whom this conversation turn is
    *     addressed.
+   * @param partnerName Name of the partner who uttered the conversation turn.
    * @param speechContent content of the conversation turn.
    * @param startTimestamp the timestamp for the start of the conversation turn.
    * @param timezone name of the timezone in which the sender of the
-   *     conversation turn is located,
+   *     conversation turn is located.
    * @returns An Observable for the server respnose.
    */
   registerContext(
-      userId: string, speechContent: string, startTimestamp?: Date,
+      userId: string, partnerName: string, speechContent: string,
+      startTimestamp?: Date,
       timezone?: string): Observable<RegisterContextResponse>;
 
   /**
@@ -305,7 +307,8 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
   }
 
   registerContext(
-      userId: string, speechContent: string, startTimestamp?: Date,
+      userId: string, partnerName: string, speechContent: string,
+      startTimestamp?: Date,
       timezone?: string): Observable<RegisterContextResponse> {
     const {endpoint, headers, withCredentials} = this.getServerCallParams();
     startTimestamp = startTimestamp || new Date();
@@ -317,6 +320,7 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
         speechContent: speechContent,
         startTimestamp: startTimestamp.toISOString(),
         timezone: timezone,
+        speakerId: partnerName,
       },
       withCredentials,
       headers,

@@ -235,7 +235,8 @@ export class PartnerComponent implements OnInit {
     this._infoMessage = 'Sending...';
     this._errorMessage = null;
     this.cdr.detectChanges();
-    this.speakFasterService.registerContext(userId, speechContent)
+    this.speakFasterService
+        .registerContext(userId, this.partnerGivenName || '', speechContent)
         .subscribe(
             registerContextResponse => {
               console.log('reponse:', registerContextResponse);

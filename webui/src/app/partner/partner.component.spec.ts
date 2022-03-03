@@ -14,13 +14,14 @@ import {PartnerModule} from './partner.module';
 @Injectable()
 class SpeakFasterServiceForTest {
   registerContext(
-      userId: string, speechContent: string, startTimestamp?: Date,
+      userId: string, partnerName: string, speechContent: string,
+      startTimestamp?: Date,
       timezone?: string): Observable<RegisterContextResponse> {
     throw Error('This should be spied on instead of called directly.')
   }
 }
 
-describe('PartnerComopnent', () => {
+fdescribe('PartnerComopnent', () => {
   let fixture: ComponentFixture<PartnerComponent>;
   const speakFasterServiceForTest = new SpeakFasterServiceForTest();
 
@@ -125,7 +126,7 @@ describe('PartnerComopnent', () => {
     fixture.detectChanges();
 
     expect(registerContextSpy)
-        .toHaveBeenCalledWith('testuser1', 'hi there. how are you?');
+        .toHaveBeenCalledWith('testuser1', '', 'hi there. how are you?');
     const info = fixture.debugElement.query(By.css('.message-info'));
     expect(info.nativeElement.innerText).toEqual('Sending...');
   });

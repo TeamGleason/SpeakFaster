@@ -124,6 +124,9 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
         !changes.contextStrings.currentValue[0]) {
       return;
     }
+    console.log(
+        '*** changes.contextStrings.currentValue:',
+        changes.contextStrings.currentValue);  // DEBUG
     this.speakFasterService
         .textPrediction({
           contextTurns: changes.contextStrings.currentValue,

@@ -11,6 +11,7 @@ import {InputBarControlEvent} from '../input-bar/input-bar.component';
 import {LexiconComponent} from '../lexicon/lexicon.component';
 import {FillMaskRequest, SpeakFasterService, TextPredictionResponse} from '../speakfaster-service';
 import {AbbreviationSpec, InputAbbreviationChangedEvent} from '../types/abbreviation';
+import {ConversationTurn} from '../types/conversation';
 import {TextEntryBeginEvent, TextEntryEndEvent} from '../types/text-entry';
 
 export enum State {
@@ -36,7 +37,7 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
   private readonly instanceId =
       AbbreviationComponent._NAME + '_' + createUuid();
   @Input() userId!: string;
-  @Input() contextStrings!: string[];
+  @Input() conversationTurns!: ConversationTurn[];
   @Input() textEntryBeginSubject!: Subject<TextEntryBeginEvent>;
   @Input() textEntryEndSubject!: Subject<TextEntryEndEvent>;
   @Input()
@@ -111,26 +112,45 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
 
   ngOnChanges(changes: SimpleChanges) {
     // TODO(cais): Add unit tests.
-    if (!changes.contextStrings) {
+    if (!changes.conversationTurns) {
       return;
     }
-    if (changes.contextStrings.previousValue != null &&
-        allItemsEqual(
-            changes.contextStrings.previousValue,
-            changes.contextStrings.currentValue)) {
+    const currentTurnsSpeech =
+        (changes.conversationTurns.currentValue as ConversationTurn[])
+            .map(turn => turn.speechContent);
+    if (changes.conversationTurns.previousValue != null) {
+      const previousTurnsSpeech =
+          (changes.conversationTurns.previousValue as ConversationTurn[])
+              .map(turn => turn.speechContent);
+      if (allItemsEqual(previousTurnsSpeech, currentTurnsSpeech)) {
+        return;
+      }
+    }
+    const conversationTurns =
+        changes.conversationTurns.currentValue as ConversationTurn[];
+    if (!conversationTurns || !conversationTurns[0]) {
       return;
     }
-    if (!changes.contextStrings.currentValue ||
-        !changes.contextStrings.currentValue[0]) {
-      return;
+    // Find the last turn that is not from the user.
+
+    let n = conversationTurns.length - 1;
+    while (n >= 0) {
+      if (conversationTurns[n].speakerId !== this.userId) {
+        break;
+      }
+      n--;
     }
-    console.log(
-        '*** changes.contextStrings.currentValue:',
-        changes.contextStrings.currentValue);  // DEBUG
+    const textPrefix: string = (n === conversationTurns.length - 1) ?
+        '' :
+        conversationTurns.slice(n + 1)
+                .map(turn => turn.speechContent)
+                .join('. ') +
+            '. ';
     this.speakFasterService
         .textPrediction({
-          contextTurns: changes.contextStrings.currentValue,
-          textPrefix: '',
+          contextTurns:
+              conversationTurns.slice(0, n + 1).map(turn => turn.speechContent),
+          textPrefix,
           timestamp: new Date().toISOString(),
           timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         })
@@ -168,8 +188,8 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
   }
 
   onTextPredictionButtonClicked(event: Event, index: number) {
-    // NOTE: blur() call prevents future space keys from inadvertently clicking
-    // the button again.
+    // NOTE: blur() call prevents future space keys from inadvertently
+    // clicking the button again.
     // TODO(cais): Add unit test.
     (event.target as HTMLButtonElement).blur();
     this.inputBarControlSubject.next({
@@ -350,19 +370,21 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
   }
 
   get usedContextStrings(): string[] {
-    // TODO(#49): Limit by token length?
+    // TODO(#49): Limit by token length? Increase length.
     const LIMIT_TURNS = 2;
     const LIMIT_CONTEXT_TURN_LENGTH = 60;
-    const strings = [...this.contextStrings.map(
-        contextString =>
-            limitStringLength(contextString, LIMIT_CONTEXT_TURN_LENGTH))];
+    const strings = [...this.conversationTurns.map(
+        turn =>
+            limitStringLength(turn.speechContent, LIMIT_CONTEXT_TURN_LENGTH))];
     if (strings.length > LIMIT_TURNS) {
       strings.splice(0, strings.length - LIMIT_TURNS);
     }
     return strings;
   }
 
-  /** Heuristics about the num_samples to use when requesting AE from server. */
+  /**
+   * Heuristics about the num_samples to use when requesting AE from server.
+   */
   private getNumSamples(abbreviationSpec: AbbreviationSpec|null) {
     if (abbreviationSpec === null) {
       return 128;

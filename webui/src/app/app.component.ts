@@ -14,6 +14,7 @@ import {configureService, FillMaskRequest, GetUserIdResponse, SpeakFasterService
 import {InputAbbreviationChangedEvent} from './types/abbreviation';
 import {AppState} from './types/app-state';
 import {AddContextualPhraseRequest} from './types/contextual_phrase';
+import {ConversationTurn} from './types/conversation';
 import {TextEntryBeginEvent, TextEntryEndEvent} from './types/text-entry';
 
 
@@ -73,8 +74,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       new Subject();
 
   // Context speech content used for AE and other text predictions.
-  readonly contextStringsAvailable: string[] = [];
-  readonly contextStringsSelected: string[] = [];
+  readonly conversationTurnsAvailable: ConversationTurn[] = [];
+  readonly conversationTurnsSelected: ConversationTurn[] = [];
   inputString: string = '';
 
   @ViewChildren('clickableButton')
@@ -260,16 +261,16 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     this.changeAppState(AppState.MINIBAR);
   }
 
-  onContextStringsUpdated(contextStrings: string[]) {
+  onContextStringsUpdated(conversationTurns: ConversationTurn[]) {
     // TODO(cais): Add unit tests.
-    this.contextStringsAvailable.splice(0);
-    this.contextStringsAvailable.push(...contextStrings);
+    this.conversationTurnsAvailable.splice(0);
+    this.conversationTurnsAvailable.push(...conversationTurns);
   }
 
-  onContextStringsSelected(contextStrings: string[]) {
+  onContextStringsSelected(conversationTurns: ConversationTurn[]) {
     // TODO(cais): Add unit tests.
-    this.contextStringsSelected.splice(0);
-    this.contextStringsSelected.push(...contextStrings);
+    this.conversationTurnsSelected.splice(0);
+    this.conversationTurnsSelected.push(...conversationTurns);
   }
 
   onAbbreviationInputChanged(abbreviationChangedEvent:
@@ -326,7 +327,11 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   get anyContextStringsAvailable(): boolean {
-    return this.contextStringsAvailable.length > 0;
+    return this.conversationTurnsAvailable.length > 0;
+  }
+
+  get contextStringsSelected(): string[] {
+    return this.conversationTurnsSelected.map(turn => turn.speechContent);
   }
 
   get inputStringIsCompatibleWithAbbreviationExpansion(): boolean {

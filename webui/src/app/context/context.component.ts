@@ -7,6 +7,7 @@ import {ConversationTurnComponent} from '../conversation-turn/conversation-turn.
 import {getPhraseStats, HttpEventLogger} from '../event-logger/event-logger-impl';
 import {SpeakFasterService} from '../speakfaster-service';
 import {ConversationTurnContextSignal, getConversationTurnContextSignal} from '../types/context';
+import {ConversationTurn} from '../types/conversation';
 import {TextEntryEndEvent} from '../types/text-entry';
 
 import {DEFAULT_CONTEXT_SIGNALS} from './default-context';
@@ -19,8 +20,8 @@ import {DEFAULT_CONTEXT_SIGNALS} from './default-context';
 export class ContextComponent implements OnInit, AfterViewInit {
   private static readonly _NAME = 'ContextComponent';
   // TODO(cais): Do not hardcode this user ID.
-  private static readonly MAX_DISPLAYED_CONTEXT_COUNT = 2;
-  private static readonly MAX_FOCUS_CONTEXT_SIGNALS = 2;
+  private static readonly MAX_DISPLAYED_CONTEXT_COUNT = 3;
+  private static readonly MAX_FOCUS_CONTEXT_SIGNALS = 3;
 
   @Input() userId!: string;
   @Input() textEntryEndSubject!: Subject<TextEntryEndEvent>;
@@ -30,8 +31,10 @@ export class ContextComponent implements OnInit, AfterViewInit {
   readonly contextSignals: ConversationTurnContextSignal[] = [];
   contextRetrievalError: string|null = null;
 
-  @Output() contextStringsUpdated: EventEmitter<string[]> = new EventEmitter();
-  @Output() contextStringsSelected: EventEmitter<string[]> = new EventEmitter();
+  @Output()
+  contextStringsUpdated: EventEmitter<ConversationTurn[]> = new EventEmitter();
+  @Output()
+  contextStringsSelected: EventEmitter<ConversationTurn[]> = new EventEmitter();
 
   @ViewChildren('contextItem')
   viewButtons!: QueryList<ConversationTurnComponent>;
@@ -226,8 +229,8 @@ export class ContextComponent implements OnInit, AfterViewInit {
               }
               this.emitContextStringsSelected();
               this.contextRetrievalError = null;
-              this.contextStringsUpdated.next(this.contextSignals.map(
-                  signal => signal.conversationTurn.speechContent));
+              this.contextStringsUpdated.next(
+                  this.contextSignals.map(signal => signal.conversationTurn));
             },
             error => {
               this.cleanUpContextSignals();
@@ -323,6 +326,6 @@ export class ContextComponent implements OnInit, AfterViewInit {
             .filter(
                 signal =>
                     this.focusContextIds.indexOf(signal.contextId!) !== -1)
-            .map(signal => signal.conversationTurn!.speechContent));
+            .map(signal => signal.conversationTurn!));
   }
 }

@@ -78,7 +78,12 @@ describe('AbbreviationComponent', () => {
     it('sends http request on trigger: ' +
            `contextStrings = ${JSON.stringify(contextStrings)}`,
        () => {
-         fixture.componentInstance.contextStrings = contextStrings;
+         fixture.componentInstance.conversationTurns =
+             contextStrings.map(str => ({
+                                  speakerId: 'partner1',
+                                  speechContent: str,
+                                  startTimestamp: new Date(),
+                                }));
          const spy = spyOn(
                          fixture.componentInstance.speakFasterService,
                          'expandAbbreviation')
@@ -270,7 +275,11 @@ describe('AbbreviationComponent', () => {
   });
 
   it('displays SpellComponent given abbreviaton and state', () => {
-    fixture.componentInstance.contextStrings = ['hello'];
+    fixture.componentInstance.conversationTurns = [{
+      speakerId: 'partner1',
+      speechContent: 'hello',
+      startTimestamp: new Date(),
+    }];
     fixture.detectChanges();
     const abbreviationSpec: AbbreviationSpec = {
       tokens: [
@@ -294,7 +303,11 @@ describe('AbbreviationComponent', () => {
       abbreviationSpec,
       requestExpansion: true,
     });
-    fixture.componentInstance.contextStrings = ['hello'];
+    fixture.componentInstance.conversationTurns = [{
+      speakerId: 'partner1',
+      speechContent: 'hello',
+      startTimestamp: new Date(),
+    }];
     fixture.componentInstance.state = State.CHOOSING_EXPANSION;
     fixture.detectChanges();
 

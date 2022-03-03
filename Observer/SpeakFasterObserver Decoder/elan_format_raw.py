@@ -124,7 +124,7 @@ def format_raw_data(input_dir,
   extract_audio_events(concatenated_audio_path, audio_events_tsv_path)
 
   # Perform ASR on audio.
-  asr_tsv_path = os.path.join(input_dir, "asr.tsv")
+  asr_tsv_path = os.path.join(input_dir, file_naming.ASR_TSV_FILENAME)
   run_asr(first_audio_path, asr_tsv_path, speaker_count, gcs_bucket_name)
 
   # Merge the files.

@@ -179,7 +179,7 @@ fdescribe('InputBarComponent', () => {
          expect(abbreviationSpec.tokens.length).toEqual(1);
          expect(abbreviationSpec.tokens[0].value)
              .toEqual(expectedAbbreviationString);
-         expect(abbreviationSpec.tokens[0].isKeyword).toEqual(false);
+         expect(abbreviationSpec.tokens[0].isKeyword).toBeFalse();
          expect(abbreviationSpec.eraserSequence)
              .toEqual(repeatVirtualKey(
                  VIRTUAL_KEY.BACKSPACE, expectdEraserSequenceLength));
@@ -212,7 +212,7 @@ fdescribe('InputBarComponent', () => {
          expect(abbreviationSpec.tokens.length).toEqual(1);
          expect(abbreviationSpec.tokens[0].value)
              .toEqual(expectedAbbreviationString);
-         expect(abbreviationSpec.tokens[0].isKeyword).toEqual(false);
+         expect(abbreviationSpec.tokens[0].isKeyword).toBeFalse();
          expect(abbreviationSpec.eraserSequence)
              .toEqual(repeatVirtualKey(
                  VIRTUAL_KEY.BACKSPACE, expectedEraserSequenceLength));
@@ -269,6 +269,30 @@ fdescribe('InputBarComponent', () => {
     expect(abbreviationSpec.eraserSequence)
         .toEqual(repeatVirtualKey(VIRTUAL_KEY.BACKSPACE, keySequence.length));
   });
+
+  it('input abbreviation with head keywords with period triggers AE without period',
+     () => {
+       const keySequence = [
+         'g', 'o', 'o', 'd', VIRTUAL_KEY.PERIOD, VIRTUAL_KEY.SPACE, 't', 'i',
+         'a', 't', 'h', 's', VIRTUAL_KEY.SPACE, VIRTUAL_KEY.SPACE
+       ];
+       const reconstructedText = keySequence.join('');
+       enterKeysIntoComponent(keySequence, reconstructedText);
+
+       expect(inputAbbreviationChangeEvents.length).toEqual(1);
+       expect(inputAbbreviationChangeEvents[0].requestExpansion).toBeTrue();
+       const {abbreviationSpec} = inputAbbreviationChangeEvents[0];
+       expect(abbreviationSpec.readableString).toEqual('good tiaths');
+       const {tokens} = abbreviationSpec;
+       expect(tokens.length).toEqual(2);
+       expect(tokens[0]).toEqual({value: 'good', isKeyword: true});
+       expect(tokens[1]).toEqual({value: 'tiaths', isKeyword: false});
+       expect(abbreviationSpec.lineageId.length).toBeGreaterThan(0);
+       expect(abbreviationSpec.eraserSequence)
+           .toEqual(
+               repeatVirtualKey(VIRTUAL_KEY.BACKSPACE, keySequence.length));
+     });
+
 
   it('too many head keywords disable expand and spell buttons', () => {
     const keySequence = [
@@ -391,6 +415,31 @@ fdescribe('InputBarComponent', () => {
          expect(tokens[2]).toEqual({value: 'c', isKeyword: false});
        });
   }
+
+  it('spelling word with extraneous period then enter trigger key triggers AE: ',
+     () => {
+       const keySequence = ['a', 'b', 'c'];
+       const reconstructedText = keySequence.join('');
+       enterKeysIntoComponent(keySequence, reconstructedText);
+       const spellButton = fixture.debugElement.query(By.css('.spell-button'));
+       spellButton.nativeElement.click();
+       fixture.detectChanges();
+       const spellSequence = ['b', 'i', 't', VIRTUAL_KEY.PERIOD, VIRTUAL_KEY.SPACE];
+       const spellReconstructedText =
+           spellSequence.join('') + reconstructedText;
+       enterKeysIntoComponent(spellSequence, spellReconstructedText);
+
+       expect(inputAbbreviationChangeEvents.length).toEqual(1);
+       expect(inputAbbreviationChangeEvents[0].requestExpansion).toBeTrue();
+       const {abbreviationSpec} = inputAbbreviationChangeEvents[0];
+       expect(abbreviationSpec.tokens.length).toEqual(3);
+       expect(abbreviationSpec.readableString).toEqual('a bit c');
+       // TODO(cais): Make assertion about eraseSequence with spelling.
+       const {tokens} = abbreviationSpec;
+       expect(tokens[0]).toEqual({value: 'a', isKeyword: false});
+       expect(tokens[1]).toEqual({value: 'bit', isKeyword: true});
+       expect(tokens[2]).toEqual({value: 'c', isKeyword: false});
+     });
 
   it('clicking expand button after spelling triggers AE', () => {
     const keySequence = ['a', 'b', 'c'];

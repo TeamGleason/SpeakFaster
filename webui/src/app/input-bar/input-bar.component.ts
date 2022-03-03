@@ -40,6 +40,10 @@ export interface InputBarControlEvent {
   clearAll?: boolean;
 }
 
+function removePeriods(str: string) {
+  return str.replace(/\./g, '');
+}
+
 // Abbreviation expansion can be triggered by entering any of the the
 // abbreviation following key sequences.
 // TODO(#49): This can be generalized and made configurable.
@@ -330,7 +334,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
             pendingChars = '';
           }
           tokens.push({
-            value: this._chipTypedText![i]!,
+            value: removePeriods(this._chipTypedText![i]!),
             isKeyword: true,
           });
         } else {
@@ -346,7 +350,8 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
       }
       abbreviationSpec = {
         tokens,
-        readableString: tokens.map(token => token.value).join(' '),
+        readableString:
+            tokens.map(token => removePeriods(token.value)).join(' '),
         precedingText,
         eraserSequence: repeatVirtualKey(VIRTUAL_KEY.BACKSPACE, eraserLength),
         lineageId: createUuid(),
@@ -377,10 +382,10 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     let readableString: string = '';
     headKeywords.forEach(keyword => {
       tokens.push({
-        value: keyword,
+        value: removePeriods(keyword),
         isKeyword: true,
       });
-      readableString += keyword + ' ';
+      readableString += removePeriods(keyword) + ' ';
     });
     readableString += abbrevText;
     tokens.push({

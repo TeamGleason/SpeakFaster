@@ -4,7 +4,7 @@ import {HttpClient, HttpHeaders} from '@angular/common/http';
 import {Injectable} from '@angular/core';
 import {Observable, of} from 'rxjs';
 import {first} from 'rxjs/operators';
-import {isPlainAlphanumericKey, isTextContentKey} from 'src/utils/keyboard-utils';
+import {isTextContentKey} from 'src/utils/keyboard-utils';
 import {createUuid} from 'src/utils/uuid';
 
 import {getAppState} from '../app-state-registry';

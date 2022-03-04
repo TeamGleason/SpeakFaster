@@ -1,13 +1,14 @@
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {Subject} from 'rxjs';
 
-import {InputAbbreviationChangedEvent} from '../types/abbreviation';
 import {TextEntryBeginEvent, TextEntryEndEvent} from '../types/text-entry';
 
-import {ExternalEventsComponent, getPunctuationLiteral, getVirtualkeyCode, repeatVirtualKey, VIRTUAL_KEY, VKCODE_SPECIAL_KEYS} from './external-events.component';
+import {ExternalEventsComponent, getPunctuationLiteral, getVirtualkeyCode, LCTRL_KEY_HEAD_FOR_TTS_TRIGGER, repeatVirtualKey, VIRTUAL_KEY, VKCODE_SPECIAL_KEYS} from './external-events.component';
 import {ExternalEventsModule} from './external-events.module';
 
-describe('ExternalEventsComponent', () => {
+const END_KEY_CODE = getVirtualkeyCode(LCTRL_KEY_HEAD_FOR_TTS_TRIGGER)[0]
+
+fdescribe('ExternalEventsComponent', () => {
   let textEntryBeginSubject: Subject<TextEntryBeginEvent>;
   let textEntryEndSubject: Subject<TextEntryEndEvent>;
   let fixture: ComponentFixture<ExternalEventsComponent>;
@@ -151,42 +152,55 @@ describe('ExternalEventsComponent', () => {
       Array<[string, number[], string]> = [
         [
           'letters, number, space and punctuation',
-          [72, 73, 188, 32, 87, 49, 190, 162, 81], 'hi, w1.'
+          [72, 73, 188, 32, 87, 49, 190, 162, END_KEY_CODE], 'hi, w1.'
         ],
-        ['with exclamation point', [72, 73, 160, 49, 162, 81], 'hi!'],
-        ['shift punctuation', [72, 73, 160, 186, 191, 162, 81], 'hi:/'],
-        ['repeating LCtrl key', [72, 73, 162, 162, 81], 'hi'],
-        ['with new lines', [72, 73, 188, 13, 87, 162, 81], 'hi,\nw'],
-        ['with backspace', [72, 73, 8, 72, 162, 81], 'hh'],
-        ['with left arrow and inserted char', [72, 73, 37, 65, 162, 81], 'hai'],
-        ['with left arrow and backspace', [72, 73, 37, 8, 162, 81], 'i'],
-        ['with noop left arrow', [39, 72, 73, 162, 81], 'hi'],
-        ['with noop right arrow', [72, 73, 39, 162, 81], 'hi'],
+        ['with exclamation point', [72, 73, 160, 49, 162, END_KEY_CODE], 'hi!'],
+        [
+          'shift punctuation', [72, 73, 160, 186, 191, 162, END_KEY_CODE],
+          'hi:/'
+        ],
+        ['repeating LCtrl key', [72, 73, 162, 162, END_KEY_CODE], 'hi'],
+        ['with new lines', [72, 73, 188, 13, 87, 162, END_KEY_CODE], 'hi,\nw'],
+        ['with backspace', [72, 73, 8, 72, 162, END_KEY_CODE], 'hh'],
+        [
+          'with left arrow and inserted char',
+          [72, 73, 37, 65, 162, END_KEY_CODE], 'hai'
+        ],
+        [
+          'with left arrow and backspace', [72, 73, 37, 8, 162, END_KEY_CODE],
+          'i'
+        ],
+        ['with noop left arrow', [39, 72, 73, 162, END_KEY_CODE], 'hi'],
+        ['with noop right arrow', [72, 73, 39, 162, END_KEY_CODE], 'hi'],
         [
           'with left & right arrow, inserted chars',
-          [72, 73, 37, 65, 39, 65, 162, 81], 'haia'
+          [72, 73, 37, 65, 39, 65, 162, END_KEY_CODE], 'haia'
         ],
-        ['home key', [72, 73, 188, 32, 36, 65, 66, 162, 81], 'abhi, '],
+        ['home key', [72, 73, 188, 32, 36, 65, 66, 162, END_KEY_CODE], 'abhi,'],
         [
-          'home key and end key', [72, 73, 188, 32, 36, 65, 35, 66, 162, 81],
-          'ahi, b'
+          'home key and end key',
+          [72, 73, 188, 32, 36, 65, 35, 66, 162, END_KEY_CODE], 'ahi, b'
         ],
         [
-          'new line and home key', [72, 73, 188, 13, 87, 36, 65, 162, 81],
-          'hi,\naw'
+          'new line and home key',
+          [72, 73, 188, 13, 87, 36, 65, 162, END_KEY_CODE], 'hi,\naw'
         ],
         [
           'new line, home and end key',
-          [72, 73, 188, 13, 87, 36, 35, 65, 162, 81], 'hi,\nwa'
+          [72, 73, 188, 13, 87, 36, 35, 65, 162, END_KEY_CODE], 'hi,\nwa'
         ],
-        ['with noop home key', [36, 72, 73, 162, 81], 'hi'],
-        ['with noop end key', [72, 73, 35, 162, 81], 'hi'],
-        ['home and delete key', [72, 73, 188, 36, 46, 162, 81], 'i,'],
-        ['1 left arrow and 1 delete key', [72, 73, 188, 37, 46, 162, 81], 'hi'],
+        ['with noop home key', [36, 72, 73, 162, END_KEY_CODE], 'hi'],
+        ['with noop end key', [72, 73, 35, 162, END_KEY_CODE], 'hi'],
+        ['home and delete key', [72, 73, 188, 36, 46, 162, END_KEY_CODE], 'i,'],
         [
-          '2 left arrows and 1 delete key', [72, 73, 188, 37, 37, 46, 162, 81],
-          'h,'
+          '1 left arrow and 1 delete key',
+          [72, 73, 188, 37, 46, 162, END_KEY_CODE], 'hi'
         ],
+        [
+          '2 left arrows and 1 delete key',
+          [72, 73, 188, 37, 37, 46, 162, END_KEY_CODE], 'h,'
+        ],
+        ['with apostrophe', [65, 222, 66, 162, END_KEY_CODE], 'a\'b'],
       ];
   for (const
            [description,
@@ -206,6 +220,36 @@ describe('ExternalEventsComponent', () => {
     });
   }
 
+  it('reconstructs text based on sentence-end period and space', () => {
+    const vkCodes = [72, 73, 190, 32];
+    for (const vkCode of vkCodes) {
+      component.externalKeypressHook(vkCode);
+    }
+    expect(beginEvents.length).toEqual(1);
+    expect(endEvents.length).toEqual(1);
+    expect(endEvents[0].text).toEqual('hi.');
+    expect(endEvents[0].isFinal).toBeTrue();
+  });
+
+  it('whitespace-only text does not trigger end event', () => {
+    const vkCodes = [32, 32, 13, 162, END_KEY_CODE];
+    for (const vkCode of vkCodes) {
+      component.externalKeypressHook(vkCode);
+    }
+    expect(beginEvents.length).toEqual(1);
+    expect(endEvents.length).toEqual(0);
+  });
+
+  it('Period and space from internal source doesn\'t trigger end event', () => {
+    const vkCodes = [72, 73, 190, 32];
+    for (const vkCode of vkCodes) {
+      component.externalKeypressHook(vkCode, /* isExternal= */ false);
+    }
+    expect(beginEvents.length).toEqual(1);
+    expect(endEvents.length).toEqual(0);
+  });
+
+  // TODO(cais): Restore. DO NOT SUBMIT.
   it('Correctly identifies human-entered and auto-injected keys', () => {
     spyOn(Date, 'now').and.returnValue(0);
     component.externalKeypressHook(65);  // Human-entered.
@@ -224,7 +268,8 @@ describe('ExternalEventsComponent', () => {
     spyOn(Date, 'now').and.returnValue(3000);
     component.externalKeypressHook(162);  // Human-entered.
     spyOn(Date, 'now').and.returnValue(3600);
-    component.externalKeypressHook(81);  // Human-entered.
+    component.externalKeypressHook(
+        getVirtualkeyCode('w')[0]);  // Human-entered.
     expect(beginEvents.length).toEqual(1);
     expect(endEvents.length).toEqual(1);
     expect(endEvents[0].text).toEqual('abcd ef');
@@ -237,7 +282,8 @@ describe('ExternalEventsComponent', () => {
     spyOn(Date, 'now').and.returnValue(1000);
     component.externalKeypressHook(162);  // Human-entered.
     spyOn(Date, 'now').and.returnValue(2000);
-    component.externalKeypressHook(81);  // Human-entered.
+    component.externalKeypressHook(getVirtualkeyCode(
+        LCTRL_KEY_HEAD_FOR_TTS_TRIGGER)[0]);  // Human-entered.
     // Ends first phrase; begins second one.
     spyOn(Date, 'now').and.returnValue(3000);
     component.externalKeypressHook(65);  // Human-entered.
@@ -248,7 +294,8 @@ describe('ExternalEventsComponent', () => {
     spyOn(Date, 'now').and.returnValue(5000);
     component.externalKeypressHook(162);  // Human-entered.
     spyOn(Date, 'now').and.returnValue(6000);
-    component.externalKeypressHook(81);  // Human-entered.
+    component.externalKeypressHook(getVirtualkeyCode(
+        LCTRL_KEY_HEAD_FOR_TTS_TRIGGER)[0]);  // Human-entered.
     expect(beginEvents.length).toEqual(2);
     expect(endEvents.length).toEqual(2);
     expect(endEvents[0].text).toEqual('a');

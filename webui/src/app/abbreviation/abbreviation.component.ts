@@ -278,8 +278,9 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
     }
     const text = this.abbreviationOptions[this._selectedAbbreviationIndex];
     if (toInjectKeys) {
-      const injectedKeys: Array<string|VIRTUAL_KEY> =
-          this.abbreviation!.eraserSequence || [];
+      // TODO(cais): Injecting eraser sequence is diabled for now. If it is to
+      // be reinstated later, use this.abbreviation!.eraserSequence.
+      const injectedKeys: Array<string|VIRTUAL_KEY> = [];
       injectedKeys.push(...text.split(''));
       if (!endsWithSentenceEndPunctuation(text)) {
         injectedKeys.push(VIRTUAL_KEY.PERIOD);

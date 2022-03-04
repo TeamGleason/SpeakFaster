@@ -16,61 +16,16 @@ const callbackStack: Array<{callbackName: string, callback: KeyboardCallback}> =
 export class KeyboardComponent {
   private static readonly _NAME = 'KeyboardComponent';
 
-  private static readonly callbackStack:
-      Array<{callbackName: string, callback: KeyboardCallback}> = [];
-
-  /**
-   * Register a callback.
-   * @param callbackName A unique identifier for the callback. If there is
-   *   already a callback with this name registered, this call will be no-op.
-   * @param callback
-   */
-  static registerCallback(callbackName: string, callback: KeyboardCallback) {
-    if (callbackName === '') {
-      throw new Error('Empty component name');
-    }
-    const alreadyExists =
-        callbackStack.map(item => item.callbackName).indexOf(callbackName) !==
-        -1;
-    if (alreadyExists) {
-      return;
-    }
-    callbackStack.push({callbackName: callbackName, callback});
-    console.log(`Registered keyboard callback: ${callbackName}`);
-  }
-
-  static unregisterCallback(callbackName: string) {
-    for (let i = callbackStack.length - 1; i >= 0; --i) {
-      if (callbackStack[i].callbackName === callbackName) {
-        callbackStack.splice(i, 1);
-      }
-    }
-  }
-
   constructor(private eventLogger: HttpEventLogger) {}
 
   @HostListener('document:keydown', ['$event'])
   onKeydown(event: KeyboardEvent) {
     this.eventLogger.logKeypress(event);
-    // First, call externalKeypressHook().
     if ((window as any).externalKeypressHook !== undefined) {
       try {
         const vkCode: number = getVirtualkeyCode(event.key)[0];
-        (window as any).externalKeypressHook(vkCode);
+        (window as any).externalKeypressHook(vkCode, /* isExternal= */ false);
       } catch (error) {
-      }
-    }
-    // Then, call registered callbacks.
-    const length = callbackStack.length;
-    if (length === 0) {
-      return;
-    }
-    for (let i = length - 1; i >= 0; --i) {
-      const callback = callbackStack[i].callback;
-      if (callback(event)) {
-        event.preventDefault();
-        event.stopPropagation();
-        break;
       }
     }
   }

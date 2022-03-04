@@ -5,7 +5,6 @@ import {createUuid} from 'src/utils/uuid';
 
 import {registerNewAccessToken, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from '../../utils/cefsharp';
 import {isPlainAlphanumericKey} from '../../utils/keyboard-utils';
-import {KeyboardComponent} from '../keyboard/keyboard.component';
 
 import {DeviceCodeResponse, GoogleDeviceAuthService, TokenResponse} from './google-device-auth-service';
 
@@ -50,8 +49,6 @@ export class AuthComponent implements OnInit, AfterViewInit, OnDestroy {
         this.clientId = params['client_id'];
       }
     });
-    KeyboardComponent.registerCallback(
-        AuthComponent._NAME, this.handleKeyboardEvent.bind(this));
   }
 
   ngAfterViewInit() {
@@ -63,7 +60,6 @@ export class AuthComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy() {
-    KeyboardComponent.unregisterCallback(AuthComponent._NAME);
     updateButtonBoxesToEmpty(this.instanceId);
   }
 

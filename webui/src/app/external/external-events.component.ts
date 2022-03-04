@@ -20,7 +20,6 @@ import {Component, Input, OnInit} from '@angular/core';
 import {Subject} from 'rxjs';
 import {keySequenceEndsWith} from 'src/utils/text-utils';
 
-import {AbbreviationSpec, InputAbbreviationChangedEvent} from '../types/abbreviation';
 import {TextEntryBeginEvent, TextEntryEndEvent} from '../types/text-entry';
 
 // The minimum delay between a preceeding keypress and an eye-gaze-triggered
@@ -63,6 +62,7 @@ export enum VIRTUAL_KEY {
   MINUS = '-',
   PERIOD = '.',
   SLASH_QUESTION_MARK = '/?',
+  VK_OEM_7 = '\'',
 }
 
 // Windows virtual keys, see
@@ -102,6 +102,7 @@ export const VKCODE_SPECIAL_KEYS: {[vkCode: number]: VIRTUAL_KEY} = {
   189: VIRTUAL_KEY.MINUS,
   190: VIRTUAL_KEY.PERIOD,
   191: VIRTUAL_KEY.SLASH_QUESTION_MARK,
+  222: VIRTUAL_KEY.VK_OEM_7,
 };
 
 // The reverse of the VKCODE_SPECIAL_KEYS map.
@@ -115,15 +116,17 @@ for (const k of Object.keys(VKCODE_SPECIAL_KEYS)) {
 }
 
 export const PUNCTUATION: VIRTUAL_KEY[] = [
-  VIRTUAL_KEY.SEMICOLON_COLON,
-  VIRTUAL_KEY.PLUS,
-  VIRTUAL_KEY.COMMA,
-  VIRTUAL_KEY.MINUS,
-  VIRTUAL_KEY.PERIOD,
-  VIRTUAL_KEY.SLASH_QUESTION_MARK,
+  VIRTUAL_KEY.SEMICOLON_COLON, VIRTUAL_KEY.PLUS, VIRTUAL_KEY.COMMA,
+  VIRTUAL_KEY.MINUS, VIRTUAL_KEY.PERIOD, VIRTUAL_KEY.SLASH_QUESTION_MARK,
+  VIRTUAL_KEY.VK_OEM_7,  // Single quote.
 ];
 
-export const TTS_TRIGGER_COMBO_KEY: string[] = [VIRTUAL_KEY.LCTRL, 'q'];
+export const SENTENCE_END_COMBO_KEYS: string[][] = [
+  [VIRTUAL_KEY.PERIOD, VIRTUAL_KEY.SPACE],
+];
+export const LCTRL_KEY_HEAD_FOR_TTS_TRIGGER = 'w';
+export const TTS_TRIGGER_COMBO_KEY: string[] =
+    [VIRTUAL_KEY.LCTRL, LCTRL_KEY_HEAD_FOR_TTS_TRIGGER];
 
 function getKeyFromVirtualKeyCode(vkCode: number): string|null {
   if (vkCode >= 48 && vkCode <= 57) {
@@ -146,6 +149,7 @@ function getKeyFromVirtualKeyCode(vkCode: number): string|null {
  *   that is not 1.
  */
 export function getVirtualkeyCode(charOrKey: string|VIRTUAL_KEY): number[] {
+  console.log('*** getVirtualKeyCode():', charOrKey);  // DEBUG
   if (SPECIAL_VIRTUAL_KEY_TO_CODE.has(charOrKey as VIRTUAL_KEY)) {
     return [
       SPECIAL_VIRTUAL_KEY_TO_CODE.get(charOrKey as VIRTUAL_KEY) as number
@@ -185,6 +189,8 @@ export function getPunctuationLiteral(
       return '.';
     case VIRTUAL_KEY.SLASH_QUESTION_MARK:
       return isShift ? '?' : '/';
+    case VIRTUAL_KEY.VK_OEM_7:
+      return '\'';
     default:
       throw new Error(`Invalid virtual key code: ${VIRTUAL_KEY}`);
   }
@@ -222,7 +228,6 @@ export function getNumOrPunctuationLiteral(
 export function repeatVirtualKey(key: VIRTUAL_KEY, num: number): VIRTUAL_KEY[] {
   return Array(num).fill(key);
 }
-
 
 export type KeypressListener =
     (keySequence: string[], reconstructedText: string) => void;
@@ -295,7 +300,7 @@ export class ExternalEventsComponent implements OnInit {
     ExternalEventsComponent.keypressListeners.splice(0);
   }
 
-  public externalKeypressHook(vkCode: number) {
+  public externalKeypressHook(vkCode: number, isExternal = true) {
     const virtualKey = getKeyFromVirtualKeyCode(vkCode);
     if (virtualKey === null) {
       return;
@@ -308,15 +313,21 @@ export class ExternalEventsComponent implements OnInit {
       this.numGazeKeypresses++;
     }
     this.previousKeypressTimeMillis = nowMillis;
-    if (keySequenceEndsWith(this.keySequence, TTS_TRIGGER_COMBO_KEY)) {
+    if (isExternal &&
+        (keySequenceEndsWith(this.keySequence, TTS_TRIGGER_COMBO_KEY) ||
+         SENTENCE_END_COMBO_KEYS.some(
+             keys => keySequenceEndsWith(this.keySequence, keys)))) {
       // A TTS action has been triggered.
-      console.log(`TTS event: "${this._text}"`);
-      this.textEntryEndSubject.next({
-        text: this._text,
-        timestampMillis: Date.now(),
-        numHumanKeypresses: this.numGazeKeypresses,
-        isFinal: true,
-      });
+      const text = this._text.trim();
+      if (text) {
+        console.log(`Sentence-end event: "${text}"`);
+        this.textEntryEndSubject.next({
+          text,
+          timestampMillis: Date.now(),
+          numHumanKeypresses: this.numGazeKeypresses,
+          isFinal: true,
+        });
+      }
       return;
     }
 

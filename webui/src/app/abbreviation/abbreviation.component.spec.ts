@@ -8,7 +8,7 @@ import {createUuid} from 'src/utils/uuid';
 
 import * as cefSharp from '../../utils/cefsharp';
 import {HttpEventLogger} from '../event-logger/event-logger-impl';
-import {ExternalEventsComponent, repeatVirtualKey, VIRTUAL_KEY} from '../external/external-events.component';
+import {repeatVirtualKey, VIRTUAL_KEY} from '../external/external-events.component';
 import {AbbreviationExpansionRespnose, FillMaskRequest, SpeakFasterService, TextPredictionRequest, TextPredictionResponse} from '../speakfaster-service';
 import {TestListener} from '../test-utils/test-cefsharp-listener';
 import {AbbreviationSpec, InputAbbreviationChangedEvent} from '../types/abbreviation';
@@ -65,6 +65,7 @@ fdescribe('AbbreviationComponent', () => {
         abbreviationExpansionTriggers;
     fixture.componentInstance.fillMaskTriggers = fillMaskTriggers;
     fixture.componentInstance.textEntryEndSubject = textEntryEndSubject;
+    fixture.componentInstance.conversationTurns = [];
     fixture.detectChanges();
   });
 
@@ -252,4 +253,22 @@ fdescribe('AbbreviationComponent', () => {
        expect(events[0].numKeypresses).toEqual(expectedNumKeypresses);
        expect(events[0].numHumanKeypresses).toEqual(expectedNumKeypresses);
      });
+
+  it('getting AE options resets error', () => {
+    fixture.componentInstance.responseError = 'foo error';
+    abbreviationExpansionTriggers.next({
+      abbreviationSpec: {
+        tokens: [{
+          value: 'a',
+          isKeyword: false,
+        }],
+        readableString: 'a',
+        lineageId: createUuid(),
+      },
+      requestExpansion: true,
+    });
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.responseError).toBeNull();
+  });
 });

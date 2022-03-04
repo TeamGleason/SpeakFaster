@@ -161,6 +161,7 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
           }
           this.textPredictions.splice(0);
           data.outputs.forEach(output => {
+            this.responseError = null;
             const text = output.trim();
             if (!text ||
                 !text.match(
@@ -344,6 +345,7 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
             data => {
               this.eventLogger.logAbbreviationExpansionResponse(
                   getAbbreviationExpansionResponseStats(data.exactMatches));
+              this.responseError = null;
               this.abbreviationOptions.splice(0);
               if (data.exactMatches != null) {
                 data.exactMatches.forEach(exactMatch => {
@@ -364,7 +366,8 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
                   getAbbreviationExpansionResponseStats(undefined, 'error'));
               this.state = State.CHOOSING_EXPANSION;
               this.receivedEmptyOptions = false;
-              this.responseError = error.message;
+              this.responseError =
+                  typeof error === 'string' ? error : error.message;
               this.cdr.detectChanges();
             });
     this.cdr.detectChanges();

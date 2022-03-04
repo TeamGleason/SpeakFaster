@@ -2,7 +2,8 @@
 
 import {HttpClient} from '@angular/common/http';
 import {Injectable} from '@angular/core';
-import {Observable} from 'rxjs';
+import {Observable, throwError} from 'rxjs';
+import {catchError, timeout} from 'rxjs/operators';
 
 import {AbbreviationSpec} from './types/abbreviation';
 import {ContextSignal} from './types/context';
@@ -185,6 +186,16 @@ export function configureService(config: ServiceConfiguration) {
   configuration = config;
 }
 
+const ABBREVIATION_EXPANSION_TIMEOUT_MILLIS = 6000;
+const TEXT_PREDICTION_TIMEOUT_MILLIS = 6000;
+const FILL_MASK_TIMEOUT_MILLIS = 6000;
+const CONTEXT_PHRASES_TIMEOUT_MILLIS = 10000;
+
+export function makeTimeoutErrorMessage(
+    taskName: string, timeoutMillis: number) {
+  return `${taskName} timeout (${(timeoutMillis / 1e3).toFixed(1)} s)`;
+}
+
 @Injectable()
 export class SpeakFasterService implements SpeakFasterServiceStub {
   constructor(private http: HttpClient) {}
@@ -210,18 +221,26 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
         keywordIndices.push(i);
       }
     }
-    return this.http.get<AbbreviationExpansionRespnose>(endpoint, {
-      params: {
-        mode: 'abbreviation_expansion',
-        acronym: abbreviationSpec.readableString,
-        speechContent,
-        keywordIndices: keywordIndices.join(','),
-        precedingText: precedingText || '',
-        numSamples,
-      },
-      withCredentials,
-      headers,
-    });
+    return this.http
+        .get<AbbreviationExpansionRespnose>(endpoint, {
+          params: {
+            mode: 'abbreviation_expansion',
+            acronym: abbreviationSpec.readableString,
+            speechContent,
+            keywordIndices: keywordIndices.join(','),
+            precedingText: precedingText || '',
+            numSamples,
+          },
+          withCredentials,
+          headers,
+        })
+        .pipe(
+            timeout(ABBREVIATION_EXPANSION_TIMEOUT_MILLIS),
+            catchError(error => {
+              return throwError(makeTimeoutErrorMessage(
+                  'Abbreviatione expansion',
+                  ABBREVIATION_EXPANSION_TIMEOUT_MILLIS));
+            }));
   }
 
   textPrediction(textPredictionRequest: TextPredictionRequest):
@@ -242,11 +261,16 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
     if (textPredictionRequest.allowedTags) {
       params['allowedTags'] = textPredictionRequest.allowedTags.join(',');
     }
-    return this.http.get<TextPredictionResponse>(endpoint, {
-      params,
-      withCredentials,
-      headers,
-    });
+    return this.http
+        .get<TextPredictionResponse>(endpoint, {
+          params,
+          withCredentials,
+          headers,
+        })
+        .pipe(timeout(TEXT_PREDICTION_TIMEOUT_MILLIS), catchError(error => {
+                return throwError(makeTimeoutErrorMessage(
+                    'Text prediction', TEXT_PREDICTION_TIMEOUT_MILLIS));
+              }));
   }
 
   addContextualPhrase(request: AddContextualPhraseRequest):
@@ -260,11 +284,16 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
           request.contextualPhrase.tags.join(',') :
           undefined,
     };
-    return this.http.get<AddContextualPhraseResponse>(endpoint, {
-      params,
-      withCredentials,
-      headers,
-    });
+    return this.http
+        .get<AddContextualPhraseResponse>(endpoint, {
+          params,
+          withCredentials,
+          headers,
+        })
+        .pipe(timeout(CONTEXT_PHRASES_TIMEOUT_MILLIS), catchError(error => {
+                return throwError(makeTimeoutErrorMessage(
+                    'Add context phrase', CONTEXT_PHRASES_TIMEOUT_MILLIS));
+              }));
   }
 
   deleteContextualPhrase(request: DeleteContextualPhraseRequest):
@@ -275,23 +304,33 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
       userId: request.userId,
       phraseId: request.phraseId,
     };
-    return this.http.get<DeleteContextualPhraseResponse>(endpoint, {
-      params,
-      withCredentials,
-      headers,
-    });
+    return this.http
+        .get<DeleteContextualPhraseResponse>(endpoint, {
+          params,
+          withCredentials,
+          headers,
+        })
+        .pipe(timeout(CONTEXT_PHRASES_TIMEOUT_MILLIS), catchError(error => {
+                return throwError(makeTimeoutErrorMessage(
+                    'Delete context phrase', CONTEXT_PHRASES_TIMEOUT_MILLIS));
+              }));
   }
 
   fillMask(request: FillMaskRequest): Observable<FillMaskResponse> {
     const {endpoint, headers, withCredentials} = this.getServerCallParams();
-    return this.http.get<FillMaskResponse>(endpoint, {
-      params: {
-        mode: 'fill_mask',
-        ...request,
-      },
-      withCredentials,
-      headers,
-    });
+    return this.http
+        .get<FillMaskResponse>(endpoint, {
+          params: {
+            mode: 'fill_mask',
+            ...request,
+          },
+          withCredentials,
+          headers,
+        })
+        .pipe(timeout(FILL_MASK_TIMEOUT_MILLIS), catchError(error => {
+                return throwError(makeTimeoutErrorMessage(
+                    'Word replacement', FILL_MASK_TIMEOUT_MILLIS));
+              }));
   }
 
   retrieveContext(userId: string) {

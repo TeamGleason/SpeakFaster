@@ -3,12 +3,13 @@
 import {HttpClientModule} from '@angular/common/http';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {By} from '@angular/platform-browser';
-import {of, Subject} from 'rxjs';
+import {Observable, of, Subject} from 'rxjs';
 import {createUuid} from 'src/utils/uuid';
 
 import * as cefSharp from '../../utils/cefsharp';
 import {HttpEventLogger} from '../event-logger/event-logger-impl';
 import {ExternalEventsComponent, repeatVirtualKey, VIRTUAL_KEY} from '../external/external-events.component';
+import {AbbreviationExpansionRespnose, FillMaskRequest, SpeakFasterService, TextPredictionRequest, TextPredictionResponse} from '../speakfaster-service';
 import {TestListener} from '../test-utils/test-cefsharp-listener';
 import {AbbreviationSpec, InputAbbreviationChangedEvent} from '../types/abbreviation';
 import {TextEntryEndEvent} from '../types/text-entry';
@@ -16,14 +17,31 @@ import {TextEntryEndEvent} from '../types/text-entry';
 import {AbbreviationComponent, State} from './abbreviation.component';
 import {AbbreviationModule} from './abbreviation.module';
 
-describe('AbbreviationComponent', () => {
+class SpeakFasterServiceForTest {
+  expandAbbreviation(
+      speechContent: string, abbreviationSpec: AbbreviationSpec,
+      numSamples: number,
+      precedingText?: string): Observable<AbbreviationExpansionRespnose> {
+    return of({});
+  }
+
+  textPrediction(textPredictionRequest: TextPredictionRequest):
+      Observable<TextPredictionResponse> {
+    return of({});
+  }
+}
+
+fdescribe('AbbreviationComponent', () => {
+  let speakFasterServiceForTest: SpeakFasterServiceForTest;
   let abbreviationExpansionTriggers: Subject<InputAbbreviationChangedEvent>;
+  let fillMaskTriggers: Subject<FillMaskRequest>;
   let textEntryEndSubject: Subject<TextEntryEndEvent>;
   let fixture: ComponentFixture<AbbreviationComponent>;
   let testListener: TestListener;
   let abbreviationChangeEvents: InputAbbreviationChangedEvent[];
 
   beforeEach(async () => {
+    speakFasterServiceForTest = new SpeakFasterServiceForTest();
     testListener = new TestListener();
     (window as any)[cefSharp.BOUND_LISTENER_NAME] = testListener;
     await TestBed
@@ -31,6 +49,7 @@ describe('AbbreviationComponent', () => {
           imports: [AbbreviationModule, HttpClientModule],
           declarations: [AbbreviationComponent],
           providers: [
+            {provide: SpeakFasterService, useValue: speakFasterServiceForTest},
             {provide: HttpEventLogger, useValue: new HttpEventLogger(null)},
           ]
         })
@@ -39,10 +58,12 @@ describe('AbbreviationComponent', () => {
     abbreviationChangeEvents = [];
     abbreviationExpansionTriggers.subscribe(
         (event) => abbreviationChangeEvents.push(event));
+    fillMaskTriggers = new Subject();
     textEntryEndSubject = new Subject();
     fixture = TestBed.createComponent(AbbreviationComponent);
     fixture.componentInstance.abbreviationExpansionTriggers =
         abbreviationExpansionTriggers;
+    fixture.componentInstance.fillMaskTriggers = fillMaskTriggers;
     fixture.componentInstance.textEntryEndSubject = textEntryEndSubject;
     fixture.detectChanges();
   });
@@ -121,9 +142,13 @@ describe('AbbreviationComponent', () => {
        });
   }
 
+  function populateAbbreviationOptions(options: string[]) {
+    fixture.componentInstance.abbreviationOptions.splice(0);
+    fixture.componentInstance.abbreviationOptions.push(...options);
+  }
+
   it('displays expansion options when available', () => {
-    fixture.componentInstance.abbreviationOptions =
-        ['what time is it', 'we took it in'];
+    populateAbbreviationOptions(['what time is it', 'we took it in']);
     fixture.componentInstance.state = State.CHOOSING_EXPANSION;
     fixture.detectChanges();
     const expansions =
@@ -149,7 +174,7 @@ describe('AbbreviationComponent', () => {
       eraserSequence: repeatVirtualKey(VIRTUAL_KEY.BACKSPACE, 8),
       lineageId: createUuid(),
     };
-    fixture.componentInstance.abbreviationOptions = ['what time is it'];
+    populateAbbreviationOptions(['what time is it']);
     fixture.componentInstance.state = State.CHOOSING_EXPANSION;
     fixture.detectChanges();
     const selectButtons =
@@ -158,48 +183,10 @@ describe('AbbreviationComponent', () => {
     await fixture.whenStable();
     const calls = testListener.injectedKeysCalls;
     expect(calls.length).toEqual(1);
-    // Includes the leading eraser keys and the trailing space.
-    expect(calls[0]).toEqual([
-      8,  8,  8,  8,  8,  8,  8,  8,  87, 72, 65, 84,
-      32, 84, 73, 77, 69, 32, 73, 83, 32, 73, 84, 32,
-    ]);
-  });
-
-  it('clicking abort button resets state and send end event', () => {
-    const textEntryEndEvents: TextEntryEndEvent[] = [];
-    textEntryEndSubject.subscribe(event => {
-      textEntryEndEvents.push(event);
-    });
-    fixture.componentInstance.reconstructedText = 'wtii  ';
-    fixture.componentInstance.abbreviation = {
-      tokens: ['w', 't', 'i', 'i'].map(char => ({
-                                         value: char,
-                                         isKeyword: false,
-                                       })),
-      readableString: 'wtii',
-      triggerKeys: [VIRTUAL_KEY.SPACE, VIRTUAL_KEY.SPACE],
-      eraserSequence: repeatVirtualKey(VIRTUAL_KEY.BACKSPACE, 8),
-      lineageId: createUuid(),
-    };
-    fixture.componentInstance.abbreviationOptions = ['what time is it'];
-    fixture.componentInstance.state = State.CHOOSING_EXPANSION;
-    fixture.detectChanges();
-    const abortButtons =
-        fixture.debugElement.query(By.css('.action-abort-button'));
-    abortButtons.nativeElement.click();
-    fixture.detectChanges();
-
-    const {componentInstance} = fixture;
-    expect(componentInstance.state).toEqual(State.PRE_CHOOSING_EXPANSION);
-    expect(componentInstance.abbreviation).toBeNull();
-    expect(componentInstance.responseError).toBeNull();
-    expect(componentInstance.abbreviationOptions).toEqual([]);
-    expect(componentInstance.reconstructedText).toEqual('');
-    expect(textEntryEndEvents.length).toEqual(1);
-    expect(textEntryEndEvents[0].text).toEqual('');
-    expect(textEntryEndEvents[0].timestampMillis).toBeGreaterThan(0);
-    expect(textEntryEndEvents[0].isFinal).toBeTrue();
-    expect(textEntryEndEvents[0].isAborted).toBeTrue();
+    // NOTE: For now we exclude the eraser sequence: [8,  8,  8,  8,  8,  8,  8,
+    // 8]. Includes the leading eraser keys and the trailing space.
+    expect(calls[0]).toEqual(
+        [87, 72, 65, 84, 32, 84, 73, 77, 69, 32, 73, 83, 32, 73, 84, 190, 32]);
   });
 
   it('clicking inject-button publishes to textEntryEndSubject', () => {
@@ -216,8 +203,7 @@ describe('AbbreviationComponent', () => {
       triggerKeys: [VIRTUAL_KEY.SPACE, VIRTUAL_KEY.SPACE],
       lineageId: createUuid(),
     };
-    fixture.componentInstance.abbreviationOptions =
-        ['what time is it', 'we took it in'];
+    populateAbbreviationOptions(['what time is it', 'we took it in']);
     fixture.componentInstance.state = State.CHOOSING_EXPANSION;
     fixture.detectChanges();
     const selectButtons =
@@ -250,8 +236,7 @@ describe('AbbreviationComponent', () => {
          triggerKeys: [VIRTUAL_KEY.SPACE, VIRTUAL_KEY.SPACE],
          lineageId: createUuid(),
        };
-       fixture.componentInstance.abbreviationOptions =
-           ['what time is it', 'we took it in'];
+       populateAbbreviationOptions(['what time is it', 'we took it in']);
        fixture.componentInstance.state = State.CHOOSING_EXPANSION;
        fixture.detectChanges();
        const selectButtons =
@@ -267,61 +252,4 @@ describe('AbbreviationComponent', () => {
        expect(events[0].numKeypresses).toEqual(expectedNumKeypresses);
        expect(events[0].numHumanKeypresses).toEqual(expectedNumKeypresses);
      });
-
-  it('does not display SpellComponent initially', () => {
-    const spellComponents =
-        fixture.debugElement.queryAll(By.css('app-spell-component'));
-    expect(spellComponents).toEqual([]);
-  });
-
-  it('displays SpellComponent given abbreviaton and state', () => {
-    fixture.componentInstance.conversationTurns = [{
-      speakerId: 'partner1',
-      speechContent: 'hello',
-      startTimestamp: new Date(),
-    }];
-    fixture.detectChanges();
-    const abbreviationSpec: AbbreviationSpec = {
-      tokens: [
-        {
-          value: 'h',
-          isKeyword: false,
-        },
-        {
-          value: 'a',
-          isKeyword: false,
-        },
-        {
-          value: 'y',
-          isKeyword: false,
-        }
-      ],
-      readableString: 'hay',
-      lineageId: createUuid(),
-    };
-    abbreviationExpansionTriggers.next({
-      abbreviationSpec,
-      requestExpansion: true,
-    });
-    fixture.componentInstance.conversationTurns = [{
-      speakerId: 'partner1',
-      speechContent: 'hello',
-      startTimestamp: new Date(),
-    }];
-    fixture.componentInstance.state = State.CHOOSING_EXPANSION;
-    fixture.detectChanges();
-
-    const spellComponents =
-        fixture.debugElement.queryAll(By.css('app-spell-component'));
-    expect(spellComponents.length).toEqual(1);
-  });
-
-  it('unsubscribes from textEntryEndSubject on destroy', () => {
-    fixture.detectChanges();
-    const prevNumListeners = ExternalEventsComponent.getNumKeypressListeners();
-    fixture.componentInstance.ngOnDestroy();
-
-    expect(ExternalEventsComponent.getNumKeypressListeners())
-        .toEqual(prevNumListeners - 1);
-  });
 });

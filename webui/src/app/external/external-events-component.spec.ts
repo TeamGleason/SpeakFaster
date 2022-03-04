@@ -249,7 +249,6 @@ fdescribe('ExternalEventsComponent', () => {
     expect(endEvents.length).toEqual(0);
   });
 
-  // TODO(cais): Restore. DO NOT SUBMIT.
   it('Correctly identifies human-entered and auto-injected keys', () => {
     spyOn(Date, 'now').and.returnValue(0);
     component.externalKeypressHook(65);  // Human-entered.

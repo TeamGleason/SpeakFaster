@@ -26,7 +26,6 @@ export enum State {
 @Component({
   selector: 'app-abbreviation-component',
   templateUrl: './abbreviation.component.html',
-  providers: [SpeakFasterService],
 })
 export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
                                               AfterViewInit {
@@ -69,11 +68,12 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
 
   abbreviation: AbbreviationSpec|null = null;
   responseError: string|null = null;
-  abbreviationOptions: string[] = [];
+  readonly abbreviationOptions: string[] = [];
   receivedEmptyOptions: boolean = false;
   private _selectedAbbreviationIndex: number = -1;
   private abbreviationExpansionTriggersSubscription?: Subscription;
   private fillMaskRequestTriggersSubscription?: Subscription;
+  private testEntryEndSubscription?: Subscription;
 
   constructor(
       public speakFasterService: SpeakFasterService,
@@ -95,11 +95,12 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
           this.state = State.REFINING_EXPANSION;
           this.cdr.detectChanges();
         });
-    this.textEntryEndSubject.subscribe(event => {
-      if (event.isFinal) {
-        this.resetState();  // TODO(cais): Add unit test.
-      }
-    });
+    this.testEntryEndSubscription =
+        this.textEntryEndSubject.subscribe(event => {
+          if (event.isFinal) {
+            this.resetState();  // TODO(cais): Add unit test.
+          }
+        });
   }
 
   ngAfterViewInit() {
@@ -179,6 +180,9 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
     }
     if (this.fillMaskRequestTriggersSubscription) {
       this.fillMaskRequestTriggersSubscription.unsubscribe();
+    }
+    if (this.testEntryEndSubscription) {
+      this.testEntryEndSubscription.unsubscribe();
     }
     updateButtonBoxesToEmpty(this.instanceId);
   }
@@ -318,7 +322,7 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
       this.responseError = 'Cannot expand abbreviation: empty abbreviation';
       return;
     }
-    this.abbreviationOptions = [];
+    this.abbreviationOptions.splice(0);
     this.state = State.REQUEST_ONGIONG;
     this.responseError = null;
     this.receivedEmptyOptions = false;
@@ -340,6 +344,7 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
             data => {
               this.eventLogger.logAbbreviationExpansionResponse(
                   getAbbreviationExpansionResponseStats(data.exactMatches));
+              this.abbreviationOptions.splice(0);
               if (data.exactMatches != null) {
                 data.exactMatches.forEach(exactMatch => {
                   const replaced =
@@ -349,7 +354,6 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
                     this.abbreviationOptions.push(replaced);
                   }
                 });
-                // this.abbreviationOptions.push(...data.exactMatches);
               }
               this.state = State.CHOOSING_EXPANSION;
               this.receivedEmptyOptions = this.abbreviationOptions.length === 0;

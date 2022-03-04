@@ -489,13 +489,14 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this.state === State.CHOOSING_WORD_CHIP ||
         this.state === State.FOCUSED_ON_WORD_CHIP) {
       const words: string[] = this._chips.map(chip => chip.text);
-      if (this._focusChipIndex && this._chipTypedText !== null) {
+      if (this._focusChipIndex !== null && this._chipTypedText !== null) {
         this._chipTypedText.forEach((chipText, i) => {
           if (chipText !== null) {
             words[i] = chipText;
           }
         });
       }
+      console.log('*** words =', words);  // DEBUG
       return words.join(' ');
     } else if (
         this.state === State.ENTERING_BASE_TEXT ||

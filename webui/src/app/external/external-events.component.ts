@@ -149,7 +149,6 @@ function getKeyFromVirtualKeyCode(vkCode: number): string|null {
  *   that is not 1.
  */
 export function getVirtualkeyCode(charOrKey: string|VIRTUAL_KEY): number[] {
-  console.log('*** getVirtualKeyCode():', charOrKey);  // DEBUG
   if (SPECIAL_VIRTUAL_KEY_TO_CODE.has(charOrKey as VIRTUAL_KEY)) {
     return [
       SPECIAL_VIRTUAL_KEY_TO_CODE.get(charOrKey as VIRTUAL_KEY) as number

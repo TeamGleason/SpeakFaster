@@ -714,6 +714,35 @@ fdescribe('InputBarComponent', () => {
     expect(textEntryEndEvents[0].text).toEqual('i felt great');
   });
 
+  it('types keys during refinement registers manual revision: first chip', () => {
+    inputBarControlSubject.next({
+      chips: [
+        {
+          text: 'i',
+        },
+        {
+          text: 'feel',
+        },
+        {
+          text: 'great',
+        }
+      ]
+    });
+    fixture.detectChanges();
+    const keySequence = ['i', 't', VIRTUAL_KEY.SPACE];
+    const reconstructedText = keySequence.join('');
+    const chips =
+        fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'))
+    chips[0].nativeElement.click();
+    enterKeysIntoComponent(keySequence, reconstructedText);
+    const speakButton = fixture.debugElement.query(By.css('.speak-button'))
+                            .query(By.css('.speak-button'));
+    speakButton.nativeElement.click();
+
+    expect(textEntryEndEvents.length).toEqual(1);
+    expect(textEntryEndEvents[0].text).toEqual('it feel great');
+  });
+
   it('spell button is shown during word refinement', () => {
     fixture.componentInstance.inputString = 'ifg';
     inputBarControlSubject.next({

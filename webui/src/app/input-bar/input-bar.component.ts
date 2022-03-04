@@ -231,7 +231,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
             this._chips.length, matchingChipIndices[0]);
         this.state = State.FOCUSED_ON_LETTER_CHIP;
         // Signal to soft keyboard a word boundary. TODO(cais): Decide.
-        injectKeys([VIRTUAL_KEY.SPACE]);
+        injectKeys([VIRTUAL_KEY.SPACE], /* toSelfApp= */ false);
         this.baseReconstructedText = this.latestReconstructedString.slice(
             0, this.latestReconstructedString.length - 1);
         this._focusChipIndex = matchingChipIndices[0];
@@ -406,6 +406,8 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
       chips: abbreviation.split('').map(char => ({text: char})),
     });
     this.state = State.CHOOSING_LETTER_CHIP;
+    // TODO(cais): Add unit test.
+    this.refreshExternalSoftKeyboardState();
     this.eventLogger.logAbbreviationExpansionStartSpellingMode(
         abbreviation.length);
   }
@@ -418,8 +420,6 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
       this.eventLogger.logAbbreviationExpansionSpellingChipSelection(
           this._chips.length, index);
       this.state = State.FOCUSED_ON_LETTER_CHIP;
-      // Signal to soft keyboard a word boundary. TODO(cais): Decide.
-      injectKeys([VIRTUAL_KEY.SPACE]);
       const firstLetter = this._chips[index].text[0];
       this.loadPrefixedLexiconRequestSubject.next({
         prefix: firstLetter,
@@ -428,6 +428,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
         this.state === State.CHOOSING_WORD_CHIP ||
         this.state === State.FOCUSED_ON_WORD_CHIP) {
       // TODO(cais): Add unit tests.
+      this.refreshExternalSoftKeyboardState();
       const tokens: string[] = this._chips.map(chip => chip.text);
       if (this._chipTypedText !== null) {
         for (let i = 0; i < this._chipTypedText.length; ++i) {
@@ -479,6 +480,10 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
         this.state === State.FOCUSED_ON_LETTER_CHIP) {
       this.state = State.ENTERING_BASE_TEXT;
     }
+  }
+
+  private refreshExternalSoftKeyboardState() {
+    injectKeys([VIRTUAL_KEY.SPACE], /* toSelfApp= */ true);
   }
 
   /**
@@ -533,7 +538,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     this.eventLogger.logInputBarInjectButtonClick(getPhraseStats(text));
     const injectedKeys: Array<string|VIRTUAL_KEY> = [];
     injectedKeys.push(...text.split(''));
-    injectKeys(injectedKeys);
+    injectKeys(injectedKeys, /* toSelfApp= */ false);
     this.textEntryEndSubject.next({
       text,
       timestampMillis: Date.now(),

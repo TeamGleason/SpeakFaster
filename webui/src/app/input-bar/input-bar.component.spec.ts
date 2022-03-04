@@ -95,7 +95,7 @@ fdescribe('InputBarComponent', () => {
 
   it('input box is initially empty', () => {
     const inputText = fixture.debugElement.query(By.css('.input-text'));
-    expect(inputText.nativeElement.innerText).toEqual('');
+    expect(inputText.nativeElement.innerText).toEqual('|');  // The cursor.
     expect(fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'))
                .length)
         .toEqual(0);
@@ -136,7 +136,7 @@ fdescribe('InputBarComponent', () => {
          enterKeysIntoComponent(keySequence, reconstructedText);
 
          const inputText = fixture.debugElement.query(By.css('.input-text'));
-         expect(inputText.nativeElement.innerText).toEqual(expectedText);
+         expect(inputText.nativeElement.innerText).toEqual(expectedText + '|');
          expect(fixture.debugElement.query(By.css('.expand-button')))
              .not.toBeNull();
          expect(fixture.debugElement.query(By.css('.spell-button')))
@@ -156,7 +156,7 @@ fdescribe('InputBarComponent', () => {
     fixture.detectChanges();
 
     const inputText = fixture.debugElement.query(By.css('.input-text'));
-    expect(inputText.nativeElement.innerText).toEqual('');
+    expect(inputText.nativeElement.innerText).toEqual('|');
     expect(fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'))
                .length)
         .toEqual(0);
@@ -334,7 +334,7 @@ fdescribe('InputBarComponent', () => {
     fixture.detectChanges();
 
     const inputText = fixture.debugElement.query(By.css('.input-text'));
-    expect(inputText.nativeElement.innerText).toEqual('');
+    expect(inputText.nativeElement.innerText).toEqual('|');
     expect(fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'))
                .length)
         .toEqual(0);
@@ -367,6 +367,17 @@ fdescribe('InputBarComponent', () => {
     expect(fixture.debugElement.query(By.css('.length-limit-exceeded')))
     expect(fixture.debugElement.query(By.css('.abort-button'))).not.toBeNull();
     expect(LoadLexiconRequests.length).toEqual(0);
+  });
+
+  it('clicking spell button injects space key to self app', () => {
+    const keySequence = ['a', 'c', 'e'];
+    const reconstructedText = keySequence.join('');
+    enterKeysIntoComponent(keySequence, reconstructedText);
+    const spellButton = fixture.debugElement.query(By.css('.spell-button'));
+    spellButton.nativeElement.click();
+
+    expect(testListener.injectedKeysCalls).toEqual([[32]]);  // A space.
+    expect(testListener.injectedKeysCallsToSelfApp).toEqual([true]);
   });
 
   it('spelling word updates chips', () => {
@@ -658,32 +669,36 @@ fdescribe('InputBarComponent', () => {
     expect(fillMaskRequests.length).toEqual(0);
   });
 
-  it('clicking chip during refinement triggers fillMask', () => {
-    inputBarControlSubject.next({
-      chips: [
-        {
-          text: 'i',
-        },
-        {
-          text: 'feel',
-        },
-        {
-          text: 'great',
-        }
-      ]
-    });
-    fixture.detectChanges();
-    const chips =
-        fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'))
-    chips[2].nativeElement.click();
+  it('clicking chip during refinement triggers fillMask and calls ' +
+         'self-app key inject',
+     () => {
+       inputBarControlSubject.next({
+         chips: [
+           {
+             text: 'i',
+           },
+           {
+             text: 'feel',
+           },
+           {
+             text: 'great',
+           }
+         ]
+       });
+       fixture.detectChanges();
+       const chips =
+           fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'))
+       chips[2].nativeElement.click();
 
-    expect(fillMaskRequests.length).toEqual(1);
-    expect(fillMaskRequests[0]).toEqual({
-      speechContent: 'How are you',
-      phraseWithMask: 'i feel _',
-      maskInitial: 'g',
-    });
-  });
+       expect(fillMaskRequests.length).toEqual(1);
+       expect(fillMaskRequests[0]).toEqual({
+         speechContent: 'How are you',
+         phraseWithMask: 'i feel _',
+         maskInitial: 'g',
+       });
+       expect(testListener.injectedKeysCalls).toEqual([[32]]);
+       expect(testListener.injectedKeysCallsToSelfApp).toEqual([true]);
+     });
 
   it('types keys during refinement registers manual revision', () => {
     inputBarControlSubject.next({
@@ -714,34 +729,35 @@ fdescribe('InputBarComponent', () => {
     expect(textEntryEndEvents[0].text).toEqual('i felt great');
   });
 
-  it('types keys during refinement registers manual revision: first chip', () => {
-    inputBarControlSubject.next({
-      chips: [
-        {
-          text: 'i',
-        },
-        {
-          text: 'feel',
-        },
-        {
-          text: 'great',
-        }
-      ]
-    });
-    fixture.detectChanges();
-    const keySequence = ['i', 't', VIRTUAL_KEY.SPACE];
-    const reconstructedText = keySequence.join('');
-    const chips =
-        fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'))
-    chips[0].nativeElement.click();
-    enterKeysIntoComponent(keySequence, reconstructedText);
-    const speakButton = fixture.debugElement.query(By.css('.speak-button'))
-                            .query(By.css('.speak-button'));
-    speakButton.nativeElement.click();
+  it('types keys during refinement registers manual revision: first chip',
+     () => {
+       inputBarControlSubject.next({
+         chips: [
+           {
+             text: 'i',
+           },
+           {
+             text: 'feel',
+           },
+           {
+             text: 'great',
+           }
+         ]
+       });
+       fixture.detectChanges();
+       const keySequence = ['i', 't', VIRTUAL_KEY.SPACE];
+       const reconstructedText = keySequence.join('');
+       const chips =
+           fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'))
+       chips[0].nativeElement.click();
+       enterKeysIntoComponent(keySequence, reconstructedText);
+       const speakButton = fixture.debugElement.query(By.css('.speak-button'))
+                               .query(By.css('.speak-button'));
+       speakButton.nativeElement.click();
 
-    expect(textEntryEndEvents.length).toEqual(1);
-    expect(textEntryEndEvents[0].text).toEqual('it feel great');
-  });
+       expect(textEntryEndEvents.length).toEqual(1);
+       expect(textEntryEndEvents[0].text).toEqual('it feel great');
+     });
 
   it('spell button is shown during word refinement', () => {
     fixture.componentInstance.inputString = 'ifg';

@@ -286,7 +286,7 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
         injectedKeys.push(VIRTUAL_KEY.PERIOD);
       }
       injectedKeys.push(VIRTUAL_KEY.SPACE);  // Append a space at the end.
-      injectKeys(injectedKeys);
+      injectKeys(injectedKeys, /* toSelfApp= */ false);
     }
     this.textEntryEndSubject.next({
       text,

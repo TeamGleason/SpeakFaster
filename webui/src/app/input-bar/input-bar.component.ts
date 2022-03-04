@@ -53,8 +53,9 @@ export const ABBRVIATION_EXPANSION_TRIGGER_KEY_SEQUENCES: Array<string[]> =
     [[VIRTUAL_KEY.SPACE, VIRTUAL_KEY.SPACE], [VIRTUAL_KEY.ENTER]];
 
 const INPUT_TEXT_BASE_FONT_SIZE = 30;
-const INPUT_TEXT_FONT_SIZE_SCALING_FACTORS = [1.0, 1 / 1.3, 1 / 1.6, 1 / 1.8];
-const INPUT_TEXT_FONT_SIZE_SCALING_LENGTH_TICKS = [0, 50, 120, 280];
+const INPUT_TEXT_FONT_SIZE_SCALING_FACTORS =
+    [1.0, 1 / 1.35, 1 / 1.6, 1 / 1.8, 1 / 1.95];
+const INPUT_TEXT_FONT_SIZE_SCALING_LENGTH_TICKS = [0, 50, 100, 150, 250];
 
 @Component({
   selector: 'app-input-bar-component',
@@ -496,7 +497,6 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
           }
         });
       }
-      console.log('*** words =', words);  // DEBUG
       return words.join(' ');
     } else if (
         this.state === State.ENTERING_BASE_TEXT ||

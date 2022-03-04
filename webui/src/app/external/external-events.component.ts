@@ -231,6 +231,21 @@ export function repeatVirtualKey(key: VIRTUAL_KEY, num: number): VIRTUAL_KEY[] {
 export type KeypressListener =
     (keySequence: string[], reconstructedText: string) => void;
 
+/**
+ * A configuration for ignoring a certain sequence of machine-generated key
+ * sequences or a part of it.
+ */
+export interface IgnoreMachineKeySequenceConfig {
+  // The sequence of keys, e.g., for ", ", use `[VIRTUAL_KEY.COMMA,
+  // VIRTUAL_KEY.SPACE]`.
+  keySequence: Array<string|VIRTUAL_KEY>;
+
+  // Inclusive index for the ignored keys, must be <= keySequence.length - 1;
+  // For example, if keySequence is `[VIRTUAL_KEY.COMMA, VIRTUAL_KEY.SPACE]` and
+  // ignoreStartIndex is 1, then the second (Space) key will be ignored.
+  ignoreStartIndex: number;
+}
+
 @Component({
   selector: 'app-external-events-component',
   templateUrl: './external-events.component.html',
@@ -239,7 +254,9 @@ export class ExternalEventsComponent implements OnInit {
   @Input() textEntryBeginSubject!: Subject<TextEntryBeginEvent>;
   @Input() textEntryEndSubject!: Subject<TextEntryEndEvent>;
 
-  private static keypressListeners: KeypressListener[] = [];
+  private static readonly keypressListeners: KeypressListener[] = [];
+  private static readonly ignoreMachineKeySequenceConfigs:
+      IgnoreMachineKeySequenceConfig[] = [];
 
   private previousKeypressTimeMillis: number|null = null;
   // Number of keypresses effected through eye gaze (as determiend by
@@ -289,6 +306,57 @@ export class ExternalEventsComponent implements OnInit {
     }
   }
 
+  /**
+   * Register a machine-generated key sequence to be ignored. Repeated
+   * registration of the same key sequence will lead to error.
+   */
+  public static registerIgnoreKeySequence(ignoreConfig:
+                                              IgnoreMachineKeySequenceConfig) {
+    if (ignoreConfig.keySequence.length <= 1) {
+      throw new Error(`Cannot register ignore-sequence of length ${
+          ignoreConfig.keySequence.length}`);
+    }
+    if (ignoreConfig.ignoreStartIndex < 0 ||
+        ignoreConfig.ignoreStartIndex >= ignoreConfig.keySequence.length) {
+      throw new Error(
+          `Invalid ignore start index: ${ignoreConfig.ignoreStartIndex}`);
+    }
+    for (const existingConfig of
+             ExternalEventsComponent.ignoreMachineKeySequenceConfigs) {
+      if (JSON.stringify(existingConfig.keySequence) ===
+          JSON.stringify(ignoreConfig.keySequence)) {
+        throw new Error(`Ignore sequence already exists: ${
+            JSON.stringify(existingConfig.keySequence)}`);
+      }
+    }
+    ExternalEventsComponent.ignoreMachineKeySequenceConfigs.push(ignoreConfig);
+  }
+
+  /**
+   * Register a machine-generated key sequence to be ignored. If the config in
+   * the parameter has not been registered, an error will be thrown.
+   */
+  public static unregisterIgnoreKeySequence(
+      ignoreConfig: IgnoreMachineKeySequenceConfig) {
+    for (let i =
+             ExternalEventsComponent.ignoreMachineKeySequenceConfigs.length - 1;
+         i >= 0; --i) {
+      const existingConfig =
+          ExternalEventsComponent.ignoreMachineKeySequenceConfigs[i];
+      if (JSON.stringify(existingConfig.keySequence) ===
+          JSON.stringify(ignoreConfig.keySequence)) {
+        ExternalEventsComponent.ignoreMachineKeySequenceConfigs.splice(i, 1);
+        return;
+      }
+    }
+    throw new Error(
+        `Ignore config is not found: ${JSON.stringify(ignoreConfig)}`);
+  }
+
+  public static clearIgnoreKeySequences() {
+    ExternalEventsComponent.ignoreMachineKeySequenceConfigs.splice(0);
+  }
+
   /** Get the number of registered keypress listeners. */
   public static getNumKeypressListeners(): number {
     return ExternalEventsComponent.keypressListeners.length;
@@ -306,12 +374,14 @@ export class ExternalEventsComponent implements OnInit {
     }
     this.keySequence.push(virtualKey);
     const nowMillis = Date.now();
-    if (this.previousKeypressTimeMillis === null ||
-        (nowMillis - this.previousKeypressTimeMillis) >
-            MIN_GAZE_KEYPRESS_MILLIS) {
+    const isInferredMachineKey = this.previousKeypressTimeMillis !== null &&
+        (nowMillis - this.previousKeypressTimeMillis) <
+            MIN_GAZE_KEYPRESS_MILLIS;
+    if (this.previousKeypressTimeMillis === null || !isInferredMachineKey) {
       this.numGazeKeypresses++;
     }
     this.previousKeypressTimeMillis = nowMillis;
+
     if (isExternal &&
         (keySequenceEndsWith(this.keySequence, TTS_TRIGGER_COMBO_KEY) ||
          SENTENCE_END_COMBO_KEYS.some(
@@ -380,6 +450,7 @@ export class ExternalEventsComponent implements OnInit {
       this.textEntryBeginSubject.next({timestampMillis: Date.now()});
     }
 
+    this.processIgnoreMachineKeySequences(isInferredMachineKey);
     ExternalEventsComponent.keypressListeners.forEach(listener => {
       listener(this.keySequence, this._text);
     });
@@ -391,6 +462,26 @@ export class ExternalEventsComponent implements OnInit {
     console.log(
         `externalKeypressHook(): virtualKey=${virtualKey}; ` +
         `text="${this._text}"; cursorPos=${this.cursorPos}`);
+  }
+
+  private processIgnoreMachineKeySequences(isInferredMachineKey: boolean):
+      void {
+    // Process ignored machine key sequences.
+    let numDisacrdedChars = 0;
+    if (isInferredMachineKey) {
+      for (const ignoreConfig of
+               ExternalEventsComponent.ignoreMachineKeySequenceConfigs) {
+        if (keySequenceEndsWith(this.keySequence, ignoreConfig.keySequence)) {
+          numDisacrdedChars =
+              ignoreConfig.keySequence.length - ignoreConfig.ignoreStartIndex;
+        }
+      }
+    }
+    if (numDisacrdedChars > 0) {
+      this._text =
+          this._text.substring(0, this._text.length - numDisacrdedChars);
+      this.keySequence.splice(this.keySequence.length - numDisacrdedChars);
+    }
   }
 
   private insertCharAsCursorPos(char: string) {

@@ -7,7 +7,7 @@ import {endsWithSentenceEndPunctuation, keySequenceEndsWith} from 'src/utils/tex
 import {createUuid} from 'src/utils/uuid';
 
 import {getPhraseStats, HttpEventLogger} from '../event-logger/event-logger-impl';
-import {ExternalEventsComponent, repeatVirtualKey, VIRTUAL_KEY} from '../external/external-events.component';
+import {ExternalEventsComponent, IgnoreMachineKeySequenceConfig, repeatVirtualKey, VIRTUAL_KEY} from '../external/external-events.component';
 import {LexiconComponent, LoadLexiconRequest} from '../lexicon/lexicon.component';
 import {FillMaskRequest, SpeakFasterService} from '../speakfaster-service';
 import {AbbreviationSpec, AbbreviationToken, InputAbbreviationChangedEvent} from '../types/abbreviation';
@@ -75,6 +75,15 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   private static readonly ABBREVIATION_MAX_TOTAL_LENGTH = 50;
   private static readonly IN_FLIGHT_AE_TRIGGER_DEBOUNCE_MILLIS = 600;
 
+  // NOTE(https://github.com/TeamGleason/SpeakFaster/issues/217): Some external
+  // keyboards attach a space right after a comma, which causes trouble for
+  // abbreviations containing commas ("g.hay").
+  private static readonly IGNORE_MACHINE_KEY_SEQUENCE:
+      IgnoreMachineKeySequenceConfig = {
+        keySequence: [VIRTUAL_KEY.COMMA, VIRTUAL_KEY.SPACE],
+        ignoreStartIndex: 1,
+      }
+
   @Input() userId!: string;
   @Input() contextStrings!: string[];
   @Input() languageCode!: string;
@@ -124,6 +133,8 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
             this.updateInputString(textInjection.text);
           }
         });
+    ExternalEventsComponent.registerIgnoreKeySequence(
+        InputBarComponent.IGNORE_MACHINE_KEY_SEQUENCE);
     ExternalEventsComponent.registerKeypressListener(this.keypressListener);
     this.inputBarChipsSubscription =
         this.inputBarControlSubject.subscribe((event: InputBarControlEvent) => {
@@ -188,6 +199,8 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     }
     updateButtonBoxesToEmpty(this.instanceId);
     ExternalEventsComponent.unregisterKeypressListener(this.keypressListener);
+    ExternalEventsComponent.unregisterIgnoreKeySequence(
+        InputBarComponent.IGNORE_MACHINE_KEY_SEQUENCE);
   }
 
   public listenToKeypress(keySequence: string[], reconstructedText: string):

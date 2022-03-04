@@ -36,6 +36,7 @@ fdescribe('ExternalEventsComponent', () => {
     fixture.detectChanges();
     jasmine.getEnv().allowRespy(true);
     ExternalEventsComponent.clearKeypressListeners();
+    ExternalEventsComponent.clearIgnoreKeySequences();
   });
 
   it('Virtual key codes map has no duplicate values', () => {
@@ -301,5 +302,159 @@ fdescribe('ExternalEventsComponent', () => {
     expect(endEvents[0].numHumanKeypresses).toEqual(3);
     expect(endEvents[1].text).toEqual('abc');
     expect(endEvents[1].numHumanKeypresses).toEqual(4);
+  });
+
+  it('registerIgnoreKeySequence ignores machine sequence', () => {
+    const keySequences: string[][] = [];
+    const reconstructedTexts: string[] = [];
+    ExternalEventsComponent.registerKeypressListener(
+        (keySequence: string[], reconstructedText: string) => {
+          keySequences.push(keySequence.slice());
+          reconstructedTexts.push(reconstructedText);
+        });
+    ExternalEventsComponent.registerIgnoreKeySequence({
+      keySequence: [VIRTUAL_KEY.COMMA, VIRTUAL_KEY.SPACE],
+      ignoreStartIndex: 1,
+    });
+    spyOn(Date, 'now').and.returnValue(0);
+    component.externalKeypressHook(65);
+    spyOn(Date, 'now').and.returnValue(100);
+    component.externalKeypressHook(32);  // Space.
+    spyOn(Date, 'now').and.returnValue(1000);
+    component.externalKeypressHook(188);  // Comma.
+    spyOn(Date, 'now').and.returnValue(1100);
+    component.externalKeypressHook(32);  // Space. Gap < 200 ms;
+
+    expect(keySequences).toEqual([
+      ['a'], ['a', ' '], ['a', ' ', ','], ['a', ' ', ',']
+    ]);
+    expect(reconstructedTexts).toEqual(['a', 'a ', 'a ,', 'a ,']);
+  });
+
+  it('registerIgnoreKeySequence does not ignores human sequence', () => {
+    const keySequences: string[][] = [];
+    const reconstructedTexts: string[] = [];
+    ExternalEventsComponent.registerKeypressListener(
+        (keySequence: string[], reconstructedText: string) => {
+          keySequences.push(keySequence.slice());
+          reconstructedTexts.push(reconstructedText);
+        });
+    ExternalEventsComponent.registerIgnoreKeySequence({
+      keySequence: [VIRTUAL_KEY.COMMA, VIRTUAL_KEY.SPACE],
+      ignoreStartIndex: 1,
+    });
+    spyOn(Date, 'now').and.returnValue(0);
+    component.externalKeypressHook(65);
+    spyOn(Date, 'now').and.returnValue(100);
+    component.externalKeypressHook(32);  // Space.
+    spyOn(Date, 'now').and.returnValue(1000);
+    component.externalKeypressHook(188);  // Comma.
+    spyOn(Date, 'now').and.returnValue(1201);
+    component.externalKeypressHook(32);  // Space. Gap > 200 ms;
+
+    expect(keySequences).toEqual([
+      ['a'], ['a', ' '], ['a', ' ', ','], ['a', ' ', ',', ' ']
+    ]);
+    expect(reconstructedTexts).toEqual(['a', 'a ', 'a ,', 'a , ']);
+  });
+
+  it('unregisterIgnoreKeySequence allows machine sequence', () => {
+    const keySequences: string[][] = [];
+    const reconstructedTexts: string[] = [];
+    ExternalEventsComponent.registerKeypressListener(
+        (keySequence: string[], reconstructedText: string) => {
+          keySequences.push(keySequence.slice());
+          reconstructedTexts.push(reconstructedText);
+        });
+    ExternalEventsComponent.registerIgnoreKeySequence({
+      keySequence: [VIRTUAL_KEY.COMMA, VIRTUAL_KEY.SPACE],
+      ignoreStartIndex: 1,
+    });
+    ExternalEventsComponent.unregisterIgnoreKeySequence({
+      keySequence: [VIRTUAL_KEY.COMMA, VIRTUAL_KEY.SPACE],
+      ignoreStartIndex: 1,
+    });
+    spyOn(Date, 'now').and.returnValue(0);
+    component.externalKeypressHook(65);
+    spyOn(Date, 'now').and.returnValue(100);
+    component.externalKeypressHook(32);  // Space.
+    spyOn(Date, 'now').and.returnValue(1000);
+    component.externalKeypressHook(188);  // Comma.
+    spyOn(Date, 'now').and.returnValue(1100);
+    component.externalKeypressHook(32);  // Space. Gap < 200 ms;
+
+    expect(keySequences).toEqual([
+      ['a'], ['a', ' '], ['a', ' ', ','], ['a', ' ', ',', ' ']
+    ]);
+    expect(reconstructedTexts).toEqual(['a', 'a ', 'a ,', 'a , ']);
+  });
+
+  it('registering an existing ignore sequence leads to error', () => {
+    ExternalEventsComponent.registerIgnoreKeySequence({
+      keySequence: [VIRTUAL_KEY.COMMA, VIRTUAL_KEY.SPACE],
+      ignoreStartIndex: 1,
+    });
+
+    expect(() => ExternalEventsComponent.registerIgnoreKeySequence({
+      keySequence: [VIRTUAL_KEY.COMMA, VIRTUAL_KEY.SPACE],
+      ignoreStartIndex: 1,
+    })).toThrowError();
+  });
+
+  it('registering two different ignore sequences works', () => {
+    const keySequences: string[][] = [];
+    const reconstructedTexts: string[] = [];
+    ExternalEventsComponent.registerKeypressListener(
+        (keySequence: string[], reconstructedText: string) => {
+          keySequences.push(keySequence.slice());
+          reconstructedTexts.push(reconstructedText);
+        });
+    ExternalEventsComponent.registerIgnoreKeySequence({
+      keySequence: [VIRTUAL_KEY.COMMA, VIRTUAL_KEY.SPACE],
+      ignoreStartIndex: 1,
+    });
+    ExternalEventsComponent.registerIgnoreKeySequence({
+      keySequence: ['z', VIRTUAL_KEY.SPACE],
+      ignoreStartIndex: 1,
+    });
+    spyOn(Date, 'now').and.returnValue(0);
+    component.externalKeypressHook(65);
+    spyOn(Date, 'now').and.returnValue(100);
+    component.externalKeypressHook(32);  // Space.
+    spyOn(Date, 'now').and.returnValue(1000);
+    component.externalKeypressHook(90);  // 'z'.
+    spyOn(Date, 'now').and.returnValue(1100);
+    component.externalKeypressHook(32);  // Space. Gap < 200 ms;
+
+    expect(keySequences).toEqual([
+      ['a'], ['a', ' '], ['a', ' ', 'z'], ['a', ' ', 'z']
+    ]);
+    expect(reconstructedTexts).toEqual(['a', 'a ', 'a z', 'a z']);
+  });
+
+  it('unregistering nonexistent ignore sequence leads to error', () => {
+    ExternalEventsComponent.registerIgnoreKeySequence({
+      keySequence: [VIRTUAL_KEY.COMMA, VIRTUAL_KEY.SPACE],
+      ignoreStartIndex: 1,
+    });
+    expect(() => ExternalEventsComponent.unregisterIgnoreKeySequence({
+      keySequence: ['z', VIRTUAL_KEY.SPACE],
+      ignoreStartIndex: 1,
+    })).toThrowError(/Ignore config is not found/);
+  });
+
+  it('registering invalid ignore sequence leads to error', () => {
+    expect(() => ExternalEventsComponent.registerIgnoreKeySequence({
+      keySequence: [VIRTUAL_KEY.COMMA],
+      ignoreStartIndex: 0,
+    })).toThrowError(/length/);
+    expect(() => ExternalEventsComponent.registerIgnoreKeySequence({
+      keySequence: [VIRTUAL_KEY.COMMA, VIRTUAL_KEY.SPACE],
+      ignoreStartIndex: -1,
+    })).toThrowError(/Invalid ignore start index/);
+    expect(() => ExternalEventsComponent.registerIgnoreKeySequence({
+      keySequence: [VIRTUAL_KEY.COMMA, VIRTUAL_KEY.SPACE],
+      ignoreStartIndex: 2,
+    })).toThrowError(/Invalid ignore start index/);
   });
 });

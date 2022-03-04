@@ -20,7 +20,7 @@ export class KeyboardComponent {
       Array<{callbackName: string, callback: KeyboardCallback}> = [];
 
   /**
-   * Register a callback
+   * Register a callback.
    * @param callbackName A unique identifier for the callback. If there is
    *   already a callback with this name registered, this call will be no-op.
    * @param callback

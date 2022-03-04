@@ -4,11 +4,13 @@ import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {By} from '@angular/platform-browser';
 import {Subject} from 'rxjs';
 
+import * as cefSharp from '../../utils/cefsharp';
 import {HttpEventLogger} from '../event-logger/event-logger-impl';
 import {repeatVirtualKey, VIRTUAL_KEY} from '../external/external-events.component';
 import {InputBarChipComponent} from '../input-bar-chip/input-bar-chip.component';
 import {LoadLexiconRequest} from '../lexicon/lexicon.component';
 import {FillMaskRequest, SpeakFasterService} from '../speakfaster-service';
+import {TestListener} from '../test-utils/test-cefsharp-listener';
 import {InputAbbreviationChangedEvent} from '../types/abbreviation';
 import {TextEntryEndEvent} from '../types/text-entry';
 
@@ -20,6 +22,7 @@ class SpeakFasterServiceForTest {
 }
 
 fdescribe('InputBarComponent', () => {
+  let testListener: TestListener;
   let textEntryEndSubject: Subject<TextEntryEndEvent>;
   let inputBarControlSubject: Subject<InputBarControlEvent>;
   let abbreviationExpansionTriggers: Subject<InputAbbreviationChangedEvent>;
@@ -33,6 +36,8 @@ fdescribe('InputBarComponent', () => {
   let fillMaskRequests: FillMaskRequest[];
 
   beforeEach(async () => {
+    testListener = new TestListener();
+    (window as any)[cefSharp.BOUND_LISTENER_NAME] = testListener;
     textEntryEndSubject = new Subject();
     inputBarControlSubject = new Subject();
     abbreviationExpansionTriggers = new Subject();
@@ -80,6 +85,12 @@ fdescribe('InputBarComponent', () => {
     fixture.componentInstance.loadPrefixedLexiconRequestSubject =
         loadPrefixedLexiconRequestSubject;
     fixture.detectChanges();
+  });
+
+  afterAll(async () => {
+    if (cefSharp.BOUND_LISTENER_NAME in (window as any)) {
+      delete (window as any)[cefSharp.BOUND_LISTENER_NAME];
+    }
   });
 
   it('input box is initially empty', () => {
@@ -424,7 +435,8 @@ fdescribe('InputBarComponent', () => {
        const spellButton = fixture.debugElement.query(By.css('.spell-button'));
        spellButton.nativeElement.click();
        fixture.detectChanges();
-       const spellSequence = ['b', 'i', 't', VIRTUAL_KEY.PERIOD, VIRTUAL_KEY.SPACE];
+       const spellSequence =
+           ['b', 'i', 't', VIRTUAL_KEY.PERIOD, VIRTUAL_KEY.SPACE];
        const spellReconstructedText =
            spellSequence.join('') + reconstructedText;
        enterKeysIntoComponent(spellSequence, spellReconstructedText);
@@ -804,6 +816,9 @@ fdescribe('InputBarComponent', () => {
        ]);
        expect(event.inAppTextToSpeechAudioConfig).toBeUndefined();
        expect(event.timestampMillis).toBeGreaterThan(0);
+       const calls = testListener.injectedKeysCalls;
+       expect(calls.length).toEqual(1);
+       expect(calls[0]).toEqual([65, 76, 76, 32, 71, 79, 79, 68, 190, 32]);
      });
 
   it('clicking inject text button injects keypresses without added final period',

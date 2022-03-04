@@ -532,6 +532,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     this.eventLogger.logInputBarInjectButtonClick(getPhraseStats(text));
     const injectedKeys: Array<string|VIRTUAL_KEY> = [];
     injectedKeys.push(...text.split(''));
+    injectKeys(injectedKeys);
     this.textEntryEndSubject.next({
       text,
       timestampMillis: Date.now(),

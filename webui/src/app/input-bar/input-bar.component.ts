@@ -73,7 +73,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   // Maximum allowed length of the entire abbreviation, including the leading
   // keywords.
   private static readonly ABBREVIATION_MAX_TOTAL_LENGTH = 50;
-  private static readonly IN_FLIGHT_AE_TRIGGER_DEBOUNCE_MILLIS = 600;
+  private static readonly IN_FLIGHT_AE_TRIGGER_DEBOUNCE_MILLIS = 500;
 
   // NOTE(https://github.com/TeamGleason/SpeakFaster/issues/217): Some external
   // keyboards attach a space right after a comma, which causes trouble for

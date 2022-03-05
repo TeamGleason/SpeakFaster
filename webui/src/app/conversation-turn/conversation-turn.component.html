@@ -11,9 +11,12 @@
 
 .conversation-turn {
   align-items: center;
-  background: #333;
+  background: rgb(48, 48, 48);
   border: 1px solid #888;
   border-radius: 5px;
+  box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
   color: #eee;
   display: flex;
   flex-direction: row;
@@ -29,12 +32,12 @@
 }
 
 .focused-turn {
-  border: 3px solid gold;
+  border: 2px solid gold;
 }
 
 .hardcode-tag {
   background-color: lightgrey;
-  border: 2px solid #888;
+  border: 1px solid #888;
   color: black;
   border-radius: 5px;
   display: inline-block;
@@ -78,6 +81,10 @@
   padding: 2px 5px;
 }
 
+.self-turn {
+  background-color: rgb(90, 90, 90);
+}
+
 .turn-content {
   display: inline-block;
   flex: 1;
@@ -88,7 +95,10 @@
 
 </style>
 
-<button #button class="conversation-turn" [ngClass]="{'focused-turn': isFocus}">
+<button
+    #button
+    class="conversation-turn"
+    [ngClass]="{'focused-turn': isFocus, 'self-turn': isSelf}">
   <div
       *ngIf="!turn.isTts && turn.speakerId != null && turn.speakerId.length > 0"
       class="speaker-tag">
@@ -100,5 +110,8 @@
   <div *ngIf="turn.isHardcoded" class="hardcode-tag">
     📌
   </div>
-  <div class="turn-content" #turnContent>{{contentString}}</div>
+  <div
+      #turnContent
+      class="turn-content"
+  >{{contentString}}</div>
 </button>

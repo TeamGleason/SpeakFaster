@@ -19,7 +19,7 @@ export const DEFAULT_CONTEXT_SIGNALS: ConversationTurnContextSignal[] = [
     speakerId: null,
     startTimestamp: new Date(),
     speechContent:
-        'Good to see you, Sean. Nice day today. How are you feeling right now?',
+        'How are you feeling right now?',
     isHardcoded: true,
   }),
 ];

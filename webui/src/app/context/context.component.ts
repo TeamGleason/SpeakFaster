@@ -25,6 +25,7 @@ export class ContextComponent implements OnInit, AfterViewInit {
 
   @Input() userId!: string;
   @Input() textEntryEndSubject!: Subject<TextEntryEndEvent>;
+  @Input() isDev: boolean = false;
 
   private static readonly CONTEXT_POLLING_INTERVAL_MILLIS = 2 * 1000;
   private contextRetrievalTimerSubscription: Subscription|null = null;
@@ -126,6 +127,7 @@ export class ContextComponent implements OnInit, AfterViewInit {
     this.contextSignals.push(addedContextSignal);
     this.focusContextIds.splice(0);
     this.focusContextIds.push(addedContextSignal.contextId!);
+    this.limitContextItemsCount();
     this.emitContextStringsSelected();
   }
 

@@ -5,23 +5,32 @@
   width: 1000px;
 }
 
+.badge-image {
+  height: 40px;
+  width: 40px;
+  padding: 4px;
+  vertical-align: middle;
+}
+
 .context-add-button {
   background: #333;
-  border: 2px solid #888;
+  border: 1px solid #888;
   border-radius: 5px;
   color: #eee;
   font-size: 20px;
-  height: 45px;
-  margin-left: 10px;
-  margin-bottom: 6px;
+  height: 44px;
+  margin-left: 8px;
+  margin-bottom: 4px;
   min-width: 50px;
-  padding: 5px;
+  padding: 4px;
   vertical-align: middle;
   width: fit-content;
 }
 
 .context-container {
-  display: inline-block;
+  align-items: flex-start;
+  display: inline-flex;
+  flex-direction: row;
 }
 
 .context-header-section {
@@ -32,7 +41,7 @@
   color: red;
   display: inline-block;
   font-size: 18px;
-  margin-left: 6px;
+  margin-left: 8px;
   max-width: 80px;
   vertical-align: middle;
   white-space: pre-wrap;
@@ -42,7 +51,7 @@
   display: inline-block;
   color: #777;
   font-size: 21px;
-  margin-left: 6px;
+  margin-left: 8px;
 }
 
 .conversation-turn {
@@ -52,27 +61,26 @@
 .no-context-found {
   display: inline-block;
   font-size: 28px;
-  margin-left: 6px;
+  margin-left: 8px;
   color: #777;
 }
 
 </style>
 
 <div class="context-header-section">
-  <div class="context-tag">
-    Context:
-  </div>
+  <img
+      class="badge-image"
+      src="/assets/images/conversation.png"
+      alt="Conversation context" />
 
   <button
+      *ngIf="isDev"
       class="context-add-button"
       (click)="onContextAddButtonClicked($event)">
     +
   </button>
 
 </div>
-
-<!-- TODO(cais): Add Ctrl+C instruction. -->
-<!-- TODO(cais): Add Alt+N instruction. -->
 
 <div
     *ngIf="contextRetrievalError !== null"

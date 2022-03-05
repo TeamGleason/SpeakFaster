@@ -18,7 +18,8 @@ export class ConversationTurnComponent implements AfterViewInit, OnDestroy {
 
   private static readonly CONTENT_STRING_MAX_LENGTH = 80;
   private static readonly BASE_FONT_SIZE_PX = 24;
-  private static readonly FONT_SCALING_LENGTH_THRESHOLD = 36;
+  private static readonly FONT_SCALING_LENGTH_THRESHOLD = 32;
+  private static readonly MIN_FONT_SIZE_PX = 10;
 
   @Input() turn!: ConversationTurn;
   @Input() isFocus: boolean = false;
@@ -52,6 +53,10 @@ export class ConversationTurnComponent implements AfterViewInit, OnDestroy {
           (this.turn.speechContent.length /
            ConversationTurnComponent.FONT_SCALING_LENGTH_THRESHOLD),
           0.45);
+      if (fontSizePx < ConversationTurnComponent.MIN_FONT_SIZE_PX) {
+        // TODO(cais): Add unit test.
+        fontSizePx = ConversationTurnComponent.MIN_FONT_SIZE_PX;
+      }
     }
     contentElement.style.fontSize = `${fontSizePx.toFixed(1)}px`;
     updateButtonBoxesForElements(this.instanceId, this.buttons);

@@ -47,6 +47,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   appState: AppState = AppState.ABBREVIATION_EXPANSION;
   private previousNonMinimizedAppState: AppState = this.appState;
 
+  private _isDev = false;
   private _isPartner = false;
   private _showMetrics = false;
   // Set this to `false` to skip using access token (e.g., developing with
@@ -93,6 +94,9 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     registerAppState(this.appState);
     bindCefSharpListener();
     this.route.queryParams.subscribe(params => {
+      if (params['dev']) {
+        this._isDev = this.stringValueMeansTrue(params['dev']);
+      }
       if (params['partner']) {
         this._isPartner = this.stringValueMeansTrue(params['partner']);
       }
@@ -215,6 +219,10 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   getUserRole(): UserRole {
     return this._isPartner ? UserRole.PARTNER : UserRole.AAC_USER;
+  }
+
+  get isDev(): boolean {
+    return this._isDev;
   }
 
   get userId(): string {

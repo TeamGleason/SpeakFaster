@@ -75,6 +75,8 @@ Under the AAC user mode, the following URL parameters must be provided:
    Google OAuth2.
 5. `endpoint`: This is the URL to the API endpoint that serves features such as
    abbreviation expansion and text prediction.
+6. `dev`: This boolean URL parameter controls whether developer-oriented features
+   are shown (e.g., `dev=true` or `dev=1`). Default value: `false`.
 
 Optional URL parameters include:
 - `showMetrics`: Controls whether text-entry metrics such as words-per minute

@@ -376,8 +376,7 @@ fdescribe('InputBarComponent', () => {
     const spellButton = fixture.debugElement.query(By.css('.spell-button'));
     spellButton.nativeElement.click();
 
-    expect(testListener.injectedKeysCalls).toEqual([[32]]);  // A space.
-    expect(testListener.injectedKeysCallsToSelfApp).toEqual([true]);
+    expect(testListener.numRequestSoftkeyboardResetCalls).toEqual(1);
   });
 
   it('spelling word updates chips', () => {
@@ -696,8 +695,7 @@ fdescribe('InputBarComponent', () => {
          phraseWithMask: 'i feel _',
          maskInitial: 'g',
        });
-       expect(testListener.injectedKeysCalls).toEqual([[32]]);
-       expect(testListener.injectedKeysCallsToSelfApp).toEqual([true]);
+       expect(testListener.numRequestSoftkeyboardResetCalls).toEqual(1);
      });
 
   it('types keys during refinement registers manual revision', () => {

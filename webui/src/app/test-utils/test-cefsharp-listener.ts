@@ -4,7 +4,7 @@
 export class TestListener {
   private readonly buttonBoxesCalls: Array<[string, number[][]]> = [];
   private readonly injectedKeys: Array<number[]> = [];
-  private readonly injectedKeysToSelfApp: boolean[] = [];
+  private _numRequestSoftKeyboardResetCalls = 0;
   private readonly resizeWindowValues: Array<[number, number]> = [];
 
   public updateButtonBoxes(componentName: string, boxes: number[][]) {
@@ -15,17 +15,20 @@ export class TestListener {
     return this.buttonBoxesCalls;
   }
 
-  public injectKeys(virtualKeys: number[], toSelfApp: boolean) {
+  public injectKeys(virtualKeys: number[]) {
     this.injectedKeys.push(virtualKeys);
-    this.injectedKeysToSelfApp.push(toSelfApp);
+  }
+
+  public requestSoftKeyboardReset() {
+    this._numRequestSoftKeyboardResetCalls++;
   }
 
   get injectedKeysCalls(): Array<number[]> {
     return this.injectedKeys.slice();
   }
 
-  get injectedKeysCallsToSelfApp(): boolean[] {
-    return this.injectedKeysToSelfApp.slice();
+  get numRequestSoftkeyboardResetCalls(): number {
+    return this._numRequestSoftKeyboardResetCalls;
   }
 
   public resizeWindow(height: number, width: number) {

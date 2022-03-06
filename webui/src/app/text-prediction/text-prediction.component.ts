@@ -75,7 +75,7 @@ export class TextPredictionComponent implements AfterViewInit, OnChanges,
 
   onPredictionButtonClicked(event: Event, index: number) {
     const chars: string[] = this.predictions[index].split('');
-    injectKeys(chars, /* toSelfApp= */ false);
+    injectKeys(chars);
     // TODO(cais): Support backspace injection.
     const text = this.textPrefix.trim() + ' ' + this.predictions[index].trim();
     this.textInjectionSubject.next({

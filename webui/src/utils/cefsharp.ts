@@ -99,18 +99,29 @@ function updateButtonBoxes(
  *     versus an external recipient app).
  */
 export function injectKeys(
-    virtualKeys: Array<string|VIRTUAL_KEY>, toSelfApp: boolean) {
+    virtualKeys: Array<string|VIRTUAL_KEY>, toSelfApp: boolean): number {
   if ((window as any)[BOUND_LISTENER_NAME] == null) {
     console.warn(`Cannot call injectKeys(), because object ${
         BOUND_LISTENER_NAME} is not found`)
-    return;
+    return 0;
   }
   const virtualKeyCodes: number[] = [];
   for (const virtualKey of virtualKeys) {
     virtualKeyCodes.push(...getVirtualkeyCode(virtualKey));
   }
-  ((window as any)[BOUND_LISTENER_NAME] as any)
+  return ((window as any)[BOUND_LISTENER_NAME] as any)
       .injectKeys(virtualKeyCodes, toSelfApp);
+}
+
+/** Request host app to reset the state of the attached soft keyboard. */
+export function requestSoftKeyboardReset() {
+  if ((window as any)[BOUND_LISTENER_NAME] == null) {
+    console.warn(`Cannot call requestSoftKeyboardReset(), because object ${
+        BOUND_LISTENER_NAME} is not found`)
+    return;
+  }
+  ((window as any)[BOUND_LISTENER_NAME] as any)
+      .requestSoftKeyboardReset();
 }
 
 /**

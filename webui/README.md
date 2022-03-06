@@ -126,6 +126,8 @@ it to have the following interface.
 interface BoundObject {
   function injectKey(virtualKeys: number[]): void;
 
+  function requestSoftkeyboardRest(): number;
+
   function resizeWindow(height: number, width: number);
 
   function updateButtonBoxes(componentName: string,
@@ -147,6 +149,16 @@ host. Below we describe their use respectively.
 
 The contract of the `injectKeys()` function is it will issue the keys in `virtualKeys`
 programmatically in the specified order.
+
+#### 2.2. Request external softkeyboard to reset state
+
+Occasionally the WebUI needs to request a state reset in the softkeyboard
+attached to the host application. For example, when the user starts to spell
+a word out after an initial abbreviation-expansion request, such a reset will
+allow the user to utilize the external keyboard's word prediction without
+its state being confounded by the previously typed abbreviation, which is
+usually not a valid word. This can be achieved by using the method
+`requestSoftkeybardRest()`.
 
 #### 2.2. Window resizing
 

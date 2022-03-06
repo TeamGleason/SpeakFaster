@@ -2,7 +2,7 @@
 import {AfterViewInit, Component, ElementRef, EventEmitter, Input, OnDestroy, OnInit, Output, QueryList, ViewChild, ViewChildren} from '@angular/core';
 import {Subject, Subscription} from 'rxjs';
 import {debounceTime} from 'rxjs/operators';
-import {injectKeys, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
+import {injectKeys, requestSoftKeyboardReset, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
 import {endsWithSentenceEndPunctuation, keySequenceEndsWith} from 'src/utils/text-utils';
 import {createUuid} from 'src/utils/uuid';
 
@@ -496,7 +496,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private refreshExternalSoftKeyboardState() {
-    injectKeys([VIRTUAL_KEY.SPACE], /* toSelfApp= */ true);
+    requestSoftKeyboardReset();
   }
 
   /**

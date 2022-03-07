@@ -30,6 +30,9 @@ export enum State {
 export interface InputBarChipSpec {
   // Text content of the chip.
   text: string;
+
+  // Whether this is a pre-spelled word.
+  preSpelled?: boolean;
 }
 
 /** An event that updates the clickable chips in the input bar. */
@@ -147,11 +150,18 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
             this._chips.push(...event.chips);
             if (this._chipTypedText !== null) {
               for (let i = 0; i < this._chipTypedText.length; ++i) {
-                if (this._chipTypedText[i] !== null) {
+                if (this._chipTypedText[i] !== null &&
+                    !this._chips[i].preSpelled) {
                   this._chips[i].text = this._chipTypedText[i]!;
                 }
               }
             }
+            this._chips.forEach((chip, i) => {
+              if (chip.preSpelled) {
+                this.ensureChipTypedTextCreated();
+                this._chipTypedText![i] = chip.text;
+              }
+            });
             if (this._chips.length > 0) {
               this.state = State.CHOOSING_WORD_CHIP;
               this.eventLogger.logAbbreviationExpansionStartWordRefinementMode(
@@ -174,6 +184,12 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
             .subscribe((event: InputAbbreviationChangedEvent) => {
               this.abbreviationExpansionTriggers.next(event);
             });
+  }
+
+  private ensureChipTypedTextCreated() {
+    if (this._chipTypedText === null) {
+      this._chipTypedText = Array(this._chips.length).fill(null);
+    }
   }
 
   ngAfterViewInit() {
@@ -227,7 +243,6 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     } else if (this.state === State.CHOOSING_WORD_CHIP) {
       this.cutText = this._chips.map(chip => chip.text).join(' ') + ' ';
       this.inputString = this.cutText + lastKey;
-      this._chips.splice(0);
       this.state = State.AFTER_CUT;
     } else if (this.state === State.CHOOSING_LETTER_CHIP) {
       // If there is a uniquely matching word, then choose it.
@@ -248,10 +263,8 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
         this.baseReconstructedText = this.latestReconstructedString.slice(
             0, this.latestReconstructedString.length - 1);
         this._focusChipIndex = matchingChipIndices[0];
-        if (this._chipTypedText === null) {
-          this._chipTypedText = Array(this._chips.length).fill(null);
-        }
-        this._chipTypedText[this._focusChipIndex] = typedLetter;
+        this.ensureChipTypedTextCreated();
+        this._chipTypedText![this._focusChipIndex] = typedLetter;
         this.loadPrefixedLexiconRequestSubject.next({
           prefix: typedLetter,
         });
@@ -414,10 +427,18 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   onSpellButtonClicked(event: Event) {
-    const abbreviation = this.inputString.trim();
-    this.inputBarControlSubject.next({
-      chips: abbreviation.split('').map(char => ({text: char})),
-    });
+    let abbreviation: string = this.inputString.trim();
+    const newChips: InputBarChipSpec[] = [];
+    if (this.cutText) {
+      abbreviation = abbreviation.substring(this.cutText.length).trim();
+      const cutTextWords =
+          this.cutText.trim().split(' ').filter(word => word.length > 0);
+      newChips.push(
+          ...cutTextWords.map(word => ({text: word, preSpelled: true})));
+    }
+
+    newChips.push(...abbreviation.split('').map(char => ({text: char})));
+    this.inputBarControlSubject.next({chips: newChips});
     this.state = State.CHOOSING_LETTER_CHIP;
     this.refreshExternalSoftKeyboardState();
     this.eventLogger.logAbbreviationExpansionStartSpellingMode(
@@ -560,6 +581,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private resetState(clearText: boolean = true, resetBase: boolean = true) {
     this.state = State.ENTERING_BASE_TEXT;
+    this._chips.splice(0);
     this._focusChipIndex = null;
     this._chipTypedText = null;
     if (clearText) {
@@ -613,9 +635,8 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
         lastTokenLength > InputBarComponent.ABBREVIATION_MAX_PROPER_LENGTH;
   }
 
-  get abbreviationExpansionLengthLimitExceededMessage(): string {
-    return `AE length limit exceeded.`
-  }
+  get abbreviationExpansionLengthLimitExceededMessage():
+      string{return `AE length limit exceeded.`}
 
   get chips(): InputBarChipSpec[] {
     return this._chips?.slice(0);

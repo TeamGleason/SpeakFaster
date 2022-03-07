@@ -8,6 +8,7 @@ import * as cefSharp from '../../utils/cefsharp';
 import {HttpEventLogger} from '../event-logger/event-logger-impl';
 import {repeatVirtualKey, VIRTUAL_KEY} from '../external/external-events.component';
 import {InputBarChipComponent} from '../input-bar-chip/input-bar-chip.component';
+import {InputBarChipModule} from '../input-bar-chip/input-bar-chip.module';
 import {LoadLexiconRequest} from '../lexicon/lexicon.component';
 import {FillMaskRequest, SpeakFasterService} from '../speakfaster-service';
 import {TestListener} from '../test-utils/test-cefsharp-listener';
@@ -65,8 +66,8 @@ fdescribe('InputBarComponent', () => {
 
     await TestBed
         .configureTestingModule({
-          imports: [InputBarModule],
-          declarations: [InputBarComponent],
+          imports: [InputBarModule, InputBarChipModule],
+          declarations: [InputBarComponent, InputBarChipComponent],
           providers: [
             {provide: SpeakFasterService, useValue: speakFasterServiceForTest},
             {provide: HttpEventLogger, useValue: new HttpEventLogger(null)},
@@ -87,7 +88,7 @@ fdescribe('InputBarComponent', () => {
     fixture.detectChanges();
   });
 
-  afterAll(async () => {
+  afterEach(async () => {
     if (cefSharp.BOUND_LISTENER_NAME in (window as any)) {
       delete (window as any)[cefSharp.BOUND_LISTENER_NAME];
     }
@@ -110,12 +111,19 @@ fdescribe('InputBarComponent', () => {
   });
 
   function enterKeysIntoComponent(
-      keySequence: Array<string|VIRTUAL_KEY>, reconstructedText: string,
-      baseLength = 0): void {
+      keySequence: Array<string|VIRTUAL_KEY>,
+      reconstructedText: string|string[], baseLength = 0): void {
     for (let i = 0; i < keySequence.length; ++i) {
       const currentKeySequence = keySequence.slice(0, i + 1)
-      fixture.componentInstance.listenToKeypress(
-          currentKeySequence, reconstructedText.slice(0, baseLength + i + 1));
+      if (typeof reconstructedText === 'string') {
+        fixture.componentInstance.listenToKeypress(
+            currentKeySequence, reconstructedText.slice(0, baseLength + i + 1));
+      }
+      else {
+        fixture.componentInstance.listenToKeypress(
+            currentKeySequence,
+            reconstructedText[i].slice(0, baseLength + i + 1));
+      }
       fixture.detectChanges();
     }
   }
@@ -211,9 +219,9 @@ fdescribe('InputBarComponent', () => {
            `key sequence: ${JSON.stringify(keySequence)}`,
        () => {
          enterKeysIntoComponent(keySequence, reconstructedText);
-         const expandbutton =
+         const expandButton =
              fixture.debugElement.query(By.css('.expand-button'));
-         expandbutton.nativeElement.click();
+         expandButton.nativeElement.click();
          fixture.detectChanges();
 
          expect(inputAbbreviationChangeEvents.length).toEqual(1);
@@ -407,6 +415,35 @@ fdescribe('InputBarComponent', () => {
     expect(inputAbbreviationChangeEvents.length).toEqual(0);
     expect(LoadLexiconRequests.length).toEqual(1);
     expect(LoadLexiconRequests[0]).toEqual({prefix: 'b'});
+  });
+
+
+  it('backspace during spelling: reconstructs correct word', () => {
+    const keySequence = ['a', 'b', 'c'];
+    const reconstructedText = keySequence.join('');
+    enterKeysIntoComponent(keySequence, reconstructedText);
+    const spellButton = fixture.debugElement.query(By.css('.spell-button'));
+    spellButton.nativeElement.click();
+    fixture.detectChanges();
+    const spellSequence = ['a', 'l', VIRTUAL_KEY.BACKSPACE, 'n', 'y'];
+    const spellReconstructedText = [
+      reconstructedText + 'a',
+      reconstructedText + 'al',
+      reconstructedText + 'a',
+      reconstructedText + 'an',
+      reconstructedText + 'any',
+    ];
+    enterKeysIntoComponent(spellSequence, spellReconstructedText, 3);
+
+    const chips =
+        fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'));
+    expect(chips.length).toEqual(3);
+    expect((chips[0].componentInstance as InputBarChipComponent).text)
+        .toEqual('any');
+    expect((chips[1].componentInstance as InputBarChipComponent).text)
+        .toEqual('b');
+    expect((chips[2].componentInstance as InputBarChipComponent).text)
+        .toEqual('c');
   });
 
   for (const triggerKey of [VIRTUAL_KEY.SPACE, VIRTUAL_KEY.ENTER]) {
@@ -889,10 +926,155 @@ fdescribe('InputBarComponent', () => {
        expect(event.timestampMillis).toBeGreaterThan(0);
      });
 
+  it('type after multi-word text prediction chip and then spell', () => {
+    inputBarControlSubject.next({
+      chips: [
+        {
+          text: 'i am feeling',
+        },
+      ]
+    });
+    (fixture.componentInstance as any).cutText = 'i am feeling';
+    fixture.componentInstance.state = State.AFTER_CUT;
+    fixture.detectChanges();
+    enterKeysIntoComponent(['s', 's', 'g'], 'ssg');
+    const spellButton = fixture.debugElement.query(By.css('.spell-button'));
+    spellButton.nativeElement.click();
+    fixture.detectChanges();
+
+    const chips =
+        fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'));
+    expect(chips.length).toEqual(6);
+    expect(chips[0].nativeElement.innerText).toEqual('i');
+    expect(chips[1].nativeElement.innerText).toEqual('am');
+    expect(chips[2].nativeElement.innerText).toEqual('feeling');
+    expect(chips[3].nativeElement.innerText).toEqual('s');
+    expect(chips[4].nativeElement.innerText).toEqual('s');
+    expect(chips[5].nativeElement.innerText).toEqual('g');
+    expect(fixture.componentInstance.state).toEqual(State.CHOOSING_LETTER_CHIP);
+  });
+
+  it('launchin AE with pre-spelled words', () => {
+    inputBarControlSubject.next({
+      chips: [
+        {
+          text: 'i',
+          preSpelled: true,
+        },
+        {
+          text: 'am',
+          preSpelled: true,
+        },
+        {
+          text: 'feeling',
+          preSpelled: true,
+        },
+        {
+          text: 's',
+        },
+        {
+          text: 'g',
+        },
+      ]
+    });
+    fixture.componentInstance.inputString = 'sg';
+    fixture.componentInstance.state = State.CHOOSING_LETTER_CHIP;
+    fixture.detectChanges();
+    enterKeysIntoComponent(['g', 'o', 'o', 'd'], 'good');
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.state)
+        .toEqual(State.FOCUSED_ON_LETTER_CHIP);
+    expect(fixture.debugElement.query(By.css('.spell-button'))).toBeNull();
+    const chips =
+        fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'));
+    expect(chips.length).toEqual(5);
+    expect(chips[0].nativeElement.innerText).toEqual('i');
+    expect(chips[1].nativeElement.innerText).toEqual('am');
+    expect(chips[2].nativeElement.innerText).toEqual('feeling');
+    expect(chips[3].nativeElement.innerText).toEqual('s');
+    expect(chips[4].nativeElement.innerText).toEqual('good |');
+    expect(fixture.componentInstance
+               .inputStringIsCompatibleWithAbbreviationExpansion)
+        .toBeTrue();
+
+    const expandButton = fixture.debugElement.query(By.css('.expand-button'));
+    expandButton.nativeElement.click();
+    fixture.detectChanges();
+
+    expect(inputAbbreviationChangeEvents.length).toEqual(1);
+    const event = inputAbbreviationChangeEvents[0];
+    expect(event.requestExpansion).toBeTrue();
+    const {abbreviationSpec} = event;
+    expect(abbreviationSpec.readableString).toEqual('i am feeling s good');
+    expect(abbreviationSpec.lineageId.length).toBeGreaterThan(0);
+    expect(abbreviationSpec.tokens.length).toEqual(5);
+    expect(abbreviationSpec.tokens[0]).toEqual({value: 'i', isKeyword: true});
+    expect(abbreviationSpec.tokens[1]).toEqual({value: 'am', isKeyword: true});
+    expect(abbreviationSpec.tokens[2])
+        .toEqual({value: 'feeling', isKeyword: true});
+    expect(abbreviationSpec.tokens[3]).toEqual({value: 's', isKeyword: false});
+    expect(abbreviationSpec.tokens[4])
+        .toEqual({value: 'good', isKeyword: true});
+  });
+
+  it('Cut and then type after AE option selection', () => {
+    inputBarControlSubject.next({
+      chips: [
+        {
+          text: 'i',
+        },
+        {
+          text: 'feel',
+        },
+        {
+          text: 'great',
+        }
+      ]
+    });
+    fixture.componentInstance.state = State.CHOOSING_WORD_CHIP;
+    fixture.detectChanges();
+    const chips =
+        fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'));
+    chips[1].nativeElement.click();
+    fixture.detectChanges();
+
+    const expandButton = fixture.debugElement.query(By.css('.cut-button'));
+    expandButton.nativeElement.click();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.state).toEqual(State.AFTER_CUT);
+    expect(fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'))
+               .length)
+        .toEqual(0);
+    expect(fixture.componentInstance.inputString).toEqual('i feel ');
+  });
+
+  it('Selecting the last chip does not show cut button', () => {
+    inputBarControlSubject.next({
+      chips: [
+        {
+          text: 'i',
+        },
+        {
+          text: 'feel',
+        },
+        {
+          text: 'great',
+        }
+      ]
+    });
+    fixture.componentInstance.state = State.CHOOSING_WORD_CHIP;
+    fixture.detectChanges();
+    const chips =
+        fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'));
+    chips[2].nativeElement.click();
+    fixture.detectChanges();
+
+    expect(fixture.debugElement.query(By.css('.cut-button'))).toBeNull();
+  });
 
 
-  // TODO(cais): Test AFTER_CUT state: text selection and AE.
   // TODO(cais): Test spelling valid word triggers AE, with debounce.
-  // TODO(cais): Backspaces during spelling.
   // TODO(cais): Test favorite button.
 });

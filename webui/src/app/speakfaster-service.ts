@@ -193,7 +193,7 @@ const CONTEXT_PHRASES_TIMEOUT_MILLIS = 10000;
 
 export function makeTimeoutErrorMessage(
     taskName: string, timeoutMillis: number) {
-  return `${taskName} timeout (${(timeoutMillis / 1e3).toFixed(1)} s)`;
+  return `${taskName} (timeout: ${(timeoutMillis / 1e3).toFixed(1)} s)`;
 }
 
 @Injectable()
@@ -238,7 +238,7 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
             timeout(ABBREVIATION_EXPANSION_TIMEOUT_MILLIS),
             catchError(error => {
               return throwError(makeTimeoutErrorMessage(
-                  'Abbreviatione expansion',
+                  'Abbreviation expansion',
                   ABBREVIATION_EXPANSION_TIMEOUT_MILLIS));
             }));
   }

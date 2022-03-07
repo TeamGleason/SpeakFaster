@@ -16,6 +16,11 @@ mat-progress-spinner {
   zoom: 0.3;
 }
 
+.button-image {
+  height: 36px;
+  width: 36px;
+}
+
 .container {
   display: flex;
   flex-direction: row;
@@ -126,14 +131,20 @@ mat-progress-spinner {
         class="scroll-button"
         [ngClass]="{'scroll-button-disabled': isScrollButtonDisabled('up')}"
         (click)="onScrollButtonClicked($event, 'up')">
-      ↑
+      <img
+          class="button-image"
+          src="/assets/images/arrow_up.png"
+          alt="add to favorite" />
     </button>
     <button
         #clickableButton
         class="scroll-button"
         [ngClass]="{'scroll-button-disabled': isScrollButtonDisabled('down')}"
         (click)="onScrollButtonClicked($event, 'down')">
-      ↓
+      <img
+          class="button-image"
+          src="/assets/images/arrow_down.png"
+          alt="add to favorite" />
     </button>
   </div>
 </div>

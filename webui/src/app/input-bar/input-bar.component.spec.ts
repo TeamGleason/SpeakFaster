@@ -235,7 +235,8 @@ fdescribe('InputBarComponent', () => {
 
   it('long input abbreviation disables AE buttons and shows notice', () => {
     // Length 11.
-    const keySequence = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k'];
+    const keySequence =
+        ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'o'];
     const reconstructedText = keySequence.join('');
     enterKeysIntoComponent(keySequence, reconstructedText);
 
@@ -250,7 +251,7 @@ fdescribe('InputBarComponent', () => {
      () => {
        // Length 11, excluding the two space keys.
        const keySequence = [
-         'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k',
+         'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
          VIRTUAL_KEY.SPACE, VIRTUAL_KEY.SPACE
        ];
        const reconstructedText = keySequence.join('');

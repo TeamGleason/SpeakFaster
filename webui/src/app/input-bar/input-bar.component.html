@@ -3,7 +3,7 @@
 :host {
   box-sizing: border-box;
   color: #EEE;
-  font-family: "Product Sans", "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  font-family: "Google Sans", "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
   font-size: 32px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -214,7 +214,7 @@
         <div
             *ngIf="inputStringExceedsAbbreviationExpansionLimit"
             class="length-limit-exceeded">
-          AE length limit exceeded
+          {{abbreviationExpansionLengthLimitExceededMessage}}
         </div>
       </div>
     </div>

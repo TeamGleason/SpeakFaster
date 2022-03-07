@@ -4,7 +4,7 @@
   background-color: black;
   box-sizing: border-box;
   color: #333;
-  font-family: "Product Sans", "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  font-family: "Google Sans", "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
   font-size: 16px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -58,6 +58,10 @@ app-text-to-speech-component {
   overflow: hidden;
   position: relative;
   width: 1200px;
+}
+
+.main-area.main-area-hidden {
+  display:none
 }
 
 .main-left-pane {
@@ -138,7 +142,8 @@ app-text-to-speech-component {
 
   <div
       class="main-area"
-      *ngIf="hasAccessToken() && appState !== 'MINIBAR'">
+      *ngIf="hasAccessToken()"
+      [ngClass]="{'main-area-hidden': appState === 'MINIBAR'}">
     <div class="main-left-pane">
       <div class="side-pane-button-container">
         <button
@@ -170,7 +175,7 @@ app-text-to-speech-component {
 
     <div class="main-right-pane">
       <app-context-component
-        *ngIf="hasAccessToken() && appState === 'ABBREVIATION_EXPANSION'"
+        *ngIf="isMinimizedOrNonMinimizedAbbreviationExpansionState"
         [userId]="userId"
         [textEntryEndSubject]="textEntryEndSubject"
         [isDev]="isDev"
@@ -179,7 +184,7 @@ app-text-to-speech-component {
       ></app-context-component>
 
       <app-quick-phrases-component
-          *ngIf="hasAccessToken() && isQuickPhrasesAppState()"
+          *ngIf="isQuickPhrasesAppState()"
           [userId]="userId"
           [allowedTags]="getQuickPhrasesAllowedTags()"
           [showDeleteButtons]="getQuickPhrasesShowDeleteButtons()"
@@ -191,7 +196,7 @@ app-text-to-speech-component {
       ></app-quick-phrases-component>
 
       <app-abbreviation-component
-        *ngIf="hasAccessToken() && appState === 'ABBREVIATION_EXPANSION'"
+        *ngIf="isMinimizedOrNonMinimizedAbbreviationExpansionState"
         [userId]="userId"
         [conversationTurns]="conversationTurnsSelected.slice()"
         [abbreviationExpansionTriggers]="abbreviationExpansionTriggers"

@@ -67,7 +67,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   // Maximum allowed length of the abbreviation (proper) part of the input
   // string. For example, in the abbreviation with leading keywords ("how are
   // yd"), the "yd" part is the abbreviaton proper and it has a length of 2.
-  private static readonly ABBREVIATION_MAX_PROPER_LENGTH = 10;
+  private static readonly ABBREVIATION_MAX_PROPER_LENGTH = 12;
   // Maximum number of allowed leading (head) keywords.
   private static readonly ABBREVIATION_MAX_HEAD_KEYWORDS = 4;
   // Maximum allowed length of the entire abbreviation, including the leading
@@ -611,6 +611,10 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     return trimmedLength > InputBarComponent.ABBREVIATION_MAX_TOTAL_LENGTH ||
         tokens.length > InputBarComponent.ABBREVIATION_MAX_HEAD_KEYWORDS + 1 ||
         lastTokenLength > InputBarComponent.ABBREVIATION_MAX_PROPER_LENGTH;
+  }
+
+  get abbreviationExpansionLengthLimitExceededMessage(): string {
+    return `AE length limit exceeded.`
   }
 
   get chips(): InputBarChipSpec[] {

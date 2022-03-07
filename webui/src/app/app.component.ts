@@ -207,9 +207,13 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     this.eventLogger.logAppStageChange(this.appState, newState);
     // TODO(cais): Debug the case of finishing an AE in InputBarComponent then
     // switching to a QuickPhraseComponent to do filtering.
-    this.inputBarControlSubject.next({
-      clearAll: true,
-    });
+    if (newState !== AppState.MINIBAR && this.appState !== AppState.MINIBAR) {
+      // When minimizing to or restoring from the mini-bar, we don't reset the
+      // text in the input bar.
+      this.inputBarControlSubject.next({
+        clearAll: true,
+      });
+    }
     this.appState = newState;
     registerAppState(this.appState);
     if (this.appState !== AppState.MINIBAR) {
@@ -259,6 +263,11 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   get accessToken() {
     return this._accessToken;
+  }
+
+  get isMinimizedOrNonMinimizedAbbreviationExpansionState() {
+    return this.appState === AppState.ABBREVIATION_EXPANSION ||
+        this.appState === AppState.MINIBAR;
   }
 
   onInputStringChanged(str: string) {

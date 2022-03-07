@@ -27,7 +27,7 @@ export class ContextComponent implements OnInit, AfterViewInit {
   @Input() textEntryEndSubject!: Subject<TextEntryEndEvent>;
   @Input() isDev: boolean = false;
 
-  private static readonly CONTEXT_POLLING_INTERVAL_MILLIS = 2 * 1000;
+  private static readonly CONTEXT_POLLING_INTERVAL_MILLIS = 3   * 1000;
   private contextRetrievalTimerSubscription: Subscription|null = null;
   readonly contextSignals: ConversationTurnContextSignal[] = [];
   contextRetrievalError: string|null = null;

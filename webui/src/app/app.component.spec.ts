@@ -13,7 +13,7 @@ import {MiniBarModule} from './mini-bar/mini-bar.module';
 import {TestListener} from './test-utils/test-cefsharp-listener';
 import {AppState} from './types/app-state';
 
-describe('AppComponent', () => {
+fdescribe('AppComponent', () => {
   let fixture: ComponentFixture<AppComponent>;
   let testListener: TestListener;
 
@@ -170,7 +170,7 @@ describe('AppComponent', () => {
     await fixture.whenStable();
 
     expect(fixture.componentInstance.appState)
-        .toEqual(AppState.QUICK_PHRASES_FAVORITE);
+        .toEqual(AppState.QUICK_PHRASES_CARE);
     const miniBar =
         fixture.debugElement.query(By.css('app-mini-bar-component'));
     expect(miniBar).toBeNull();
@@ -199,6 +199,34 @@ describe('AppComponent', () => {
     await fixture.whenStable();
 
     expect(fixture.componentInstance.appState)
-        .toEqual(AppState.QUICK_PHRASES_FAVORITE);
+        .toEqual(AppState.QUICK_PHRASES_CARE);
+  });
+
+  it('under minimized state, the main area exists but is hidden', async () => {
+    fixture.componentInstance.onNewAccessToken('foo-access-token');
+    fixture.componentInstance.appState = AppState.MINIBAR;
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const mainArea = fixture.debugElement.query(By.css('.main-area'));
+    expect(mainArea).not.toBeNull();
+    expect(mainArea.classes['main-area-hidden']).toEqual(true);
+    expect(mainArea.query(By.css('app-input-bar-component'))).not.toBeNull();
+    expect(mainArea.query(By.css('app-abbreviation-component'))).not.toBeNull();
+    expect(mainArea.query(By.css('app-context-component'))).not.toBeNull();
+  });
+
+  it('under non-minimized state, the main area is not hidden', async () => {
+    fixture.componentInstance.onNewAccessToken('foo-access-token');
+    fixture.componentInstance.appState = AppState.ABBREVIATION_EXPANSION;
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const mainArea = fixture.debugElement.query(By.css('.main-area'));
+    expect(mainArea).not.toBeNull();
+    expect(mainArea.classes['main-area-hidden']).toBeUndefined();
+    expect(mainArea.query(By.css('app-input-bar-component'))).not.toBeNull();
+    expect(mainArea.query(By.css('app-abbreviation-component'))).not.toBeNull();
+    expect(mainArea.query(By.css('app-context-component'))).not.toBeNull();
   });
 });

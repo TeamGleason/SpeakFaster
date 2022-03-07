@@ -1074,6 +1074,27 @@ fdescribe('InputBarComponent', () => {
     expect(fixture.debugElement.query(By.css('.cut-button'))).toBeNull();
   });
 
+  it('typing then injecting text prediction combines tex twith prediction',
+     () => {
+       enterKeysIntoComponent(['w', 'o', 'w'], 'wow');
+       inputBarControlSubject.next({
+         chips: [{
+           text: 'this is',
+           isTextPrediction: true,
+         }]
+       });
+       fixture.detectChanges();
+       const chips = fixture.debugElement.queryAll(
+           By.css('app-input-bar-chip-component'));
+
+       expect(chips.length).toEqual(1);
+       expect(chips[0].nativeElement.innerText).toEqual('wow this is');
+       expect(fixture.componentInstance.state)
+           .toEqual(State.CHOOSING_WORD_CHIP);
+       expect(fixture.componentInstance.hasOnlyOneTextPredictionChip)
+           .toBeTrue();
+       expect(fixture.debugElement.query(By.css('.spell-button'))).toBeNull();
+     });
 
   // TODO(cais): Test spelling valid word triggers AE, with debounce.
   // TODO(cais): Test favorite button.

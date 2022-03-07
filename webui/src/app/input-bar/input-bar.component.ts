@@ -33,6 +33,9 @@ export interface InputBarChipSpec {
 
   // Whether this is a pre-spelled word.
   preSpelled?: boolean;
+
+  // Whether this is a text prediction, could be multi-word.
+  isTextPrediction?: boolean;
 }
 
 /** An event that updates the clickable chips in the input bar. */
@@ -145,9 +148,21 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
             this.baseReconstructedText = this.latestReconstructedString;
             this.resetState(/* cleanText= */ true, /* resetBase= */ false);
           } else if (event.chips !== undefined) {
+            let {chips} = event;
+            if (this.state === State.ENTERING_BASE_TEXT && this.inputString &&
+                chips[0].isTextPrediction) {
+              console.log('*** Is ENTERING_BASE_TEXT');  // DEBUG
+              chips[0] = {
+                text: this.inputString.trim() + ' ' + chips[0].text,
+                isTextPrediction: chips[0].isTextPrediction,
+              };
+              this.baseReconstructedText = this.latestReconstructedString;
+            }
             this._focusChipIndex = null;
             this._chips.splice(0);
-            this._chips.push(...event.chips);
+            this._chips.push(...chips);
+            console.log(
+                '*** 100: chips:', JSON.stringify(this._chips));  // DEBUG
             if (this._chipTypedText !== null) {
               for (let i = 0; i < this._chipTypedText.length; ++i) {
                 if (this._chipTypedText[i] !== null &&
@@ -162,8 +177,12 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
                 this._chipTypedText![i] = chip.text;
               }
             });
+            console.log(
+                '*** 200: chips:', JSON.stringify(this._chips));  // DEBUG
             if (this._chips.length > 0) {
+              // if (!chips[0].isTextPrediction) {
               this.state = State.CHOOSING_WORD_CHIP;
+              // }
               this.eventLogger.logAbbreviationExpansionStartWordRefinementMode(
                   getPhraseStats(this._chips.map(chip => chip.text).join(' ')));
             }
@@ -187,7 +206,10 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private ensureChipTypedTextCreated() {
+    console.log(
+        '*** ensure 100', JSON.stringify(this._chipTypedText));  // DEBUG
     if (this._chipTypedText === null) {
+      console.log('*** ensure 200');  // DEBUG
       this._chipTypedText = Array(this._chips.length).fill(null);
     }
   }
@@ -429,6 +451,10 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   onSpellButtonClicked(event: Event) {
     let abbreviation: string = this.inputString.trim();
     const newChips: InputBarChipSpec[] = [];
+    console.log(`*** this.cutText: '${this.cutText}'`);  // DEBUG
+    console.log(`*** this.baseReconstructedText: '${
+        this.baseReconstructedText}'`);              // DEBUG
+    console.log('*** abbreviation:', abbreviation);  // DEBUG
     if (this.cutText) {
       abbreviation = abbreviation.substring(this.cutText.length).trim();
       const cutTextWords =
@@ -542,6 +568,13 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     }
     text = text.trim();
     return text;
+  }
+
+  get hasOnlyOneTextPredictionChip(): boolean {
+    return this._chips !== null && this._chips.length === 1 &&
+        this._chips[0].isTextPrediction === true &&
+        (this.latestReconstructedString.length ===
+         this.baseReconstructedText.length);
   }
 
   onSpeakAsIsButtonClicked(event?: Event) {

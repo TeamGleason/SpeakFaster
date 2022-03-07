@@ -188,7 +188,6 @@
             (click)="onExpandButtonClicked($event)">
           Expand
         </button>
-        <!-- TODO(cais): Support AFTER_CUT keyword expansion. -->
 
         <button
             #clickableButton
@@ -198,7 +197,8 @@
                     state === 'FOCUSED_ON_WORD_CHIP' ||
                     state === 'AFTER_CUT') &&
                    inputStringIsCompatibleWithAbbreviationExpansion &&
-                   supportsAbbrevationExpansion"
+                   supportsAbbrevationExpansion &&
+                   !hasOnlyOneTextPredictionChip"
             class="action-button spell-button"
             (click)="onSpellButtonClicked($event)">
           Spell

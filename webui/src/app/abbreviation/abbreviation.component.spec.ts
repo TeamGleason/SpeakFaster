@@ -9,6 +9,7 @@ import {createUuid} from 'src/utils/uuid';
 import * as cefSharp from '../../utils/cefsharp';
 import {HttpEventLogger} from '../event-logger/event-logger-impl';
 import {repeatVirtualKey, VIRTUAL_KEY} from '../external/external-events.component';
+import {InputBarControlEvent} from '../input-bar/input-bar.component';
 import {AbbreviationExpansionRespnose, FillMaskRequest, SpeakFasterService, TextPredictionRequest, TextPredictionResponse} from '../speakfaster-service';
 import {TestListener} from '../test-utils/test-cefsharp-listener';
 import {AbbreviationSpec, InputAbbreviationChangedEvent} from '../types/abbreviation';
@@ -36,9 +37,11 @@ fdescribe('AbbreviationComponent', () => {
   let abbreviationExpansionTriggers: Subject<InputAbbreviationChangedEvent>;
   let fillMaskTriggers: Subject<FillMaskRequest>;
   let textEntryEndSubject: Subject<TextEntryEndEvent>;
+  let inputBarControlSubject: Subject<InputBarControlEvent>;
   let fixture: ComponentFixture<AbbreviationComponent>;
   let testListener: TestListener;
   let abbreviationChangeEvents: InputAbbreviationChangedEvent[];
+  let inputBarControlEvents: InputBarControlEvent[];
 
   beforeEach(async () => {
     speakFasterServiceForTest = new SpeakFasterServiceForTest();
@@ -58,11 +61,16 @@ fdescribe('AbbreviationComponent', () => {
     abbreviationChangeEvents = [];
     abbreviationExpansionTriggers.subscribe(
         (event) => abbreviationChangeEvents.push(event));
+    inputBarControlSubject = new Subject();
+    inputBarControlEvents = [];
+    inputBarControlSubject.subscribe(
+        (event) => inputBarControlEvents.push(event));
     fillMaskTriggers = new Subject();
     textEntryEndSubject = new Subject();
     fixture = TestBed.createComponent(AbbreviationComponent);
     fixture.componentInstance.abbreviationExpansionTriggers =
         abbreviationExpansionTriggers;
+    fixture.componentInstance.inputBarControlSubject = inputBarControlSubject;
     fixture.componentInstance.fillMaskTriggers = fillMaskTriggers;
     fixture.componentInstance.textEntryEndSubject = textEntryEndSubject;
     fixture.componentInstance.conversationTurns = [];
@@ -270,5 +278,25 @@ fdescribe('AbbreviationComponent', () => {
     fixture.detectChanges();
 
     expect(fixture.componentInstance.responseError).toBeNull();
+  });
+
+  it('clickng text prediction fires input-bar control event', () => {
+    fixture.componentInstance.textPredictions.splice(0)
+    fixture.componentInstance.textPredictions.push('foo');
+    fixture.componentInstance.textPredictions.push('bar');
+    fixture.detectChanges();
+    const textPredictionButtons =
+        fixture.debugElement.queryAll(By.css('.text-prediction-button'));
+    expect(textPredictionButtons.length).toEqual(2);
+    textPredictionButtons[1].nativeElement.click();
+    fixture.detectChanges();
+
+    expect(inputBarControlEvents.length).toEqual(1);
+    const [event] = inputBarControlEvents;
+    expect(event.clearAll).toBeUndefined();
+    expect(event.chips).toEqual([{
+      text: 'bar',
+      isTextPrediction: true,
+    }]);
   });
 });

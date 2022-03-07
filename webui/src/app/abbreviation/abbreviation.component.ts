@@ -200,6 +200,7 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
     this.inputBarControlSubject.next({
       chips: [{
         text: this.textPredictions[index],
+        isTextPrediction: true,
       }],
     });
   }

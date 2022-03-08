@@ -7,7 +7,7 @@
 
 app-phrase-component {
   display: inline-block;
-  margin: 3px 5px;
+  margin: 2px 4px;
 }
 
 mat-progress-spinner {
@@ -129,21 +129,31 @@ mat-progress-spinner {
     <button
         #clickableButton
         class="scroll-button"
-        [ngClass]="{'scroll-button-disabled': isScrollButtonDisabled('up')}"
         (click)="onScrollButtonClicked($event, 'up')">
       <img
+          *ngIf="!isScrollButtonDisabled('up')"
           class="button-image"
           src="/assets/images/arrow_up.png"
+          alt="add to favorite" />
+      <img
+          *ngIf="isScrollButtonDisabled('up')"
+          class="button-image"
+          src="/assets/images/arrow_up_disabled.png"
           alt="add to favorite" />
     </button>
     <button
         #clickableButton
         class="scroll-button"
-        [ngClass]="{'scroll-button-disabled': isScrollButtonDisabled('down')}"
         (click)="onScrollButtonClicked($event, 'down')">
       <img
+          *ngIf="!isScrollButtonDisabled('down')"
           class="button-image"
           src="/assets/images/arrow_down.png"
+          alt="add to favorite" />
+      <img
+          *ngIf="isScrollButtonDisabled('down')"
+          class="button-image"
+          src="/assets/images/arrow_down_disabled.png"
           alt="add to favorite" />
     </button>
   </div>

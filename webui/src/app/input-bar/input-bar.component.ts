@@ -151,7 +151,6 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
             let {chips} = event;
             if (this.state === State.ENTERING_BASE_TEXT && this.inputString &&
                 chips[0].isTextPrediction) {
-              console.log('*** Is ENTERING_BASE_TEXT');  // DEBUG
               chips[0] = {
                 text: this.inputString.trim() + ' ' + chips[0].text,
                 isTextPrediction: chips[0].isTextPrediction,
@@ -161,8 +160,6 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
             this._focusChipIndex = null;
             this._chips.splice(0);
             this._chips.push(...chips);
-            console.log(
-                '*** 100: chips:', JSON.stringify(this._chips));  // DEBUG
             if (this._chipTypedText !== null) {
               for (let i = 0; i < this._chipTypedText.length; ++i) {
                 if (this._chipTypedText[i] !== null &&
@@ -177,8 +174,6 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
                 this._chipTypedText![i] = chip.text;
               }
             });
-            console.log(
-                '*** 200: chips:', JSON.stringify(this._chips));  // DEBUG
             if (this._chips.length > 0) {
               // if (!chips[0].isTextPrediction) {
               this.state = State.CHOOSING_WORD_CHIP;
@@ -206,10 +201,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private ensureChipTypedTextCreated() {
-    console.log(
-        '*** ensure 100', JSON.stringify(this._chipTypedText));  // DEBUG
     if (this._chipTypedText === null) {
-      console.log('*** ensure 200');  // DEBUG
       this._chipTypedText = Array(this._chips.length).fill(null);
     }
   }
@@ -450,17 +442,22 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
 
   onSpellButtonClicked(event: Event) {
     let abbreviation: string = this.inputString.trim();
+    const tokens = abbreviation.split(' ').filter(token => token.length > 0);
     const newChips: InputBarChipSpec[] = [];
-    console.log(`*** this.cutText: '${this.cutText}'`);  // DEBUG
-    console.log(`*** this.baseReconstructedText: '${
-        this.baseReconstructedText}'`);              // DEBUG
-    console.log('*** abbreviation:', abbreviation);  // DEBUG
     if (this.cutText) {
       abbreviation = abbreviation.substring(this.cutText.length).trim();
       const cutTextWords =
           this.cutText.trim().split(' ').filter(word => word.length > 0);
       newChips.push(
           ...cutTextWords.map(word => ({text: word, preSpelled: true})));
+    } else if (tokens.length > 1) {
+      for (let i = 0; i < tokens.length - 1; ++i) {
+        newChips.push({
+          text: tokens[i].toLowerCase(),
+          preSpelled: true,
+        });
+      }
+      abbreviation = tokens[tokens.length - 1];
     }
 
     newChips.push(...abbreviation.split('').map(char => ({text: char})));

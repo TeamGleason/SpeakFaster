@@ -191,8 +191,8 @@
 
         <button
             #clickableButton
-            *ngIf="(state === 'ENTERING_BASE_TEXT' ||
-                    state === 'CHOOSING_PHRASES' ||
+            *ngIf="((state === 'ENTERING_BASE_TEXT') ||
+                    (state === 'CHOOSING_PHRASES') ||
                     state === 'CHOOSING_WORD_CHIP' ||
                     state === 'FOCUSED_ON_WORD_CHIP' ||
                     state === 'AFTER_CUT') &&

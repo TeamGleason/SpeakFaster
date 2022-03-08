@@ -2,7 +2,7 @@
 import {Injectable} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {By} from '@angular/platform-browser';
-import {Subject} from 'rxjs';
+import {Observable, Subject} from 'rxjs';
 
 import * as cefSharp from '../../utils/cefsharp';
 import {HttpEventLogger} from '../event-logger/event-logger-impl';
@@ -13,6 +13,7 @@ import {LoadLexiconRequest} from '../lexicon/lexicon.component';
 import {FillMaskRequest, SpeakFasterService} from '../speakfaster-service';
 import {TestListener} from '../test-utils/test-cefsharp-listener';
 import {InputAbbreviationChangedEvent} from '../types/abbreviation';
+import {AddContextualPhraseRequest, AddContextualPhraseResponse} from '../types/contextual_phrase';
 import {TextEntryEndEvent} from '../types/text-entry';
 
 import {InputBarComponent, InputBarControlEvent, State} from './input-bar.component';
@@ -20,6 +21,10 @@ import {InputBarModule} from './input-bar.module';
 
 @Injectable()
 class SpeakFasterServiceForTest {
+  public addContextualPhrase(request: AddContextualPhraseRequest):
+      Observable<AddContextualPhraseResponse> {
+    throw new Error('Should call spy instead of this method.');
+  }
 }
 
 fdescribe('InputBarComponent', () => {
@@ -1095,6 +1100,50 @@ fdescribe('InputBarComponent', () => {
            .toBeTrue();
        expect(fixture.debugElement.query(By.css('.spell-button'))).toBeNull();
      });
+
+  it('multi-token abbreviation then hit spell: chips are correct', () => {
+    enterKeysIntoComponent(
+        [
+          's', 'o', VIRTUAL_KEY.SPACE, 'm', 'u', 'c', 'h', VIRTUAL_KEY.SPACE,
+          'b', 'v'
+        ],
+        'so much bv');
+    fixture.detectChanges();
+    const spellButton = fixture.debugElement.query(By.css('.spell-button'));
+    spellButton.nativeElement.click();
+    fixture.detectChanges();
+
+    const chips =
+        fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'));
+    expect(chips.length).toEqual(4);
+    expect(chips[0].nativeElement.innerText).toEqual('so');
+    expect(chips[1].nativeElement.innerText).toEqual('much');
+    expect(chips[2].nativeElement.innerText).toEqual('b');
+    expect(chips[3].nativeElement.innerText).toEqual('v');
+  });
+
+  it('clicking favorite button calls ', () => {
+    enterKeysIntoComponent(
+        ['s', 'o', VIRTUAL_KEY.SPACE, 'l', 'o', 'n', 'g', VIRTUAL_KEY.SPACE],
+        'so long ');
+    const addContextualPhraseSpy =
+        spyOn(speakFasterServiceForTest, 'addContextualPhrase');
+    fixture.detectChanges();
+    const favoriteButton =
+        fixture.debugElement.query(By.css('app-favorite-button-component'))
+            .query(By.css('.favorite-button'));
+    favoriteButton.nativeElement.click();
+    fixture.detectChanges();
+
+    expect(addContextualPhraseSpy).toHaveBeenCalledOnceWith({
+      userId: 'testuser',
+      contextualPhrase: {
+        phraseId: '',
+        text: 'so long',
+        tags: ['favorite'],
+      },
+    });
+  });
 
   // TODO(cais): Test spelling valid word triggers AE, with debounce.
   // TODO(cais): Test favorite button.

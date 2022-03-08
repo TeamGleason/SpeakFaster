@@ -16,10 +16,10 @@ export class ConversationTurnComponent implements AfterViewInit, OnDestroy {
   private readonly instanceId =
       ConversationTurnComponent._NAME + '_' + createUuid();
 
-  private static readonly CONTENT_STRING_MAX_LENGTH = 80;
+  private static readonly CONTENT_STRING_MAX_LENGTH = 160;
   private static readonly BASE_FONT_SIZE_PX = 24;
   private static readonly FONT_SCALING_LENGTH_THRESHOLD = 32;
-  private static readonly MIN_FONT_SIZE_PX = 10;
+  private static readonly MIN_FONT_SIZE_PX = 12;
 
   @Input() turn!: ConversationTurn;
   @Input() isFocus: boolean = false;

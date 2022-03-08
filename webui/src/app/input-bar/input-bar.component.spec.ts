@@ -1145,6 +1145,23 @@ fdescribe('InputBarComponent', () => {
     });
   });
 
+  it('setting isFocus to false hides cursor', () => {
+    fixture.componentInstance.isFocused = false;
+    fixture.detectChanges();
+
+    const cursor = fixture.debugElement.query(By.css('.simulated-cursor'));
+    expect(cursor.classes['simulated-cursor-hidden']).toBeTrue();
+  });
+
+  it('setting isFocus back to true shows cursor', () => {
+    fixture.componentInstance.isFocused = false;
+    fixture.detectChanges();
+    fixture.componentInstance.isFocused = true;
+    fixture.detectChanges();
+
+    const cursor = fixture.debugElement.query(By.css('.simulated-cursor'));
+    expect(cursor.classes['simulated-cursor-hidden']).toBeUndefined();
+  });
+
   // TODO(cais): Test spelling valid word triggers AE, with debounce.
-  // TODO(cais): Test favorite button.
 });

@@ -253,4 +253,20 @@ fdescribe('AppComponent', () => {
     expect(appContextComponent.classes['app-context-component-area-hidden'])
         .toBeUndefined();
   });
+
+  it('isFocused is initially true', () => {
+    expect(fixture.componentInstance.isFocused).toBeTrue();
+  });
+
+  it('calling setHostWindowFocus(false) sets isFocus to false', () => {
+    (window as any).setHostWindowFocus(false);
+    expect(fixture.componentInstance.isFocused).toBeFalse();
+  });
+
+  it('calling setHostWindowFocus() false then true sets isFocus to true', () => {
+    (window as any).setHostWindowFocus(false);
+    (window as any).setHostWindowFocus(true);
+    expect(fixture.componentInstance.isFocused).toBeTrue();
+  });
+
 });

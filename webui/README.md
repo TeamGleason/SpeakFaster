@@ -117,7 +117,12 @@ This allows the WebUI to be informed of all alphanumeric and functional keypress
 The function `getVirtualkeyCode()` in `external-events-component.ts` can
 translate strings into virtual key code values.
 
-### 2. Bound listner for WebUI-to-host information flow
+### 2. Listening for the foreground (activated) state of the host window
+
+The global function `window.setHostWindowFocus(isFocused: boolean)` provides the
+WebUI with the foreground (activated) state of the host window.
+
+### 3. Bound listner for WebUI-to-host information flow
 
 The WebUI looks for the global `window.boundListener` object and expects
 it to have the following interface.
@@ -145,12 +150,12 @@ The three interface methods, `injectKey()`, `updateButtonBoxes()`, and
 `resizeWindow()` allow the WebUI to send different types of information to the
 host. Below we describe their use respectively.
 
-#### 2.1. Keystroke injection API
+#### 3.1. Keystroke injection API
 
 The contract of the `injectKeys()` function is it will issue the keys in `virtualKeys`
 programmatically in the specified order.
 
-#### 2.2. Request external softkeyboard to reset state
+#### 3.2. Request external softkeyboard to reset state
 
 Occasionally the WebUI needs to request a state reset in the softkeyboard
 attached to the host application. For example, when the user starts to spell
@@ -160,13 +165,13 @@ its state being confounded by the previously typed abbreviation, which is
 usually not a valid word. This can be achieved by using the method
 `requestSoftkeybardRest()`.
 
-#### 2.2. Window resizing
+#### 3.3 Window resizing
 
 The contract of the `resizedWindow()` function is that it will request the host
 app to resize the window that contains the WebView to the specified height and
 width.
 
-### 2.3. Registeration of gaze-clickable areas
+### 3.4. Registeration of gaze-clickable areas
 
 The WebUI is meant to be used with an eye tracker. The hosting app provides
 two methods in the `window.boundListener` object to allow the WebUI to register

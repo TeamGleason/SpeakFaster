@@ -135,6 +135,10 @@
   margin-left: 0.1em;
 }
 
+.simulated-cursor-hidden {
+  display: none;
+}
+
 @keyframes blink {
   50% {
     opacity: 0;
@@ -157,7 +161,10 @@
                  state !== 'CHOOSING_WORD_CHIP' &&
                  state !== 'FOCUSED_ON_WORD_CHIP'">
         <span
-            #inputText class="input-text">{{inputString}}<span class="simulated-cursor">|</span></span>
+            #inputText class="input-text">{{inputString}}<span
+                class="simulated-cursor"
+                [ngClass]="{'simulated-cursor-hidden': !isFocused}"
+            >|</span></span>
       </div>
       <div
           class="chips-container"

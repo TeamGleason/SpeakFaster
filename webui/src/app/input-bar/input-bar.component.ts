@@ -101,6 +101,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   @Input() fillMaskTriggers!: Subject<FillMaskRequest>;
   @Input() inputBarControlSubject!: Subject<InputBarControlEvent>;
   @Input() loadPrefixedLexiconRequestSubject!: Subject<LoadLexiconRequest>;
+  @Input() isFocused: boolean = true;
   @Output() inputStringChanged: EventEmitter<string> = new EventEmitter();
 
   private readonly _chips: InputBarChipSpec[] = [];

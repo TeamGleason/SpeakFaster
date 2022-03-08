@@ -141,6 +141,12 @@ export function registerExternalKeypressHook(callback: ExternalKeypressHook) {
   (window as any)['externalKeypressHook'] = callback;
 }
 
+export type HostWindowFocusHook = (isFocused: boolean) => void;
+
+export function registerHostWindowFocusHook(callback: HostWindowFocusHook) {
+  (window as any)['setHostWindowFocus'] = callback;
+}
+
 export type ExternalAccessTokenHook = (accessToken: string) => void;
 
 /**

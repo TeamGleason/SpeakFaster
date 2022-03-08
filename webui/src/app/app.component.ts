@@ -2,7 +2,7 @@ import {AfterViewInit, Component, ElementRef, OnDestroy, OnInit, QueryList, View
 import {ActivatedRoute} from '@angular/router';
 import {Subject} from 'rxjs';
 
-import {bindCefSharpListener, registerExternalAccessTokenHook, registerExternalKeypressHook, resizeWindow, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from '../utils/cefsharp';
+import {bindCefSharpListener, registerExternalAccessTokenHook, registerExternalKeypressHook, registerHostWindowFocusHook, resizeWindow, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from '../utils/cefsharp';
 import {createUuid} from '../utils/uuid';
 
 import {registerAppState} from './app-state-registry';
@@ -60,6 +60,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   private _userEmail: string|null = null;
   private _endpoint: string = '';
   private _accessToken: string = '';
+  private _isFocused: boolean = true;
   isSpelling = false;
 
   abbreviationExpansionTriggers: Subject<InputAbbreviationChangedEvent> =
@@ -155,6 +156,9 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       console.log(`Received new external access token: ${externalAccessToken}`);
       this.onNewAccessToken(externalAccessToken);
     });
+    registerHostWindowFocusHook((isFocused: boolean) => {
+      this._isFocused = isFocused;
+    });
     registerExternalKeypressHook(
         this.externalEventsComponent.externalKeypressHook.bind(
             this.externalEventsComponent));
@@ -243,6 +247,10 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   get showMetrics(): boolean {
     return this._showMetrics;
+  }
+
+  get isFocused(): boolean {
+    return this._isFocused;
   }
 
   onNewAccessToken(accessToken: string) {

@@ -129,7 +129,7 @@ export const TTS_TRIGGER_COMBO_KEY: string[] =
     [VIRTUAL_KEY.LCTRL, LCTRL_KEY_HEAD_FOR_TTS_TRIGGER];
 
 function getKeyFromVirtualKeyCode(vkCode: number): string|null {
-  if (vkCode >= 48 && vkCode <= 57) {
+  if (vkCode >= 48 && vkCode <= 58) {
     return String.fromCharCode(vkCode);
   } else if (vkCode >= 65 && vkCode <= 90) {
     return String.fromCharCode(vkCode).toLowerCase();
@@ -216,7 +216,7 @@ export function getNumOrPunctuationLiteral(
       return isShift ? '&' : '7';
     case 56:
       return isShift ? '*' : '8';
-    case 56:
+    case 57:
       return isShift ? '(' : '9';
     default:
       throw new Error(`Invalid key code for number keys: ${vkCode}`);

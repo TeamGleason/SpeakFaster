@@ -129,6 +129,24 @@ fdescribe('ExternalEventsComponent', () => {
     expect(reconstructedTexts).toEqual(['a', 'a ']);
   });
 
+  it('Registers number keys', () => {
+    const keySequences: string[][] = [];
+    const reconstructedTexts: string[] = [];
+    ExternalEventsComponent.registerKeypressListener(
+        (keySequence: string[], reconstructedText: string) => {
+          keySequences.push(keySequence.slice());
+          reconstructedTexts.push(reconstructedText);
+        });
+    component.externalKeypressHook(57);  // '9'
+    component.externalKeypressHook(56);  // '8'
+    component.externalKeypressHook(49);  // '1'
+    component.externalKeypressHook(48);  // '0'
+    expect(keySequences).toEqual([
+      ['9'], ['9', '8'], ['9', '8', '1'], ['9', '8', '1', '0']
+    ]);
+    expect(reconstructedTexts).toEqual(['9', '98', '981', '9810']);
+  });
+
   it('Reistering keypress listener updates listener count', () => {
     ExternalEventsComponent.registerKeypressListener(
         (keySequence: string[], reconstructedText: string) => {});

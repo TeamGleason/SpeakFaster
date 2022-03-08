@@ -19,7 +19,7 @@ let appSettings: AppSettings|null = null;
 
 function getDefaultAppSettings(): AppSettings {
   return {
-    ttsVoiceType: 'PERSONALIZED',
+    ttsVoiceType: 'GENERIC',
     ttsVolume: 'MEDIUM',
   };
 }

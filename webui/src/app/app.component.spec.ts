@@ -229,4 +229,28 @@ fdescribe('AppComponent', () => {
     expect(mainArea.query(By.css('app-abbreviation-component'))).not.toBeNull();
     expect(mainArea.query(By.css('app-context-component'))).not.toBeNull();
   });
+
+  it('under quick phrase state, context component exists and is hidden', () => {
+    fixture.componentInstance.onNewAccessToken('foo-access-token');
+    fixture.componentInstance.appState = AppState.QUICK_PHRASES_FAVORITE;
+    fixture.detectChanges();
+
+    const appContextComponent =
+        fixture.debugElement.query(By.css('app-context-component'));
+    expect(appContextComponent).not.toBeNull();
+    expect(appContextComponent.classes['app-context-component-area-hidden'])
+        .toEqual(true);
+  });
+
+  it('under abbreviaton expansion state, context component is shown', () => {
+    fixture.componentInstance.onNewAccessToken('foo-access-token');
+    fixture.componentInstance.appState = AppState.ABBREVIATION_EXPANSION;
+    fixture.detectChanges();
+
+    const appContextComponent =
+        fixture.debugElement.query(By.css('app-context-component'));
+    expect(appContextComponent).not.toBeNull();
+    expect(appContextComponent.classes['app-context-component-area-hidden'])
+        .toBeUndefined();
+  });
 });

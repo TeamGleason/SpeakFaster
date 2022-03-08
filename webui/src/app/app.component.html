@@ -23,6 +23,10 @@ app-text-to-speech-component {
   float: right;
 }
 
+.app-context-component-area-hidden {
+  display: none;
+}
+
 .auth-area {
   border: 2px solid yellow;
   border-radius: 7px;
@@ -61,7 +65,7 @@ app-text-to-speech-component {
 }
 
 .main-area.main-area-hidden {
-  display:none
+  display: none;
 }
 
 .main-left-pane {
@@ -175,7 +179,7 @@ app-text-to-speech-component {
 
     <div class="main-right-pane">
       <app-context-component
-        *ngIf="isMinimizedOrNonMinimizedAbbreviationExpansionState"
+        [ngClass]="{'app-context-component-area-hidden': appState !== 'ABBREVIATION_EXPANSION'}"
         [userId]="userId"
         [textEntryEndSubject]="textEntryEndSubject"
         [isDev]="isDev"

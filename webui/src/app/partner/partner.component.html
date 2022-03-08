@@ -22,6 +22,18 @@ mat-progress-spinner {
   zoom: 0.3;
 }
 
+.button-content {
+  align-items: center;
+  display: inline-flex;
+  flex-direction: row;
+}
+
+.button-image {
+  height: 36px;
+  margin-right: 8px;
+  width: 36px;
+}
+
 .clear-button-row {
   align-items: flex-end;
   display: flex;
@@ -33,18 +45,26 @@ mat-progress-spinner {
 }
 
 .info-container {
+  align-items: center;
   display: flex;
+  flex-direction: row;
   justify-content: flex-end;
-  margin-right: 10px;
-  line-height: 30px;
-  vertical-align: middle;
+  line-height: 48px;
+  margin-right: 12px;
+}
+
+.in-progress-info {
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+  line-height: 48px;
+  margin: 0 8px;
 }
 
 .message {
   display: inline-block;
   font-size: 18px;
   margin-left: 6px;
-  margin-top: 20px;
 }
 
 .message-info {
@@ -67,13 +87,13 @@ mat-progress-spinner {
 }
 
 .partner-given-name {
-  margin-left: 6px;
+  margin-left: 8px;
 }
 
 .partner-profile-section {
   display: flex;
   flex: 1;
-  margin: 0 5px;
+  margin: 0 8px;
   line-height: 48px;
   vertical-align: middle;
 }
@@ -85,22 +105,29 @@ mat-progress-spinner {
 }
 
 .text-input-button {
+  background-color: #ddd;
+  color: black;
   display: inline-block;
   flex: 1;
   font-size: 26px;
   height: 64px;
   margin-left: 4px;
-  margin-top: 6px;
-  margin-right: 2px;
+  margin-top: 8px;
+  margin-right: 4px;
   min-width: 100px;
   vertical-align: middle;
+}
+
+.signing-in-message {
+  font-size: 18px;
+  margin-left: 8px;
 }
 
 .sign-in-out-button {
   background-color: black;
   color: #EEE;
   cursor: pointer;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
   max-width: 400px;
   min-height: 80px;
   padding-left: 20px;
@@ -109,12 +136,6 @@ mat-progress-spinner {
 
 .sign-in-out-button:hover {
   background-color: #222;
-}
-
-.sign-in-out-button-content {
-  display: flex;
-  line-height: 40px;
-  vertical-align: middle;
 }
 
 .sign-in-out-button-image {
@@ -139,7 +160,7 @@ mat-progress-spinner {
   font-size: 24px;
   height: 90px;
   line-height: 110%;
-  padding: 3px;
+  padding: 4px;
   width: 100%;
 }
 
@@ -184,7 +205,7 @@ mat-progress-spinner {
   <button
       class="sign-in-out-button"
       (click)="partnerToggleAuthenticationState()">
-    <div class="sign-in-out-button-content">
+    <div class="button-content">
       <img
           class="sign-in-out-button-image"
           src={{signInOutButtonImgSrc}}
@@ -194,6 +215,16 @@ mat-progress-spinner {
       </span>
     </div>
   </button>
+
+  <div
+      *ngIf="state === 'SIGNING_IN'"
+      class="in-progress-info">
+    <mat-progress-spinner
+      [mode]="'indeterminate'"
+      [value]="50">
+    </mat-progress-spinner>
+    <span class="signing-in-message">Signing in...</span>
+  </div>
 
   <div *ngIf="state !== 'NOT_SIGNED_IN'">
 
@@ -207,11 +238,15 @@ mat-progress-spinner {
       </div>
 
       <div *ngIf="state === 'GETTING_AAC_USER_LIST'">
+        <mat-progress-spinner
+          [mode]="'indeterminate'"
+          [value]="50">
+        </mat-progress-spinner>
         Retrieving AAC user list...
       </div>
 
       <div
-          *ngIf="state !== 'GETTING_AAC_USER_LIST'"
+          *ngIf="state !== 'GETTING_AAC_USER_LIST' && state !== 'SIGNING_IN'"
           class="user-ids-container">
         <span class="user-ids-tag">to user:</span>
         <select class="user-ids" #userIdsSelect>
@@ -243,14 +278,20 @@ mat-progress-spinner {
             class="text-input-button"
             [disabled]="state === 'SENDING_MESSAGE'"
             (click)="onSpeakButtonClicked($event)">
-          <span *ngIf="state !== 'ASR_ONGOING'">🎤 Speak</span>
-          <span *ngIf="state === 'ASR_ONGOING'">🟥 Stop</span>
+          <div class="button-content" *ngIf="state !== 'ASR_ONGOING'">
+            <img class="button-image" src="/assets/images/microphone.png">Speak
+          </div>
+          <div class="button-content" *ngIf="state == 'ASR_ONGOING'">
+            🟥 Stop
+          </div>
         </button>
         <button
             class="text-input-button text-send-button"
             [disabled]="isAsrOrMessageSendOngoing"
             (click)="onSendButtonClicked($event)">
-          Send
+          <div class="button-content" *ngIf="state !== 'ASR_ONGOING'">
+            <img class="button-image" src="/assets/images/send.png">Send
+          </div>
         </button>
       </div>
     </div>
@@ -269,11 +310,12 @@ mat-progress-spinner {
         class="message message-info">
       {{infoMessage}}
     </div>
-    <div
-        *ngIf="errorMessage !== null"
-        class="message message-error">
-      {{errorMessage}}
-    </div>
+  </div>
+
+  <div
+      *ngIf="errorMessage !== null"
+      class="message message-error">
+    {{errorMessage}}
   </div>
 
 </div>

@@ -10,6 +10,8 @@ const DEFAULT_USER_IDS: string[] = ['cais', 'testuser'];
 export enum State {
   // User (partner) has not signed in yet.
   NOT_SIGNED_IN = 'NOT_SIGNED_IN',
+  // In the middle of the sign-in process.
+  SIGNING_IN = 'SIGNING_IN',
   // User (partner) is signed in and the app is requesting the list of
   // associated AAC user(s).
   GETTING_AAC_USER_LIST = 'GETTING_AAC_USER_LIST',
@@ -69,6 +71,8 @@ export class PartnerComponent implements OnInit {
           this.cdr.detectChanges();
           return;
         }
+        console.log('Creating gapi client');
+        this.state = State.SIGNING_IN;
         gapi.client
             .init({
               clientId: this.clientId,
@@ -76,12 +80,17 @@ export class PartnerComponent implements OnInit {
               discoveryDocs: [PartnerComponent.DISCOVERY_URL],
             })
             .then(() => {
+              console.log(
+                  'gapi client is created. Creating google auth instance.');
               this.googleAuth = gapi.auth2.getAuthInstance();
+              console.log('Created google auth instance.');
               this.googleAuth.isSignedIn.listen(() => {
+                console.log('google auth is signed in.');
                 this.getUserInfo();
               });
               this.getUserInfo();
             });
+        this.cdr.detectChanges();
       });
     } else {
       console.error('gapi is not defined. cannot perform authentication.');
@@ -91,30 +100,35 @@ export class PartnerComponent implements OnInit {
   private getUserInfo(): void {
     if (!this.user) {
       this.user = this.googleAuth!.currentUser.get();
+      console.log('Got current user:', this.user);
     }
     if (!this.user) {
       this._errorMessage = 'Failed to get current user';
       this.resetPartnerInfo();
       this.state = State.NOT_SIGNED_IN;
       this.cdr.detectChanges();
+      console.error('Failed to get current user');
       return;
     }
     const isAuthorized =
         this.user.hasGrantedScopes(PartnerComponent.GOOGLE_AUTH_SCOPE);
     if (!isAuthorized) {
-      this._errorMessage = 'Not authorized';
+      this._errorMessage = 'Not authorized for given scope';
       this.resetPartnerInfo();
       this.state = State.NOT_SIGNED_IN;
       this.cdr.detectChanges();
+      console.error('User is not authorized for given scope');
       return;
     }
     this._accessToken = this.user.getAuthResponse().access_token;
+    console.log('Got user access token.');
     this.newAccessToken.emit(this._accessToken);
     const userProfile = this.user.getBasicProfile();
     this._partnerEmail = userProfile.getEmail();
     this._partnerGivenName = userProfile.getGivenName();
     this._partnerProfileImageUrl = userProfile.getImageUrl();
     this.state = State.GETTING_AAC_USER_LIST;
+    console.log('Getting partner users...');
     this.speakFasterService.getPartnerUsers(this._partnerEmail!)
         .subscribe(
             (partnerUsersResonse: PartnerUsersResponse) => {
@@ -125,6 +139,7 @@ export class PartnerComponent implements OnInit {
               this.cdr.detectChanges();
             },
             (error) => {
+              this._errorMessage = 'Failed to get partner users. Using default.';
               this._userIds.splice(0);
               this._userIds.push(...DEFAULT_USER_IDS);
               this.state = State.READY;
@@ -244,7 +259,7 @@ export class PartnerComponent implements OnInit {
                 this.turnText = '';
                 this._errorMessage = null;
                 this._infoMessage =
-                    `Message sent to ${userId}: "${speechContent}"`;
+                    `Sent to ${userId}: "${speechContent}"`;
                 if (this.turnTextInput) {
                   this.turnTextInput.nativeElement.value = '';
                 }

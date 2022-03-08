@@ -154,7 +154,7 @@ fdescribe('PartnerComopnent', () => {
 
     const info = fixture.debugElement.query(By.css('.message-info'));
     expect(info.nativeElement.innerText)
-        .toEqual('Message sent to testuser1: "hi there. how are you?"');
+        .toEqual('Sent to testuser1: "hi there. how are you?"');
     expect(turnInput.nativeElement.value).toEqual('');
   });
 
@@ -182,5 +182,18 @@ fdescribe('PartnerComopnent', () => {
     expect(error.nativeElement.innerText)
         .toEqual('Message not sent. There was an error.');
     expect(turnInput.nativeElement.value).toEqual(' hi there.\nhow are you? ');
+  });
+
+  it('under signing-in state, shows spinner', () => {
+    fixture.componentInstance.state = State.SIGNING_IN;
+    fixture.detectChanges();
+    const spinners =
+        fixture.debugElement.queryAll(By.css('mat-progress-spinner'));
+    expect(spinners.length).toEqual(1);
+    const signingInMessage =
+        fixture.debugElement.query(By.css('.signing-in-message'));
+    expect(signingInMessage.nativeElement.innerText).toEqual('Signing in...');
+    expect(fixture.debugElement.query(By.css('.user-ids-container')))
+        .toBeNull();
   });
 });

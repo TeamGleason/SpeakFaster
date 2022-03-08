@@ -4,6 +4,7 @@ import {HttpClient} from '@angular/common/http';
 import {Injectable} from '@angular/core';
 import {Observable, throwError} from 'rxjs';
 import {catchError, timeout} from 'rxjs/operators';
+import {trimStringAtHead} from 'src/utils/text-utils';
 
 import {AbbreviationSpec} from './types/abbreviation';
 import {ContextSignal} from './types/context';
@@ -191,6 +192,11 @@ const TEXT_PREDICTION_TIMEOUT_MILLIS = 6000;
 const FILL_MASK_TIMEOUT_MILLIS = 6000;
 const CONTEXT_PHRASES_TIMEOUT_MILLIS = 10000;
 
+const ABBREVIATION_EXPANSION_CONTEXT_MAX_LENGTH_CHARS = 1000;
+const TEXT_PREDICTION_CONTEXT_MAX_LENGTH_CHARS = 500;
+const TEXT_PREDICTION_TEXT_PREFIX_MAX_LENGTH_CHARS = 500;
+const FILL_MASK_CONTEXT_MAX_LENGTH_CHARS = 200;
+
 export function makeTimeoutErrorMessage(
     taskName: string, timeoutMillis: number) {
   return `${taskName} (timeout: ${(timeoutMillis / 1e3).toFixed(1)} s)`;
@@ -214,6 +220,8 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
   expandAbbreviation(
       speechContent: string, abbreviationSpec: AbbreviationSpec,
       numSamples: number, precedingText?: string) {
+    speechContent = trimStringAtHead(
+        speechContent, ABBREVIATION_EXPANSION_CONTEXT_MAX_LENGTH_CHARS);
     const {endpoint, headers, withCredentials} = this.getServerCallParams();
     const keywordIndices: number[] = [];
     for (let i = 0; i < abbreviationSpec.tokens.length; ++i) {
@@ -246,11 +254,17 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
   textPrediction(textPredictionRequest: TextPredictionRequest):
       Observable<TextPredictionResponse> {
     const {endpoint, headers, withCredentials} = this.getServerCallParams();
+    const speechContent = trimStringAtHead(
+        textPredictionRequest.contextTurns.join('|'),
+        TEXT_PREDICTION_CONTEXT_MAX_LENGTH_CHARS);
+    const textPrefix = trimStringAtHead(
+        textPredictionRequest.textPrefix,
+        TEXT_PREDICTION_TEXT_PREFIX_MAX_LENGTH_CHARS);
     const params: any = {
       userId: textPredictionRequest.userId || '',
       mode: 'text_continuation',
-      speechContent: textPredictionRequest.contextTurns.join('|'),
-      textPrefix: textPredictionRequest.textPrefix,
+      speechContent,
+      textPrefix,
     };
     if (textPredictionRequest.timestamp) {
       params['timestamp'] = textPredictionRequest.timestamp;
@@ -318,6 +332,11 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
 
   fillMask(request: FillMaskRequest): Observable<FillMaskResponse> {
     const {endpoint, headers, withCredentials} = this.getServerCallParams();
+    request = {
+      ...request,
+      speechContent: trimStringAtHead(
+          request.speechContent, FILL_MASK_CONTEXT_MAX_LENGTH_CHARS),
+    };
     return this.http
         .get<FillMaskResponse>(endpoint, {
           params: {

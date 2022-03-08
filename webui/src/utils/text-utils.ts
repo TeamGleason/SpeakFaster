@@ -59,3 +59,21 @@ export function endsWithSentenceEndPunctuation(text: string): boolean {
   text = text.trim();
   return text.match(/.*[\.\!\?]$/) !== null;
 }
+
+/**
+ * Trim string from the head, respecting word boundary.
+ * @param str Input string.
+ * @param maxLength Maximum allowed length.
+ */
+export function trimStringAtHead(str: string, maxLength: number): string {
+  const length = str.length;
+  if (length <= maxLength) {
+    return str;
+  }
+  const trimAt = length - maxLength;
+  let trimmed = str.substring(length - maxLength, length);
+  if (!str[trimAt - 1].match(/^\s$/)) {
+    trimmed = trimmed.substring(trimmed.search(/\s/));
+  }
+  return trimmed.trim();
+}

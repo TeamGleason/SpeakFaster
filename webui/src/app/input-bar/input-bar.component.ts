@@ -564,8 +564,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
         this.state === State.AFTER_CUT) {
       return this.inputString;
     }
-    text = text.trim();
-    return text;
+    return text.trim();
   }
 
   get hasOnlyOneTextPredictionChip(): boolean {
@@ -577,15 +576,14 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
 
   onSpeakAsIsButtonClicked(event?: Event) {
     const text = this.effectivePhrase;
-    if (!text) {
-      return;
-    }
+    const repeatLastNonEmpty = text === '';
     this.eventLogger.logInputBarSpeakButtonClick(getPhraseStats(text));
     this.textEntryEndSubject.next({
       text,
       timestampMillis: Date.now(),
       isFinal: true,
-      inAppTextToSpeechAudioConfig: {}
+      inAppTextToSpeechAudioConfig: {},
+      repeatLastNonEmpty,
     });
   }
 

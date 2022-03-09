@@ -762,12 +762,14 @@ fdescribe('InputBarComponent', () => {
         fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'))
     chips[1].nativeElement.click();
     enterKeysIntoComponent(keySequence, reconstructedText);
-    const speakButton = fixture.debugElement.query(By.css('.speak-button'))
-                            .query(By.css('.speak-button'));
+    const speakButton = fixture.debugElement.query(By.css('.speak-button'));
     speakButton.nativeElement.click();
 
     expect(textEntryEndEvents.length).toEqual(1);
     expect(textEntryEndEvents[0].text).toEqual('i felt great');
+    expect(textEntryEndEvents[0].repeatLastNonEmpty).toBeFalse();
+    expect(textEntryEndEvents[0].inAppTextToSpeechAudioConfig)
+        .not.toBeUndefined();
   });
 
   it('types keys during refinement registers manual revision: first chip',
@@ -792,12 +794,32 @@ fdescribe('InputBarComponent', () => {
            fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'))
        chips[0].nativeElement.click();
        enterKeysIntoComponent(keySequence, reconstructedText);
+       const speakButton = fixture.debugElement.query(By.css('.speak-button'));
+       speakButton.nativeElement.click();
+
+       expect(textEntryEndEvents.length).toEqual(1);
+       expect(textEntryEndEvents[0].text).toEqual('it feel great');
+       expect(textEntryEndEvents[0].repeatLastNonEmpty).toBeFalse();
+       expect(textEntryEndEvents[0].inAppTextToSpeechAudioConfig)
+           .not.toBeUndefined();
+     });
+
+  it('clicking speak button clears text & clicking again triggers repeat',
+     () => {
+       enterKeysIntoComponent(['i', 't'], 'it');
+       fixture.detectChanges();
        const speakButton = fixture.debugElement.query(By.css('.speak-button'))
                                .query(By.css('.speak-button'));
        speakButton.nativeElement.click();
 
        expect(textEntryEndEvents.length).toEqual(1);
-       expect(textEntryEndEvents[0].text).toEqual('it feel great');
+       expect(textEntryEndEvents[0].text).toEqual('it');
+       expect(textEntryEndEvents[0].repeatLastNonEmpty).toBeFalse();
+
+       speakButton.nativeElement.click();
+       expect(textEntryEndEvents.length).toEqual(2);
+       expect(textEntryEndEvents[1].text).toEqual('');
+       expect(textEntryEndEvents[1].repeatLastNonEmpty).toBeTrue();
      });
 
   it('spell button is shown during word refinement', () => {

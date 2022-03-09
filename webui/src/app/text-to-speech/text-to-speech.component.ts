@@ -61,6 +61,7 @@ export class TextToSpeechComponent implements OnInit {
   ttsAudioElements!: QueryList<ElementRef<HTMLAudioElement>>;
   private _audioPlayCallCount: number = 0;
   private audioPlayDisabledForTest = false;
+  private lastNonEmptySpokenText: string|null = null;
 
   constructor(
       public textToSpeechService: TextToSpeechService,
@@ -90,12 +91,23 @@ export class TextToSpeechComponent implements OnInit {
       if (!event.isFinal || event.inAppTextToSpeechAudioConfig === undefined) {
         return;
       }
+      let text = event.text.trim();
+      if (text === '') {
+        if (event.repeatLastNonEmpty && this.lastNonEmptySpokenText !== null) {
+          // TODO(cais): Add unit test.
+          text = this.lastNonEmptySpokenText;
+        } else {
+          return;
+        }
+      } else {
+        this.lastNonEmptySpokenText = text;
+      }
       const appSettings = await getAppSettings();
       const ttsVoiceType = appSettings.ttsVoiceType;
       if (ttsVoiceType === 'PERSONALIZED') {
-        this.doCloudTextToSpeech(event.text, appSettings);
+        this.doCloudTextToSpeech(text, appSettings);
       } else {
-        this.doLocalTextToSpeech(event.text, appSettings);
+        this.doLocalTextToSpeech(text, appSettings);
       }
     });
   }

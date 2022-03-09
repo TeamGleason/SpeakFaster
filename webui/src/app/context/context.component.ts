@@ -27,7 +27,7 @@ export class ContextComponent implements OnInit, AfterViewInit {
   @Input() textEntryEndSubject!: Subject<TextEntryEndEvent>;
   @Input() isDev: boolean = false;
 
-  private static readonly CONTEXT_POLLING_INTERVAL_MILLIS = 3   * 1000;
+  private static readonly CONTEXT_POLLING_INTERVAL_MILLIS = 3 * 1000;
   private contextRetrievalTimerSubscription: Subscription|null = null;
   readonly contextSignals: ConversationTurnContextSignal[] = [];
   contextRetrievalError: string|null = null;
@@ -53,7 +53,8 @@ export class ContextComponent implements OnInit, AfterViewInit {
     }
     this.focusContextIds.splice(0);
     this.textEntryEndSubject.subscribe((textInjection: TextEntryEndEvent) => {
-      if (!textInjection.isFinal || textInjection.isAborted) {
+      if (!textInjection.isFinal || textInjection.isAborted ||
+          textInjection.text.trim() === '') {
         return;
       }
       const timestamp = new Date(textInjection.timestampMillis);

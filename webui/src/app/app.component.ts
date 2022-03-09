@@ -118,6 +118,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       }
       // TODO(cais): Add unit tests.
       const userEmail = params['user_email'];
+      console.log(`Got user email from URL parameters: ${userEmail}`);
       if (userEmail && userEmail !== this._userEmail) {
         this._userEmail = userEmail;
         this.speakFasterService.getUserId(userEmail).subscribe(

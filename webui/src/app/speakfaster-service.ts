@@ -386,14 +386,12 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
   }
 
   getUserId(userEmail: string): Observable<GetUserIdResponse> {
-    const {headers, withCredentials} = this.getServerCallParams();
     return this.http.get<GetUserIdResponse>('/get_user_id', {
       params: {
         user_email: userEmail,
       },
-      withCredentials,
-      headers,
     });
+    // TODO(cais): Add unit tests.
   }
 
   getPartnerUsers(partnerEmail: string): Observable<PartnerUsersResponse> {

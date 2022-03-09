@@ -1,4 +1,4 @@
-import {AfterViewInit, Component, ElementRef, Input, OnDestroy, QueryList, ViewChild, ViewChildren} from '@angular/core';
+import {AfterContentChecked, AfterViewInit, Component, ElementRef, Input, OnDestroy, QueryList, ViewChild, ViewChildren} from '@angular/core';
 import {createUuid} from 'src/utils/uuid';
 
 import {updateButtonBoxesForElements, updateButtonBoxesToEmpty} from '../../utils/cefsharp';
@@ -11,7 +11,9 @@ import {ConversationTurn} from '../types/conversation';
   templateUrl: './conversation-turn.component.html',
   providers: [],
 })
-export class ConversationTurnComponent implements AfterViewInit, OnDestroy {
+export class ConversationTurnComponent implements AfterViewInit,
+                                                  AfterContentChecked,
+                                                  OnDestroy {
   private static readonly _NAME = 'ConversationTurnComponent';
   private readonly instanceId =
       ConversationTurnComponent._NAME + '_' + createUuid();
@@ -20,6 +22,7 @@ export class ConversationTurnComponent implements AfterViewInit, OnDestroy {
   private static readonly BASE_FONT_SIZE_PX = 24;
   private static readonly FONT_SCALING_LENGTH_THRESHOLD = 32;
   private static readonly MIN_FONT_SIZE_PX = 12;
+  private isVisible = false;
 
   @Input() turn!: ConversationTurn;
   @Input() isFocus: boolean = false;
@@ -62,7 +65,23 @@ export class ConversationTurnComponent implements AfterViewInit, OnDestroy {
       }
     }
     contentElement.style.fontSize = `${fontSizePx.toFixed(1)}px`;
-    updateButtonBoxesForElements(this.instanceId, this.buttons);
+  }
+
+  ngAfterContentChecked() {
+    if (!this.turnContentElement) {
+      return;
+    }
+    const offsetParent = this.turnContentElement.nativeElement.offsetParent;
+    if (!this.isVisible && offsetParent !== null) {
+      // Just became visible.
+      this.isVisible = true;
+      updateButtonBoxesForElements(this.instanceId, this.buttons);
+    } else if (this.isVisible && offsetParent === null) {
+      // Just became hidden.
+      this.isVisible = false;
+      updateButtonBoxesToEmpty(this.instanceId);
+    }
+    // TODO(cais): Update unit tests.
   }
 
   ngOnDestroy() {

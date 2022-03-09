@@ -77,9 +77,34 @@ fdescribe('ExternalEventsComponent', () => {
     expect(getPunctuationLiteral(VIRTUAL_KEY.COMMA, true)).toEqual(',');
   });
 
-  it('typing a key sends TextEntryBeginEvent', () => {
-    component.externalKeypressHook(65);  // 'a'
+  it('typing an internal key sends TextEntryBeginEvent', () => {
+    component.externalKeypressHook(65, /* isExternal= */ false);  // 'a'
     expect(beginEvents.length).toEqual(1);
+  });
+
+  it('typing an external key sends TextEntryBeginEvent', () => {
+    component.externalKeypressHook(65, /* isExternal= */ true);  // 'a'
+    expect(beginEvents.length).toEqual(1);
+  });
+
+  it('final event in textEntryEndSubject resets external state', () => {
+    component.externalKeypressHook(65);  // 'a'
+    textEntryEndSubject.next({
+      text: 'hi',
+      timestampMillis: Date.now(),
+      isFinal: true,
+    });
+    expect(component.externalText).toEqual('');
+  });
+
+  it('final event in textEntryEndSubject resets internal state', () => {
+    component.externalKeypressHook(65, /* isExterna= */ false);  // 'a'
+    textEntryEndSubject.next({
+      text: 'hi',
+      timestampMillis: Date.now(),
+      isFinal: true,
+    });
+    expect(component.internalText).toEqual('');
   });
 
   it('final event in textEntryEndSubject resets state', () => {
@@ -89,7 +114,7 @@ fdescribe('ExternalEventsComponent', () => {
       timestampMillis: Date.now(),
       isFinal: true,
     });
-    expect(component.text).toEqual('');
+    expect(component.externalText).toEqual('');
   });
 
   it('non-final event in textEntryEndSubject does not reset state', () => {
@@ -99,7 +124,7 @@ fdescribe('ExternalEventsComponent', () => {
       timestampMillis: Date.now(),
       isFinal: false,
     });
-    expect(component.text).toEqual('a');
+    expect(component.externalText).toEqual('a');
   });
 
   it('aborted event resets state', () => {
@@ -112,7 +137,7 @@ fdescribe('ExternalEventsComponent', () => {
       isFinal: true,
       isAborted: true,
     });
-    expect(component.text).toEqual('');
+    expect(component.externalText).toEqual('');
   });
 
   it('Registering keypress listener causes listener to be called', () => {
@@ -123,10 +148,24 @@ fdescribe('ExternalEventsComponent', () => {
           keySequences.push(keySequence.slice());
           reconstructedTexts.push(reconstructedText);
         });
-    component.externalKeypressHook(65);  // 'a'
-    component.externalKeypressHook(32);  // Space
+    component.externalKeypressHook(65, /* isExternal= */ false);  // 'a'
+    component.externalKeypressHook(32, /* isExternal= */ false);  // Space
     expect(keySequences).toEqual([['a'], ['a', ' ']]);
     expect(reconstructedTexts).toEqual(['a', 'a ']);
+  });
+
+  it('External keypresses do not invoke registered listeners', () => {
+    const keySequences: string[][] = [];
+    const reconstructedTexts: string[] = [];
+    ExternalEventsComponent.registerKeypressListener(
+        (keySequence: string[], reconstructedText: string) => {
+          keySequences.push(keySequence.slice());
+          reconstructedTexts.push(reconstructedText);
+        });
+    component.externalKeypressHook(65, /* isExternal= */ true);  // 'a'
+    component.externalKeypressHook(32, /* isExternal= */ true);  // Space
+    expect(keySequences).toEqual([]);
+    expect(reconstructedTexts).toEqual([]);
   });
 
   it('Registers number keys', () => {
@@ -137,10 +176,10 @@ fdescribe('ExternalEventsComponent', () => {
           keySequences.push(keySequence.slice());
           reconstructedTexts.push(reconstructedText);
         });
-    component.externalKeypressHook(57);  // '9'
-    component.externalKeypressHook(56);  // '8'
-    component.externalKeypressHook(49);  // '1'
-    component.externalKeypressHook(48);  // '0'
+    component.externalKeypressHook(57, /* isExternal= */ false);  // '9'
+    component.externalKeypressHook(56, /* isExternal= */ false);  // '8'
+    component.externalKeypressHook(49, /* isExternal= */ false);  // '1'
+    component.externalKeypressHook(48, /* isExternal= */ false);  // '0'
     expect(keySequences).toEqual([
       ['9'], ['9', '8'], ['9', '8', '1'], ['9', '8', '1', '0']
     ]);
@@ -150,6 +189,7 @@ fdescribe('ExternalEventsComponent', () => {
   it('Reistering keypress listener updates listener count', () => {
     ExternalEventsComponent.registerKeypressListener(
         (keySequence: string[], reconstructedText: string) => {});
+
     expect(ExternalEventsComponent.getNumKeypressListeners()).toEqual(1);
   });
 
@@ -335,13 +375,14 @@ fdescribe('ExternalEventsComponent', () => {
       ignoreStartIndex: 1,
     });
     spyOn(Date, 'now').and.returnValue(0);
-    component.externalKeypressHook(65);
+    component.externalKeypressHook(65, /* isExternal= */ false);
     spyOn(Date, 'now').and.returnValue(100);
-    component.externalKeypressHook(32);  // Space.
+    component.externalKeypressHook(32, /* isExternal= */ false);  // Space.
     spyOn(Date, 'now').and.returnValue(1000);
-    component.externalKeypressHook(188);  // Comma.
+    component.externalKeypressHook(188, /* isExternal= */ false);  // Comma.
     spyOn(Date, 'now').and.returnValue(1100);
-    component.externalKeypressHook(32);  // Space. Gap < 200 ms;
+    component.externalKeypressHook(
+        32, /* isExternal= */ false);  // Space. Gap < 200 ms;
 
     expect(keySequences).toEqual([
       ['a'], ['a', ' '], ['a', ' ', ','], ['a', ' ', ',']
@@ -362,13 +403,14 @@ fdescribe('ExternalEventsComponent', () => {
       ignoreStartIndex: 1,
     });
     spyOn(Date, 'now').and.returnValue(0);
-    component.externalKeypressHook(65);
+    component.externalKeypressHook(65, /* isExternal= */ false);
     spyOn(Date, 'now').and.returnValue(100);
-    component.externalKeypressHook(32);  // Space.
+    component.externalKeypressHook(32, /* isExternal= */ false);  // Space.
     spyOn(Date, 'now').and.returnValue(1000);
-    component.externalKeypressHook(188);  // Comma.
+    component.externalKeypressHook(188, /* isExternal= */ false);  // Comma.
     spyOn(Date, 'now').and.returnValue(1201);
-    component.externalKeypressHook(32);  // Space. Gap > 200 ms;
+    component.externalKeypressHook(
+        32, /* isExternal= */ false);  // Space. Gap > 200 ms;
 
     expect(keySequences).toEqual([
       ['a'], ['a', ' '], ['a', ' ', ','], ['a', ' ', ',', ' ']
@@ -393,13 +435,14 @@ fdescribe('ExternalEventsComponent', () => {
       ignoreStartIndex: 1,
     });
     spyOn(Date, 'now').and.returnValue(0);
-    component.externalKeypressHook(65);
+    component.externalKeypressHook(65, /* isExternal= */ false);
     spyOn(Date, 'now').and.returnValue(100);
-    component.externalKeypressHook(32);  // Space.
+    component.externalKeypressHook(32, /* isExternal= */ false);  // Space.
     spyOn(Date, 'now').and.returnValue(1000);
-    component.externalKeypressHook(188);  // Comma.
+    component.externalKeypressHook(188, /* isExternal= */ false);  // Comma.
     spyOn(Date, 'now').and.returnValue(1100);
-    component.externalKeypressHook(32);  // Space. Gap < 200 ms;
+    component.externalKeypressHook(
+        32, /* isExternal= */ false);  // Space. Gap < 200 ms;
 
     expect(keySequences).toEqual([
       ['a'], ['a', ' '], ['a', ' ', ','], ['a', ' ', ',', ' ']
@@ -436,13 +479,14 @@ fdescribe('ExternalEventsComponent', () => {
       ignoreStartIndex: 1,
     });
     spyOn(Date, 'now').and.returnValue(0);
-    component.externalKeypressHook(65);
+    component.externalKeypressHook(65, /* isExternal= */ false);
     spyOn(Date, 'now').and.returnValue(100);
-    component.externalKeypressHook(32);  // Space.
+    component.externalKeypressHook(32, /* isExternal= */ false);  // Space.
     spyOn(Date, 'now').and.returnValue(1000);
-    component.externalKeypressHook(90);  // 'z'.
+    component.externalKeypressHook(90, /* isExternal= */ false);  // 'z'.
     spyOn(Date, 'now').and.returnValue(1100);
-    component.externalKeypressHook(32);  // Space. Gap < 200 ms;
+    component.externalKeypressHook(
+        32, /* isExternal= */ false);  // Space. Gap < 200 ms;
 
     expect(keySequences).toEqual([
       ['a'], ['a', ' '], ['a', ' ', 'z'], ['a', ' ', 'z']

@@ -12,7 +12,7 @@
  * externalKeypressHook(76);  // l
  * externalKeypressHook(190);  // .
  * externalKeypressHook(162);  // LCtrl
- * externalKeypressHook(81);  // Q
+ * externalKeypressHook(87);  // Q
  * ```
  */
 
@@ -231,6 +231,31 @@ export function repeatVirtualKey(key: VIRTUAL_KEY, num: number): VIRTUAL_KEY[] {
 export type KeypressListener =
     (keySequence: string[], reconstructedText: string) => void;
 
+export interface TextReconState {
+  previousKeypressTimeMillis: number|null;
+  // Number of keypresses effected through eye gaze (as determiend by
+  // a temporal threshold).
+  numGazeKeypresses: number;
+  // The sequence of all keys, including ASCII and functional keys. Used in
+  // the calculation of speed and keystroke saving rate (KSR).
+  keySequence: string[];
+  // Millisecond timestamp (since epoch) for the previous keypress (if any)
+  text: string;
+  cursorPos: number;
+  isShiftOn: boolean;
+}
+
+export function createInitialTextReconState(): TextReconState {
+  return {
+    previousKeypressTimeMillis: null,
+    numGazeKeypresses: 0,
+    keySequence: [],
+    text: '',
+    cursorPos: 0,
+    isShiftOn: false,
+  };
+}
+
 /**
  * A configuration for ignoring a certain sequence of machine-generated key
  * sequences or a part of it.
@@ -258,17 +283,21 @@ export class ExternalEventsComponent implements OnInit {
   private static readonly ignoreMachineKeySequenceConfigs:
       IgnoreMachineKeySequenceConfig[] = [];
 
-  private previousKeypressTimeMillis: number|null = null;
-  // Number of keypresses effected through eye gaze (as determiend by
-  // a temporal threshold).
-  private numGazeKeypresses = 0;
-  // The sequence of all keys, including ASCII and functional keys. Used in
-  // the calculation of speed and keystroke saving rate (KSR).
-  private readonly keySequence: string[] = [];
-  // Millisecond timestamp (since epoch) for the previous keypress (if any)
-  private _text: string = '';
-  private cursorPos: number = 0;
-  private isShiftOn = false;
+  private internalReconState = createInitialTextReconState();
+  private externalReconState = createInitialTextReconState();
+
+  // TODO(cais): Clean up.
+  // private previousKeypressTimeMillis: number|null = null;
+  // // Number of keypresses effected through eye gaze (as determiend by
+  // // a temporal threshold).
+  // private numGazeKeypresses = 0;
+  // // The sequence of all keys, including ASCII and functional keys. Used in
+  // // the calculation of speed and keystroke saving rate (KSR).
+  // private readonly keySequence: string[] = [];
+  // // Millisecond timestamp (since epoch) for the previous keypress (if any)
+  // private _text: string = '';
+  // private cursorPos: number = 0;
+  // private isShiftOn = false;
 
   ExternalEvewntsComponent() {}
 
@@ -278,7 +307,8 @@ export class ExternalEventsComponent implements OnInit {
       if (!event.isFinal) {
         return;
       }
-      this.reset();
+      this.reset(this.externalReconState);
+      this.reset(this.internalReconState);
     });
   }
 
@@ -372,88 +402,96 @@ export class ExternalEventsComponent implements OnInit {
     if (virtualKey === null) {
       return;
     }
-    this.keySequence.push(virtualKey);
+    const reconState =
+        isExternal ? this.externalReconState : this.internalReconState;
+    reconState.keySequence.push(virtualKey);
     const nowMillis = Date.now();
-    const isInferredMachineKey = this.previousKeypressTimeMillis !== null &&
-        (nowMillis - this.previousKeypressTimeMillis) <
+    const isInferredMachineKey =
+        reconState.previousKeypressTimeMillis !== null &&
+        (nowMillis - reconState.previousKeypressTimeMillis) <
             MIN_GAZE_KEYPRESS_MILLIS;
-    if (this.previousKeypressTimeMillis === null || !isInferredMachineKey) {
-      this.numGazeKeypresses++;
+    if (reconState.previousKeypressTimeMillis === null ||
+        !isInferredMachineKey) {
+      reconState.numGazeKeypresses++;
     }
-    this.previousKeypressTimeMillis = nowMillis;
+    reconState.previousKeypressTimeMillis = nowMillis;
 
     if (isExternal &&
-        (keySequenceEndsWith(this.keySequence, TTS_TRIGGER_COMBO_KEY) ||
+        (keySequenceEndsWith(reconState.keySequence, TTS_TRIGGER_COMBO_KEY) ||
          SENTENCE_END_COMBO_KEYS.some(
-             keys => keySequenceEndsWith(this.keySequence, keys)))) {
+             keys => keySequenceEndsWith(reconState.keySequence, keys)))) {
       // A TTS action has been triggered.
-      const text = this._text.trim();
+      const text = reconState.text.trim();
       if (text) {
         console.log(`Sentence-end event: "${text}"`);
         this.textEntryEndSubject.next({
           text,
           timestampMillis: Date.now(),
-          numHumanKeypresses: this.numGazeKeypresses,
+          numHumanKeypresses: reconState.numGazeKeypresses,
           isFinal: true,
         });
       }
       return;
     }
 
-    const originallyEmpty = this._text === '';
+    const originallyEmpty = reconState.text === '';
     if (virtualKey.length === 1 && (virtualKey >= 'a' && virtualKey <= 'z')) {
-      this.insertCharAsCursorPos(virtualKey);
+      this.insertCharAsCursorPos(virtualKey, reconState);
     } else if (
         virtualKey.length === 1 && (virtualKey >= '0' && virtualKey <= '9')) {
       this.insertCharAsCursorPos(
-          getNumOrPunctuationLiteral(vkCode, this.isShiftOn));
+          getNumOrPunctuationLiteral(vkCode, reconState.isShiftOn), reconState);
     } else if (virtualKey === VIRTUAL_KEY.SPACE) {
-      this.insertCharAsCursorPos(' ');
+      this.insertCharAsCursorPos(' ', reconState);
     } else if (virtualKey === VIRTUAL_KEY.ENTER) {
-      this.insertCharAsCursorPos('\n');
+      this.insertCharAsCursorPos('\n', reconState);
     } else if (virtualKey === VIRTUAL_KEY.HOME) {
-      this.cursorPos = this.getHomeKeyDestination();
+      reconState.cursorPos = this.getHomeKeyDestination(reconState);
     } else if (virtualKey === VIRTUAL_KEY.END) {
-      this.cursorPos = this.getEndKeyDestination();
+      reconState.cursorPos = this.getEndKeyDestination(reconState);
     } else if (PUNCTUATION.indexOf(virtualKey as VIRTUAL_KEY) !== -1) {
       this.insertCharAsCursorPos(
-          getPunctuationLiteral(virtualKey as VIRTUAL_KEY, this.isShiftOn));
+          getPunctuationLiteral(
+              virtualKey as VIRTUAL_KEY, reconState.isShiftOn),
+          reconState);
     } else if (virtualKey === VIRTUAL_KEY.LARROW) {
-      if (this.cursorPos > 0) {
-        this.cursorPos--;
+      if (reconState.cursorPos > 0) {
+        reconState.cursorPos--;
       }
     } else if (virtualKey === VIRTUAL_KEY.RARROW) {
-      if (this.cursorPos < this._text.length) {
-        this.cursorPos++;
+      if (reconState.cursorPos < reconState.text.length) {
+        reconState.cursorPos++;
       }
     } else if (virtualKey === VIRTUAL_KEY.BACKSPACE) {
-      if (this.cursorPos > 0) {
-        this._text = this._text.slice(0, this.cursorPos - 1) +
-            this._text.slice(this.cursorPos);
-        this.cursorPos--;
+      if (reconState.cursorPos > 0) {
+        reconState.text = reconState.text.slice(0, reconState.cursorPos - 1) +
+            reconState.text.slice(reconState.cursorPos);
+        reconState.cursorPos--;
       }
     } else if (virtualKey === VIRTUAL_KEY.DELETE) {
-      if (this.cursorPos < this._text.length) {
-        this._text = this._text.slice(0, this.cursorPos) +
-            this._text.slice(this.cursorPos + 1);
+      if (reconState.cursorPos < reconState.text.length) {
+        reconState.text = reconState.text.slice(0, reconState.cursorPos) +
+            reconState.text.slice(reconState.cursorPos + 1);
       }
     } else if (
         virtualKey === VIRTUAL_KEY.LSHIFT ||
         virtualKey === VIRTUAL_KEY.RSHIFT) {
-      this.isShiftOn = true;
+      reconState.isShiftOn = true;
     }
     if (virtualKey !== VIRTUAL_KEY.LSHIFT &&
         virtualKey !== VIRTUAL_KEY.RSHIFT) {
-      this.isShiftOn = false;
+      reconState.isShiftOn = false;
     }
-    if (originallyEmpty && this._text.length > 0) {
+    if (originallyEmpty && reconState.text.length > 0) {
       this.textEntryBeginSubject.next({timestampMillis: Date.now()});
     }
 
-    this.processIgnoreMachineKeySequences(isInferredMachineKey);
-    ExternalEventsComponent.keypressListeners.forEach(listener => {
-      listener(this.keySequence, this._text);
-    });
+    this.processIgnoreMachineKeySequences(isInferredMachineKey, reconState);
+    if (!isExternal) {
+      ExternalEventsComponent.keypressListeners.forEach(listener => {
+        listener(reconState.keySequence, reconState.text);
+      });
+    }
 
     // TODO(cais): Take care of the up and down arrow keys.
     // TODO(cais): Track ctrl state.
@@ -461,60 +499,67 @@ export class ExternalEventsComponent implements OnInit {
     // TODO(cais): Take care of Shift+Backspace and Shift+Delete.
     console.log(
         `externalKeypressHook(): virtualKey=${virtualKey}; ` +
-        `text="${this._text}"; cursorPos=${this.cursorPos}`);
+        `text="${reconState.text}"; cursorPos=${reconState.cursorPos}`);
   }
 
-  private processIgnoreMachineKeySequences(isInferredMachineKey: boolean):
-      void {
+  private processIgnoreMachineKeySequences(
+      isInferredMachineKey: boolean, reconState: TextReconState): void {
     // Process ignored machine key sequences.
     let numDisacrdedChars = 0;
     if (isInferredMachineKey) {
       for (const ignoreConfig of
                ExternalEventsComponent.ignoreMachineKeySequenceConfigs) {
-        if (keySequenceEndsWith(this.keySequence, ignoreConfig.keySequence)) {
+        if (keySequenceEndsWith(
+                reconState.keySequence, ignoreConfig.keySequence)) {
           numDisacrdedChars =
               ignoreConfig.keySequence.length - ignoreConfig.ignoreStartIndex;
         }
       }
     }
     if (numDisacrdedChars > 0) {
-      this._text =
-          this._text.substring(0, this._text.length - numDisacrdedChars);
-      this.keySequence.splice(this.keySequence.length - numDisacrdedChars);
+      reconState.text = reconState.text.substring(
+          0, reconState.text.length - numDisacrdedChars);
+      reconState.keySequence.splice(
+          reconState.keySequence.length - numDisacrdedChars);
     }
   }
 
-  private insertCharAsCursorPos(char: string) {
-    if (this.cursorPos === this._text.length) {
-      this._text += char;
+  private insertCharAsCursorPos(char: string, reconState: TextReconState) {
+    if (reconState.cursorPos === reconState.text.length) {
+      reconState.text += char;
     } else {
-      this._text = this._text.slice(0, this.cursorPos) + char +
-          this._text.slice(this.cursorPos);
+      reconState.text = reconState.text.slice(0, reconState.cursorPos) + char +
+          reconState.text.slice(reconState.cursorPos);
     }
-    this.cursorPos += 1;
+    reconState.cursorPos += 1;
   }
 
-  private getHomeKeyDestination(): number {
-    let p = this.cursorPos;
-    const indexNewLine = this._text.lastIndexOf('\n', this.cursorPos);
+  private getHomeKeyDestination(reconState: TextReconState): number {
+    let p = reconState.cursorPos;
+    const indexNewLine =
+        reconState.text.lastIndexOf('\n', reconState.cursorPos);
     return indexNewLine === -1 ? 0 : indexNewLine + 1;
   }
 
-  private getEndKeyDestination(): number {
-    const indexNewLine = this._text.indexOf('\n', this.cursorPos);
-    return indexNewLine === -1 ? this._text.length : indexNewLine - 1;
+  private getEndKeyDestination(reconState: TextReconState): number {
+    const indexNewLine = reconState.text.indexOf('\n', reconState.cursorPos);
+    return indexNewLine === -1 ? reconState.text.length : indexNewLine - 1;
   }
 
-  get text(): string {
-    return this._text;
+  get externalText(): string {
+    return this.externalReconState.text;
   }
 
-  private reset() {
-    this.previousKeypressTimeMillis = null;
-    this.numGazeKeypresses = 0;
-    this._text = '';
-    this.cursorPos = 0;
-    this.isShiftOn = false;
-    this.keySequence.splice(0);
+  get internalText(): string {
+    return this.internalReconState.text;
+  }
+
+  private reset(reconState: TextReconState) {
+    reconState.previousKeypressTimeMillis = null;
+    reconState.numGazeKeypresses = 0;
+    reconState.text = '';
+    reconState.cursorPos = 0;
+    reconState.isShiftOn = false;
+    reconState.keySequence.splice(0);
   }
 }

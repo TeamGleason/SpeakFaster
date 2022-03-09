@@ -15,4 +15,6 @@ export enum AppState {
 
   // The Settings page.
   SETTINGS = 'SETTINGS',
+  // The help page.
+  HELP = 'HELP',
 }

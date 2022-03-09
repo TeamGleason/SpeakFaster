@@ -22,8 +22,10 @@
 }
 
 .bottom-section {
-  position: absolute;
-  right: 0;
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+  justify-content:space-between;
 }
 
 .header-section {
@@ -48,7 +50,7 @@
   color: #eee;
   display: inline-flex;
   flex-direction: row;
-  font-size: 24px;
+  font-size: 22px;
   height: 60px;
   line-height: 32px;
   margin: 10px;
@@ -68,6 +70,10 @@
   height: 48px;
   margin-left: 40px;
   padding-right: 8px;
+}
+
+.option-button.help-button {
+  min-width: 120px;
 }
 
 .option-button.reload-button {
@@ -94,10 +100,11 @@
 }
 
 .sign-in-section {
+  align-items: center;
   color: #888;
-  display: inline-block;
+  display: inline-flex;
+  flex-direction: row;
   font-size: 21px;
-  margin-top: 16px;
 }
 
 </style>
@@ -175,6 +182,14 @@
 </div>
 
 <div class="bottom-section">
+  <button
+      #clickableButton
+      [ngClass]="{'active-button': appSettings!.ttsVolume === 'QUIET'}"
+      class="option-button help-button"
+      (click)="onHelpButtonClicked($event)">
+    Help
+  </button>
+
   <div class="sign-in-section">
     <div *ngIf="userGivenName !== null">
       Signed in as:
@@ -186,4 +201,5 @@
       </span>
     </div>
   </div>
+
 </div>

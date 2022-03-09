@@ -1,0 +1,111 @@
+<style>
+
+:host {
+    background-color: black;
+    box-sizing: border-box;
+    color: #eee;
+    font-family: "Google Sans", "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+    font-size: 16px;
+    margin-left: 12px;
+    position: fixed;
+    width: 800px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+h3 {
+  margin: 8px 4px;
+}
+
+.abbreviation-example {
+  background-color: lightyellow;
+  border-radius: 4px;
+  color: black;
+  font-weight: bold;
+  padding: 0 4px;
+}
+
+.abbreviation-rules {
+  font-size: 18px;
+  color: #ccc;
+  margin: 0 8px;
+}
+
+.example-list {
+  font-size: 18px;
+}
+
+.original-phrase {
+  background-color: lightgreen;
+  border-radius: 4px;
+  color: black;
+  padding: 0 4px;
+}
+
+</style>
+
+<div>
+  <h3>
+    How to abbreviate a phrase
+  </h3>
+
+  <ul class="abbreviation-rules">
+    <li>
+      Length limit: 12 characters
+    </li>
+
+    <li>
+      All characters should be lowercase
+    </li>
+
+    <li>
+      Omit all sentence-final punctuation
+      <ul class="example-list">
+        <li>
+          <span class="original-phrase">How are you?</span>
+          →
+          <span class="abbreviation-example">hay</span>
+        </li>
+      </ul>
+    </li>
+
+    <li>
+      Keep sentence-middle punctuation, without space
+      <ul>
+        <li>
+          <span class="original-phrase">The more you practice, the better you will get</span>
+          →
+          <span class="abbreviation-example">tmyp,tbywg</span>
+        </li>
+      </ul>
+    </li>
+
+    <li>
+      Keep Arabic numerals, without
+      <ul>
+        <li>
+          <span class="original-phrase">See you at 9</span>
+          →
+          <span class="abbreviation-example">sya9</span>
+        </li>
+      </ul>
+    </li>
+
+    <li>
+      For contractions, omit and split at the apostrophe and take the initial letters
+      <ul>
+        <li>
+          <span class="original-phrase">You won't believe this</span>
+          →
+          <span class="abbreviation-example">ywtbt</span>
+        </li>
+        <li>
+          <span class="original-phrase">I'll let you know</span>
+          →
+          <span class="abbreviation-example">illyk</span>
+        </li>
+      </ul>
+    </li>
+  </ul>
+
+</div>

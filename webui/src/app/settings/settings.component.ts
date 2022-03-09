@@ -1,5 +1,5 @@
 /** Quick phrase list for direct selection. */
-import {AfterViewInit, ChangeDetectorRef, Component, ElementRef, Input, OnDestroy, OnInit, QueryList, ViewChildren} from '@angular/core';
+import {AfterViewInit, ChangeDetectorRef, Component, ElementRef, EventEmitter, Input, OnDestroy, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
 import {requestQuitApp, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
 import {createUuid} from 'src/utils/uuid';
 
@@ -21,6 +21,7 @@ export class SettingsComponent implements AfterViewInit, OnInit, OnDestroy {
   @Input() userId!: string;
   @Input() userEmail!: string|null;
   @Input() userGivenName!: string|null;
+  @Output() helpButtonClicked: EventEmitter<Event> = new EventEmitter();
 
   constructor(
       private cdr: ChangeDetectorRef, private eventLogger: HttpEventLogger) {}
@@ -69,6 +70,10 @@ export class SettingsComponent implements AfterViewInit, OnInit, OnDestroy {
 
   onQuitAppButtonClicked(even: Event) {
     requestQuitApp();
+  }
+
+  onHelpButtonClicked(event: Event) {
+    this.helpButtonClicked.emit(event);
   }
 
   get versionString(): string {

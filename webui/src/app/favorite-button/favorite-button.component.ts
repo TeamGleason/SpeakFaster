@@ -2,7 +2,7 @@
  * A button for adding a phrase to favorite. Supports animation that
  * indicates states such as ongoing request, success and error.
  */
-import {Component, EventEmitter, Input, OnDestroy, OnInit, Output} from '@angular/core';
+import {Component, Input, OnDestroy, OnInit} from '@angular/core';
 
 import {getContextualPhraseStats, getPhraseStats, HttpEventLogger} from '../event-logger/event-logger-impl';
 import {SpeakFasterService} from '../speakfaster-service';

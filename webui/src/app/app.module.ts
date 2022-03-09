@@ -7,6 +7,7 @@ import {AppComponent} from './app.component';
 import {AuthModule} from './auth/auth.module';
 import {ContextModule} from './context/context.module';
 import {ExternalEventsModule} from './external/external-events.module';
+import {HelpModule} from './help/help.module';
 import {InputBarModule} from './input-bar/input-bar.module';
 import {KeyboardModule} from './keyboard/keyboard.module';
 import {LexiconModule} from './lexicon/lexicon.module';
@@ -28,6 +29,7 @@ import {TextToSpeechModule} from './text-to-speech/text-to-speech.module';
     BrowserModule,
     ContextModule,
     ExternalEventsModule,
+    HelpModule,
     KeyboardModule,
     LexiconModule,
     MetricsModule,

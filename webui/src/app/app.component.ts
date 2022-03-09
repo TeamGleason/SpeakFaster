@@ -345,6 +345,10 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     this.changeAppState(AppState.SETTINGS);
   }
 
+  onHelpButtonClicked(event: Event) {
+    this.changeAppState(AppState.HELP);
+  }
+
   isQuickPhrasesAppState() {
     return this.appState === AppState.QUICK_PHRASES_FAVORITE ||
         this.appState === AppState.QUICK_PHRASES_PARTNERS ||

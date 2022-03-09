@@ -214,8 +214,13 @@ app-text-to-speech-component {
           *ngIf="appState === 'SETTINGS'"
           [userId]="userId"
           [userEmail]="userEmail"
-          [userGivenName]="userGivenName">
+          [userGivenName]="userGivenName"
+          (helpButtonClicked)="onHelpButtonClicked($event)">
       </app-settings-component>
+
+      <app-help-component
+          *ngIf="appState === 'HELP'">
+      </app-help-component>
 
       <div class="bottom-area">
         <app-input-bar-component
@@ -224,7 +229,7 @@ app-text-to-speech-component {
             [languageCode]="languageCode"
             [textEntryEndSubject]="textEntryEndSubject"
             [supportsAbbrevationExpansion]="appState === 'ABBREVIATION_EXPANSION'"
-            [favoriteButtonSendsUserFeedback]="appState === 'SETTINGS'"
+            [favoriteButtonSendsUserFeedback]="appState === 'SETTINGS' || appState === 'HELP'"
             [inputBarControlSubject]="inputBarControlSubject"
             [loadPrefixedLexiconRequestSubject]="loadPrefixedLexiconRequestSubject"
             [abbreviationExpansionTriggers]="abbreviationExpansionTriggers"

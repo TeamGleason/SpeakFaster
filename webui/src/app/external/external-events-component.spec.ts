@@ -265,24 +265,52 @@ fdescribe('ExternalEventsComponent', () => {
           [65, 66, 32, 72, 73, 162, 8, 162, END_KEY_CODE], 'ab'
         ],
         [
+          'LCtrl+LShift+LArrow+Back word delete: to a single word',
+          [65, 66, 32, 72, 73, 162, 160, 37, 8, 162, END_KEY_CODE], 'ab'
+        ],
+        [
           'LCtrl+Back word delete: with ending space',
           [65, 66, 32, 72, 73, 32, 162, 8, 162, END_KEY_CODE], 'ab'
+        ],
+        [
+          'LCtrl+LShift+LArrow+Back word delete: with ending space',
+          [65, 66, 32, 72, 73, 32, 162, 160, 37, 8, 162, END_KEY_CODE], 'ab'
         ],
         [
           'LCtrl+Back word delete: with ending spaces',
           [65, 66, 32, 72, 73, 32, 32, 162, 8, 162, END_KEY_CODE], 'ab'
         ],
         [
-          'LCtrl+Back word delete: with newline',
-          [65, 66, 13, 72, 73, 13, 162, 8, 162, END_KEY_CODE], 'ab'
+          'LCtrl+LShift+LArrow+Back word delete: with ending spaces',
+          [65, 66, 32, 72, 73, 32, 32, 162, 160, 37, 8, 162, END_KEY_CODE], 'ab'
         ],
         [
           'LCtrl+Back word delete: with newline',
           [65, 66, 13, 72, 73, 13, 162, 8, 162, END_KEY_CODE], 'ab'
+        ],
+        [
+          'LCtrl+LShift+LArrow+Back word delete: with newline',
+          [65, 66, 13, 72, 73, 13, 162, 160, 37, 8, 162, END_KEY_CODE], 'ab'
+        ],
+        [
+          'LCtrl+Back word delete: with newline',
+          [65, 66, 13, 72, 73, 13, 162, 8, 162, END_KEY_CODE], 'ab'
+        ],
+        [
+          'LCtrl+LShift+LArrow+Back word delete: with newline',
+          [65, 66, 13, 72, 73, 13, 162, 160, 37, 8, 162, END_KEY_CODE], 'ab'
         ],
         [
           'LCtrl+Back word delete: delete twice',
           [67, 32, 65, 66, 32, 72, 73, 13, 162, 8, 162, 8, 162, END_KEY_CODE],
+          'c',
+        ],
+        [
+          'LCtrl+LShift+LArrow+Back word delete: delete twice',
+          [
+            67, 32, 65, 66, 32, 72, 73, 13, 162, 160, 37, 8, 162, 160, 37, 8,
+            162, END_KEY_CODE
+          ],
           'c',
         ],
       ];
@@ -311,6 +339,12 @@ fdescribe('ExternalEventsComponent', () => {
                [65, 66, 32, 162, 8],
                [65, 66, 13, 162, 8],
                [65, 66, 13, 32, 162, 8],
+               [65, 162, 160, 37, 8],
+               [65, 162, 160, 37, 8, 162, 160, 37, 8],
+               [65, 66, 162, 160, 37, 8],
+               [65, 66, 32, 162, 160, 37, 8],
+               [65, 66, 13, 162, 160, 37, 8],
+               [65, 66, 13, 32, 162, 160, 37, 8],
   ] as number[][]) {
     it(`LCtrl+Back word delete: all the way to empty: keys = ` +
            JSON.stringify(keyCodes),

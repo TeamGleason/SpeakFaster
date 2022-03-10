@@ -127,6 +127,10 @@ export const SENTENCE_END_COMBO_KEYS: string[][] = [
 export const LCTRL_KEY_HEAD_FOR_TTS_TRIGGER = 'w';
 export const TTS_TRIGGER_COMBO_KEY: string[] =
     [VIRTUAL_KEY.LCTRL, LCTRL_KEY_HEAD_FOR_TTS_TRIGGER];
+export const WORD_BACKSPACE_COMBO_KEY: string[] = [
+  VIRTUAL_KEY.LCTRL, VIRTUAL_KEY.LSHIFT, VIRTUAL_KEY.LARROW,
+  VIRTUAL_KEY.BACKSPACE
+];
 
 function getKeyFromVirtualKeyCode(vkCode: number): string|null {
   if (vkCode >= 48 && vkCode <= 58) {
@@ -156,6 +160,10 @@ export function getVirtualkeyCode(charOrKey: string|VIRTUAL_KEY): number[] {
   } else if (charOrKey === 'Control') {
     // TODO(cais): Add unit test.
     return getVirtualkeyCode(VIRTUAL_KEY.LCTRL);
+  } else if (charOrKey === 'ArrowLeft') {
+    return getVirtualkeyCode(VIRTUAL_KEY.LARROW);
+  } else if (charOrKey === 'ArrowRight') {
+    return getVirtualkeyCode(VIRTUAL_KEY.RARROW);
   } else {
     if (charOrKey.length !== 1) {
       throw new Error(
@@ -455,7 +463,9 @@ export class ExternalEventsComponent implements OnInit {
     }
     if (virtualKey === VIRTUAL_KEY.BACKSPACE) {
       const prevKey = reconState.keySequence[reconState.keySequence.length - 2];
-      if (prevKey === VIRTUAL_KEY.LCTRL || prevKey === VIRTUAL_KEY.RCTRL) {
+      if (prevKey === VIRTUAL_KEY.LCTRL || prevKey === VIRTUAL_KEY.RCTRL ||
+          keySequenceEndsWith(
+              reconState.keySequence, WORD_BACKSPACE_COMBO_KEY)) {
         // Wod delete.
         this.wordBackspace(reconState);
       } else {
@@ -532,6 +542,7 @@ export class ExternalEventsComponent implements OnInit {
   }
 
   private wordBackspace(reconState: TextReconState) {
+    reconState.cursorPos = reconState.keySequence.length;
     // Find the last non-whitespace chararcter.
     let j = reconState.text.length - 1;
     for (; j >= 0; --j) {

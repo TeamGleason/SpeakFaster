@@ -92,6 +92,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   ngOnInit() {
+    // Disable accidental activation of the context menu.
+    document.addEventListener('contextmenu', event => event.preventDefault());
     registerAppState(this.appState);
     bindCefSharpListener();
     this.route.queryParams.subscribe(params => {

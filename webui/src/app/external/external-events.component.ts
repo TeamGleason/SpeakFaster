@@ -123,6 +123,8 @@ export const PUNCTUATION: VIRTUAL_KEY[] = [
 
 export const SENTENCE_END_COMBO_KEYS: string[][] = [
   [VIRTUAL_KEY.PERIOD, VIRTUAL_KEY.SPACE],
+  [VIRTUAL_KEY.LSHIFT, VIRTUAL_KEY.SLASH_QUESTION_MARK, VIRTUAL_KEY.SPACE],
+  [VIRTUAL_KEY.LSHIFT, '1', VIRTUAL_KEY.SPACE],
 ];
 export const LCTRL_KEY_HEAD_FOR_TTS_TRIGGER = 'w';
 export const TTS_TRIGGER_COMBO_KEY: string[] =
@@ -158,12 +160,17 @@ export function getVirtualkeyCode(charOrKey: string|VIRTUAL_KEY): number[] {
       SPECIAL_VIRTUAL_KEY_TO_CODE.get(charOrKey as VIRTUAL_KEY) as number
     ];
   } else if (charOrKey === 'Control') {
-    // TODO(cais): Add unit test.
     return getVirtualkeyCode(VIRTUAL_KEY.LCTRL);
+  } else if (charOrKey === 'Shift') {
+    return getVirtualkeyCode(VIRTUAL_KEY.LSHIFT);
   } else if (charOrKey === 'ArrowLeft') {
     return getVirtualkeyCode(VIRTUAL_KEY.LARROW);
+  } else if (charOrKey === 'ArrowUp') {
+    return getVirtualkeyCode(VIRTUAL_KEY.UARROW);
   } else if (charOrKey === 'ArrowRight') {
     return getVirtualkeyCode(VIRTUAL_KEY.RARROW);
+  } else if (charOrKey === 'ArrowDown') {
+    return getVirtualkeyCode(VIRTUAL_KEY.DARROW);
   } else {
     if (charOrKey.length !== 1) {
       throw new Error(

@@ -50,6 +50,13 @@ fdescribe('ExternalEventsComponent', () => {
     expect(getVirtualkeyCode(VIRTUAL_KEY.SPACE)).toEqual([32]);
     expect(getVirtualkeyCode(VIRTUAL_KEY.END)).toEqual([35]);
     expect(getVirtualkeyCode(VIRTUAL_KEY.HOME)).toEqual([36]);
+
+    expect(getVirtualkeyCode('Control')).toEqual([162]);
+    expect(getVirtualkeyCode('Shift')).toEqual([160]);
+    expect(getVirtualkeyCode('ArrowLeft')).toEqual([37]);
+    expect(getVirtualkeyCode('ArrowUp')).toEqual([38]);
+    expect(getVirtualkeyCode('ArrowRight')).toEqual([39]);
+    expect(getVirtualkeyCode('ArrowDown')).toEqual([40]);
   });
 
   it('getVirtualkeyCode returns correct code for non-special keys', () => {
@@ -363,6 +370,28 @@ fdescribe('ExternalEventsComponent', () => {
     expect(beginEvents.length).toEqual(1);
     expect(endEvents.length).toEqual(1);
     expect(endEvents[0].text).toEqual('hi.');
+    expect(endEvents[0].isFinal).toBeTrue();
+  });
+
+  it('reconstructs text based on sentence-end question mark and space', () => {
+    const vkCodes = [72, 73, 160, 191, 32];
+    for (const vkCode of vkCodes) {
+      component.externalKeypressHook(vkCode);
+    }
+    expect(beginEvents.length).toEqual(1);
+    expect(endEvents.length).toEqual(1);
+    expect(endEvents[0].text).toEqual('hi?');
+    expect(endEvents[0].isFinal).toBeTrue();
+  });
+
+  it('reconstructs text based on sentence-end exclamation point and space', () => {
+    const vkCodes = [72, 73, 160, 49, 32];
+    for (const vkCode of vkCodes) {
+      component.externalKeypressHook(vkCode);
+    }
+    expect(beginEvents.length).toEqual(1);
+    expect(endEvents.length).toEqual(1);
+    expect(endEvents[0].text).toEqual('hi!');
     expect(endEvents[0].isFinal).toBeTrue();
   });
 

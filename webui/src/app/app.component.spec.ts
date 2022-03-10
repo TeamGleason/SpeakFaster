@@ -1,6 +1,7 @@
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {By} from '@angular/platform-browser';
 import {RouterTestingModule} from '@angular/router/testing';
+import {Subject} from 'rxjs';
 
 import * as cefSharp from '../utils/cefsharp';
 
@@ -263,10 +264,16 @@ fdescribe('AppComponent', () => {
     expect(fixture.componentInstance.isFocused).toBeFalse();
   });
 
-  it('calling setHostWindowFocus() false then true sets isFocus to true', () => {
-    (window as any).setHostWindowFocus(false);
-    (window as any).setHostWindowFocus(true);
-    expect(fixture.componentInstance.isFocused).toBeTrue();
-  });
+  it('calling setHostWindowFocus() false then true sets isFocus to true',
+     () => {
+       (window as any).setHostWindowFocus(false);
+       (window as any).setHostWindowFocus(true);
+       expect(fixture.componentInstance.isFocused).toBeTrue();
+     });
 
+  it('switches to HELP app state on event', () => {
+    fixture.componentInstance.onHelpButtonClicked(null as any);
+
+    expect(fixture.componentInstance.appState).toEqual(AppState.HELP);
+  });
 });

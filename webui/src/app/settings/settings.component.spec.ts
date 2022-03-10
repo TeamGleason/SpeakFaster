@@ -22,7 +22,8 @@ describe('SettingsComponent', () => {
         .configureTestingModule({
           imports: [SettingsModule],
           declarations: [SettingsComponent],
-          providers: [{provide: HttpEventLogger, useValue: new HttpEventLogger(null)}],
+          providers:
+              [{provide: HttpEventLogger, useValue: new HttpEventLogger(null)}],
         })
         .compileComponents();
     fixture = TestBed.createComponent(SettingsComponent);
@@ -84,5 +85,16 @@ describe('SettingsComponent', () => {
     expect(selectedButtons.length).toEqual(1);
     expect(selectedButtons[0].nativeElement.innerText).toEqual('Loud');
     expect((await getAppSettings()).ttsVolume).toEqual('LOUD');
+  });
+
+  it('Clicking help button emits helpButtonClicked', () => {
+    let numEmittedEvents = 0;
+    fixture.componentInstance.helpButtonClicked.subscribe((event) => {
+      numEmittedEvents++;
+    });
+    const helpButton = fixture.debugElement.query(By.css('.help-button'));
+    helpButton.nativeElement.cick();
+
+    expect(numEmittedEvents).toEqual(1);
   });
 });

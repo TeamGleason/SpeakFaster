@@ -118,8 +118,7 @@ mat-progress-spinner {
 }
 
 .text-input-button:disabled {
-  background-color: #888;
-  color: #eee;
+  background-color: #666;
 }
 
 .signing-in-message {
@@ -248,7 +247,7 @@ mat-progress-spinner {
           [mode]="'indeterminate'"
           [value]="50">
         </mat-progress-spinner>
-        Retrieving AAC user list...
+        Retrieving users...
       </div>
 
       <div
@@ -295,7 +294,7 @@ mat-progress-spinner {
             class="text-input-button text-send-button"
             [disabled]="isAsrOrMessageSendOngoing"
             (click)="onSendButtonClicked($event)">
-          <div class="button-content" *ngIf="state !== 'ASR_ONGOING'">
+          <div class="button-content">
             <img class="button-image" src="/assets/images/send.png">Send
           </div>
         </button>

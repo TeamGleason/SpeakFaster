@@ -260,6 +260,31 @@ fdescribe('ExternalEventsComponent', () => {
           [72, 73, 188, 37, 37, 46, 162, END_KEY_CODE], 'h,'
         ],
         ['with apostrophe', [65, 222, 66, 162, END_KEY_CODE], 'a\'b'],
+        [
+          'LCtrl+Back word delete: to a single word',
+          [65, 66, 32, 72, 73, 162, 8, 162, END_KEY_CODE], 'ab'
+        ],
+        [
+          'LCtrl+Back word delete: with ending space',
+          [65, 66, 32, 72, 73, 32, 162, 8, 162, END_KEY_CODE], 'ab'
+        ],
+        [
+          'LCtrl+Back word delete: with ending spaces',
+          [65, 66, 32, 72, 73, 32, 32, 162, 8, 162, END_KEY_CODE], 'ab'
+        ],
+        [
+          'LCtrl+Back word delete: with newline',
+          [65, 66, 13, 72, 73, 13, 162, 8, 162, END_KEY_CODE], 'ab'
+        ],
+        [
+          'LCtrl+Back word delete: with newline',
+          [65, 66, 13, 72, 73, 13, 162, 8, 162, END_KEY_CODE], 'ab'
+        ],
+        [
+          'LCtrl+Back word delete: delete twice',
+          [67, 32, 65, 66, 32, 72, 73, 13, 162, 8, 162, 8, 162, END_KEY_CODE],
+          'c',
+        ],
       ];
   for (const
            [description,
@@ -277,6 +302,23 @@ fdescribe('ExternalEventsComponent', () => {
       expect(endEvents[0].timestampMillis)
           .toBeGreaterThanOrEqual(beginEvents[0].timestampMillis);
     });
+  }
+
+  for (const keyCodes
+           of [[65, 162, 8],
+               [65, 162, 8, 162, 8],
+               [65, 66, 162, 8],
+               [65, 66, 32, 162, 8],
+               [65, 66, 13, 162, 8],
+               [65, 66, 13, 32, 162, 8],
+  ] as number[][]) {
+    it(`LCtrl+Back word delete: all the way to empty: keys = ` +
+           JSON.stringify(keyCodes),
+       () => {
+         keyCodes.forEach(keyCode => component.externalKeypressHook(keyCode));
+
+         expect(component.externalText).toEqual('');
+       });
   }
 
   it('reconstructs text based on sentence-end period and space', () => {

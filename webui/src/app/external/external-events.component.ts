@@ -153,6 +153,9 @@ export function getVirtualkeyCode(charOrKey: string|VIRTUAL_KEY): number[] {
     return [
       SPECIAL_VIRTUAL_KEY_TO_CODE.get(charOrKey as VIRTUAL_KEY) as number
     ];
+  } else if (charOrKey === 'Control') {
+    // TODO(cais): Add unit test.
+    return getVirtualkeyCode(VIRTUAL_KEY.LCTRL);
   } else {
     if (charOrKey.length !== 1) {
       throw new Error(
@@ -285,19 +288,6 @@ export class ExternalEventsComponent implements OnInit {
 
   private internalReconState = createInitialTextReconState();
   private externalReconState = createInitialTextReconState();
-
-  // TODO(cais): Clean up.
-  // private previousKeypressTimeMillis: number|null = null;
-  // // Number of keypresses effected through eye gaze (as determiend by
-  // // a temporal threshold).
-  // private numGazeKeypresses = 0;
-  // // The sequence of all keys, including ASCII and functional keys. Used in
-  // // the calculation of speed and keystroke saving rate (KSR).
-  // private readonly keySequence: string[] = [];
-  // // Millisecond timestamp (since epoch) for the previous keypress (if any)
-  // private _text: string = '';
-  // private cursorPos: number = 0;
-  // private isShiftOn = false;
 
   ExternalEvewntsComponent() {}
 
@@ -462,11 +452,18 @@ export class ExternalEventsComponent implements OnInit {
       if (reconState.cursorPos < reconState.text.length) {
         reconState.cursorPos++;
       }
-    } else if (virtualKey === VIRTUAL_KEY.BACKSPACE) {
-      if (reconState.cursorPos > 0) {
-        reconState.text = reconState.text.slice(0, reconState.cursorPos - 1) +
-            reconState.text.slice(reconState.cursorPos);
-        reconState.cursorPos--;
+    }
+    if (virtualKey === VIRTUAL_KEY.BACKSPACE) {
+      const prevKey = reconState.keySequence[reconState.keySequence.length - 2];
+      if (prevKey === VIRTUAL_KEY.LCTRL || prevKey === VIRTUAL_KEY.RCTRL) {
+        // Wod delete.
+        this.wordBackspace(reconState);
+      } else {
+        if (reconState.cursorPos > 0) {
+          reconState.text = reconState.text.slice(0, reconState.cursorPos - 1) +
+              reconState.text.slice(reconState.cursorPos);
+          reconState.cursorPos--;
+        }
       }
     } else if (virtualKey === VIRTUAL_KEY.DELETE) {
       if (reconState.cursorPos < reconState.text.length) {
@@ -532,6 +529,27 @@ export class ExternalEventsComponent implements OnInit {
           reconState.text.slice(reconState.cursorPos);
     }
     reconState.cursorPos += 1;
+  }
+
+  private wordBackspace(reconState: TextReconState) {
+    // Find the last non-whitespace chararcter.
+    let j = reconState.text.length - 1;
+    for (; j >= 0; --j) {
+      const char = reconState.text[j];
+      if (char !== ' ' && char !== '\n') {
+        break;
+      }
+    }
+    // Then find the last whitespace character.
+    for (; j >= 0; --j) {
+      const char = reconState.text[j];
+      if (char === ' ' || char === '\n') {
+        break;
+      }
+    }
+    reconState.text = reconState.text.slice(0, j + 1) +
+        reconState.text.slice(reconState.cursorPos);
+    reconState.cursorPos = j + 1;
   }
 
   private getHomeKeyDestination(reconState: TextReconState): number {

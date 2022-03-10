@@ -23,6 +23,8 @@ export enum State {
   POST_CHOOSING_EXPANSION = 'POST_CHOOSING_EXPANSION',
 }
 
+const MAX_NUM_TEXT_PREDICTIONS = 4;
+
 @Component({
   selector: 'app-abbreviation-component',
   templateUrl: './abbreviation.component.html',
@@ -171,6 +173,9 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
             }
             this.textPredictions.push(output);
           });
+          if (textPrefix.length > MAX_NUM_TEXT_PREDICTIONS) {
+            this.textPredictions.splice(MAX_NUM_TEXT_PREDICTIONS);
+          }
           this.cdr.detectChanges();
         });
   }
@@ -262,6 +267,7 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
 
   onRefinementResult(refinementResult: RefinementResult) {
     if (!refinementResult.isAbort) {
+      this.responseError = null;
       this.abbreviationOptions.splice(0);
       this.abbreviationOptions.push(refinementResult.phrase);
     }
@@ -324,6 +330,7 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
       this.responseError = 'Cannot expand abbreviation: empty abbreviation';
       return;
     }
+    this.responseError = null;
     this.abbreviationOptions.splice(0);
     this.state = State.REQUEST_ONGIONG;
     this.responseError = null;

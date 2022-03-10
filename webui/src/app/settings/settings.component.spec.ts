@@ -97,4 +97,12 @@ describe('SettingsComponent', () => {
 
     expect(numEmittedEvents).toEqual(1);
   });
+
+  it('shows user ID when user email and given name are unavailable', () => {
+    fixture.componentInstance.userId = 'testuser2';
+    fixture.detectChanges();
+
+    const userIdSpan = fixture.debugElement.query(By.css('.user-id'));
+    expect(userIdSpan.nativeElement.innerText).toEqual('(ID: testuser2');
+  });
 });

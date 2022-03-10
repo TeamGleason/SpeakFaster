@@ -280,7 +280,7 @@ fdescribe('AbbreviationComponent', () => {
     expect(fixture.componentInstance.responseError).toBeNull();
   });
 
-  it('clickng text prediction fires input-bar control event', () => {
+  it('clicking text prediction fires input-bar control event', () => {
     fixture.componentInstance.textPredictions.splice(0)
     fixture.componentInstance.textPredictions.push('foo');
     fixture.componentInstance.textPredictions.push('bar');

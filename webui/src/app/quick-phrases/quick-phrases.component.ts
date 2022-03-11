@@ -30,7 +30,7 @@ export class QuickPhrasesComponent implements AfterViewInit, OnChanges,
 
   private readonly instanceId =
       QuickPhrasesComponent._NAME + '_' + createUuid();
-  private readonly SCROLL_STEP = 75;
+  private readonly SCROLL_STEP = 225;
   state = State.RETRIEVING_PHRASES;
 
   // Tags used for filtering the quick phrases (contextual phrases) during

@@ -981,6 +981,27 @@ fdescribe('InputBarComponent', () => {
     expect(fixture.componentInstance.state).toEqual(State.CHOOSING_LETTER_CHIP);
   });
 
+  it('abort button is shown when text prediction chip is present', () => {
+    inputBarControlSubject.next({
+      chips: [
+        {
+          text: 'i am feeling',
+        },
+      ]
+    });
+    (fixture.componentInstance as any).cutText = 'i am feeling';
+    fixture.componentInstance.state = State.AFTER_CUT;
+    fixture.detectChanges();
+
+    const abortButton = fixture.debugElement.query(By.css('.abort-button'));
+    expect(abortButton).not.toBeNull();
+
+    abortButton.nativeElement.click();
+    expect(fixture.componentInstance.state).toEqual(State.ENTERING_BASE_TEXT);
+    expect(fixture.componentInstance.chips.length).toEqual(0);
+    expect(fixture.componentInstance.inputString).toEqual('');
+  });
+
   it('launchin AE with pre-spelled words', () => {
     inputBarControlSubject.next({
       chips: [

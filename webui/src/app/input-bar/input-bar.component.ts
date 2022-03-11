@@ -640,9 +640,8 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     return this._chips[index].text;
   }
 
-  get inputStringIsNotEmpty(): boolean {
-    const trimmedLength = this.inputString.trim().length;
-    return trimmedLength > 0;
+  get hasInputStringOrChips(): boolean {
+    return this.inputString.trim().length > 0 || this._chips.length > 0;
   }
 
   /**

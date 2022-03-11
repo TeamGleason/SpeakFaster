@@ -213,7 +213,7 @@
 
         <button
             #clickableButton
-            *ngIf="inputStringIsNotEmpty"
+            *ngIf="hasInputStringOrChips"
             class="action-button abort-button"
             (click)="onAbortButtonClicked($event)">
           X

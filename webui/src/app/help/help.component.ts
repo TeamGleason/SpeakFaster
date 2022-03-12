@@ -1,28 +1,18 @@
 /** The help component. */
-import {Component, ElementRef, EventEmitter, Input, OnDestroy, OnInit, Output, QueryList, ViewChild} from '@angular/core';
-import {updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
+import {Component} from '@angular/core';
 import {createUuid} from 'src/utils/uuid';
+
+import {ABBREVIATION_MAX_PROPER_LENGTH} from '../input-bar/input-bar.component';
 
 @Component({
   selector: 'app-help-component',
   templateUrl: './help.component.html',
 })
-export class HelpComponent implements OnDestroy {
+export class HelpComponent {
   private static readonly _NAME = 'HelpComponent';
   private readonly instanceId = HelpComponent._NAME + '_' + createUuid();
 
-  @ViewChild('clickableButton')
-  clickableButtons!: QueryList<ElementRef<HTMLElement>>;
-
-  ngAfterViewInit() {
-    updateButtonBoxesForElements(this.instanceId, this.clickableButtons);
-    this.clickableButtons.changes.subscribe(
-        (queryList: QueryList<ElementRef>) => {
-          updateButtonBoxesForElements(this.instanceId, queryList);
-        });
-  }
-
-  ngOnDestroy() {
-    updateButtonBoxesToEmpty(this.instanceId);
+  get maxAbbreviationLength(): number {
+    return ABBREVIATION_MAX_PROPER_LENGTH;
   }
 }

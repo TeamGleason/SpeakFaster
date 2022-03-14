@@ -5,7 +5,7 @@ import {loadSettings, saveSettings} from 'src/utils/cefsharp';
 
 export type TtsVoiceType = 'PERSONALIZED'|'GENERIC';
 
-export type TtsVolume = 'QUIET'|'MEDIUM'|'LOUD';
+export type TtsVolume = 'QUIET'|'MEDIUM_QUIET'|'MEDIUM'|'MEDIUM_LOUD'|'LOUD';
 
 export const LOCAL_STORAGE_ITEM_NAME = 'GoogleSpeakFasterWebUiSettings.json';
 

@@ -171,10 +171,24 @@
   </button>
   <button
       #clickableButton
+      [ngClass]="{'active-button': appSettings!.ttsVolume === 'MEDIUM_QUIET'}"
+      class="option-button"
+      (click)="setTtsVolume('MEDIUM_QUIET')">
+    Medium Quiet
+  </button>
+  <button
+      #clickableButton
       [ngClass]="{'active-button': appSettings!.ttsVolume === 'MEDIUM'}"
       class="option-button"
       (click)="setTtsVolume('MEDIUM')">
     Medium
+  </button>
+  <button
+      #clickableButton
+      [ngClass]="{'active-button': appSettings!.ttsVolume === 'MEDIUM_LOUD'}"
+      class="option-button"
+      (click)="setTtsVolume('MEDIUM_LOUD')">
+    Medium Loud
   </button>
   <button
       #clickableButton

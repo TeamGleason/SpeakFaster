@@ -8,7 +8,7 @@ import {isTextContentKey} from 'src/utils/keyboard-utils';
 import {createUuid} from 'src/utils/uuid';
 
 import {getAppState} from '../app-state-registry';
-import {getVirtualkeyCode, VIRTUAL_KEY} from '../external/external-events.component';
+import {getVirtualkeyCode} from '../external/external-events.component';
 import {AbbreviationSpec} from '../types/abbreviation';
 import {AppState} from '../types/app-state';
 import {ContextualPhrase} from '../types/contextual_phrase';

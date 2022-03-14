@@ -20,17 +20,23 @@ export interface TextToSpeechEvent {
 
 export type TextToSpeechListener = (event: TextToSpeechEvent) => void;
 
+export const VOLUME_STEP_DB = 3;
+
 export function getCloudTextToSpeechVolumeGainDb(appSettings: AppSettings):
     number {
   // Unit: dB. Default is 0.
   const volume = appSettings.ttsVolume;
   switch (volume) {
     case 'QUIET':
-      return -10.0;
+      return -2 * VOLUME_STEP_DB;
+    case 'MEDIUM_QUIET':
+      return -VOLUME_STEP_DB;
     case 'MEDIUM':
       return 0.0;
+    case 'MEDIUM_LOUD':
+      return VOLUME_STEP_DB;
     case 'LOUD':
-      return 16.0;
+      return 2 * VOLUME_STEP_DB;
   }
 }
 
@@ -38,9 +44,13 @@ export function getLocalTextToSpeechVolume(appSettings: AppSettings): number {
   const volume = appSettings.ttsVolume;
   switch (volume) {
     case 'QUIET':
-      return 0.2;
+      return 1.0 / Math.pow(10, 4 * VOLUME_STEP_DB / 20);
+    case 'MEDIUM_QUIET':
+      return 1.0 / Math.pow(10, 3 * VOLUME_STEP_DB / 20);
     case 'MEDIUM':
-      return 0.5;
+      return 1.0 / Math.pow(10, 2 * VOLUME_STEP_DB / 20);
+    case 'MEDIUM_LOUD':
+      return 1.0 / Math.pow(10, VOLUME_STEP_DB / 20);
     case 'LOUD':
       return 1.0;
   }

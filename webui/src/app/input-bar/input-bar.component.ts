@@ -530,12 +530,14 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
         isFinal: true,
         isAborted: true,
       });
+      updateButtonBoxesForElements(this.instanceId, this.buttons);
     } else if (
         this.state === State.CHOOSING_WORD_CHIP ||
         this.state === State.FOCUSED_ON_WORD_CHIP ||
         this.state === State.CHOOSING_LETTER_CHIP ||
         this.state === State.FOCUSED_ON_LETTER_CHIP) {
       this.state = State.ENTERING_BASE_TEXT;
+      updateButtonBoxesForElements(this.instanceId, this.buttons);
     }
   }
 

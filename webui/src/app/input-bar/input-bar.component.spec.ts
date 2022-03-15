@@ -1,6 +1,6 @@
 /** Unit tests for InputBarComponent. */
 import {Injectable} from '@angular/core';
-import {ComponentFixture, TestBed} from '@angular/core/testing';
+import {ComponentFixture, fakeAsync, TestBed, tick} from '@angular/core/testing';
 import {By} from '@angular/platform-browser';
 import {Observable, Subject} from 'rxjs';
 
@@ -981,26 +981,36 @@ fdescribe('InputBarComponent', () => {
     expect(fixture.componentInstance.state).toEqual(State.CHOOSING_LETTER_CHIP);
   });
 
-  it('abort button is shown when text prediction chip is present', () => {
-    inputBarControlSubject.next({
-      chips: [
-        {
-          text: 'i am feeling',
-        },
-      ]
-    });
-    (fixture.componentInstance as any).cutText = 'i am feeling';
-    fixture.componentInstance.state = State.AFTER_CUT;
-    fixture.detectChanges();
+  it('abort button is shown when text prediction chip is present',
+     fakeAsync(() => {
+       inputBarControlSubject.next({
+         chips: [
+           {
+             text: 'i am feeling',
+           },
+         ]
+       });
+       (fixture.componentInstance as any).cutText = 'i am feeling';
+       fixture.componentInstance.state = State.AFTER_CUT;
+       fixture.detectChanges();
 
-    const abortButton = fixture.debugElement.query(By.css('.abort-button'));
-    expect(abortButton).not.toBeNull();
+       const abortButton = fixture.debugElement.query(By.css('.abort-button'));
+       expect(abortButton).not.toBeNull();
 
-    abortButton.nativeElement.click();
-    expect(fixture.componentInstance.state).toEqual(State.ENTERING_BASE_TEXT);
-    expect(fixture.componentInstance.chips.length).toEqual(0);
-    expect(fixture.componentInstance.inputString).toEqual('');
-  });
+       const prevNumCalls = testListener.updateButtonBoxesCalls.length;
+       abortButton.nativeElement.click();
+       expect(fixture.componentInstance.state)
+           .toEqual(State.ENTERING_BASE_TEXT);
+       expect(fixture.componentInstance.chips.length).toEqual(0);
+       expect(fixture.componentInstance.inputString).toEqual('');
+       tick();
+       expect(testListener.updateButtonBoxesCalls.length)
+           .toEqual(prevNumCalls + 3);
+       const lastCall =
+           testListener
+               .updateButtonBoxesCalls[testListener.updateButtonBoxesCalls.length - 1];
+       expect(lastCall[0].indexOf('InputBarComponent_')).toEqual(0);
+     }));
 
   it('launchin AE with pre-spelled words', () => {
     inputBarControlSubject.next({

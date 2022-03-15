@@ -1,4 +1,4 @@
-import {ComponentFixture, TestBed} from '@angular/core/testing';
+import {ComponentFixture, fakeAsync, TestBed, tick} from '@angular/core/testing';
 import {By} from '@angular/platform-browser';
 import {RouterTestingModule} from '@angular/router/testing';
 import {Subject} from 'rxjs';
@@ -105,6 +105,16 @@ fdescribe('AppComponent', () => {
     lastCall[1].forEach(buttonBox => {
       expect(buttonBox.length).toEqual(4);
     });
+  });
+
+  it('calls setEyeGazeOptions with defaults on init', async () => {
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(testListener.setEyeGazeOptionsCalls.length).toEqual(1);
+    const [call] = testListener.setEyeGazeOptionsCalls;
+    expect(call[0]).toEqual(true);
+    expect(call[1]).toEqual(20);
   });
 
   for (const appState

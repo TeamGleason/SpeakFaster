@@ -1,9 +1,9 @@
 /** Unit tests for settings. */
 import {BOUND_LISTENER_NAME} from '../../utils/cefsharp';
 
-import {clearSettings, ensureAppSettingsLoaded, LOCAL_STORAGE_ITEM_NAME, setTtsVoiceType, setTtsVolume, tryLoadSettings} from './settings';
+import {clearSettings, ensureAppSettingsLoaded, getAppSettings, LOCAL_STORAGE_ITEM_NAME, modifyAppSettingsForTest, setGazeFuzzyRadius, setShowGazeTracker, setTtsVoiceType, setTtsVolume, tryLoadSettings, trySaveSettings} from './settings';
 
-describe('settings', () => {
+fdescribe('settings', () => {
   beforeEach(async () => {
     clearSettings();
     localStorage.removeItem(LOCAL_STORAGE_ITEM_NAME);
@@ -20,9 +20,23 @@ describe('settings', () => {
        await ensureAppSettingsLoaded();
        const settings = await tryLoadSettings();
        expect(settings).not.toBeNull();
-       expect(settings!.ttsVoiceType).toEqual('PERSONALIZED');
+       expect(settings!.ttsVoiceType).toEqual('GENERIC');
        expect(settings!.ttsVolume).toEqual('MEDIUM');
      });
+
+  it('ensureAppSettingsLoaded updates missing fields', async () => {
+    modifyAppSettingsForTest({
+      ttsVoiceType: 'PERSONALIZED',
+      ttsVolume: 'MEDIUM_LOUD',
+    });
+    await ensureAppSettingsLoaded();
+    const settings = await getAppSettings();
+
+    expect(settings!.ttsVoiceType).toEqual('PERSONALIZED');
+    expect(settings!.ttsVolume).toEqual('MEDIUM_LOUD');
+    expect(settings!.showGazeTracker).toEqual('YES');
+    expect(settings!.gazeFuzzyRadius).toEqual(20);
+  });
 
   it('setting tts voice type succeeds', async () => {
     await setTtsVoiceType('GENERIC');
@@ -36,7 +50,31 @@ describe('settings', () => {
     await setTtsVolume('QUIET');
     const settings = await tryLoadSettings();
     expect(settings).not.toBeNull();
-    expect(settings!.ttsVoiceType).toEqual('PERSONALIZED');
+    expect(settings!.ttsVoiceType).toEqual('GENERIC');
     expect(settings!.ttsVolume).toEqual('QUIET');
+  });
+
+  it('setting showGazeTrakcer succeeds', async () => {
+    await setShowGazeTracker('NO');
+    await trySaveSettings();
+    const settings = await tryLoadSettings();
+    expect(settings).not.toBeNull();
+    expect(settings!.showGazeTracker).toEqual('NO');
+  });
+
+  for (const radius of [0, 30]) {
+    it('setting setGazeFuzzyRadius succeeds', async () => {
+      await setGazeFuzzyRadius(radius);
+      await trySaveSettings();
+      const settings = await tryLoadSettings();
+      expect(settings).not.toBeNull();
+      expect(settings!.gazeFuzzyRadius).toEqual(radius);
+    });
+  }
+
+  it('setting gaze fuzzy radius to invalid values raises error', async () => {
+    await expectAsync(setGazeFuzzyRadius(-10)).toBeRejectedWithError();
+    await expectAsync(setGazeFuzzyRadius(NaN)).toBeRejectedWithError();
+    await expectAsync(setGazeFuzzyRadius(Infinity)).toBeRejectedWithError();
   });
 });

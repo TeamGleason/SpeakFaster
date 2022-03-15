@@ -1,0 +1,95 @@
+/** Unit test for SettingsEyeGazeComponent. */
+
+import {ComponentFixture, TestBed} from '@angular/core/testing';
+import {By} from '@angular/platform-browser';
+
+import {BOUND_LISTENER_NAME} from '../../utils/cefsharp';
+import {HttpEventLogger} from '../event-logger/event-logger-impl';
+import {clearSettings, getAppSettings, LOCAL_STORAGE_ITEM_NAME} from '../settings/settings';
+
+import {SettingsEyeGazeComponent} from './settings-eye-gaze.component';
+import {SettingsEyeGazeModule} from './settings-eye-gaze.module';
+
+fdescribe('SettingsEyeGazeComponent', () => {
+  let fixture: ComponentFixture<SettingsEyeGazeComponent>;
+
+  beforeEach(async () => {
+    (window as any)[BOUND_LISTENER_NAME] = undefined;
+    clearSettings();
+    localStorage.removeItem(LOCAL_STORAGE_ITEM_NAME);
+    await TestBed
+        .configureTestingModule({
+          imports: [SettingsEyeGazeModule],
+          declarations: [SettingsEyeGazeComponent],
+          providers:
+              [{provide: HttpEventLogger, useValue: new HttpEventLogger(null)}],
+        })
+        .compileComponents();
+    fixture = TestBed.createComponent(SettingsEyeGazeComponent);
+    fixture.detectChanges();
+    clearSettings();
+  });
+
+  it('Shows default showGazeTracker setting when loaded', async () => {
+    await fixture.whenStable();
+    const showGazeTrackerSection =
+        fixture.debugElement.query(By.css('.show-gaze-tracker-section'));
+    expect(showGazeTrackerSection).not.toBeNull();
+    const buttons = showGazeTrackerSection.queryAll(By.css('.option-button'));
+    expect(buttons.length).toEqual(2);
+    expect(buttons[0].nativeElement.innerText).toEqual('Yes');
+    expect(buttons[1].nativeElement.innerText).toEqual('No');
+    const selectedButtons =
+        showGazeTrackerSection.queryAll(By.css('.active-button'));
+    expect(selectedButtons.length).toEqual(1);
+    expect(selectedButtons[0].nativeElement.innerText).toEqual('Yes');
+  });
+
+  it('Shows default gazeFuzzyRadius setting when loaded', async () => {
+    await fixture.whenStable();
+    const gazeFuzzyRadiusSection =
+        fixture.debugElement.query(By.css('.gaze-fuzzy-radius-section'));
+    expect(gazeFuzzyRadiusSection).not.toBeNull();
+    const buttons = gazeFuzzyRadiusSection.queryAll(By.css('.option-button'));
+    expect(buttons.length).toEqual(5);
+    expect(buttons[0].nativeElement.innerText).toEqual('0');
+    expect(buttons[1].nativeElement.innerText).toEqual('10');
+    expect(buttons[2].nativeElement.innerText).toEqual('20');
+    expect(buttons[3].nativeElement.innerText).toEqual('30');
+    expect(buttons[4].nativeElement.innerText).toEqual('40');
+    const selectedButtons =
+        gazeFuzzyRadiusSection.queryAll(By.css('.active-button'));
+    expect(selectedButtons.length).toEqual(1);
+    expect(selectedButtons[0].nativeElement.innerText).toEqual('20');
+  });
+
+  it('Changing showGazeTracker saves new settings', async () => {
+    await fixture.whenStable();
+    const showGazeTrackerSection =
+        fixture.debugElement.query(By.css('.show-gaze-tracker-section'));
+    const buttons = showGazeTrackerSection.queryAll(By.css('.option-button'));
+    buttons[1].nativeElement.click();
+    await fixture.whenStable();
+
+    const selectedButtons =
+        showGazeTrackerSection.queryAll(By.css('.active-button'));
+    expect(selectedButtons.length).toEqual(1);
+    expect(selectedButtons[0].nativeElement.innerText).toEqual('No');
+    expect((await getAppSettings()).showGazeTracker).toEqual('NO');
+  });
+
+  it('Chaging gazeFuzzyRadius saves new settings', async () => {
+    await fixture.whenStable();
+    const gazeFuzzyRadiusSection =
+        fixture.debugElement.query(By.css('.gaze-fuzzy-radius-section'));
+    const buttons = gazeFuzzyRadiusSection.queryAll(By.css('.option-button'));
+    buttons[4].nativeElement.click();
+    await fixture.whenStable();
+
+    const selectedButtons =
+        gazeFuzzyRadiusSection.queryAll(By.css('.active-button'));
+    expect(selectedButtons.length).toEqual(1);
+    expect(selectedButtons[0].nativeElement.innerText).toEqual('40');
+    expect((await getAppSettings()).gazeFuzzyRadius).toEqual(40);
+  });
+});

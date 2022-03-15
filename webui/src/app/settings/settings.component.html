@@ -202,8 +202,17 @@
 <div class="bottom-section">
   <button
       #clickableButton
+      class="option-button eye-gaze-settings-button"
+      (click)="onEyeGazeSettingsButtonClicked($event)">
+    <img class="icon-image" src="/assets/images/eye.png">
+    Eye-gaze settings
+  </button>
+
+  <button
+      #clickableButton
       class="option-button help-button"
       (click)="onHelpButtonClicked($event)">
+    <img class="icon-image" src="/assets/images/help.png">
     Help
   </button>
 

@@ -1,6 +1,5 @@
 /** Unit test for SettingsComponent. */
 
-/** Unit tests for QuickPhrasesComponent. */
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {By} from '@angular/platform-browser';
 

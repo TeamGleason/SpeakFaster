@@ -79,6 +79,7 @@ Under the AAC user mode, the following URL parameters must be provided:
    are shown (e.g., `dev=true` or `dev=1`). Default value: `false`.
 
 Optional URL parameters include:
+
 - `showMetrics`: Controls whether text-entry metrics such as words-per minute
   (WPM) and keystroke-saving rate (KSR) are visible in the UI. Default: false.
 
@@ -138,6 +139,8 @@ interface BoundObject {
   function updateButtonBoxes(componentName: string,
                              boxes: Array<[number, number, number, number]>);
 
+  async function setEyeGazeOptions(showGazeTracker: boolean, gazeFuzzyRadius: number);
+
   async function saveSettings(appSettings: AppSettings): boolean;
 
   async function loadSettings(): AppSettings|null;
@@ -196,7 +199,19 @@ new clickable regions that have appeared since the last call.
 Calling `updateButtonBoxes()` n times with n different `componentName`s will
 cause n sets of clickable regions to be registered.
 
-### 2.4. Saving WebUI user settings to host and loading the settings from host
+### 3.5. Setting eye-gaze tracking options in host app
+
+The `setEyeGazeOptions()` interface method allows the WebUI to request
+changes in the host app's eye tracking parameters. The settable parameters
+include:
+
+1. `showGazeTracker`: whether a UI object such as a dot is shown on the
+   screen to indicate the current gaze point of the user.
+2. `gazeFuzzyRadius`: the radius of the virtual circle around the gaze point
+   that is used to determine whether any of the gaze-clickable buttons are
+   hit.
+
+### 3.6. Saving WebUI user settings to host and loading the settings from host
 
 The functions `saveSettings()` and `loadSettings()` can be used to serialized
 user settings (e.g., TTS voice and volume) to the host and loading the settings
@@ -204,7 +219,7 @@ back from the host. Note that WebViews such as CefSharp usually do not persist
 data stored in `localStorage` after the instance of WebView is destroyed, which
 necessitates settings storage at the host level.
 
-### 2.5. Requesting app quit
+### 3.7. Requesting app quit
 
 To request the host app to close the WebUI and quit as a whole, call
 `requestAppQuit()`.

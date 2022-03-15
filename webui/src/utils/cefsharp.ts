@@ -2,7 +2,7 @@
 
 import {ElementRef, QueryList} from '@angular/core';
 import {getVirtualkeyCode, VIRTUAL_KEY} from 'src/app/external/external-events.component';
-import {AppSettings} from 'src/app/settings/settings';
+import {AppSettings, DEFAULT_GAZE_FUZZY_RADIUS, getAppSettings, setShowGazeTracker} from 'src/app/settings/settings';
 
 const CEFSHARP_OBJECT_NAME = 'CefSharp';
 export const BOUND_LISTENER_NAME = 'boundListener';
@@ -66,6 +66,25 @@ export function updateButtonBoxesForElements(
   }, 0);
 }
 
+/**
+ * Updates the host app regarding eye tracking options.
+ * @param showGazeTracker Whether the dot that tracks the gaze point is
+ *     shown.
+ * @param gazeFuzzyRadius The radius for the fuzzy gaze pointer (e.g, 20).
+ */
+export function setEyeGazeOptions(
+    showGazeTracker: boolean, gazeFuzzyRadius: number) {
+  if ((window as any)[BOUND_LISTENER_NAME] == null) {
+    console.warn(`Cannot call setEyeGazeOptions(), because object ${
+        BOUND_LISTENER_NAME} is not found`)
+    return;
+  }
+  console.log(`Calling host setEyeGazeOptions with: setEyeGazeOptions=${
+      setShowGazeTracker}, gazeFuzzyRadius=${gazeFuzzyRadius}`);
+  ((window as any)[BOUND_LISTENER_NAME] as any)
+      .setEyeGazeOptions(showGazeTracker, gazeFuzzyRadius);
+}
+
 function isRectVisibleInsideContainer(rect: DOMRect, containerRect: DOMRect) {
   const {bottom, height, top} = rect;
   return top <= containerRect.top ? containerRect.top - top <= height :
@@ -107,7 +126,7 @@ export function injectKeys(virtualKeys: Array<string|VIRTUAL_KEY>): number {
     virtualKeyCodes.push(...getVirtualkeyCode(virtualKey));
   }
   return ((window as any)[BOUND_LISTENER_NAME] as any)
-      .injectKeys(virtualKeyCodes) as number;
+             .injectKeys(virtualKeyCodes) as number;
 }
 
 /** Request host app to reset the state of the attached soft keyboard. */
@@ -117,8 +136,7 @@ export function requestSoftKeyboardReset() {
         BOUND_LISTENER_NAME} is not found`)
     return;
   }
-  ((window as any)[BOUND_LISTENER_NAME] as any)
-      .requestSoftKeyboardReset();
+  ((window as any)[BOUND_LISTENER_NAME] as any).requestSoftKeyboardReset();
 }
 
 /**
@@ -214,4 +232,12 @@ export function requestQuitApp(): void {
     return;
   }
   ((window as any)[BOUND_LISTENER_NAME] as any).requestQuitApp();
+}
+
+export async function setHostEyeGazeOptions() {
+  const appSettings = await getAppSettings();
+  setEyeGazeOptions(
+      appSettings.showGazeTracker === 'YES',
+      appSettings.gazeFuzzyRadius === undefined ? DEFAULT_GAZE_FUZZY_RADIUS :
+                                                  appSettings.gazeFuzzyRadius);
 }

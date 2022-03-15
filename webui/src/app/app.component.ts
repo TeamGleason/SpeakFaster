@@ -2,7 +2,7 @@ import {AfterViewInit, Component, ElementRef, OnDestroy, OnInit, QueryList, View
 import {ActivatedRoute} from '@angular/router';
 import {Subject} from 'rxjs';
 
-import {bindCefSharpListener, registerExternalAccessTokenHook, registerExternalKeypressHook, registerHostWindowFocusHook, resizeWindow, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from '../utils/cefsharp';
+import {bindCefSharpListener, registerExternalAccessTokenHook, registerExternalKeypressHook, registerHostWindowFocusHook, resizeWindow, setHostEyeGazeOptions, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from '../utils/cefsharp';
 import {createUuid} from '../utils/uuid';
 
 import {registerAppState} from './app-state-registry';
@@ -96,6 +96,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     document.addEventListener('contextmenu', event => event.preventDefault());
     registerAppState(this.appState);
     bindCefSharpListener();
+    setHostEyeGazeOptions();
     this.route.queryParams.subscribe(params => {
       if (params['dev']) {
         this._isDev = this.stringValueMeansTrue(params['dev']);
@@ -350,6 +351,10 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   onHelpButtonClicked(event: Event) {
     this.changeAppState(AppState.HELP);
+  }
+
+  onEyeGazeSettingsButtonClicked(event: Event) {
+    this.changeAppState(AppState.EYE_GAZE_SETTINGS);
   }
 
   isQuickPhrasesAppState() {

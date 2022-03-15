@@ -13,8 +13,11 @@ export enum AppState {
   // there is no context turn.
   ABBREVIATION_EXPANSION = 'ABBREVIATION_EXPANSION',
 
-  // The Settings page.
+  // The Settings page: with frequently changed settings such as TTS voice and
+  // volume.
   SETTINGS = 'SETTINGS',
+  // The eye-gaze settings page.
+  EYE_GAZE_SETTINGS = 'EYE_GAZE_SETTINGS',
   // The help page.
   HELP = 'HELP',
 }

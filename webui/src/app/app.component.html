@@ -216,8 +216,13 @@ app-text-to-speech-component {
           [userId]="userId"
           [userEmail]="userEmail"
           [userGivenName]="userGivenName"
-          (helpButtonClicked)="onHelpButtonClicked($event)">
+          (helpButtonClicked)="onHelpButtonClicked($event)"
+          (eyeGazeSettingsButtonClicked)="onEyeGazeSettingsButtonClicked($event)">
       </app-settings-component>
+
+      <app-settings-eye-gaze-component
+          *ngIf="appState === 'EYE_GAZE_SETTINGS'">
+      </app-settings-eye-gaze-component>
 
       <app-help-component
           *ngIf="appState === 'HELP'">

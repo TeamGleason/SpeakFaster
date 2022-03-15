@@ -11,6 +11,7 @@ import {HttpEventLogger} from './event-logger/event-logger-impl';
 import {ExternalEventsModule} from './external/external-events.module';
 import {MetricsModule} from './metrics/metrics.module';
 import {MiniBarModule} from './mini-bar/mini-bar.module';
+import {clearSettings} from './settings/settings';
 import {TestListener} from './test-utils/test-cefsharp-listener';
 import {AppState} from './types/app-state';
 

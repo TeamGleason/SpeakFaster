@@ -6,15 +6,18 @@ import {By} from '@angular/platform-browser';
 import {BOUND_LISTENER_NAME} from '../../utils/cefsharp';
 import {HttpEventLogger} from '../event-logger/event-logger-impl';
 import {clearSettings, getAppSettings, LOCAL_STORAGE_ITEM_NAME} from '../settings/settings';
+import {TestListener} from '../test-utils/test-cefsharp-listener';
 
 import {SettingsEyeGazeComponent} from './settings-eye-gaze.component';
 import {SettingsEyeGazeModule} from './settings-eye-gaze.module';
 
 fdescribe('SettingsEyeGazeComponent', () => {
   let fixture: ComponentFixture<SettingsEyeGazeComponent>;
+  let testListener: TestListener;
 
   beforeEach(async () => {
-    (window as any)[BOUND_LISTENER_NAME] = undefined;
+    testListener = new TestListener();
+    (window as any)[BOUND_LISTENER_NAME] = testListener;
     clearSettings();
     localStorage.removeItem(LOCAL_STORAGE_ITEM_NAME);
     await TestBed
@@ -76,6 +79,8 @@ fdescribe('SettingsEyeGazeComponent', () => {
     expect(selectedButtons.length).toEqual(1);
     expect(selectedButtons[0].nativeElement.innerText).toEqual('No');
     expect((await getAppSettings()).showGazeTracker).toEqual('NO');
+    expect(testListener.setEyeGazeOptionsCalls.length).toEqual(1);
+    expect(testListener.setEyeGazeOptionsCalls[0][0]).toEqual(false);
   });
 
   it('Chaging gazeFuzzyRadius saves new settings', async () => {
@@ -91,5 +96,7 @@ fdescribe('SettingsEyeGazeComponent', () => {
     expect(selectedButtons.length).toEqual(1);
     expect(selectedButtons[0].nativeElement.innerText).toEqual('40');
     expect((await getAppSettings()).gazeFuzzyRadius).toEqual(40);
+    expect(testListener.setEyeGazeOptionsCalls.length).toEqual(1);
+    expect(testListener.setEyeGazeOptionsCalls[0][1]).toEqual(40);
   });
 });

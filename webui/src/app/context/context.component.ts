@@ -244,6 +244,14 @@ export class ContextComponent implements OnInit, AfterViewInit {
 
   private appendTextInjectionToContext(turnSignal:
                                            ConversationTurnContextSignal) {
+    if (this.contextSignals.length > 0 &&
+        this.contextSignals[this.contextSignals.length - 1]
+                .conversationTurn.speechContent ===
+            turnSignal.conversationTurn.speechContent) {
+      // Ignore repeated contextual turns.
+      // TODO(cais): Add unit tests.
+      return;
+    }
     // Also add the latest user entered text.
     this.contextSignals.push(turnSignal);
     // Sort context turns in asecnding order of timestamp.

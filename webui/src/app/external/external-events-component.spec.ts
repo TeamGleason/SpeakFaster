@@ -3,7 +3,7 @@ import {Subject} from 'rxjs';
 
 import {TextEntryBeginEvent, TextEntryEndEvent} from '../types/text-entry';
 
-import {ExternalEventsComponent, getPunctuationLiteral, getVirtualkeyCode, LCTRL_KEY_HEAD_FOR_TTS_TRIGGER, repeatVirtualKey, VIRTUAL_KEY, VKCODE_SPECIAL_KEYS} from './external-events.component';
+import {ExternalEventsComponent, getPunctuationLiteral, getVirtualkeyCode, LCTRL_KEY_HEAD_FOR_TTS_TRIGGER, tryDetectoMultiKeyChar, VIRTUAL_KEY, VKCODE_SPECIAL_KEYS} from './external-events.component';
 import {ExternalEventsModule} from './external-events.module';
 
 const END_KEY_CODE = getVirtualkeyCode(LCTRL_KEY_HEAD_FOR_TTS_TRIGGER)[0]
@@ -258,6 +258,8 @@ fdescribe('ExternalEventsComponent', () => {
         ['with noop home key', [36, 72, 73, 162, END_KEY_CODE], 'hi'],
         ['with noop end key', [72, 73, 35, 162, END_KEY_CODE], 'hi'],
         ['home and delete key', [72, 73, 188, 36, 46, 162, END_KEY_CODE], 'i,'],
+        ['question mark', [72, 73, 160, 191, 162, END_KEY_CODE], 'hi?'],
+        ['exclamation point', [72, 73, 160, 49, 162, END_KEY_CODE], 'hi!'],
         [
           '1 left arrow and 1 delete key',
           [72, 73, 188, 37, 46, 162, END_KEY_CODE], 'hi'
@@ -362,6 +364,39 @@ fdescribe('ExternalEventsComponent', () => {
        });
   }
 
+  it('tryDetectoMultiKeyChar returns correct character', () => {
+    expect(tryDetectoMultiKeyChar([VIRTUAL_KEY.LSHIFT, '1'])).toEqual('!');
+    expect(tryDetectoMultiKeyChar([
+      VIRTUAL_KEY.LSHIFT, '1', VIRTUAL_KEY.LSHIFT,
+      VIRTUAL_KEY.SLASH_QUESTION_MARK
+    ])).toEqual('?');
+    expect(tryDetectoMultiKeyChar([
+      'h', 'i', VIRTUAL_KEY.LSHIFT, '1'
+    ])).toEqual('!');
+    expect(tryDetectoMultiKeyChar([
+      'y', 'e', 's', VIRTUAL_KEY.LSHIFT, VIRTUAL_KEY.SLASH_QUESTION_MARK
+    ])).toEqual('?');
+    expect(tryDetectoMultiKeyChar([
+      'y', 'e', 's', VIRTUAL_KEY.LSHIFT, VIRTUAL_KEY.SEMICOLON_COLON
+    ])).toEqual(':');
+    expect(tryDetectoMultiKeyChar([
+      'y', 'e', 's', VIRTUAL_KEY.SPACE, VIRTUAL_KEY.LSHIFT, '9'
+    ])).toEqual('(');
+    expect(tryDetectoMultiKeyChar([
+      'y', 'e', 's', VIRTUAL_KEY.SPACE, VIRTUAL_KEY.LSHIFT, '0'
+    ])).toEqual(')');
+  });
+
+  it('tryDetectMultiKeyChar returns null', () => {
+    expect(tryDetectoMultiKeyChar([])).toBeNull();
+    expect(tryDetectoMultiKeyChar(['h', 'i'])).toBeNull();
+    expect(tryDetectoMultiKeyChar(['h', 'i', VIRTUAL_KEY.LSHIFT])).toBeNull();
+    expect(tryDetectoMultiKeyChar([
+      'h', 'i', VIRTUAL_KEY.SLASH_QUESTION_MARK
+    ])).toBeNull();
+    expect(tryDetectoMultiKeyChar(['h', 'i', '1'])).toBeNull();
+  });
+
   it('reconstructs text based on sentence-end period and space', () => {
     const vkCodes = [72, 73, 190, 32];
     for (const vkCode of vkCodes) {
@@ -384,16 +419,17 @@ fdescribe('ExternalEventsComponent', () => {
     expect(endEvents[0].isFinal).toBeTrue();
   });
 
-  it('reconstructs text based on sentence-end exclamation point and space', () => {
-    const vkCodes = [72, 73, 160, 49, 32];
-    for (const vkCode of vkCodes) {
-      component.externalKeypressHook(vkCode);
-    }
-    expect(beginEvents.length).toEqual(1);
-    expect(endEvents.length).toEqual(1);
-    expect(endEvents[0].text).toEqual('hi!');
-    expect(endEvents[0].isFinal).toBeTrue();
-  });
+  it('reconstructs text based on sentence-end exclamation point and space',
+     () => {
+       const vkCodes = [72, 73, 160, 49, 32];
+       for (const vkCode of vkCodes) {
+         component.externalKeypressHook(vkCode);
+       }
+       expect(beginEvents.length).toEqual(1);
+       expect(endEvents.length).toEqual(1);
+       expect(endEvents[0].text).toEqual('hi!');
+       expect(endEvents[0].isFinal).toBeTrue();
+     });
 
   it('whitespace-only text does not trigger end event', () => {
     const vkCodes = [32, 32, 13, 162, END_KEY_CODE];

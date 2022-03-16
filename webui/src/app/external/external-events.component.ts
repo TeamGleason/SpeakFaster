@@ -187,6 +187,21 @@ export function getVirtualkeyCode(charOrKey: string|VIRTUAL_KEY): number[] {
         SPECIAL_VIRTUAL_KEY_TO_CODE.get(VIRTUAL_KEY.SLASH_QUESTION_MARK) as
             number
       ];
+    } else if (charOrKey === ':') {
+      return [
+        SPECIAL_VIRTUAL_KEY_TO_CODE.get(VIRTUAL_KEY.LSHIFT) as number,
+        SPECIAL_VIRTUAL_KEY_TO_CODE.get(VIRTUAL_KEY.SEMICOLON_COLON) as number
+      ];
+    } else if (charOrKey === '(') {
+      return [
+        SPECIAL_VIRTUAL_KEY_TO_CODE.get(VIRTUAL_KEY.LSHIFT) as number,
+        getVirtualkeyCode('9')[0],
+      ];
+    } else if (charOrKey === ')') {
+      return [
+        SPECIAL_VIRTUAL_KEY_TO_CODE.get(VIRTUAL_KEY.LSHIFT) as number,
+        getVirtualkeyCode('0')[0],
+      ];
     }
     // TODO(cais): Support other punctuation including '!' and '?'.
     return [charOrKey.toUpperCase().charCodeAt(0)];
@@ -239,6 +254,32 @@ export function getNumOrPunctuationLiteral(
     default:
       throw new Error(`Invalid key code for number keys: ${vkCode}`);
   }
+}
+
+// Map from characters to multiple keypresses needed to enter them.
+export const MULTI_KEY_CHARS: {[char: string]: Array<VIRTUAL_KEY|string>} = {
+  '?': [VIRTUAL_KEY.LSHIFT, VIRTUAL_KEY.SLASH_QUESTION_MARK],
+  '!': [VIRTUAL_KEY.LSHIFT, '1'],
+  ':': [VIRTUAL_KEY.LSHIFT, VIRTUAL_KEY.SEMICOLON_COLON],
+  '(': [VIRTUAL_KEY.LSHIFT, '9'],
+  ')': [VIRTUAL_KEY.LSHIFT, '0'],
+};
+
+/**
+ * Detect whether the key sequence ends with a subsequence that represents a
+ * character entered by multiple characters, such as '?' and '!'.
+ * @param keySequence
+ * @returns If the sequence ends with a multi-char sequence that represents a
+ *     character, the character will be returned. Else, `null` will be returned.
+ */
+export function tryDetectoMultiKeyChar(keySequence: string[]): string|null {
+  for (const char in MULTI_KEY_CHARS) {
+    const suffix = MULTI_KEY_CHARS[char];
+    if (keySequenceEndsWith(keySequence, suffix)) {
+      return char;
+    }
+  }
+  return null;
 }
 
 /** Repeat a virtual key a given number of times. */
@@ -440,7 +481,11 @@ export class ExternalEventsComponent implements OnInit {
     }
 
     const originallyEmpty = reconState.text === '';
-    if (virtualKey.length === 1 && (virtualKey >= 'a' && virtualKey <= 'z')) {
+    const multiKeyChar = tryDetectoMultiKeyChar(reconState.keySequence);
+    if (multiKeyChar !== null) {
+      this.insertCharAsCursorPos(multiKeyChar, reconState);
+    } else if (
+        virtualKey.length === 1 && (virtualKey >= 'a' && virtualKey <= 'z')) {
       this.insertCharAsCursorPos(virtualKey, reconState);
     } else if (
         virtualKey.length === 1 && (virtualKey >= '0' && virtualKey <= '9')) {

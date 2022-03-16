@@ -28,7 +28,7 @@ export function limitStringLength(
 /** Determines if an array of strings ends with the specified suffix. */
 export function keySequenceEndsWith(
     keySequence: string[], suffix: string[]): boolean {
-  return keySequence.length > suffix.length &&
+  return keySequence.length >= suffix.length &&
       allItemsEqual(
              keySequence.slice(keySequence.length - suffix.length), suffix);
 }

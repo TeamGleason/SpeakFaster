@@ -5,7 +5,7 @@ import {createUuid} from 'src/utils/uuid';
 
 import {HttpEventLogger} from '../event-logger/event-logger-impl';
 
-import {AppSettings, getAppSettings, setTtsVoiceType, setTtsVolume, TtsVoiceType, TtsVolume} from './settings';
+import {AppSettings, getAppSettings, setTtsSpeakingRate, setTtsVoiceType, setTtsVolume, TtsVoiceType, TtsVolume} from './settings';
 import {VERSION} from './version';
 
 @Component({
@@ -62,6 +62,12 @@ export class SettingsComponent implements AfterViewInit, OnInit, OnDestroy {
   setTtsVolume(ttsVolume: TtsVolume) {
     setTtsVolume(ttsVolume);
     this.eventLogger.logSettingsChange('TtsVolume');
+    this.refreshSettings();
+  }
+
+  setTtsSpeakingRate(ttsSpeakingRate: number) {
+    setTtsSpeakingRate(ttsSpeakingRate);
+    this.eventLogger.logSettingsChange('TtsSpeakingRate');
     this.refreshSettings();
   }
 

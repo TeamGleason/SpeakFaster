@@ -45,8 +45,8 @@ export interface AbbreviationExpansionResponseStats {
 }
 
 // Name of an app setting.
-export type SettingName =
-    'TtsVoiceType'|'TtsVolume'|'ShowGazeTracker'|'GazeFuzzyRadius';
+export type SettingName = 'TtsVoiceType'|'TtsVolume'|'TtsSpeakingRate'|
+    'ShowGazeTracker'|'GazeFuzzyRadius';
 
 export interface UserFeedback {
   // The feedback message that the user typed.

@@ -221,6 +221,34 @@
       </button>
     </div>
 
+    <div
+        *ngIf="appSettings !== null"
+        class="settings-section tts-speaking-rate-section">
+      <div class="section-title">Text-to-speech speaking rate:</div>
+
+      <button
+          #clickableButton
+          [ngClass]="{'active-button': appSettings!.ttsSpeakingRate === 0.8}"
+          class="option-button tts-volume-button"
+          (click)="setTtsSpeakingRate(0.8)">
+        0.8
+      </button>
+      <button
+          #clickableButton
+          [ngClass]="{'active-button': appSettings!.ttsSpeakingRate === 0.9}"
+          class="option-button tts-volume-button"
+          (click)="setTtsSpeakingRate(0.9)">
+        0.9
+      </button>
+      <button
+          #clickableButton
+          [ngClass]="{'active-button': appSettings!.ttsSpeakingRate === 1.0}"
+          class="option-button tts-volume-button"
+          (click)="setTtsSpeakingRate(1.0)">
+        1.0
+      </button>
+    </div>
+
   </div>
 
   <div class="right-column">

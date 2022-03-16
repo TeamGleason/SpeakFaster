@@ -139,7 +139,7 @@ export class TextToSpeechComponent implements OnInit {
           language: DEFAULT_LANGUAGE_CODE,
           audio_config: {
             audio_encoding: DEFAULT_AUDIO_ENCODING,
-            speaking_rate: 1.0,
+            speaking_rate: appSettings.ttsSpeakingRate || 1.0,
             volume_gain_db: getCloudTextToSpeechVolumeGainDb(appSettings),
           },
           access_token: this.accessToken,
@@ -198,6 +198,7 @@ export class TextToSpeechComponent implements OnInit {
       this.setListenersState('END');
     };
     utterance.volume = getLocalTextToSpeechVolume(appSettings);
+    utterance.rate = appSettings.ttsSpeakingRate || 1.0;
     window.speechSynthesis.speak(utterance);
   }
 

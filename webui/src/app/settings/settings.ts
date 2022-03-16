@@ -19,6 +19,9 @@ export interface AppSettings {
 
   ttsVolume: TtsVolume;
 
+  // Between 0.25 and 4.0. 1.0 is normal speaking rate.
+  ttsSpeakingRate?: number;
+
   // Whether the dot that indicates the current gaze location is shown.
   showGazeTracker?: ShowGazeTracker;
 
@@ -33,6 +36,7 @@ export function getDefaultAppSettings(): AppSettings {
   return {
     ttsVoiceType: 'GENERIC',
     ttsVolume: 'MEDIUM',
+    ttsSpeakingRate: 1.0,
     showGazeTracker: 'YES',
     gazeFuzzyRadius: DEFAULT_GAZE_FUZZY_RADIUS,
   };
@@ -122,6 +126,15 @@ export async function setTtsVoiceType(ttsVoiceType: TtsVoiceType) {
 export async function setTtsVolume(ttsVolume: TtsVolume) {
   await ensureAppSettingsLoaded();
   appSettings!.ttsVolume = ttsVolume;
+  await trySaveSettings();
+}
+
+export async function setTtsSpeakingRate(ttsSpeakingRate: number) {
+  if (!(ttsSpeakingRate >= 0.25 && ttsSpeakingRate <= 4.0)) {
+    throw new Error(`ttsSpeakingRate out of bound: ${ttsSpeakingRate}`);
+  }
+  await ensureAppSettingsLoaded();
+  appSettings!.ttsSpeakingRate = ttsSpeakingRate;
   await trySaveSettings();
 }
 

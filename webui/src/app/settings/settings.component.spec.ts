@@ -88,6 +88,21 @@ fdescribe('SettingsComponent', () => {
     expect((await getAppSettings()).ttsVolume).toEqual('LOUD');
   });
 
+  it('Changing TTS speaking rate saves new settings', async () => {
+    await fixture.whenStable();
+    const ttsSpeakingRateSection =
+        fixture.debugElement.query(By.css('.tts-speaking-rate-section'));
+    const buttons = ttsSpeakingRateSection.queryAll(By.css('.option-button'));
+    buttons[1].nativeElement.click();
+    await fixture.whenStable();
+
+    const selectedButtons =
+        ttsSpeakingRateSection.queryAll(By.css('.active-button'));
+    expect(selectedButtons.length).toEqual(1);
+    expect(selectedButtons[0].nativeElement.innerText).toEqual('0.9');
+    expect((await getAppSettings()).ttsSpeakingRate).toEqual(0.9);
+  });
+
   it('Clicking help button emits helpButtonClicked', () => {
     let numEmittedEvents = 0;
     fixture.componentInstance.helpButtonClicked.subscribe((event) => {
@@ -117,7 +132,6 @@ fdescribe('SettingsComponent', () => {
     expect(fixture.debugElement.query(By.css('.help-button'))
                .classes['active-button'])
         .toBeUndefined();
-
   });
 
   it('shows user ID when user email and given name are unavailable', () => {
@@ -125,7 +139,7 @@ fdescribe('SettingsComponent', () => {
     fixture.detectChanges();
 
     const userIdSpan = fixture.debugElement.query(By.css('.user-id'));
-    expect(userIdSpan.nativeElement.innerText.trim()).toEqual('(ID: testuser2)');
+    expect(userIdSpan.nativeElement.innerText.trim())
+        .toEqual('(ID: testuser2)');
   });
-
 });

@@ -160,7 +160,6 @@ export class TextToSpeechComponent implements OnInit {
                 TextToSpeechComponent.listeners.forEach(listener => {
                   listener({state: 'ERROR', errorMessage: 'Audio is empty'});
                 });
-                ;
                 return;
               }
               ttsAudioElement.src =

@@ -7,7 +7,7 @@ import {TextEntryBeginEvent, TextEntryEndEvent} from '../types/text-entry';
 import {MetricsComponent} from './metrics.component';
 import {MetricsModule} from './metrics.module';
 
-describe('MetricsComponent', () => {
+fdescribe('MetricsComponent', () => {
   let textEntryBeginSubject: Subject<TextEntryBeginEvent>;
   let textEntryEndSubject: Subject<TextEntryEndEvent>;
   let fixture: ComponentFixture<MetricsComponent>;

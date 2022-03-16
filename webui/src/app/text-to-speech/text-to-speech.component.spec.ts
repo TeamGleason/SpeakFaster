@@ -4,12 +4,13 @@ import {ComponentFixture, fakeAsync, TestBed, tick} from '@angular/core/testing'
 import {of, Subject, throwError} from 'rxjs';
 import {BOUND_LISTENER_NAME} from 'src/utils/cefsharp';
 
+import {clearSettings, setTtsVoiceType} from '../settings/settings';
 import {TextEntryEndEvent} from '../types/text-entry';
 
 import {getCloudTextToSpeechVolumeGainDb, getLocalTextToSpeechVolume, TextToSpeechComponent, TextToSpeechEvent, TextToSpeechListener} from './text-to-speech.component';
 import {TextToSpeechModule} from './text-to-speech.module';
 
-describe('TextToSpeechCmponent', () => {
+fdescribe('TextToSpeechCmponent', () => {
   let fixture: ComponentFixture<TextToSpeechComponent>;
   let component: TextToSpeechComponent;
   let textEntryEndSubject: Subject<TextEntryEndEvent>;
@@ -31,6 +32,11 @@ describe('TextToSpeechCmponent', () => {
     component.accessToken = 'test_token';
     component.disableAudioElementPlayForTest();
     jasmine.getEnv().allowRespy(true);
+    clearSettings();
+  });
+
+  afterEach(async () => {
+    clearSettings();
   });
 
   it('registerTextToSpeechListener registers listeners and gets TTS events',
@@ -93,6 +99,7 @@ describe('TextToSpeechCmponent', () => {
      }));
 
   it('listener is notified of audio data empty error', fakeAsync(() => {
+       setTtsVoiceType('PERSONALIZED');
        spyOn(component.textToSpeechService, 'synthesizeSpeech')
            .and.returnValue(of({
              audio_content: '',
@@ -123,6 +130,7 @@ describe('TextToSpeechCmponent', () => {
      }));
 
   it('listener is notified of error from service', fakeAsync(() => {
+    setTtsVoiceType('PERSONALIZED');
        spyOn(component.textToSpeechService, 'synthesizeSpeech')
            .and.returnValue(
                throwError({error: {error_message: 'foo audio error'}}));
@@ -132,7 +140,7 @@ describe('TextToSpeechCmponent', () => {
        };
        TextToSpeechComponent.registerTextToSpeechListener(listener);
        textEntryEndSubject.next({
-         text: 'Hi there',
+         text: 'Hello there',
          timestampMillis: new Date().getTime(),
          isFinal: true,
          inAppTextToSpeechAudioConfig: {}
@@ -147,7 +155,8 @@ describe('TextToSpeechCmponent', () => {
      }));
 
   for (const [ttsVolume, expectedGainDb] of [
-           ['QUIET', -10], ['MEDIUM', 0], ['LOUD', 16]] as
+           ['QUIET', -6], ['MEDIUM_QUIET', -3], ['MEDIUM', 0],
+           ['MEDIUM_LOUD', 3], ['LOUD', 6]] as
        Array<['QUIET' | 'MEDIUM' | 'LOUD', number]>) {
     it('getCloudTextToSpeechVolumeGainDb returns correct values: ' + ttsVolume,
        () => {
@@ -159,14 +168,14 @@ describe('TextToSpeechCmponent', () => {
   }
 
   for (const [ttsVolume, expectedGainDb] of [
-           ['QUIET', 0.2], ['MEDIUM', 0.5], ['LOUD', 1.0]] as
+           ['QUIET', 0.251], ['MEDIUM', 0.5], ['LOUD', 1.0]] as
        Array<['QUIET' | 'MEDIUM' | 'LOUD', number]>) {
     it('getLocalTextToSpeechVolume returns correct values: ' + ttsVolume,
        () => {
          expect(getLocalTextToSpeechVolume({
            ttsVoiceType: 'GENERIC',
            ttsVolume: ttsVolume,
-         })).toEqual(expectedGainDb);
+         })).toBeCloseTo(expectedGainDb);
        });
   }
 });

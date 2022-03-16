@@ -2,10 +2,10 @@
 import {ComponentFixture, fakeAsync, TestBed, tick} from '@angular/core/testing';
 import {By} from '@angular/platform-browser';
 
-import {SpeakButtonComponent, State} from './speak-button.component';
+import {SpeakButtonComponent} from './speak-button.component';
 import {SpeakButtonModule} from './speak-button.module';
 
-describe('SpeakButton', () => {
+fdescribe('SpeakButton', () => {
   let fixture: ComponentFixture<SpeakButtonComponent>;
 
   beforeEach(async () => {

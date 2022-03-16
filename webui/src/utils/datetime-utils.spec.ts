@@ -1,6 +1,6 @@
 import {getAgoString} from './datetime-utils';
 
-describe('Datetime utils', () => {
+fdescribe('Datetime utils', () => {
   describe('getAgoString', () => {
     it('returns correct seconds string', () => {
       const t0 = new Date();

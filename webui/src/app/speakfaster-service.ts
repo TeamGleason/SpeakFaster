@@ -193,6 +193,7 @@ const FILL_MASK_TIMEOUT_MILLIS = 6000;
 const CONTEXT_PHRASES_TIMEOUT_MILLIS = 10000;
 
 const ABBREVIATION_EXPANSION_CONTEXT_MAX_LENGTH_CHARS = 1000;
+const ABBREVIATION_EXPANSION_WITH_KEYWORDS_CONTEXT_MAX_LENGTH_CHARS = 200;
 const TEXT_PREDICTION_CONTEXT_MAX_LENGTH_CHARS = 500;
 const TEXT_PREDICTION_TEXT_PREFIX_MAX_LENGTH_CHARS = 500;
 const FILL_MASK_CONTEXT_MAX_LENGTH_CHARS = 200;
@@ -220,8 +221,11 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
   expandAbbreviation(
       speechContent: string, abbreviationSpec: AbbreviationSpec,
       numSamples: number, precedingText?: string) {
-    speechContent = trimStringAtHead(
-        speechContent, ABBREVIATION_EXPANSION_CONTEXT_MAX_LENGTH_CHARS);
+    const hasKeyWords = abbreviationSpec.tokens.some(token => token.isKeyword);
+    const contextMathLengthChars = hasKeyWords ?
+        ABBREVIATION_EXPANSION_WITH_KEYWORDS_CONTEXT_MAX_LENGTH_CHARS :
+        ABBREVIATION_EXPANSION_CONTEXT_MAX_LENGTH_CHARS;
+    speechContent = trimStringAtHead(speechContent, contextMathLengthChars);
     const {endpoint, headers, withCredentials} = this.getServerCallParams();
     const keywordIndices: number[] = [];
     for (let i = 0; i < abbreviationSpec.tokens.length; ++i) {

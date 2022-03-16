@@ -7,7 +7,8 @@ export class TestListener {
   private readonly injectedKeys: Array<number[]> = [];
   private _numRequestSoftKeyboardResetCalls = 0;
   private readonly resizeWindowValues: Array<[number, number]> = [];
-  private readonly _setEyeGazeOptionsCalls: Array<[boolean, number]> = [];
+  private readonly _setEyeGazeOptionsCalls: Array<[boolean, number, number]> =
+      [];
 
   public updateButtonBoxes(componentName: string, boxes: number[][]) {
     this.buttonBoxesCalls.push([componentName, boxes]);
@@ -50,8 +51,11 @@ export class TestListener {
     return getDefaultAppSettings();
   }
 
-  public setEyeGazeOptions(showGazeTracker: boolean, gazeFuzzyRadius: number) {
-    this._setEyeGazeOptionsCalls.push([showGazeTracker, gazeFuzzyRadius]);
+  public setEyeGazeOptions(
+      showGazeTracker: boolean, gazeFuzzyRadius: number,
+      dwellDelayMillis: number) {
+    this._setEyeGazeOptionsCalls.push(
+        [showGazeTracker, gazeFuzzyRadius, dwellDelayMillis]);
   }
 
   get setEyeGazeOptionsCalls() {

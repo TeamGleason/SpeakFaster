@@ -4,7 +4,7 @@ import {requestQuitApp, setHostEyeGazeOptions, updateButtonBoxesForElements, upd
 import {createUuid} from 'src/utils/uuid';
 
 import {HttpEventLogger} from '../event-logger/event-logger-impl';
-import {AppSettings, getAppSettings, setGazeFuzzyRadius, setShowGazeTracker, ShowGazeTracker} from '../settings/settings';
+import {AppSettings, getAppSettings, setDwellDelayMillis, setGazeFuzzyRadius, setShowGazeTracker, ShowGazeTracker} from '../settings/settings';
 
 @Component({
   selector: 'app-settings-eye-gaze-component',
@@ -56,6 +56,13 @@ export class SettingsEyeGazeComponent implements AfterViewInit, OnInit,
   setGazeFuzzyRadius(gazeFuzzyRadius: number) {
     setGazeFuzzyRadius(gazeFuzzyRadius);
     this.eventLogger.logSettingsChange('GazeFuzzyRadius');
+    this.refreshSettings();
+    setHostEyeGazeOptions();
+  }
+
+  setDwellDelayMillis(dwellDelayMillis: number) {
+    setDwellDelayMillis(dwellDelayMillis);
+    this.eventLogger.logSettingsChange('DwellDelayMillis');
     this.refreshSettings();
     setHostEyeGazeOptions();
   }

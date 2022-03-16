@@ -139,7 +139,8 @@ interface BoundObject {
   function updateButtonBoxes(componentName: string,
                              boxes: Array<[number, number, number, number]>);
 
-  async function setEyeGazeOptions(showGazeTracker: boolean, gazeFuzzyRadius: number);
+  async function setEyeGazeOptions(
+      showGazeTracker: boolean, gazeFuzzyRadius: number, dwellDelayMillis: number);
 
   async function saveSettings(appSettings: AppSettings): boolean;
 
@@ -210,6 +211,7 @@ include:
 2. `gazeFuzzyRadius`: the radius of the virtual circle around the gaze point
    that is used to determine whether any of the gaze-clickable buttons are
    hit.
+3. `dwellDelayMillis`: the dwell time for gaze clicking, in milliseconds.
 
 ### 3.6. Saving WebUI user settings to host and loading the settings from host
 

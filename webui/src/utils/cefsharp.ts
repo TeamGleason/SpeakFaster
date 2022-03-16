@@ -2,7 +2,7 @@
 
 import {ElementRef, QueryList} from '@angular/core';
 import {getVirtualkeyCode, VIRTUAL_KEY} from 'src/app/external/external-events.component';
-import {AppSettings, DEFAULT_GAZE_FUZZY_RADIUS, getAppSettings, setShowGazeTracker} from 'src/app/settings/settings';
+import {AppSettings, DEFAULT_DWELL_DELAY_MILLIS, DEFAULT_GAZE_FUZZY_RADIUS, getAppSettings, setShowGazeTracker} from 'src/app/settings/settings';
 
 const CEFSHARP_OBJECT_NAME = 'CefSharp';
 export const BOUND_LISTENER_NAME = 'boundListener';
@@ -71,9 +71,11 @@ export function updateButtonBoxesForElements(
  * @param showGazeTracker Whether the dot that tracks the gaze point is
  *     shown.
  * @param gazeFuzzyRadius The radius for the fuzzy gaze pointer (e.g, 20).
+ * @param dwellDelayMillis The dwell delay for gaze clicking, in milliseconds.
  */
 export function setEyeGazeOptions(
-    showGazeTracker: boolean, gazeFuzzyRadius: number) {
+    showGazeTracker: boolean, gazeFuzzyRadius: number,
+    dwellDelayMillis: number) {
   if ((window as any)[BOUND_LISTENER_NAME] == null) {
     console.warn(`Cannot call setEyeGazeOptions(), because object ${
         BOUND_LISTENER_NAME} is not found`)
@@ -82,7 +84,7 @@ export function setEyeGazeOptions(
   console.log(`Calling host setEyeGazeOptions with: setEyeGazeOptions=${
       setShowGazeTracker}, gazeFuzzyRadius=${gazeFuzzyRadius}`);
   ((window as any)[BOUND_LISTENER_NAME] as any)
-      .setEyeGazeOptions(showGazeTracker, gazeFuzzyRadius);
+      .setEyeGazeOptions(showGazeTracker, gazeFuzzyRadius, dwellDelayMillis);
 }
 
 function isRectVisibleInsideContainer(rect: DOMRect, containerRect: DOMRect) {
@@ -239,5 +241,8 @@ export async function setHostEyeGazeOptions() {
   setEyeGazeOptions(
       appSettings.showGazeTracker === 'YES',
       appSettings.gazeFuzzyRadius === undefined ? DEFAULT_GAZE_FUZZY_RADIUS :
-                                                  appSettings.gazeFuzzyRadius);
+                                                  appSettings.gazeFuzzyRadius,
+      appSettings.dwellDelayMillis === undefined ?
+          DEFAULT_DWELL_DELAY_MILLIS :
+          appSettings.dwellDelayMillis);
 }

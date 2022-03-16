@@ -1,7 +1,7 @@
 /** Unit tests for settings. */
 import {BOUND_LISTENER_NAME} from '../../utils/cefsharp';
 
-import {clearSettings, ensureAppSettingsLoaded, getAppSettings, LOCAL_STORAGE_ITEM_NAME, modifyAppSettingsForTest, setGazeFuzzyRadius, setShowGazeTracker, setTtsSpeakingRate, setTtsVoiceType, setTtsVolume, tryLoadSettings, trySaveSettings} from './settings';
+import {clearSettings, ensureAppSettingsLoaded, getAppSettings, LOCAL_STORAGE_ITEM_NAME, modifyAppSettingsForTest, setDwellDelayMillis, setGazeFuzzyRadius, setShowGazeTracker, setTtsSpeakingRate, setTtsVoiceType, setTtsVolume, tryLoadSettings, trySaveSettings} from './settings';
 
 fdescribe('settings', () => {
   beforeEach(async () => {
@@ -22,6 +22,9 @@ fdescribe('settings', () => {
        expect(settings).not.toBeNull();
        expect(settings!.ttsVoiceType).toEqual('GENERIC');
        expect(settings!.ttsVolume).toEqual('MEDIUM');
+       expect(settings!.showGazeTracker).toEqual('YES');
+       expect(settings!.gazeFuzzyRadius).toEqual(20);
+       expect(settings!.dwellDelayMillis).toEqual(400);
      });
 
   it('ensureAppSettingsLoaded updates missing fields', async () => {
@@ -80,7 +83,7 @@ fdescribe('settings', () => {
   });
 
   for (const radius of [0, 30]) {
-    it('setting setGazeFuzzyRadius succeeds', async () => {
+    it(`setting setGazeFuzzyRadius succeeds: radius=${radius}`, async () => {
       await setGazeFuzzyRadius(radius);
       await trySaveSettings();
       const settings = await tryLoadSettings();
@@ -95,4 +98,21 @@ fdescribe('settings', () => {
     await expectAsync(setGazeFuzzyRadius(Infinity)).toBeRejectedWithError();
   });
 
+  for (const dwellDelayMillis of [300, 500]) {
+    it(`setting dwell time millis succeeds: dwellDelayMillis=${
+           dwellDelayMillis}`,
+       async () => {
+         await setDwellDelayMillis(dwellDelayMillis);
+         await trySaveSettings();
+         const settings = await tryLoadSettings();
+         expect(settings).not.toBeNull();
+         expect(settings!.dwellDelayMillis).toEqual(dwellDelayMillis);
+       });
+  }
+
+  it('setting dwell time to invalid values raises error', async () => {
+    await expectAsync(setDwellDelayMillis(-10)).toBeRejectedWithError();
+    await expectAsync(setDwellDelayMillis(NaN)).toBeRejectedWithError();
+    await expectAsync(setDwellDelayMillis(Infinity)).toBeRejectedWithError();
+  });
 });

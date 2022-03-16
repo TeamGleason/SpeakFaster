@@ -12,6 +12,8 @@ export type ShowGazeTracker = 'YES'|'NO';
 
 export const DEFAULT_GAZE_FUZZY_RADIUS = 20;
 
+export const DEFAULT_DWELL_DELAY_MILLIS = 400;
+
 export const LOCAL_STORAGE_ITEM_NAME = 'GoogleSpeakFasterWebUiSettings.json';
 
 export interface AppSettings {
@@ -28,6 +30,9 @@ export interface AppSettings {
   // The radius of the fuzziness for matching gaze point to clickable items on
   // the screen.
   gazeFuzzyRadius?: number;
+
+  // Dwell delay for gaze clicking in the app. Unit: milliseconds.
+  dwellDelayMillis?: number;
 }
 
 let appSettings: AppSettings|null = null;
@@ -39,6 +44,7 @@ export function getDefaultAppSettings(): AppSettings {
     ttsSpeakingRate: 1.0,
     showGazeTracker: 'YES',
     gazeFuzzyRadius: DEFAULT_GAZE_FUZZY_RADIUS,
+    dwellDelayMillis: DEFAULT_DWELL_DELAY_MILLIS,
   };
 }
 
@@ -150,6 +156,16 @@ export async function setGazeFuzzyRadius(radius: number) {
   }
   await ensureAppSettingsLoaded();
   appSettings!.gazeFuzzyRadius = radius;
+  await trySaveSettings();
+}
+
+export async function setDwellDelayMillis(dwellDelayMillis: number) {
+  if (!(dwellDelayMillis >= 0 && isFinite(dwellDelayMillis))) {
+    throw new Error(`Required dwell deay (milliseconds) to be >= 0, but got ${
+        dwellDelayMillis}`);
+  }
+  await ensureAppSettingsLoaded();
+  appSettings!.dwellDelayMillis = dwellDelayMillis;
   await trySaveSettings();
 }
 

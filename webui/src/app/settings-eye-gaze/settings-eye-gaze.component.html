@@ -83,6 +83,7 @@
 
 <div class="header-section">
   <div class="app-title">
+    <img class="icon-image" src="/assets/images/eye.png">
     Eye-gaze settings
   </div>
 </div>
@@ -147,5 +148,40 @@
       [ngClass]="{'active-button': appSettings!.gazeFuzzyRadius === 40}"
       (click)="setGazeFuzzyRadius(40)">
     40
+  </button>
+</div>
+
+<div
+    *ngIf="appSettings !== null"
+    class="settings-section dwell-delay-section">
+  <div class="section-title">Dwell time (milliseconds):</div>
+
+  <button
+      #clickableButton
+      class="option-button"
+      [ngClass]="{'active-button': appSettings!.dwellDelayMillis === 300}"
+      (click)="setDwellDelayMillis(300)">
+    300
+  </button>
+  <button
+      #clickableButton
+      class="option-button"
+      [ngClass]="{'active-button': appSettings!.dwellDelayMillis === 400}"
+      (click)="setDwellDelayMillis(400)">
+    400
+  </button>
+  <button
+      #clickableButton
+      class="option-button"
+      [ngClass]="{'active-button': appSettings!.dwellDelayMillis === 500}"
+      (click)="setDwellDelayMillis(500)">
+    500
+  </button>
+  <button
+      #clickableButton
+      class="option-button"
+      [ngClass]="{'active-button': appSettings!.dwellDelayMillis === 600}"
+      (click)="setDwellDelayMillis(600)">
+    600
   </button>
 </div>

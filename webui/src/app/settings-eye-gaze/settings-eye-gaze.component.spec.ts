@@ -83,7 +83,7 @@ fdescribe('SettingsEyeGazeComponent', () => {
     expect(testListener.setEyeGazeOptionsCalls[0][0]).toEqual(false);
   });
 
-  it('Chaging gazeFuzzyRadius saves new settings', async () => {
+  it('Changing gazeFuzzyRadius saves new settings', async () => {
     await fixture.whenStable();
     const gazeFuzzyRadiusSection =
         fixture.debugElement.query(By.css('.gaze-fuzzy-radius-section'));
@@ -98,5 +98,22 @@ fdescribe('SettingsEyeGazeComponent', () => {
     expect((await getAppSettings()).gazeFuzzyRadius).toEqual(40);
     expect(testListener.setEyeGazeOptionsCalls.length).toEqual(1);
     expect(testListener.setEyeGazeOptionsCalls[0][1]).toEqual(40);
+  });
+
+  it('Changing dwell delay saves new settings', async () => {
+    await fixture.whenStable();
+    const dwellDelaySection =
+        fixture.debugElement.query(By.css('.dwell-delay-section'));
+    const buttons = dwellDelaySection.queryAll(By.css('.option-button'));
+    buttons[3].nativeElement.click();
+    await fixture.whenStable();
+
+    const selectedButtons =
+        dwellDelaySection.queryAll(By.css('.active-button'));
+    expect(selectedButtons.length).toEqual(1);
+    expect(selectedButtons[0].nativeElement.innerText).toEqual('600');
+    expect((await getAppSettings()).dwellDelayMillis).toEqual(600);
+    expect(testListener.setEyeGazeOptionsCalls.length).toEqual(1);
+    expect(testListener.setEyeGazeOptionsCalls[0][2]).toEqual(600);
   });
 });

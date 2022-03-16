@@ -95,8 +95,9 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     // Disable accidental activation of the context menu.
     document.addEventListener('contextmenu', event => event.preventDefault());
     registerAppState(this.appState);
-    bindCefSharpListener();
-    setHostEyeGazeOptions();
+    bindCefSharpListener().then(() => {
+      setHostEyeGazeOptions();
+    });
     this.route.queryParams.subscribe(params => {
       if (params['dev']) {
         this._isDev = this.stringValueMeansTrue(params['dev']);

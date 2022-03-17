@@ -11,7 +11,7 @@ import {ExternalEventsComponent, IgnoreMachineKeySequenceConfig, repeatVirtualKe
 import {LexiconComponent, LoadLexiconRequest} from '../lexicon/lexicon.component';
 import {FillMaskRequest, SpeakFasterService} from '../speakfaster-service';
 import {AbbreviationSpec, AbbreviationToken, InputAbbreviationChangedEvent} from '../types/abbreviation';
-import {TextEntryEndEvent} from '../types/text-entry';
+import {TextEntryBeginEvent, TextEntryEndEvent} from '../types/text-entry';
 
 export enum State {
   ENTERING_BASE_TEXT = 'ENTERING_BASE_TEXT',
@@ -50,6 +50,13 @@ export interface InputBarControlEvent {
 
   // Clear all text and chips.
   clearAll?: boolean;
+
+  // Signal to refresh quick phrases, e.g., after adding or editing a quick
+  // phrase.
+  refreshContextualPhrases?: boolean;
+
+  // Specify the tags for the to-be-added contextual phrases.
+  contextualPhraseTags?: string[];
 }
 
 function removePeriods(str: string) {
@@ -132,6 +139,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   private keypressListener = this.listenToKeypress.bind(this);
   private readonly inFlightAbbreviationExpansionTriggers:
       Subject<InputAbbreviationChangedEvent> = new Subject();
+  private _contextualPhraseTags: string[] = ['favorite'];
 
   constructor(
       public speakFasterService: SpeakFasterService,
@@ -160,6 +168,14 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
                 event.appendText, /* isExternal= */ false);
             this.inputString = ExternalEventsComponent.internalText;
             this.state = State.ENTERING_BASE_TEXT;
+            this.eventLogger.logContextualPhraseCopying(
+                getPhraseStats(event.appendText));
+          } else if (event.contextualPhraseTags) {
+            this._contextualPhraseTags.splice(0);
+            this._contextualPhraseTags.push(...event.contextualPhraseTags);
+            console.log(
+                'Input bar switched contextual phrase tags to:',
+                this.contextualPhraseTags);
           } else if (event.chips !== undefined) {
             let {chips} = event;
             if (this.state === State.ENTERING_BASE_TEXT && this.inputString &&
@@ -714,5 +730,9 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     } else {
       return '/assets/images/favorite.png';
     }
+  }
+
+  get contextualPhraseTags(): string[] {
+    return this._contextualPhraseTags.slice();
   }
 }

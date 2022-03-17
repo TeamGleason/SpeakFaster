@@ -7,6 +7,7 @@ import {createUuid} from 'src/utils/uuid';
 
 import * as cefSharp from '../../utils/cefsharp';
 import {HttpEventLogger} from '../event-logger/event-logger-impl';
+import {InputBarControlEvent} from '../input-bar/input-bar.component';
 import {SpeakFasterService, TextPredictionRequest, TextPredictionResponse} from '../speakfaster-service';
 import {TestListener} from '../test-utils/test-cefsharp-listener';
 import {ContextualPhrase} from '../types/contextual_phrase';
@@ -82,164 +83,157 @@ class SpeakFasterServiceForTest {
 }
 
 describe('QuickPhrasesComponent', () => {
-  // let fixture: ComponentFixture<QuickPhrasesComponent>;
-  // let testListener: TestListener;
-  // let textEntryBeginSubject: Subject<TextEntryBeginEvent>;
-  // let textEntryEndSubject: Subject<TextEntryEndEvent>;
-  // let speakFasterServiceForTest: SpeakFasterServiceForTest;
+  let fixture: ComponentFixture<QuickPhrasesComponent>;
+  let testListener: TestListener;
+  let textEntryBeginSubject: Subject<TextEntryBeginEvent>;
+  let textEntryEndSubject: Subject<TextEntryEndEvent>;
+  let inputBarControlSubject: Subject<InputBarControlEvent>;
+  let speakFasterServiceForTest: SpeakFasterServiceForTest;
 
-  // beforeEach(async () => {
-  //   speakFasterServiceForTest = new SpeakFasterServiceForTest();
-  //   testListener = new TestListener();
-  //   textEntryBeginSubject = new Subject();
-  //   textEntryEndSubject = new Subject();
-  //   (window as any)[cefSharp.BOUND_LISTENER_NAME] = testListener;
-  //   await TestBed
-  //       .configureTestingModule({
-  //         imports: [QuickPhrasesModule],
-  //         declarations: [QuickPhrasesComponent],
-  //         providers: [
-  //           {provide: SpeakFasterService, useValue: speakFasterServiceForTest},
-  //           {provide: HttpEventLogger, useValue: new HttpEventLogger(null)},
-  //         ],
-  //       })
-  //       .compileComponents();
-  //   fixture = TestBed.createComponent(QuickPhrasesComponent);
-  //   fixture.componentInstance.textEntryBeginSubject = textEntryBeginSubject;
-  //   fixture.componentInstance.textEntryEndSubject = textEntryEndSubject;
-  //   fixture.detectChanges();
-  // });
+  beforeEach(async () => {
+    speakFasterServiceForTest = new SpeakFasterServiceForTest();
+    testListener = new TestListener();
+    textEntryBeginSubject = new Subject();
+    textEntryEndSubject = new Subject();
+    inputBarControlSubject = new Subject();
+    (window as any)[cefSharp.BOUND_LISTENER_NAME] = testListener;
+    await TestBed
+        .configureTestingModule({
+          imports: [QuickPhrasesModule],
+          declarations: [QuickPhrasesComponent],
+          providers: [
+            {provide: SpeakFasterService, useValue: speakFasterServiceForTest},
+            {provide: HttpEventLogger, useValue: new HttpEventLogger(null)},
+          ],
+        })
+        .compileComponents();
+    fixture = TestBed.createComponent(QuickPhrasesComponent);
+    fixture.componentInstance.textEntryBeginSubject = textEntryBeginSubject;
+    fixture.componentInstance.textEntryEndSubject = textEntryEndSubject;
+    fixture.componentInstance.inputBarControlSubject = inputBarControlSubject;
+    fixture.detectChanges();
+  });
 
-  // it('shows PhraseComponents when phrases are non-empty', async () => {
-  //   fixture.componentInstance.allowedTags = ['favorite'];
-  //   fixture.componentInstance.ngOnChanges({
-  //     allowedTags: new SimpleChange(
-  //         undefined, fixture.componentInstance.allowedTags, true),
-  //   });
-  //   await fixture.whenStable();
-  //   const phraseComponents =
-  //       fixture.debugElement.queryAll(By.css('app-phrase-component'));
-  //   const noQuickPhrases =
-  //       fixture.debugElement.query(By.css('.no-quick-phrases'));
-  //   const scrollButtons =
-  //       fixture.debugElement.queryAll(By.css('.scroll-button'));
-  //   const error = fixture.debugElement.query(By.css('.error'));
+  it('shows PhraseComponents when phrases are non-empty', async () => {
+    fixture.componentInstance.allowedTag = 'favorite';
+    fixture.componentInstance.ngOnChanges({
+      allowedTag: new SimpleChange(
+          undefined, fixture.componentInstance.allowedTag, true),
+    });
+    await fixture.whenStable();
+    const phraseComponents =
+        fixture.debugElement.queryAll(By.css('app-phrase-component'));
+    const noQuickPhrases =
+        fixture.debugElement.query(By.css('.no-quick-phrases'));
+    const scrollButtons =
+        fixture.debugElement.queryAll(By.css('.scroll-button'));
+    const error = fixture.debugElement.query(By.css('.error'));
 
-  //   expect(phraseComponents.length).toEqual(2);
-  //   expect(phraseComponents[0].componentInstance.phraseText).toEqual('Hello');
-  //   expect(phraseComponents[0].componentInstance.phraseIndex).toEqual(0);
-  //   expect(phraseComponents[1].componentInstance.phraseText)
-  //       .toEqual('Thank you');
-  //   expect(phraseComponents[1].componentInstance.phraseIndex).toEqual(1);
-  //   expect(noQuickPhrases).toBeNull();
-  //   expect(scrollButtons).toEqual([]);
-  //   expect(error).toBeNull();
-  // });
+    expect(phraseComponents.length).toEqual(2);
+    expect(phraseComponents[0].componentInstance.phraseText).toEqual('Hello');
+    expect(phraseComponents[0].componentInstance.phraseIndex).toEqual(0);
+    expect(phraseComponents[1].componentInstance.phraseText)
+        .toEqual('Thank you');
+    expect(phraseComponents[1].componentInstance.phraseIndex).toEqual(1);
+    expect(noQuickPhrases).toBeNull();
+    expect(scrollButtons).toEqual([]);
+    expect(error).toBeNull();
+  });
 
-  // it('hides progress spinner after successful prhase retrieval', async () => {
-  //   fixture.componentInstance.allowedTags = ['favorite'];
-  //   fixture.componentInstance.ngOnChanges({
-  //     allowedTags: new SimpleChange(
-  //         undefined, fixture.componentInstance.allowedTags, true),
-  //   });
-  //   await fixture.whenStable();
+  it('hides progress spinner after successful prhase retrieval', async () => {
+    fixture.componentInstance.allowedTag = 'favorite';
+    fixture.componentInstance.ngOnChanges({
+      allowedTag: new SimpleChange(
+          undefined, fixture.componentInstance.allowedTag, true),
+    });
+    await fixture.whenStable();
 
-  //   const retrievingPhrases =
-  //       fixture.debugElement.query(By.css('.retrieving-quick-phrases'));
-  //   expect(retrievingPhrases).toBeNull();
-  //   const matProgressSpinner =
-  //       fixture.debugElement.query(By.css('mat-progress-spinner'));
-  //   expect(matProgressSpinner).toBeNull();
-  // });
+    const retrievingPhrases =
+        fixture.debugElement.query(By.css('.retrieving-quick-phrases'));
+    expect(retrievingPhrases).toBeNull();
+    const matProgressSpinner =
+        fixture.debugElement.query(By.css('mat-progress-spinner'));
+    expect(matProgressSpinner).toBeNull();
+  });
 
-  // it('shows no-quick-phrases label when phrases are empty', async () => {
-  //   fixture.componentInstance.allowedTags = ['nonexistent_tag'];
-  //   fixture.componentInstance.ngOnChanges({
-  //     allowedTags: new SimpleChange(
-  //         ['favorite'], fixture.componentInstance.allowedTags, false),
-  //   });
-  //   await fixture.whenStable();
-  //   const phraseComponents =
-  //       fixture.debugElement.queryAll(By.css('app-phrase-component'));
-  //   const noQuickPhrases =
-  //       fixture.debugElement.query(By.css('.no-quick-phrases'));
+  it('shows no-quick-phrases label when phrases are empty', async () => {
+    fixture.componentInstance.allowedTag = 'nonexistent_tag';
+    fixture.componentInstance.ngOnChanges({
+      allowedTag: new SimpleChange(
+          'favorite', fixture.componentInstance.allowedTag, false),
+    });
+    await fixture.whenStable();
+    const phraseComponents =
+        fixture.debugElement.queryAll(By.css('app-phrase-component'));
+    const noQuickPhrases =
+        fixture.debugElement.query(By.css('.no-quick-phrases'));
 
-  //   expect(phraseComponents).toEqual([]);
-  //   expect(noQuickPhrases).not.toBeNull();
-  // });
+    expect(phraseComponents).toEqual([]);
+    expect(noQuickPhrases).not.toBeNull();
+  });
 
-  // it('phrase speak button triggers text entry begin-end events', async () => {
-  //   let beginEvents: TextEntryBeginEvent[] = [];
-  //   let endEvents: TextEntryEndEvent[] = [];
-  //   textEntryBeginSubject.subscribe(event => {
-  //     beginEvents.push(event);
-  //   });
-  //   textEntryEndSubject.subscribe(event => {
-  //     endEvents.push(event);
-  //   });
-  //   fixture.componentInstance.allowedTags = ['favorite'];
-  //   fixture.componentInstance.ngOnChanges({
-  //     allowedTags: new SimpleChange(
-  //         undefined, fixture.componentInstance.allowedTags, true),
-  //   });
-  //   await fixture.whenStable();
-  //   const phraseComponents =
-  //       fixture.debugElement.queryAll(By.css('app-phrase-component'));
-  //   phraseComponents[0].componentInstance.speakButtonClicked.emit(
-  //       {phraseText: 'Hello', phraseIndex: 0});
+  it('phrase speak button triggers text entry begin-end events', async () => {
+    let beginEvents: TextEntryBeginEvent[] = [];
+    let endEvents: TextEntryEndEvent[] = [];
+    textEntryBeginSubject.subscribe(event => {
+      beginEvents.push(event);
+    });
+    textEntryEndSubject.subscribe(event => {
+      endEvents.push(event);
+    });
+    fixture.componentInstance.allowedTag = 'favorite';
+    fixture.componentInstance.ngOnChanges({
+      allowedTag: new SimpleChange(
+          undefined, fixture.componentInstance.allowedTag, true),
+    });
+    await fixture.whenStable();
+    const phraseComponents =
+        fixture.debugElement.queryAll(By.css('app-phrase-component'));
+    phraseComponents[0].componentInstance.speakButtonClicked.emit(
+        {phraseText: 'Hello', phraseIndex: 0});
 
-  //   expect(beginEvents.length).toEqual(1);
-  //   expect(beginEvents[0].timestampMillis).toBeGreaterThan(0);
-  //   expect(endEvents.length).toEqual(1);
-  //   expect(endEvents[0].text).toEqual('Hello');
-  //   expect(endEvents[0].timestampMillis)
-  //       .toBeGreaterThan(beginEvents[0].timestampMillis);
-  //   expect(endEvents[0].injectedKeys).toBeUndefined();
-  //   expect(endEvents[0].isFinal).toEqual(true);
-  //   expect(endEvents[0].inAppTextToSpeechAudioConfig).toEqual({});
-  //   expect(testListener.injectedKeysCalls.length).toEqual(0);
-  // });
+    expect(beginEvents.length).toEqual(1);
+    expect(beginEvents[0].timestampMillis).toBeGreaterThan(0);
+    expect(endEvents.length).toEqual(1);
+    expect(endEvents[0].text).toEqual('Hello');
+    expect(endEvents[0].timestampMillis)
+        .toBeGreaterThan(beginEvents[0].timestampMillis);
+    expect(endEvents[0].injectedKeys).toBeUndefined();
+    expect(endEvents[0].isFinal).toEqual(true);
+    expect(endEvents[0].inAppTextToSpeechAudioConfig).toEqual({});
+    expect(testListener.injectedKeysCalls.length).toEqual(0);
+  });
 
-  // it('phrase inject button triggers tex entry begin-end events', async () => {
-  //   let beginEvents: TextEntryBeginEvent[] = [];
-  //   let endEvents: TextEntryEndEvent[] = [];
-  //   textEntryBeginSubject.subscribe(event => {
-  //     beginEvents.push(event);
-  //   });
-  //   textEntryEndSubject.subscribe(event => {
-  //     endEvents.push(event);
-  //   });
-  //   fixture.componentInstance.allowedTags = ['favorite'];
-  //   fixture.componentInstance.ngOnChanges({
-  //     allowedTags: new SimpleChange(
-  //         undefined, fixture.componentInstance.allowedTags, true),
-  //   });
-  //   await fixture.whenStable();
-  //   const phraseComponents =
-  //       fixture.debugElement.queryAll(By.css('app-phrase-component'));
-  //   phraseComponents[1].componentInstance.injectButtonClicked.emit(
-  //       {phraseText: 'Thank you', phraseIndex: 1});
+  it('phrase inject button triggers input bar text append event', async () => {
+    let inputBarControlEvents: InputBarControlEvent[] = [];
+    inputBarControlSubject.subscribe(event => {
+      inputBarControlEvents.push(event);
+    });
+    fixture.componentInstance.allowedTag = 'favorite';
+    fixture.componentInstance.ngOnChanges({
+      allowedTag: new SimpleChange(
+          undefined, fixture.componentInstance.allowedTag, true),
+    });
+    await fixture.whenStable();
+    const phraseComponents =
+        fixture.debugElement.queryAll(By.css('app-phrase-component'));
+    phraseComponents[1].componentInstance.injectButtonClicked.emit(
+        {phraseText: 'Thank you', phraseIndex: 1});
 
-  //   expect(beginEvents.length).toEqual(1);
-  //   expect(beginEvents[0].timestampMillis).toBeGreaterThan(0);
-  //   expect(endEvents.length).toEqual(1);
-  //   expect(endEvents[0].text).toEqual('Thank you');
-  //   expect(endEvents[0].timestampMillis)
-  //       .toBeGreaterThan(beginEvents[0].timestampMillis);
-  //   expect(endEvents[0].isFinal).toEqual(true);
-  //   expect(endEvents[0].inAppTextToSpeechAudioConfig).toBeUndefined();
-  //   expect(testListener.injectedKeysCalls.length).toEqual(1);
-  //   expect(testListener.injectedKeysCalls[0].length)
-  //       .toEqual('Thank you'.length + 1);
-  // });
+    // expect(inputBarControlEvents.length).toEqual(1);
+    expect(inputBarControlEvents[inputBarControlEvents.length - 1].appendText)
+        .toEqual('Thank you');
+  });
 
-  // it('when overflow happens, shows scroll buttons and registers buttons boxes',
+  // it('when overflow happens, shows scroll buttons and registers
+  // buttonsboxes',
   //    async () => {
-  //      // Assume that 30 phrases of 'Counting ...' is enough to cause overflow
+  //      // Assume that 30 phrases of 'Counting ...' is enough to cause
+  //      overflow
   //      // and therefore scrolling. Same below.
-  //      fixture.componentInstance.allowedTags = ['counting'];
+  //      fixture.componentInstance.allowedTag = 'counting';
   //      fixture.componentInstance.ngOnChanges({
-  //        allowedTags: new SimpleChange(
+  //        allowedTag: new SimpleChange(
   //            undefined, fixture.componentInstance.allowedTags, true),
   //      });
   //      await fixture.whenStable();
@@ -259,7 +253,7 @@ describe('QuickPhrasesComponent', () => {
   //    });
 
   // it('clicking scroll down button updates scrollTop', async () => {
-  //   fixture.componentInstance.allowedTags = ['counting'];
+  //   fixture.componentInstance.allowedTag = 'counting';
   //   fixture.componentInstance.ngOnChanges({
   //     allowedTags: new SimpleChange(
   //         undefined, fixture.componentInstance.allowedTags, true),
@@ -276,9 +270,9 @@ describe('QuickPhrasesComponent', () => {
   // });
 
   // it('clicking scroll down then scroll up updates scrollTop', async () => {
-  //   fixture.componentInstance.allowedTags = ['counting'];
+  //   fixture.componentInstance.allowedTag = 'counting';
   //   fixture.componentInstance.ngOnChanges({
-  //     allowedTags: new SimpleChange(
+  //     allowedTag: new SimpleChange(
   //         undefined, fixture.componentInstance.allowedTags, true),
   //   });
   //   await fixture.whenStable();
@@ -294,25 +288,80 @@ describe('QuickPhrasesComponent', () => {
   //   expect(phrasesContainer.nativeElement.scrollTop).toEqual(0);
   // });
 
-  // it('shows progress spinner during request', () => {
-  //   const retrievingPhrases =
-  //       fixture.debugElement.queryAll(By.css('.retrieving-quick-phrases'));
-  //   expect(retrievingPhrases.length).toEqual(1);
-  //   const matProgressSpinner =
-  //       fixture.debugElement.queryAll(By.css('mat-progress-spinner'));
-  //   expect(matProgressSpinner.length).toEqual(1);
-  // });
+  it('shows progress spinner during request', () => {
+    const retrievingPhrases =
+        fixture.debugElement.queryAll(By.css('.retrieving-quick-phrases'));
+    expect(retrievingPhrases.length).toEqual(1);
+    const matProgressSpinner =
+        fixture.debugElement.queryAll(By.css('mat-progress-spinner'));
+    expect(matProgressSpinner.length).toEqual(1);
+  });
 
-  // it('shows error message when error occurs', async () => {
-  //   speakFasterServiceForTest.setTestMode('error');
-  //   fixture.componentInstance.allowedTags = ['favorite'];
-  //   fixture.componentInstance.ngOnChanges({
-  //     allowedTags: new SimpleChange(
-  //         undefined, fixture.componentInstance.allowedTags, true),
-  //   });
-  //   await fixture.whenStable();
+  it('shows error message when error occurs', async () => {
+    speakFasterServiceForTest.setTestMode('error');
+    fixture.componentInstance.allowedTag = 'favorite';
+    fixture.componentInstance.ngOnChanges({
+      allowedTag: new SimpleChange(
+          undefined, fixture.componentInstance.allowedTag, true),
+    });
+    await fixture.whenStable();
 
-  //   const errors = fixture.debugElement.queryAll(By.css('.error'));
-  //   expect(errors.length).toEqual(1);
-  // });
+    const errors = fixture.debugElement.queryAll(By.css('.error'));
+    expect(errors.length).toEqual(1);
+  });
+
+  it('refreshContextualPhrase event causes refresh', () => {
+    const spy =
+        spyOn(speakFasterServiceForTest, 'textPrediction').and.callThrough();
+
+    inputBarControlSubject.next({
+      clearAll: true,
+      refreshContextualPhrases: true,
+    });
+    fixture.detectChanges();
+
+    expect(spy).toHaveBeenCalled();
+  });
+
+  it('does not show close-sub-tag-button by default', () => {
+    expect(fixture.debugElement.query(By.css('.close-sub-tag-button')))
+        .toBeNull();
+  });
+
+  it('shows close-sub-tag button and title when subTag is not null', () => {
+    fixture.componentInstance.allowedTag = 'partner-name';
+    fixture.componentInstance.onExpandButtonClicked({
+      phraseText: 'Joe',
+      phraseIndex: 0,
+    });
+    fixture.detectChanges();
+    const closeSubTagButton =
+        fixture.debugElement.query(By.css('.close-sub-tag-button'));
+    const subTagTitle = fixture.debugElement.query(By.css('.sub-tag-title'));
+
+    expect(closeSubTagButton).not.toBeNull();
+    expect(subTagTitle.nativeElement.innerText).toEqual('Phrases for Joe');
+    expect(fixture.componentInstance.hasSubTag).toBeTrue();
+    expect(fixture.componentInstance.subTag).toEqual('Joe');
+    expect(fixture.componentInstance.effectiveAllowedTag)
+        .toEqual('partner-name:Joe');
+  });
+
+  it('clicking close-sub-tag button clears subtag', () => {
+    fixture.componentInstance.allowedTag = 'partner-name';
+    fixture.componentInstance.onExpandButtonClicked({
+      phraseText: 'Joe',
+      phraseIndex: 0,
+    });
+    fixture.detectChanges();
+    const closeSubTagButton =
+        fixture.debugElement.query(By.css('.close-sub-tag-button'));
+    closeSubTagButton.nativeElement.click();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.hasSubTag).toBeFalse();
+    expect(fixture.componentInstance.subTag).toEqual(null);
+    expect(fixture.componentInstance.effectiveAllowedTag)
+        .toEqual('partner-name');
+  });
 });

@@ -408,14 +408,14 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     return `/assets/images/menu-${activeStateString}.png`;
   }
 
-  getQuickPhrasesAllowedTags(): string[] {
+  getQuickPhrasesAllowedTag(): string {
     switch (this.appState) {
       case AppState.QUICK_PHRASES_FAVORITE:
-        return ['favorite'];
+        return 'favorite';
       case AppState.QUICK_PHRASES_PARTNERS:
-        return ['partner-name'];
+        return 'partner-name';
       case AppState.QUICK_PHRASES_CARE:
-        return ['care'];
+        return 'care';
       default:
         throw new Error(`Invalid app state: ${this.appState}`);
     }
@@ -426,6 +426,18 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       case AppState.QUICK_PHRASES_FAVORITE:
         return true;
       case AppState.QUICK_PHRASES_PARTNERS:
+      case AppState.QUICK_PHRASES_CARE:
+        return false;
+      default:
+        throw new Error(`Invalid app state: ${this.appState}`);
+    }
+  }
+
+  getQuickPhrasesShowExpandButtons(): boolean {
+    switch (this.appState) {
+      case AppState.QUICK_PHRASES_PARTNERS:
+        return true;
+      case AppState.QUICK_PHRASES_FAVORITE:
       case AppState.QUICK_PHRASES_CARE:
         return false;
       default:

@@ -92,4 +92,12 @@
     </app-favorite-button-component>
   </button>
 
+  <button
+      #clickableButton
+      *ngIf="showExpandButton"
+      class="action-button expand-button"
+      (click)="onExpandButtonClicked($event)">
+      <img class="button-image" src="/assets/images/partner-phrases.png" alt="expand" />
+  </button>
+
 </div>

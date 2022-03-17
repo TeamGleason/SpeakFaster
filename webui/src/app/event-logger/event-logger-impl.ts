@@ -29,9 +29,9 @@ export type EventName =
     'AbbreviationExpansionWordRefinementSelection'|'AppStateChange'|
     'ContextualPhraseAdd'|'ContextualPhraseAddError'|'ContextualPhraseDelete'|
     'ContextualPhraseDeleteError'|'ContextualPhraseSelection'|
-    'IncomingContextualTurn'|'InputBarInjectButtonClick'|
-    'InputBarSpeakButtonClick'|'Keypress'|'SessionEnd'|'SessionStart'|
-    'SettingsChange'|'UserFeedback';
+    'ContextualPhraseCopying'|'IncomingContextualTurn'|
+    'InputBarInjectButtonClick'|'InputBarSpeakButtonClick'|'Keypress'|
+    'SessionEnd'|'SessionStart'|'SettingsChange'|'UserFeedback';
 
 export type EventLogEntry = {
   userId: string;
@@ -364,6 +364,21 @@ export class HttpEventLogger implements EventLogger {
           timezone: this.timezone,
           sessionId: this.sessionId,
           eventName: 'AbbreviationExpansionEnterStartWordRefinmentMode',
+          eventData: JSON.stringify({phraseStats}),
+          appState: getAppState(),
+        })
+        .pipe(first())
+        .toPromise();
+  }
+
+  async logContextualPhraseCopying(phraseStats: ContextualPhraseStats) {
+    await this
+        .logEvent({
+          userId: this._userId!,
+          timestamp: this.getUtcEpochMillis(),
+          timezone: this.timezone,
+          sessionId: this.sessionId,
+          eventName: 'ContextualPhraseCopying',
           eventData: JSON.stringify({phraseStats}),
           appState: getAppState(),
         })

@@ -2,9 +2,10 @@
 
 import {ComponentFixture, fakeAsync, TestBed, tick} from '@angular/core/testing';
 import {By} from '@angular/platform-browser';
-import {Observable, of, throwError} from 'rxjs';
+import {Observable, of, Subject, throwError} from 'rxjs';
 
 import {HttpEventLogger} from '../event-logger/event-logger-impl';
+import {InputBarControlEvent} from '../input-bar/input-bar.component';
 import {SpeakFasterService} from '../speakfaster-service';
 import {AddContextualPhraseRequest, AddContextualPhraseResponse, DeleteContextualPhraseRequest, DeleteContextualPhraseResponse} from '../types/contextual_phrase';
 
@@ -26,10 +27,17 @@ class SpeakFasterServiceForTest {
 describe('FavoriteButton', () => {
   let fixture: ComponentFixture<FavoriteButtonComponent>;
   let speakFasterServiceForTest: SpeakFasterServiceForTest;
+  let inputBarControlSubject: Subject<InputBarControlEvent>;
+  let inputBarControlEvents: InputBarControlEvent[];
   let httpEventLoggerForTest: HttpEventLogger;
 
   beforeEach(async () => {
     speakFasterServiceForTest = new SpeakFasterServiceForTest();
+    inputBarControlSubject = new Subject();
+    inputBarControlEvents = [];
+    inputBarControlSubject.subscribe((event) => {
+      inputBarControlEvents.push(event);
+    });
     httpEventLoggerForTest = new HttpEventLogger(null);
     await TestBed
         .configureTestingModule({
@@ -42,6 +50,7 @@ describe('FavoriteButton', () => {
         })
         .compileComponents();
     fixture = TestBed.createComponent(FavoriteButtonComponent);
+    fixture.componentInstance.inputBarControlSubject = inputBarControlSubject;
     fixture.detectChanges();
   });
 
@@ -97,6 +106,11 @@ describe('FavoriteButton', () => {
            tags: ['favorite'],
          },
        });
+       expect(inputBarControlEvents.length).toEqual(1);
+       expect(inputBarControlEvents[0]).toEqual({
+         clearAll: true,
+         refreshContextualPhrases: true,
+       })
 
        tick(2000);
        expect(fixture.componentInstance.state).toEqual(State.READY);

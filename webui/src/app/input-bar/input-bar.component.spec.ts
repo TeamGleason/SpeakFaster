@@ -6,7 +6,7 @@ import {Observable, Subject} from 'rxjs';
 
 import * as cefSharp from '../../utils/cefsharp';
 import {HttpEventLogger} from '../event-logger/event-logger-impl';
-import {repeatVirtualKey, VIRTUAL_KEY} from '../external/external-events.component';
+import {repeatVirtualKey, resetReconStates, VIRTUAL_KEY} from '../external/external-events.component';
 import {InputBarChipComponent} from '../input-bar-chip/input-bar-chip.component';
 import {InputBarChipModule} from '../input-bar-chip/input-bar-chip.module';
 import {LoadLexiconRequest} from '../lexicon/lexicon.component';
@@ -42,6 +42,7 @@ describe('InputBarComponent', () => {
   let fillMaskRequests: FillMaskRequest[];
 
   beforeEach(async () => {
+    resetReconStates();
     testListener = new TestListener();
     (window as any)[cefSharp.BOUND_LISTENER_NAME] = testListener;
     textEntryEndSubject = new Subject();

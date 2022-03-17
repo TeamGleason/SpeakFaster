@@ -25,6 +25,7 @@ export class PhraseComponent implements AfterViewInit, OnDestroy {
   @Input() phraseId?: string;
   @Input() color: string = '#093F3A';
   @Input() showFavoriteButton: boolean = false;
+  @Input() showExpandButton: boolean = false;
   @Input() scaleFontSize = false;
   @Input() isTextClickable: boolean = false;
   @Output()
@@ -35,6 +36,9 @@ export class PhraseComponent implements AfterViewInit, OnDestroy {
       new EventEmitter();
   @Output()
   injectButtonClicked: EventEmitter<{phraseText: string, phraseIndex: number}> =
+      new EventEmitter();
+  @Output()
+  expandButtonClicked: EventEmitter<{phraseText: string, phraseIndex: number}> =
       new EventEmitter();
 
   @ViewChild('phrase') phraseElement!: ElementRef<HTMLDivElement>;
@@ -100,8 +104,13 @@ export class PhraseComponent implements AfterViewInit, OnDestroy {
 
   onInjectButtonClicked(event: Event) {
     (event.target as HTMLButtonElement).blur();
-    // TODO(cais): Add unit test.
     this.injectButtonClicked.emit(
+        {phraseText: this.phraseText, phraseIndex: this.phraseIndex});
+  }
+
+  onExpandButtonClicked(event: Event) {
+    (event.target as HTMLButtonElement).blur();
+    this.expandButtonClicked.emit(
         {phraseText: this.phraseText, phraseIndex: this.phraseIndex});
   }
 }

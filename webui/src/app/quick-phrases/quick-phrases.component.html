@@ -5,6 +5,19 @@
   font-family: "Google Sans", "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
 }
 
+button {
+  background: #484747;
+  border: 1px #eee solid;
+  border-radius: 4px;
+  box-sizing: border-box;
+  color: white;
+  flex: 1;
+  font-weight: bold;
+  font-size: 30px;
+  margin: 4px;
+  width: 60px;
+}
+
 app-phrase-component {
   display: inline-block;
   margin: 2px 4px;
@@ -19,6 +32,12 @@ mat-progress-spinner {
 .button-image {
   height: 36px;
   width: 36px;
+  vertical-align: middle;
+}
+
+.close-sub-tag-button {
+  height: 60px;
+  padding: 4px;
 }
 
 .container {
@@ -53,16 +72,6 @@ mat-progress-spinner {
 }
 
 .scroll-button {
-  background: #484747;
-  border: 1px #eee solid;
-  border-radius: 4px;
-  box-sizing: border-box;
-  color: white;
-  flex: 1;
-  font-weight: bold;
-  font-size: 30px;
-  margin: 4px;
-  width: 60px;
 }
 
 .scroll-button-disabled {
@@ -77,9 +86,40 @@ mat-progress-spinner {
   width: fit-content;
 }
 
+.sub-tag-name {
+  font-weight: 800;
+}
+
+.sub-tag-section {
+  margin-top: 12px;
+  max-width: 80px;
+}
+
+.sub-tag-title {
+  color: #eee;
+  margin: 4px;
+}
+
 </style>
 
 <div class="container">
+  <div *ngIf="hasSubTag" class="sub-tag-section">
+    <div class="sub-tag-title">
+      Phrases for
+      <span class="sub-tag-name">{{subTag}}</span>
+    </div>
+
+    <button
+        #clickableButton
+        class="close-sub-tag-button"
+        (click)="onCloseSubTagButtonClicked($event)">
+      <img
+          class="button-image"
+          src="/assets/images/back.png"
+          alt="add to favorite" />
+    </button>
+  </div>
+
   <div
       #quickPhrasesContainer
       class="quick-phrases-container">
@@ -93,10 +133,12 @@ mat-progress-spinner {
         [scaleFontSize]="true"
         [phraseText]="phrase.text"
         [phraseIndex]="i"
-        [showFavoriteButton]="showDeleteButtons"
+        [showFavoriteButton]="showDeleteButtons || hasSubTag"
+        [showExpandButton]="showExpandButtons && !hasSubTag"
         [color]="color"
         (speakButtonClicked)="onSpeakOptionButtonClicked($event)"
-        (injectButtonClicked)="onInjectionOptionButtonClicked($event)">
+        (injectButtonClicked)="onInjectionOptionButtonClicked($event)"
+        (expandButtonClicked)="onExpandButtonClicked($event)">
     </app-phrase-component>
 
     <div

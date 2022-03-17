@@ -56,7 +56,7 @@ describe('TextToSpeechCmponent', () => {
        };
        TextToSpeechComponent.registerTextToSpeechListener(listener);
        textEntryEndSubject.next({
-         text: 'Hi there',
+         text: 'Hi',
          timestampMillis: new Date().getTime(),
          isFinal: true,
          inAppTextToSpeechAudioConfig: {}
@@ -89,7 +89,7 @@ describe('TextToSpeechCmponent', () => {
        TextToSpeechComponent.registerTextToSpeechListener(listener);
        TextToSpeechComponent.unregisterTextToSpeechListener(listener);
        textEntryEndSubject.next({
-         text: 'Hi there',
+         text: 'Hi',
          timestampMillis: new Date().getTime(),
          isFinal: true,
          inAppTextToSpeechAudioConfig: {}
@@ -116,7 +116,7 @@ describe('TextToSpeechCmponent', () => {
        };
        TextToSpeechComponent.registerTextToSpeechListener(listener);
        textEntryEndSubject.next({
-         text: 'Hi there',
+         text: 'Hi',
          timestampMillis: new Date().getTime(),
          isFinal: true,
          inAppTextToSpeechAudioConfig: {}

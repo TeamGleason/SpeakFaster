@@ -1,5 +1,5 @@
 /** Quick phrase list for direct selection. */
-import {AfterViewInit, ChangeDetectorRef, Component, ElementRef, Input, OnChanges, OnDestroy, QueryList, SimpleChanges, ViewChild, ViewChildren} from '@angular/core';
+import {AfterViewInit, ChangeDetectorRef, Component, ElementRef, Input, OnChanges, OnDestroy, OnInit, QueryList, SimpleChanges, ViewChild, ViewChildren} from '@angular/core';
 import {Subject} from 'rxjs';
 import {injectKeys, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
 import {allItemsEqual} from 'src/utils/text-utils';
@@ -24,7 +24,7 @@ export enum State {
   selector: 'app-quick-phrases-component',
   templateUrl: './quick-phrases.component.html',
 })
-export class QuickPhrasesComponent implements AfterViewInit, OnChanges,
+export class QuickPhrasesComponent implements AfterViewInit, OnInit, OnChanges,
                                               OnDestroy {
   private static readonly _NAME = 'QuickPhrasesComponent';
 
@@ -36,8 +36,9 @@ export class QuickPhrasesComponent implements AfterViewInit, OnChanges,
   // Tags used for filtering the quick phrases (contextual phrases) during
   // server call.
   @Input() userId!: string;
-  @Input() allowedTags: string[] = [];
+  @Input() allowedTag!: string;
   @Input() showDeleteButtons: boolean = false;
+  @Input() showExpandButtons: boolean = false;
   @Input() textEntryBeginSubject!: Subject<TextEntryBeginEvent>;
   @Input() textEntryEndSubject!: Subject<TextEntryEndEvent>;
   @Input() inputBarControlSubject?: Subject<InputBarControlEvent>;
@@ -55,6 +56,8 @@ export class QuickPhrasesComponent implements AfterViewInit, OnChanges,
   @ViewChild('quickPhrasesContainer')
   quickPhrasesContainer!: ElementRef<HTMLDivElement>;
 
+  private _subTag: string|null = null;
+
   constructor(
       public speakFasterService: SpeakFasterService,
       private eventLogger: HttpEventLogger, private cdr: ChangeDetectorRef) {}
@@ -62,6 +65,7 @@ export class QuickPhrasesComponent implements AfterViewInit, OnChanges,
   private retrievePhrases(): void {
     // Using empty text prefix and empty conversation turns means retrieving
     // contextual phrases ("quick phrases").
+    this.state = State.RETRIEVING_PHRASES;
     this.speakFasterService
         .textPrediction({
           userId: this.userId,
@@ -69,7 +73,7 @@ export class QuickPhrasesComponent implements AfterViewInit, OnChanges,
           textPrefix: '',
           timestamp: new Date().toISOString(),
           timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-          allowedTags: this.allowedTags,
+          allowedTags: [this.effectiveAllowedTag],
         })
         .subscribe(
             (data: TextPredictionResponse) => {
@@ -112,13 +116,30 @@ export class QuickPhrasesComponent implements AfterViewInit, OnChanges,
               this.cdr.detectChanges();
             },
             error => {
-              this.errorMessage = `Failed to get quick phrases for tags: ${
-                  this.allowedTags.join(',')}`;
+              this.errorMessage =
+                  `Failed to get quick phrases for tag: ${this.allowedTag}`;
               this.state = State.ERROR;
               setTimeout(
                   () => this.updatePhraseButtonBoxesWithContainerRect(), 0);
               this.cdr.detectChanges();
             });
+
+    this.inputBarControlSubject?.next({
+      contextualPhraseTags: [this.effectiveAllowedTag],
+    })
+  }
+
+  get effectiveAllowedTag(): string {
+    return this._subTag === null ? this.allowedTag :
+                                  this.allowedTag + ':' + this._subTag;
+  }
+
+  ngOnInit() {
+    this.inputBarControlSubject?.subscribe((event: InputBarControlEvent) => {
+      if (event.refreshContextualPhrases) {
+        this.retrievePhrases();
+      }
+    });
   }
 
   ngAfterViewInit() {
@@ -131,7 +152,7 @@ export class QuickPhrasesComponent implements AfterViewInit, OnChanges,
   }
 
   ngOnChanges(changes: SimpleChanges) {
-    if (!changes.allowedTags && !changes.filterPrefix) {
+    if (!changes.allowedTag && !changes.filterPrefix) {
       return;
     }
     if (changes.filterPrefix &&
@@ -139,13 +160,13 @@ export class QuickPhrasesComponent implements AfterViewInit, OnChanges,
             changes.filterPrefix.currentValue) {
       setTimeout(() => this.updatePhraseButtonBoxesWithContainerRect(), 0);
     }
-    if (changes.allowedTags) {
-      if (changes.allowedTags.previousValue &&
-          allItemsEqual(
-              changes.allowedTags.previousValue,
-              changes.allowedTags.currentValue)) {
+    if (changes.allowedTag) {
+      if (changes.allowedTag.previousValue &&
+          changes.allowedTag.previousValue ===
+              changes.allowedTag.currentValue) {
         return;
       }
+      this._subTag = null;  // TODO(cais): Add unit test.
       this.retrievePhrases();
     }
   }
@@ -172,6 +193,13 @@ export class QuickPhrasesComponent implements AfterViewInit, OnChanges,
         /* toTriggerInAppTextToSpeech= */ true);
   }
 
+  onExpandButtonClicked(event: {phraseText: string, phraseIndex: number}) {
+    // TODO(cais): Add unit tests.
+    this._subTag = event.phraseText.trim();
+    this.filteredPhrases.splice(0);
+    this.retrievePhrases();
+  }
+
   checkPhraseOverflow(): boolean {
     if (!this.quickPhrasesContainer || this.state !== State.RETRIEVED_PHRASES) {
       return false;
@@ -195,6 +223,12 @@ export class QuickPhrasesComponent implements AfterViewInit, OnChanges,
     this.updatePhraseButtonBoxesWithContainerRect();
   }
 
+  onCloseSubTagButtonClicked(event: Event) {
+    this._subTag = null;
+    this.filteredPhrases.splice(0);
+    this.retrievePhrases();
+  }
+
   get filteredPhrases(): ContextualPhrase[] {
     if (!this.filterPrefix) {
       return this.phrases;
@@ -204,6 +238,14 @@ export class QuickPhrasesComponent implements AfterViewInit, OnChanges,
       const filter = this.filterPrefix.toLowerCase();
       return words.some(word => word.startsWith(filter));
     });
+  }
+
+  get hasSubTag(): boolean {
+    return this._subTag !== null;
+  }
+
+  get subTag(): string|null {
+    return this._subTag;
   }
 
   /**

@@ -91,6 +91,14 @@ export interface EventLogger {
       contextualPhraseStats: ContextualPhraseStats,
       textSelectionType: TextSelectionType): Promise<void>;
 
+
+  /**
+   * Log the copying of a contextual phrase into the input bar for further
+   * editing.
+   */
+  logContextualPhraseCopying(contextualPhraseStats: ContextualPhraseStats):
+      Promise<void>;
+
   /** Log the addition of a quick phrase. */
   logContextualPhraseAdd(contextualPhraseStats: ContextualPhraseStats):
       Promise<void>;

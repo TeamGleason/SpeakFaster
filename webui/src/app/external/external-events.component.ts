@@ -146,6 +146,85 @@ function getKeyFromVirtualKeyCode(vkCode: number): string|null {
   }
 }
 
+function insertCharAsCursorPos(char: string, reconState: TextReconState) {
+  if (reconState.cursorPos === reconState.text.length) {
+    reconState.text += char;
+  } else {
+    reconState.text = reconState.text.slice(0, reconState.cursorPos) + char +
+        reconState.text.slice(reconState.cursorPos);
+  }
+  reconState.cursorPos += 1;
+}
+
+function getHomeKeyDestination(reconState: TextReconState): number {
+  let p = reconState.cursorPos;
+  const indexNewLine = reconState.text.lastIndexOf('\n', reconState.cursorPos);
+  return indexNewLine === -1 ? 0 : indexNewLine + 1;
+}
+
+function wordBackspace(reconState: TextReconState) {
+  reconState.cursorPos = reconState.keySequence.length;
+  // Find the last non-whitespace chararcter.
+  let j = reconState.text.length - 1;
+  for (; j >= 0; --j) {
+    const char = reconState.text[j];
+    if (char !== ' ' && char !== '\n') {
+      break;
+    }
+  }
+  // Then find the last whitespace character.
+  for (; j >= 0; --j) {
+    const char = reconState.text[j];
+    if (char === ' ' || char === '\n') {
+      break;
+    }
+  }
+  reconState.text = reconState.text.slice(0, j + 1) +
+      reconState.text.slice(reconState.cursorPos);
+  reconState.cursorPos = j + 1;
+}
+
+function getEndKeyDestination(reconState: TextReconState): number {
+  const indexNewLine = reconState.text.indexOf('\n', reconState.cursorPos);
+  return indexNewLine === -1 ? reconState.text.length : indexNewLine - 1;
+}
+
+function processIgnoreMachineKeySequences(
+    isInferredMachineKey: boolean, reconState: TextReconState): void {
+  // Process ignored machine key sequences.
+  let numDisacrdedChars = 0;
+  if (isInferredMachineKey) {
+    for (const ignoreConfig of ignoreMachineKeySequenceConfigs) {
+      if (keySequenceEndsWith(
+              reconState.keySequence, ignoreConfig.keySequence)) {
+        numDisacrdedChars =
+            ignoreConfig.keySequence.length - ignoreConfig.ignoreStartIndex;
+      }
+    }
+  }
+  if (numDisacrdedChars > 0) {
+    reconState.text = reconState.text.substring(
+        0, reconState.text.length - numDisacrdedChars);
+    reconState.keySequence.splice(
+        reconState.keySequence.length - numDisacrdedChars);
+  }
+}
+
+function resetReconState(reconState: TextReconState) {
+  reconState.previousKeypressTimeMillis = null;
+  reconState.numGazeKeypresses = 0;
+  reconState.text = '';
+  reconState.cursorPos = 0;
+  reconState.isShiftOn = false;
+  reconState.keySequence.splice(0);
+}
+
+
+export function resetReconStates() {
+  resetReconState(internalReconState);
+  resetReconState(externalReconState);
+}
+
 /**
  * Get the virtual key code(s) needed to enter the character or key name.
  * @param charOrKey Character or special key name from the VIRTUAL_KEY enum.
@@ -330,6 +409,13 @@ export interface IgnoreMachineKeySequenceConfig {
   ignoreStartIndex: number;
 }
 
+const internalReconState = createInitialTextReconState();
+const externalReconState = createInitialTextReconState();
+
+const ignoreMachineKeySequenceConfigs: IgnoreMachineKeySequenceConfig[] = [];
+let textEntryBeginSubject: Subject<TextEntryBeginEvent>;
+let textEntryEndSubject: Subject<TextEntryEndEvent>;
+
 @Component({
   selector: 'app-external-events-component',
   templateUrl: './external-events.component.html',
@@ -339,22 +425,19 @@ export class ExternalEventsComponent implements OnInit {
   @Input() textEntryEndSubject!: Subject<TextEntryEndEvent>;
 
   private static readonly keypressListeners: KeypressListener[] = [];
-  private static readonly ignoreMachineKeySequenceConfigs:
-      IgnoreMachineKeySequenceConfig[] = [];
 
-  private internalReconState = createInitialTextReconState();
-  private externalReconState = createInitialTextReconState();
 
   ExternalEvewntsComponent() {}
 
   ngOnInit() {
+    textEntryBeginSubject = this.textEntryBeginSubject;
+    textEntryEndSubject = this.textEntryEndSubject;
     this.textEntryEndSubject.subscribe(event => {
       // TODO(cais): Add unit test.
       if (!event.isFinal) {
         return;
       }
-      this.reset(this.externalReconState);
-      this.reset(this.internalReconState);
+      resetReconStates();
     });
   }
 
@@ -397,15 +480,14 @@ export class ExternalEventsComponent implements OnInit {
       throw new Error(
           `Invalid ignore start index: ${ignoreConfig.ignoreStartIndex}`);
     }
-    for (const existingConfig of
-             ExternalEventsComponent.ignoreMachineKeySequenceConfigs) {
+    for (const existingConfig of ignoreMachineKeySequenceConfigs) {
       if (JSON.stringify(existingConfig.keySequence) ===
           JSON.stringify(ignoreConfig.keySequence)) {
         throw new Error(`Ignore sequence already exists: ${
             JSON.stringify(existingConfig.keySequence)}`);
       }
     }
-    ExternalEventsComponent.ignoreMachineKeySequenceConfigs.push(ignoreConfig);
+    ignoreMachineKeySequenceConfigs.push(ignoreConfig);
   }
 
   /**
@@ -414,14 +496,11 @@ export class ExternalEventsComponent implements OnInit {
    */
   public static unregisterIgnoreKeySequence(
       ignoreConfig: IgnoreMachineKeySequenceConfig) {
-    for (let i =
-             ExternalEventsComponent.ignoreMachineKeySequenceConfigs.length - 1;
-         i >= 0; --i) {
-      const existingConfig =
-          ExternalEventsComponent.ignoreMachineKeySequenceConfigs[i];
+    for (let i = ignoreMachineKeySequenceConfigs.length - 1; i >= 0; --i) {
+      const existingConfig = ignoreMachineKeySequenceConfigs[i];
       if (JSON.stringify(existingConfig.keySequence) ===
           JSON.stringify(ignoreConfig.keySequence)) {
-        ExternalEventsComponent.ignoreMachineKeySequenceConfigs.splice(i, 1);
+        ignoreMachineKeySequenceConfigs.splice(i, 1);
         return;
       }
     }
@@ -430,7 +509,7 @@ export class ExternalEventsComponent implements OnInit {
   }
 
   public static clearIgnoreKeySequences() {
-    ExternalEventsComponent.ignoreMachineKeySequenceConfigs.splice(0);
+    ignoreMachineKeySequenceConfigs.splice(0);
   }
 
   /** Get the number of registered keypress listeners. */
@@ -443,13 +522,12 @@ export class ExternalEventsComponent implements OnInit {
     ExternalEventsComponent.keypressListeners.splice(0);
   }
 
-  public externalKeypressHook(vkCode: number, isExternal = true) {
+  public static externalKeypressHook(vkCode: number, isExternal = true) {
     const virtualKey = getKeyFromVirtualKeyCode(vkCode);
     if (virtualKey === null) {
       return;
     }
-    const reconState =
-        isExternal ? this.externalReconState : this.internalReconState;
+    const reconState = isExternal ? externalReconState : internalReconState;
     reconState.keySequence.push(virtualKey);
     const nowMillis = Date.now();
     const isInferredMachineKey =
@@ -469,8 +547,7 @@ export class ExternalEventsComponent implements OnInit {
       // A TTS action has been triggered.
       const text = reconState.text.trim();
       if (text) {
-        console.log(`Sentence-end event: "${text}"`);
-        this.textEntryEndSubject.next({
+        textEntryEndSubject.next({
           text,
           timestampMillis: Date.now(),
           numHumanKeypresses: reconState.numGazeKeypresses,
@@ -483,24 +560,24 @@ export class ExternalEventsComponent implements OnInit {
     const originallyEmpty = reconState.text === '';
     const multiKeyChar = tryDetectoMultiKeyChar(reconState.keySequence);
     if (multiKeyChar !== null) {
-      this.insertCharAsCursorPos(multiKeyChar, reconState);
+      insertCharAsCursorPos(multiKeyChar, reconState);
     } else if (
         virtualKey.length === 1 && (virtualKey >= 'a' && virtualKey <= 'z')) {
-      this.insertCharAsCursorPos(virtualKey, reconState);
+      insertCharAsCursorPos(virtualKey, reconState);
     } else if (
         virtualKey.length === 1 && (virtualKey >= '0' && virtualKey <= '9')) {
-      this.insertCharAsCursorPos(
+      insertCharAsCursorPos(
           getNumOrPunctuationLiteral(vkCode, reconState.isShiftOn), reconState);
     } else if (virtualKey === VIRTUAL_KEY.SPACE) {
-      this.insertCharAsCursorPos(' ', reconState);
+      insertCharAsCursorPos(' ', reconState);
     } else if (virtualKey === VIRTUAL_KEY.ENTER) {
-      this.insertCharAsCursorPos('\n', reconState);
+      insertCharAsCursorPos('\n', reconState);
     } else if (virtualKey === VIRTUAL_KEY.HOME) {
-      reconState.cursorPos = this.getHomeKeyDestination(reconState);
+      reconState.cursorPos = getHomeKeyDestination(reconState);
     } else if (virtualKey === VIRTUAL_KEY.END) {
-      reconState.cursorPos = this.getEndKeyDestination(reconState);
+      reconState.cursorPos = getEndKeyDestination(reconState);
     } else if (PUNCTUATION.indexOf(virtualKey as VIRTUAL_KEY) !== -1) {
-      this.insertCharAsCursorPos(
+      insertCharAsCursorPos(
           getPunctuationLiteral(
               virtualKey as VIRTUAL_KEY, reconState.isShiftOn),
           reconState);
@@ -519,7 +596,7 @@ export class ExternalEventsComponent implements OnInit {
           keySequenceEndsWith(
               reconState.keySequence, WORD_BACKSPACE_COMBO_KEY)) {
         // Wod delete.
-        this.wordBackspace(reconState);
+        wordBackspace(reconState);
       } else {
         if (reconState.cursorPos > 0) {
           reconState.text = reconState.text.slice(0, reconState.cursorPos - 1) +
@@ -542,10 +619,10 @@ export class ExternalEventsComponent implements OnInit {
       reconState.isShiftOn = false;
     }
     if (originallyEmpty && reconState.text.length > 0) {
-      this.textEntryBeginSubject.next({timestampMillis: Date.now()});
+      textEntryBeginSubject.next({timestampMillis: Date.now()});
     }
 
-    this.processIgnoreMachineKeySequences(isInferredMachineKey, reconState);
+    processIgnoreMachineKeySequences(isInferredMachineKey, reconState);
     if (!isExternal) {
       ExternalEventsComponent.keypressListeners.forEach(listener => {
         listener(reconState.keySequence, reconState.text);
@@ -556,91 +633,26 @@ export class ExternalEventsComponent implements OnInit {
     // TODO(cais): Track ctrl state.
     // TODO(cais): Take care of selection state, including Ctrl+A.
     // TODO(cais): Take care of Shift+Backspace and Shift+Delete.
-    console.log(
-        `externalKeypressHook(): virtualKey=${virtualKey}; ` +
-        `text="${reconState.text}"; cursorPos=${reconState.cursorPos}`);
   }
 
-  private processIgnoreMachineKeySequences(
-      isInferredMachineKey: boolean, reconState: TextReconState): void {
-    // Process ignored machine key sequences.
-    let numDisacrdedChars = 0;
-    if (isInferredMachineKey) {
-      for (const ignoreConfig of
-               ExternalEventsComponent.ignoreMachineKeySequenceConfigs) {
-        if (keySequenceEndsWith(
-                reconState.keySequence, ignoreConfig.keySequence)) {
-          numDisacrdedChars =
-              ignoreConfig.keySequence.length - ignoreConfig.ignoreStartIndex;
-        }
-      }
+  public static appendString(str: string, isExternal: boolean) {
+    const reconState = isExternal ? externalReconState : internalReconState;
+    for (const char of str) {
+      reconState.keySequence.push(char);
     }
-    if (numDisacrdedChars > 0) {
-      reconState.text = reconState.text.substring(
-          0, reconState.text.length - numDisacrdedChars);
-      reconState.keySequence.splice(
-          reconState.keySequence.length - numDisacrdedChars);
+    if (reconState.text && !reconState.text.match(/^\s$/)) {
+      reconState.text += ' ';
     }
+    reconState.text += str;
+    reconState.text += ' ';
+    reconState.cursorPos = reconState.text.length;
   }
 
-  private insertCharAsCursorPos(char: string, reconState: TextReconState) {
-    if (reconState.cursorPos === reconState.text.length) {
-      reconState.text += char;
-    } else {
-      reconState.text = reconState.text.slice(0, reconState.cursorPos) + char +
-          reconState.text.slice(reconState.cursorPos);
-    }
-    reconState.cursorPos += 1;
+  static get externalText(): string {
+    return externalReconState.text;
   }
 
-  private wordBackspace(reconState: TextReconState) {
-    reconState.cursorPos = reconState.keySequence.length;
-    // Find the last non-whitespace chararcter.
-    let j = reconState.text.length - 1;
-    for (; j >= 0; --j) {
-      const char = reconState.text[j];
-      if (char !== ' ' && char !== '\n') {
-        break;
-      }
-    }
-    // Then find the last whitespace character.
-    for (; j >= 0; --j) {
-      const char = reconState.text[j];
-      if (char === ' ' || char === '\n') {
-        break;
-      }
-    }
-    reconState.text = reconState.text.slice(0, j + 1) +
-        reconState.text.slice(reconState.cursorPos);
-    reconState.cursorPos = j + 1;
-  }
-
-  private getHomeKeyDestination(reconState: TextReconState): number {
-    let p = reconState.cursorPos;
-    const indexNewLine =
-        reconState.text.lastIndexOf('\n', reconState.cursorPos);
-    return indexNewLine === -1 ? 0 : indexNewLine + 1;
-  }
-
-  private getEndKeyDestination(reconState: TextReconState): number {
-    const indexNewLine = reconState.text.indexOf('\n', reconState.cursorPos);
-    return indexNewLine === -1 ? reconState.text.length : indexNewLine - 1;
-  }
-
-  get externalText(): string {
-    return this.externalReconState.text;
-  }
-
-  get internalText(): string {
-    return this.internalReconState.text;
-  }
-
-  private reset(reconState: TextReconState) {
-    reconState.previousKeypressTimeMillis = null;
-    reconState.numGazeKeypresses = 0;
-    reconState.text = '';
-    reconState.cursorPos = 0;
-    reconState.isShiftOn = false;
-    reconState.keySequence.splice(0);
+  static get internalText(): string {
+    return internalReconState.text;
   }
 }

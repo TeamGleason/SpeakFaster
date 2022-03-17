@@ -11,7 +11,7 @@ import {TestListener} from '../test-utils/test-cefsharp-listener';
 import {SettingsEyeGazeComponent} from './settings-eye-gaze.component';
 import {SettingsEyeGazeModule} from './settings-eye-gaze.module';
 
-fdescribe('SettingsEyeGazeComponent', () => {
+describe('SettingsEyeGazeComponent', () => {
   let fixture: ComponentFixture<SettingsEyeGazeComponent>;
   let testListener: TestListener;
 

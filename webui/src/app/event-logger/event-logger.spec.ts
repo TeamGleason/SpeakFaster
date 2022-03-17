@@ -7,7 +7,7 @@ import {ContextualPhrase} from '../types/contextual_phrase';
 
 import {getAbbreviationExpansionRequestStats, getAbbreviationExpansionResponseStats, getContextualPhraseStats, getPhraseStats} from './event-logger-impl';
 
-fdescribe('EventLogger', () => {
+describe('EventLogger', () => {
   describe('getPhraseStats', () => {
     it('returns correct value for empy string', () => {
       expect(getPhraseStats('')).toEqual({

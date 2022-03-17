@@ -21,7 +21,7 @@ class SpeakFasterServiceForTest {
   }
 }
 
-fdescribe('PartnerComopnent', () => {
+describe('PartnerComopnent', () => {
   let fixture: ComponentFixture<PartnerComponent>;
   const speakFasterServiceForTest = new SpeakFasterServiceForTest();
 

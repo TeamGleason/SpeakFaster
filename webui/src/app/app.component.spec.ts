@@ -15,7 +15,7 @@ import {clearSettings} from './settings/settings';
 import {TestListener} from './test-utils/test-cefsharp-listener';
 import {AppState} from './types/app-state';
 
-fdescribe('AppComponent', () => {
+describe('AppComponent', () => {
   let fixture: ComponentFixture<AppComponent>;
   let testListener: TestListener;
 

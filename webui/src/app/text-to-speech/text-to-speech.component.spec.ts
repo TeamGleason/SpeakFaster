@@ -10,7 +10,7 @@ import {TextEntryEndEvent} from '../types/text-entry';
 import {getCloudTextToSpeechVolumeGainDb, getLocalTextToSpeechVolume, TextToSpeechComponent, TextToSpeechEvent, TextToSpeechListener} from './text-to-speech.component';
 import {TextToSpeechModule} from './text-to-speech.module';
 
-fdescribe('TextToSpeechCmponent', () => {
+describe('TextToSpeechCmponent', () => {
   let fixture: ComponentFixture<TextToSpeechComponent>;
   let component: TextToSpeechComponent;
   let textEntryEndSubject: Subject<TextEntryEndEvent>;
@@ -66,6 +66,7 @@ fdescribe('TextToSpeechCmponent', () => {
        expect(recordedEvents.length).toEqual(1);
        expect(recordedEvents[0])
            .toEqual({state: 'REQUESTING', errorMessage: undefined});
+       // TODO(cais): Deflake.
        expect(component.audioPlayCallCount).toEqual(1);
        expect(component.ttsAudioElements.first.nativeElement.src)
            .toEqual('data:audio/wav;base64,0123abcd');
@@ -130,7 +131,7 @@ fdescribe('TextToSpeechCmponent', () => {
      }));
 
   it('listener is notified of error from service', fakeAsync(() => {
-    setTtsVoiceType('PERSONALIZED');
+       setTtsVoiceType('PERSONALIZED');
        spyOn(component.textToSpeechService, 'synthesizeSpeech')
            .and.returnValue(
                throwError({error: {error_message: 'foo audio error'}}));

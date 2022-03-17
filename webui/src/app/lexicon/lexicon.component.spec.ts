@@ -58,7 +58,7 @@ class SpeakFasterServiceForTest {
   }
 }
 
-fdescribe('LexiconComponent', () => {
+describe('LexiconComponent', () => {
   let fixture: ComponentFixture<LexiconComponent>;
   let speakFasterServiceForTest: SpeakFasterServiceForTest;
   let loadPrefixedLexiconRequestSubject: Subject<LoadLexiconRequest>;

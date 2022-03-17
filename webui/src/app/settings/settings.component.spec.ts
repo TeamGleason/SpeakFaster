@@ -10,7 +10,7 @@ import {clearSettings, getAppSettings, LOCAL_STORAGE_ITEM_NAME, setTtsVolume} fr
 import {SettingsComponent} from './settings.component';
 import {SettingsModule} from './settings.module';
 
-fdescribe('SettingsComponent', () => {
+describe('SettingsComponent', () => {
   let fixture: ComponentFixture<SettingsComponent>;
 
   beforeEach(async () => {

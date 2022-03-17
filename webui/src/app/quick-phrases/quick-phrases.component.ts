@@ -157,9 +157,13 @@ export class QuickPhrasesComponent implements AfterViewInit, OnChanges,
   onInjectionOptionButtonClicked(event: {
     phraseText: string; phraseIndex: number
   }) {
-    this.selectPhrase(
-        event.phraseIndex, /* toInjectKeys= */ true,
-        /* toTriggerInAppTextToSpeech= */ false);
+    if (this.inputBarControlSubject === undefined) {
+      return;
+    }
+    // TODO(cais): Add unit test.
+    this.inputBarControlSubject.next({
+      appendText: event.phraseText,
+    });
   }
 
   onSpeakOptionButtonClicked(event: {phraseText: string, phraseIndex: number}) {

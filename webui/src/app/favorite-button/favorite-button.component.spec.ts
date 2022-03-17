@@ -23,7 +23,7 @@ class SpeakFasterServiceForTest {
   }
 }
 
-fdescribe('FavoriteButton', () => {
+describe('FavoriteButton', () => {
   let fixture: ComponentFixture<FavoriteButtonComponent>;
   let speakFasterServiceForTest: SpeakFasterServiceForTest;
   let httpEventLoggerForTest: HttpEventLogger;

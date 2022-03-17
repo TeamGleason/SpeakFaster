@@ -32,7 +32,7 @@ class SpeakFasterServiceForTest {
   }
 }
 
-fdescribe('AbbreviationComponent', () => {
+describe('AbbreviationComponent', () => {
   let speakFasterServiceForTest: SpeakFasterServiceForTest;
   let abbreviationExpansionTriggers: Subject<InputAbbreviationChangedEvent>;
   let fillMaskTriggers: Subject<FillMaskRequest>;

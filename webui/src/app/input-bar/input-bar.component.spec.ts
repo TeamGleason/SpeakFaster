@@ -27,7 +27,7 @@ class SpeakFasterServiceForTest {
   }
 }
 
-fdescribe('InputBarComponent', () => {
+describe('InputBarComponent', () => {
   let testListener: TestListener;
   let textEntryEndSubject: Subject<TextEntryEndEvent>;
   let inputBarControlSubject: Subject<InputBarControlEvent>;
@@ -1214,6 +1214,14 @@ fdescribe('InputBarComponent', () => {
 
     const cursor = fixture.debugElement.query(By.css('.simulated-cursor'));
     expect(cursor.classes['simulated-cursor-hidden']).toBeUndefined();
+  });
+
+  it('append text signal in input bar control subject works', () => {
+    inputBarControlSubject.next({appendText: 'foo bar'});
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.inputString).toEqual('foo bar ');
+    expect(fixture.componentInstance.state).toEqual(State.ENTERING_BASE_TEXT);
   });
 
   // TODO(cais): Test spelling valid word triggers AE, with debounce.

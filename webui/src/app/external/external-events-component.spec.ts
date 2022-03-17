@@ -1,14 +1,14 @@
 import {ComponentFixture, TestBed} from '@angular/core/testing';
-import {Subject} from 'rxjs';
+import {Subject, Subscription} from 'rxjs';
 
 import {TextEntryBeginEvent, TextEntryEndEvent} from '../types/text-entry';
 
-import {ExternalEventsComponent, getPunctuationLiteral, getVirtualkeyCode, LCTRL_KEY_HEAD_FOR_TTS_TRIGGER, tryDetectoMultiKeyChar, VIRTUAL_KEY, VKCODE_SPECIAL_KEYS} from './external-events.component';
+import {ExternalEventsComponent, getPunctuationLiteral, getVirtualkeyCode, LCTRL_KEY_HEAD_FOR_TTS_TRIGGER, resetReconStates, tryDetectoMultiKeyChar, VIRTUAL_KEY, VKCODE_SPECIAL_KEYS} from './external-events.component';
 import {ExternalEventsModule} from './external-events.module';
 
 const END_KEY_CODE = getVirtualkeyCode(LCTRL_KEY_HEAD_FOR_TTS_TRIGGER)[0]
 
-fdescribe('ExternalEventsComponent', () => {
+describe('ExternalEventsComponent', () => {
   let textEntryBeginSubject: Subject<TextEntryBeginEvent>;
   let textEntryEndSubject: Subject<TextEntryEndEvent>;
   let fixture: ComponentFixture<ExternalEventsComponent>;
@@ -37,6 +37,7 @@ fdescribe('ExternalEventsComponent', () => {
     jasmine.getEnv().allowRespy(true);
     ExternalEventsComponent.clearKeypressListeners();
     ExternalEventsComponent.clearIgnoreKeySequences();
+    resetReconStates();
   });
 
   it('Virtual key codes map has no duplicate values', () => {
@@ -85,66 +86,69 @@ fdescribe('ExternalEventsComponent', () => {
   });
 
   it('typing an internal key sends TextEntryBeginEvent', () => {
-    component.externalKeypressHook(65, /* isExternal= */ false);  // 'a'
+    ExternalEventsComponent.externalKeypressHook(
+        65, /* isExternal= */ false);  // 'a'
     expect(beginEvents.length).toEqual(1);
   });
 
   it('typing an external key sends TextEntryBeginEvent', () => {
-    component.externalKeypressHook(65, /* isExternal= */ true);  // 'a'
+    ExternalEventsComponent.externalKeypressHook(
+        65, /* isExternal= */ true);  // 'a'
     expect(beginEvents.length).toEqual(1);
   });
 
   it('final event in textEntryEndSubject resets external state', () => {
-    component.externalKeypressHook(65);  // 'a'
+    ExternalEventsComponent.externalKeypressHook(65);  // 'a'
     textEntryEndSubject.next({
       text: 'hi',
       timestampMillis: Date.now(),
       isFinal: true,
     });
-    expect(component.externalText).toEqual('');
+    expect(ExternalEventsComponent.externalText).toEqual('');
   });
 
   it('final event in textEntryEndSubject resets internal state', () => {
-    component.externalKeypressHook(65, /* isExterna= */ false);  // 'a'
+    ExternalEventsComponent.externalKeypressHook(
+        65, /* isExterna= */ false);  // 'a'
     textEntryEndSubject.next({
       text: 'hi',
       timestampMillis: Date.now(),
       isFinal: true,
     });
-    expect(component.internalText).toEqual('');
+    expect(ExternalEventsComponent.internalText).toEqual('');
   });
 
   it('final event in textEntryEndSubject resets state', () => {
-    component.externalKeypressHook(65);  // 'a'
+    ExternalEventsComponent.externalKeypressHook(65);  // 'a'
     textEntryEndSubject.next({
       text: 'hi',
       timestampMillis: Date.now(),
       isFinal: true,
     });
-    expect(component.externalText).toEqual('');
+    expect(ExternalEventsComponent.externalText).toEqual('');
   });
 
   it('non-final event in textEntryEndSubject does not reset state', () => {
-    component.externalKeypressHook(65);  // 'a'
+    ExternalEventsComponent.externalKeypressHook(65);  // 'a'
     textEntryEndSubject.next({
       text: 'hi',
       timestampMillis: Date.now(),
       isFinal: false,
     });
-    expect(component.externalText).toEqual('a');
+    expect(ExternalEventsComponent.externalText).toEqual('a');
   });
 
   it('aborted event resets state', () => {
-    component.externalKeypressHook(65);  // 'a'
-    component.externalKeypressHook(32);  // Space
-    component.externalKeypressHook(32);  // Space
+    ExternalEventsComponent.externalKeypressHook(65);  // 'a'
+    ExternalEventsComponent.externalKeypressHook(32);  // Space
+    ExternalEventsComponent.externalKeypressHook(32);  // Space
     textEntryEndSubject.next({
       text: '',
       timestampMillis: Date.now(),
       isFinal: true,
       isAborted: true,
     });
-    expect(component.externalText).toEqual('');
+    expect(ExternalEventsComponent.externalText).toEqual('');
   });
 
   it('Registering keypress listener causes listener to be called', () => {
@@ -155,8 +159,10 @@ fdescribe('ExternalEventsComponent', () => {
           keySequences.push(keySequence.slice());
           reconstructedTexts.push(reconstructedText);
         });
-    component.externalKeypressHook(65, /* isExternal= */ false);  // 'a'
-    component.externalKeypressHook(32, /* isExternal= */ false);  // Space
+    ExternalEventsComponent.externalKeypressHook(
+        65, /* isExternal= */ false);  // 'a'
+    ExternalEventsComponent.externalKeypressHook(
+        32, /* isExternal= */ false);  // Space
     expect(keySequences).toEqual([['a'], ['a', ' ']]);
     expect(reconstructedTexts).toEqual(['a', 'a ']);
   });
@@ -169,8 +175,10 @@ fdescribe('ExternalEventsComponent', () => {
           keySequences.push(keySequence.slice());
           reconstructedTexts.push(reconstructedText);
         });
-    component.externalKeypressHook(65, /* isExternal= */ true);  // 'a'
-    component.externalKeypressHook(32, /* isExternal= */ true);  // Space
+    ExternalEventsComponent.externalKeypressHook(
+        65, /* isExternal= */ true);  // 'a'
+    ExternalEventsComponent.externalKeypressHook(
+        32, /* isExternal= */ true);  // Space
     expect(keySequences).toEqual([]);
     expect(reconstructedTexts).toEqual([]);
   });
@@ -183,10 +191,14 @@ fdescribe('ExternalEventsComponent', () => {
           keySequences.push(keySequence.slice());
           reconstructedTexts.push(reconstructedText);
         });
-    component.externalKeypressHook(57, /* isExternal= */ false);  // '9'
-    component.externalKeypressHook(56, /* isExternal= */ false);  // '8'
-    component.externalKeypressHook(49, /* isExternal= */ false);  // '1'
-    component.externalKeypressHook(48, /* isExternal= */ false);  // '0'
+    ExternalEventsComponent.externalKeypressHook(
+        57, /* isExternal= */ false);  // '9'
+    ExternalEventsComponent.externalKeypressHook(
+        56, /* isExternal= */ false);  // '8'
+    ExternalEventsComponent.externalKeypressHook(
+        49, /* isExternal= */ false);  // '1'
+    ExternalEventsComponent.externalKeypressHook(
+        48, /* isExternal= */ false);  // '0'
     expect(keySequences).toEqual([
       ['9'], ['9', '8'], ['9', '8', '1'], ['9', '8', '1', '0']
     ]);
@@ -207,8 +219,8 @@ fdescribe('ExternalEventsComponent', () => {
     };
     ExternalEventsComponent.registerKeypressListener(listener);
     ExternalEventsComponent.unregisterKeypressListener(listener);
-    component.externalKeypressHook(65);  // 'a'
-    component.externalKeypressHook(32);  // Space
+    ExternalEventsComponent.externalKeypressHook(65);  // 'a'
+    ExternalEventsComponent.externalKeypressHook(32);  // Space
 
     expect(ExternalEventsComponent.getNumKeypressListeners()).toEqual(0);
     expect(keySequences).toEqual([]);
@@ -330,7 +342,7 @@ fdescribe('ExternalEventsComponent', () => {
   ] of vkCodesAndExpectedTextWithTestDescription) {
     it(`reconstructs text and sends end event: ${description}`, () => {
       for (const vkCode of vkCodes) {
-        component.externalKeypressHook(vkCode);
+        ExternalEventsComponent.externalKeypressHook(vkCode);
       }
       expect(beginEvents.length).toEqual(1);
       expect(endEvents.length).toEqual(1);
@@ -358,9 +370,10 @@ fdescribe('ExternalEventsComponent', () => {
     it(`LCtrl+Back word delete: all the way to empty: keys = ` +
            JSON.stringify(keyCodes),
        () => {
-         keyCodes.forEach(keyCode => component.externalKeypressHook(keyCode));
+         keyCodes.forEach(
+             keyCode => ExternalEventsComponent.externalKeypressHook(keyCode));
 
-         expect(component.externalText).toEqual('');
+         expect(ExternalEventsComponent.externalText).toEqual('');
        });
   }
 
@@ -400,7 +413,7 @@ fdescribe('ExternalEventsComponent', () => {
   it('reconstructs text based on sentence-end period and space', () => {
     const vkCodes = [72, 73, 190, 32];
     for (const vkCode of vkCodes) {
-      component.externalKeypressHook(vkCode);
+      ExternalEventsComponent.externalKeypressHook(vkCode);
     }
     expect(beginEvents.length).toEqual(1);
     expect(endEvents.length).toEqual(1);
@@ -411,7 +424,7 @@ fdescribe('ExternalEventsComponent', () => {
   it('reconstructs text based on sentence-end question mark and space', () => {
     const vkCodes = [72, 73, 160, 191, 32];
     for (const vkCode of vkCodes) {
-      component.externalKeypressHook(vkCode);
+      ExternalEventsComponent.externalKeypressHook(vkCode);
     }
     expect(beginEvents.length).toEqual(1);
     expect(endEvents.length).toEqual(1);
@@ -423,7 +436,7 @@ fdescribe('ExternalEventsComponent', () => {
      () => {
        const vkCodes = [72, 73, 160, 49, 32];
        for (const vkCode of vkCodes) {
-         component.externalKeypressHook(vkCode);
+         ExternalEventsComponent.externalKeypressHook(vkCode);
        }
        expect(beginEvents.length).toEqual(1);
        expect(endEvents.length).toEqual(1);
@@ -434,7 +447,7 @@ fdescribe('ExternalEventsComponent', () => {
   it('whitespace-only text does not trigger end event', () => {
     const vkCodes = [32, 32, 13, 162, END_KEY_CODE];
     for (const vkCode of vkCodes) {
-      component.externalKeypressHook(vkCode);
+      ExternalEventsComponent.externalKeypressHook(vkCode);
     }
     expect(beginEvents.length).toEqual(1);
     expect(endEvents.length).toEqual(0);
@@ -443,7 +456,8 @@ fdescribe('ExternalEventsComponent', () => {
   it('Period and space from internal source doesn\'t trigger end event', () => {
     const vkCodes = [72, 73, 190, 32];
     for (const vkCode of vkCodes) {
-      component.externalKeypressHook(vkCode, /* isExternal= */ false);
+      ExternalEventsComponent.externalKeypressHook(
+          vkCode, /* isExternal= */ false);
     }
     expect(beginEvents.length).toEqual(1);
     expect(endEvents.length).toEqual(0);
@@ -451,23 +465,25 @@ fdescribe('ExternalEventsComponent', () => {
 
   it('Correctly identifies human-entered and auto-injected keys', () => {
     spyOn(Date, 'now').and.returnValue(0);
-    component.externalKeypressHook(65);  // Human-entered.
+    ExternalEventsComponent.externalKeypressHook(65);  // Human-entered.
     spyOn(Date, 'now').and.returnValue(1000);
-    component.externalKeypressHook(66);  // Word completion selection by human.
+    ExternalEventsComponent.externalKeypressHook(
+        66);  // Word completion selection by human.
     spyOn(Date, 'now').and.returnValue(1010);
-    component.externalKeypressHook(67);  // Injected key.
+    ExternalEventsComponent.externalKeypressHook(67);  // Injected key.
     spyOn(Date, 'now').and.returnValue(1020);
-    component.externalKeypressHook(68);  // Injected key.
+    ExternalEventsComponent.externalKeypressHook(68);  // Injected key.
     spyOn(Date, 'now').and.returnValue(1030);
-    component.externalKeypressHook(32);  // Injected key.
+    ExternalEventsComponent.externalKeypressHook(32);  // Injected key.
     spyOn(Date, 'now').and.returnValue(2000);
-    component.externalKeypressHook(69);  // Word completion selection by human.
+    ExternalEventsComponent.externalKeypressHook(
+        69);  // Word completion selection by human.
     spyOn(Date, 'now').and.returnValue(2010);
-    component.externalKeypressHook(70);  // Injected key.
+    ExternalEventsComponent.externalKeypressHook(70);  // Injected key.
     spyOn(Date, 'now').and.returnValue(3000);
-    component.externalKeypressHook(162);  // Human-entered.
+    ExternalEventsComponent.externalKeypressHook(162);  // Human-entered.
     spyOn(Date, 'now').and.returnValue(3600);
-    component.externalKeypressHook(
+    ExternalEventsComponent.externalKeypressHook(
         getVirtualkeyCode('w')[0]);  // Human-entered.
     expect(beginEvents.length).toEqual(1);
     expect(endEvents.length).toEqual(1);
@@ -477,23 +493,24 @@ fdescribe('ExternalEventsComponent', () => {
 
   it('Correct resets human-entered keypress after previous end event', () => {
     spyOn(Date, 'now').and.returnValue(0);
-    component.externalKeypressHook(65);  // Human-entered.
+    ExternalEventsComponent.externalKeypressHook(65);  // Human-entered.
     spyOn(Date, 'now').and.returnValue(1000);
-    component.externalKeypressHook(162);  // Human-entered.
+    ExternalEventsComponent.externalKeypressHook(162);  // Human-entered.
     spyOn(Date, 'now').and.returnValue(2000);
-    component.externalKeypressHook(getVirtualkeyCode(
+    ExternalEventsComponent.externalKeypressHook(getVirtualkeyCode(
         LCTRL_KEY_HEAD_FOR_TTS_TRIGGER)[0]);  // Human-entered.
     // Ends first phrase; begins second one.
     spyOn(Date, 'now').and.returnValue(3000);
-    component.externalKeypressHook(65);  // Human-entered.
+    ExternalEventsComponent.externalKeypressHook(65);  // Human-entered.
     spyOn(Date, 'now').and.returnValue(4000);
-    component.externalKeypressHook(66);  // Word completion selection by human.
+    ExternalEventsComponent.externalKeypressHook(
+        66);  // Word completion selection by human.
     spyOn(Date, 'now').and.returnValue(4010);
-    component.externalKeypressHook(67);  // Injected key.
+    ExternalEventsComponent.externalKeypressHook(67);  // Injected key.
     spyOn(Date, 'now').and.returnValue(5000);
-    component.externalKeypressHook(162);  // Human-entered.
+    ExternalEventsComponent.externalKeypressHook(162);  // Human-entered.
     spyOn(Date, 'now').and.returnValue(6000);
-    component.externalKeypressHook(getVirtualkeyCode(
+    ExternalEventsComponent.externalKeypressHook(getVirtualkeyCode(
         LCTRL_KEY_HEAD_FOR_TTS_TRIGGER)[0]);  // Human-entered.
     expect(beginEvents.length).toEqual(2);
     expect(endEvents.length).toEqual(2);
@@ -516,13 +533,15 @@ fdescribe('ExternalEventsComponent', () => {
       ignoreStartIndex: 1,
     });
     spyOn(Date, 'now').and.returnValue(0);
-    component.externalKeypressHook(65, /* isExternal= */ false);
+    ExternalEventsComponent.externalKeypressHook(65, /* isExternal= */ false);
     spyOn(Date, 'now').and.returnValue(100);
-    component.externalKeypressHook(32, /* isExternal= */ false);  // Space.
+    ExternalEventsComponent.externalKeypressHook(
+        32, /* isExternal= */ false);  // Space.
     spyOn(Date, 'now').and.returnValue(1000);
-    component.externalKeypressHook(188, /* isExternal= */ false);  // Comma.
+    ExternalEventsComponent.externalKeypressHook(
+        188, /* isExternal= */ false);  // Comma.
     spyOn(Date, 'now').and.returnValue(1100);
-    component.externalKeypressHook(
+    ExternalEventsComponent.externalKeypressHook(
         32, /* isExternal= */ false);  // Space. Gap < 200 ms;
 
     expect(keySequences).toEqual([
@@ -544,13 +563,15 @@ fdescribe('ExternalEventsComponent', () => {
       ignoreStartIndex: 1,
     });
     spyOn(Date, 'now').and.returnValue(0);
-    component.externalKeypressHook(65, /* isExternal= */ false);
+    ExternalEventsComponent.externalKeypressHook(65, /* isExternal= */ false);
     spyOn(Date, 'now').and.returnValue(100);
-    component.externalKeypressHook(32, /* isExternal= */ false);  // Space.
+    ExternalEventsComponent.externalKeypressHook(
+        32, /* isExternal= */ false);  // Space.
     spyOn(Date, 'now').and.returnValue(1000);
-    component.externalKeypressHook(188, /* isExternal= */ false);  // Comma.
+    ExternalEventsComponent.externalKeypressHook(
+        188, /* isExternal= */ false);  // Comma.
     spyOn(Date, 'now').and.returnValue(1201);
-    component.externalKeypressHook(
+    ExternalEventsComponent.externalKeypressHook(
         32, /* isExternal= */ false);  // Space. Gap > 200 ms;
 
     expect(keySequences).toEqual([
@@ -576,13 +597,15 @@ fdescribe('ExternalEventsComponent', () => {
       ignoreStartIndex: 1,
     });
     spyOn(Date, 'now').and.returnValue(0);
-    component.externalKeypressHook(65, /* isExternal= */ false);
+    ExternalEventsComponent.externalKeypressHook(65, /* isExternal= */ false);
     spyOn(Date, 'now').and.returnValue(100);
-    component.externalKeypressHook(32, /* isExternal= */ false);  // Space.
+    ExternalEventsComponent.externalKeypressHook(
+        32, /* isExternal= */ false);  // Space.
     spyOn(Date, 'now').and.returnValue(1000);
-    component.externalKeypressHook(188, /* isExternal= */ false);  // Comma.
+    ExternalEventsComponent.externalKeypressHook(
+        188, /* isExternal= */ false);  // Comma.
     spyOn(Date, 'now').and.returnValue(1100);
-    component.externalKeypressHook(
+    ExternalEventsComponent.externalKeypressHook(
         32, /* isExternal= */ false);  // Space. Gap < 200 ms;
 
     expect(keySequences).toEqual([
@@ -620,13 +643,15 @@ fdescribe('ExternalEventsComponent', () => {
       ignoreStartIndex: 1,
     });
     spyOn(Date, 'now').and.returnValue(0);
-    component.externalKeypressHook(65, /* isExternal= */ false);
+    ExternalEventsComponent.externalKeypressHook(65, /* isExternal= */ false);
     spyOn(Date, 'now').and.returnValue(100);
-    component.externalKeypressHook(32, /* isExternal= */ false);  // Space.
+    ExternalEventsComponent.externalKeypressHook(
+        32, /* isExternal= */ false);  // Space.
     spyOn(Date, 'now').and.returnValue(1000);
-    component.externalKeypressHook(90, /* isExternal= */ false);  // 'z'.
+    ExternalEventsComponent.externalKeypressHook(
+        90, /* isExternal= */ false);  // 'z'.
     spyOn(Date, 'now').and.returnValue(1100);
-    component.externalKeypressHook(
+    ExternalEventsComponent.externalKeypressHook(
         32, /* isExternal= */ false);  // Space. Gap < 200 ms;
 
     expect(keySequences).toEqual([
@@ -659,5 +684,35 @@ fdescribe('ExternalEventsComponent', () => {
       keySequence: [VIRTUAL_KEY.COMMA, VIRTUAL_KEY.SPACE],
       ignoreStartIndex: 2,
     })).toThrowError(/Invalid ignore start index/);
+  });
+
+  it('appendText updates recon state correctly', () => {
+    ExternalEventsComponent.externalKeypressHook(65, /* isExternal= */ false);
+    ExternalEventsComponent.appendString(
+        'hi there', /* isExternal= */ false);
+
+    expect(ExternalEventsComponent.internalText).toEqual('a hi there ');
+  });
+
+  it('appendText followed by backspaces works', () => {
+    ExternalEventsComponent.externalKeypressHook(65, /* isExternal= */ false);
+    ExternalEventsComponent.appendString(
+        'hi there', /* isExternal= */ false);
+    ExternalEventsComponent.externalKeypressHook(8, /* isExternal= */ false);
+    ExternalEventsComponent.externalKeypressHook(8, /* isExternal= */ false);
+
+    expect(ExternalEventsComponent.internalText).toEqual('a hi ther');
+  });
+
+  it('appendText followed by word backspace works', () => {
+    ExternalEventsComponent.externalKeypressHook(65, /* isExternal= */ false);
+    ExternalEventsComponent.appendString(
+        'hi there', /* isExternal= */ false);
+    ExternalEventsComponent.externalKeypressHook(162, /* isExternal= */ false);
+    ExternalEventsComponent.externalKeypressHook(160, /* isExternal= */ false);
+    ExternalEventsComponent.externalKeypressHook(37, /* isExternal= */ false);
+    ExternalEventsComponent.externalKeypressHook(8, /* isExternal= */ false);
+
+    expect(ExternalEventsComponent.internalText).toEqual('a hi ');
   });
 });

@@ -2,7 +2,7 @@
 
 import {keySequenceEndsWith, limitStringLength, trimStringAtHead} from './text-utils';
 
-fdescribe('text-utils', () => {
+describe('text-utils', () => {
   describe('limitStringLength', () => {
     it('preserves short input strings', () => {
       expect(limitStringLength('', 10)).toEqual('');

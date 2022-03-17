@@ -3,8 +3,9 @@ import {BOUND_LISTENER_NAME} from '../../utils/cefsharp';
 
 import {clearSettings, ensureAppSettingsLoaded, getAppSettings, LOCAL_STORAGE_ITEM_NAME, modifyAppSettingsForTest, setDwellDelayMillis, setGazeFuzzyRadius, setShowGazeTracker, setTtsSpeakingRate, setTtsVoiceType, setTtsVolume, tryLoadSettings, trySaveSettings} from './settings';
 
-fdescribe('settings', () => {
+describe('settings', () => {
   beforeEach(async () => {
+    (window as any)[BOUND_LISTENER_NAME] = undefined;
     clearSettings();
     localStorage.removeItem(LOCAL_STORAGE_ITEM_NAME);
   });

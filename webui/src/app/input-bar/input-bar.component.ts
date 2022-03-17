@@ -1,5 +1,5 @@
 /** An input bar, with related functional buttons. */
-import {AfterViewInit, Component, ElementRef, EventEmitter, Input, OnDestroy, OnInit, Output, QueryList, ViewChild, ViewChildren} from '@angular/core';
+import {AfterViewInit, ChangeDetectorRef, Component, ElementRef, EventEmitter, Input, OnDestroy, OnInit, Output, QueryList, ViewChild, ViewChildren} from '@angular/core';
 import {Subject, Subscription} from 'rxjs';
 import {debounceTime} from 'rxjs/operators';
 import {injectKeys, requestSoftKeyboardReset, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
@@ -40,7 +40,13 @@ export interface InputBarChipSpec {
 
 /** An event that updates the clickable chips in the input bar. */
 export interface InputBarControlEvent {
+  // Add chips to the input bar. This is assumed to replace the existing text
+  // in the input bar.
   chips?: InputBarChipSpec[];
+
+  // Append text to the input bar. This does not erase the existing text in the
+  // input bar.
+  appendText?: string;
 
   // Clear all text and chips.
   clearAll?: boolean;
@@ -129,7 +135,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
 
   constructor(
       public speakFasterService: SpeakFasterService,
-      private eventLogger: HttpEventLogger) {}
+      private cdr: ChangeDetectorRef, private eventLogger: HttpEventLogger) {}
 
   ngOnInit() {
     this.textEntryEndSubjectSubscription = this.textEntryEndSubject.subscribe(
@@ -149,6 +155,11 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
           if (event.clearAll) {
             this.baseReconstructedText = this.latestReconstructedString;
             this.resetState(/* cleanText= */ true, /* resetBase= */ false);
+          } else if (event.appendText !== undefined) {
+            ExternalEventsComponent.appendString(
+                event.appendText, /* isExternal= */ false);
+            this.inputString = ExternalEventsComponent.internalText;
+            this.state = State.ENTERING_BASE_TEXT;
           } else if (event.chips !== undefined) {
             let {chips} = event;
             if (this.state === State.ENTERING_BASE_TEXT && this.inputString &&

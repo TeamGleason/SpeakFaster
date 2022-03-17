@@ -164,9 +164,10 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     registerHostWindowFocusHook((isFocused: boolean) => {
       this._isFocused = isFocused;
     });
-    registerExternalKeypressHook(
-        this.externalEventsComponent.externalKeypressHook.bind(
-            this.externalEventsComponent));
+    registerExternalKeypressHook((vkCode: number) => {
+      ExternalEventsComponent.externalKeypressHook(
+          vkCode, /* isExternal= */ false);
+    });
     const resizeObserver = new ResizeObserver(entries => {
       if (entries.length > 1) {
         throw new Error(

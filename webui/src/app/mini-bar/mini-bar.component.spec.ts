@@ -8,7 +8,7 @@ import {TestListener} from '../test-utils/test-cefsharp-listener';
 import {MiniBarComponent} from './mini-bar.component';
 import {MiniBarModule} from './mini-bar.module';
 
-fdescribe('MiniBarComponent', () => {
+describe('MiniBarComponent', () => {
   let fixture: ComponentFixture<MiniBarComponent>;
   let testListener: TestListener;
 

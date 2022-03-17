@@ -6,7 +6,7 @@ import {By} from '@angular/platform-browser';
 import {HelpComponent} from './help.component';
 import {HelpModule} from './help.module';
 
-fdescribe('HelpComponent', () => {
+describe('HelpComponent', () => {
   let fixture: ComponentFixture<HelpComponent>;
 
   beforeEach(async () => {

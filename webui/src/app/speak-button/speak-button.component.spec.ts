@@ -5,7 +5,7 @@ import {By} from '@angular/platform-browser';
 import {SpeakButtonComponent} from './speak-button.component';
 import {SpeakButtonModule} from './speak-button.module';
 
-fdescribe('SpeakButton', () => {
+describe('SpeakButton', () => {
   let fixture: ComponentFixture<SpeakButtonComponent>;
 
   beforeEach(async () => {

@@ -67,7 +67,6 @@ describe('TextToSpeechCmponent', () => {
        expect(recordedEvents.length).toEqual(1);
        expect(recordedEvents[0])
            .toEqual({state: 'REQUESTING', errorMessage: undefined});
-       // TODO(cais): Deflake.
        expect(component.audioPlayCallCount).toEqual(1);
        expect(component.ttsAudioElements.first.nativeElement.src)
            .toEqual('data:audio/wav;base64,0123abcd');
@@ -216,7 +215,6 @@ describe('TextToSpeechCmponent', () => {
        expect(recordedEvents.length).toEqual(2);
        expect(recordedEvents[0])
            .toEqual({state: 'REQUESTING', errorMessage: undefined});
-       // TODO(cais): Deflake.
        expect(component.audioPlayCallCount).toEqual(2);
        expect(component.ttsAudioElements.first.nativeElement.src)
            .toEqual('data:audio/wav;base64,0123abcd');
@@ -259,7 +257,6 @@ describe('TextToSpeechCmponent', () => {
         expect(recordedEvents.length).toEqual(1);
         expect(recordedEvents[0])
             .toEqual({state: 'REQUESTING', errorMessage: undefined});
-        // TODO(cais): Deflake.
         expect(component.audioPlayCallCount).toEqual(1);
         expect(component.ttsAudioElements.first.nativeElement.src)
             .toEqual('data:audio/wav;base64,0123abcd');

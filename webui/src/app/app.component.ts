@@ -337,9 +337,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       case 'QUICK_PHRASES_PARTNERS':
         this.changeAppState(AppState.QUICK_PHRASES_PARTNERS);
         break;
-      case 'QUICK_PHRASES_CARE':
-        this.changeAppState(AppState.QUICK_PHRASES_CARE);
-        break;
       case 'ABBREVIATION_EXPANSION':
         this.changeAppState(AppState.ABBREVIATION_EXPANSION);
         break;
@@ -362,8 +359,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   isQuickPhrasesAppState() {
     return this.appState === AppState.QUICK_PHRASES_FAVORITE ||
-        this.appState === AppState.QUICK_PHRASES_PARTNERS ||
-        this.appState === AppState.QUICK_PHRASES_CARE;
+        this.appState === AppState.QUICK_PHRASES_PARTNERS;
   }
 
   get anyContextStringsAvailable(): boolean {
@@ -380,7 +376,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   get nonMinimizedStatesAppStates(): AppState[] {
     return [
-      AppState.QUICK_PHRASES_CARE,
       AppState.QUICK_PHRASES_PARTNERS,
       AppState.QUICK_PHRASES_FAVORITE,
       AppState.ABBREVIATION_EXPANSION,
@@ -394,8 +389,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
         return `/assets/images/quick-phrases-favorite-${activeStateString}.png`;
       case AppState.QUICK_PHRASES_PARTNERS:
         return `/assets/images/quick-phrases-partners-${activeStateString}.png`;
-      case AppState.QUICK_PHRASES_CARE:
-        return `/assets/images/quick-phrases-care-${activeStateString}.png`;
       case AppState.ABBREVIATION_EXPANSION:
         return `/assets/images/abbreviation-expansion-${activeStateString}.png`;
       default:
@@ -414,8 +407,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
         return 'favorite';
       case AppState.QUICK_PHRASES_PARTNERS:
         return 'partner-name';
-      case AppState.QUICK_PHRASES_CARE:
-        return 'care';
       default:
         throw new Error(`Invalid app state: ${this.appState}`);
     }
@@ -425,7 +416,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     switch (this.appState) {
       case AppState.QUICK_PHRASES_FAVORITE:
       case AppState.QUICK_PHRASES_PARTNERS:
-      case AppState.QUICK_PHRASES_CARE:
         return true;
       default:
         throw new Error(`Invalid app state: ${this.appState}`);
@@ -437,7 +427,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       case AppState.QUICK_PHRASES_PARTNERS:
         return true;
       case AppState.QUICK_PHRASES_FAVORITE:
-      case AppState.QUICK_PHRASES_CARE:
         return false;
       default:
         throw new Error(`Invalid app state: ${this.appState}`);
@@ -450,8 +439,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
         return '#473261';
       case AppState.QUICK_PHRASES_PARTNERS:
         return '#3F0909';
-      case AppState.QUICK_PHRASES_CARE:
-        return '#093F3A';
       default:
         throw new Error(`Invalid app state: ${this.appState}`);
     }

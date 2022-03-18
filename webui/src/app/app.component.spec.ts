@@ -87,7 +87,7 @@ describe('AppComponent', () => {
     expect(abbreviationExpansionComponent).not.toBeNull();
     const leftNavButtons =
         fixture.debugElement.queryAll(By.css('.side-pane-button'));
-    expect(leftNavButtons.length).toEqual(6);
+    expect(leftNavButtons.length).toEqual(5);
   });
 
   it('registers button boxes with AppState is AE', async () => {
@@ -101,8 +101,8 @@ describe('AppComponent', () => {
         testListener
             .updateButtonBoxesCalls[testListener.updateButtonBoxesCalls.length - 1];
     expect(lastCall[0].startsWith('AppComponent_')).toBeTrue();
-    expect(lastCall[1].length)
-        .toEqual(6);  // Harcoding he number of expected buttons.
+    // Hardcoding he number of expected buttons.
+    expect(lastCall[1].length).toEqual(5);
     lastCall[1].forEach(buttonBox => {
       expect(buttonBox.length).toEqual(4);
     });
@@ -119,11 +119,11 @@ describe('AppComponent', () => {
   });
 
   for (const appState
-           of [AppState.QUICK_PHRASES_CARE, AppState.QUICK_PHRASES_FAVORITE,
+           of [AppState.QUICK_PHRASES_FAVORITE,
                AppState.QUICK_PHRASES_PARTNERS]) {
     it(`shows QuickPhrasesComponent when AppState is ${appState}`, async () => {
       fixture.componentInstance.onNewAccessToken('foo-access-token');
-      fixture.componentInstance.appState = AppState.QUICK_PHRASES_CARE;
+      fixture.componentInstance.appState = AppState.QUICK_PHRASES_FAVORITE;
       fixture.detectChanges();
       await fixture.whenStable();
 
@@ -182,7 +182,7 @@ describe('AppComponent', () => {
     await fixture.whenStable();
 
     expect(fixture.componentInstance.appState)
-        .toEqual(AppState.QUICK_PHRASES_CARE);
+        .toEqual(AppState.QUICK_PHRASES_PARTNERS);
     const miniBar =
         fixture.debugElement.query(By.css('app-mini-bar-component'));
     expect(miniBar).toBeNull();
@@ -211,7 +211,7 @@ describe('AppComponent', () => {
     await fixture.whenStable();
 
     expect(fixture.componentInstance.appState)
-        .toEqual(AppState.QUICK_PHRASES_CARE);
+        .toEqual(AppState.QUICK_PHRASES_PARTNERS);
   });
 
   it('under minimized state, the main area exists but is hidden', async () => {

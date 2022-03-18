@@ -98,19 +98,21 @@ export class TextToSpeechComponent implements OnInit {
 
   ngOnInit() {
     this.textEntryEndSubject.subscribe(async event => {
-      if (!event.isFinal || event.inAppTextToSpeechAudioConfig === undefined) {
+      if (!event.isFinal) {
         return;
       }
       let text = event.text.trim();
       if (text === '') {
         if (event.repeatLastNonEmpty && this.lastNonEmptySpokenText !== null) {
-          // TODO(cais): Add unit test.
           text = this.lastNonEmptySpokenText;
         } else {
           return;
         }
       } else {
         this.lastNonEmptySpokenText = text;
+      }
+      if (!event.inAppTextToSpeechAudioConfig) {
+        return;
       }
       const appSettings = await getAppSettings();
       const ttsVoiceType = appSettings.ttsVoiceType;
@@ -198,7 +200,9 @@ export class TextToSpeechComponent implements OnInit {
     };
     utterance.volume = getLocalTextToSpeechVolume(appSettings);
     utterance.rate = appSettings.ttsSpeakingRate || 1.0;
-    window.speechSynthesis.speak(utterance);
+    if (!this.audioPlayDisabledForTest) {
+      window.speechSynthesis.speak(utterance);
+    }
   }
 
   private setListenersState(state: TextToSpeechState, errorMessage?: string) {

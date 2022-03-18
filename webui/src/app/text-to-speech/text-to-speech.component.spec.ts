@@ -28,9 +28,9 @@ describe('TextToSpeechCmponent', () => {
     fixture = TestBed.createComponent(TextToSpeechComponent);
     component = fixture.componentInstance;
     component.textEntryEndSubject = textEntryEndSubject;
-    fixture.detectChanges();
     component.accessToken = 'test_token';
     component.disableAudioElementPlayForTest();
+    fixture.detectChanges();
     jasmine.getEnv().allowRespy(true);
     clearSettings();
   });
@@ -41,6 +41,7 @@ describe('TextToSpeechCmponent', () => {
 
   it('registerTextToSpeechListener registers listeners and gets TTS events',
      fakeAsync(() => {
+       setTtsVoiceType('PERSONALIZED');
        spyOn(component.textToSpeechService, 'synthesizeSpeech')
            .and.returnValue(of({
              audio_content: '0123abcd',
@@ -179,4 +180,88 @@ describe('TextToSpeechCmponent', () => {
          })).toBeCloseTo(expectedGainDb);
        });
   }
+
+  it('event with empty text and repeat request speaks out loud spoken phrase',
+     fakeAsync(() => {
+       spyOn(component.textToSpeechService, 'synthesizeSpeech')
+           .and.returnValue(of({
+             audio_content: '0123abcd',
+             audio_config: {
+               audio_encoding: 'LINEAR16',
+               speaking_rate: 1.0,
+               volume_gain_db: 0.0,
+             }
+           }));
+       const recordedEvents: TextToSpeechEvent[] = [];
+       const listener: TextToSpeechListener = (event: TextToSpeechEvent) => {
+         recordedEvents.push(event);
+       };
+       TextToSpeechComponent.registerTextToSpeechListener(listener);
+       textEntryEndSubject.next({
+         text: 'hi',
+         timestampMillis: new Date().getTime(),
+         isFinal: true,
+         inAppTextToSpeechAudioConfig: {},
+       });
+       tick();
+
+       textEntryEndSubject.next({
+         text: '',
+         repeatLastNonEmpty: true,
+         timestampMillis: new Date().getTime(),
+         isFinal: true,
+         inAppTextToSpeechAudioConfig: {},
+       });
+       tick();
+       expect(recordedEvents.length).toEqual(2);
+       expect(recordedEvents[0])
+           .toEqual({state: 'REQUESTING', errorMessage: undefined});
+       // TODO(cais): Deflake.
+       expect(component.audioPlayCallCount).toEqual(2);
+       expect(component.ttsAudioElements.first.nativeElement.src)
+           .toEqual('data:audio/wav;base64,0123abcd');
+     }));
+
+  it('event with empty text and repeat request speaks out loud last injected phrase',
+      fakeAsync(() => {
+        setTtsVoiceType('PERSONALIZED');
+        spyOn(component.textToSpeechService, 'synthesizeSpeech')
+            .and.returnValue(of({
+              audio_content: '0123abcd',
+              audio_config: {
+                audio_encoding: 'LINEAR16',
+                speaking_rate: 1.0,
+                volume_gain_db: 0.0,
+              }
+            }));
+        const recordedEvents: TextToSpeechEvent[] = [];
+        const listener: TextToSpeechListener = (event: TextToSpeechEvent) => {
+          recordedEvents.push(event);
+        };
+        TextToSpeechComponent.registerTextToSpeechListener(listener);
+        textEntryEndSubject.next({
+          text: 'hi',
+          timestampMillis: new Date().getTime(),
+          isFinal: true,
+          injectedKeys: ['h', 'i'],
+          inAppTextToSpeechAudioConfig: undefined,
+        });
+        tick();
+
+        textEntryEndSubject.next({
+          text: '',
+          repeatLastNonEmpty: true,
+          timestampMillis: new Date().getTime(),
+          isFinal: true,
+          inAppTextToSpeechAudioConfig: {},
+        });
+        tick();
+        expect(recordedEvents.length).toEqual(1);
+        expect(recordedEvents[0])
+            .toEqual({state: 'REQUESTING', errorMessage: undefined});
+        // TODO(cais): Deflake.
+        expect(component.audioPlayCallCount).toEqual(1);
+        expect(component.ttsAudioElements.first.nativeElement.src)
+            .toEqual('data:audio/wav;base64,0123abcd');
+      }));
 });

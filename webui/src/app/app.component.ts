@@ -424,10 +424,9 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   getQuickPhrasesShowDeleteButtons(): boolean {
     switch (this.appState) {
       case AppState.QUICK_PHRASES_FAVORITE:
-        return true;
       case AppState.QUICK_PHRASES_PARTNERS:
       case AppState.QUICK_PHRASES_CARE:
-        return false;
+        return true;
       default:
         throw new Error(`Invalid app state: ${this.appState}`);
     }

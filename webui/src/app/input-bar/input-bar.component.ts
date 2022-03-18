@@ -403,7 +403,6 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
             });
             pendingChars = '';
           }
-          console.log('*** pushing:', this._chipTypedText![i]!);  // DEBUG
           tokens.push({
             value: removePunctuation(this._chipTypedText![i]!).trim(),
             isKeyword: true,

@@ -59,8 +59,8 @@ export interface InputBarControlEvent {
   contextualPhraseTags?: string[];
 }
 
-function removePeriods(str: string) {
-  return str.replace(/\./g, '');
+function removePunctuation(str: string) {
+  return str.replace(/[\.\!\?]/g, '');
 }
 
 // Abbreviation expansion can be triggered by entering any of the the
@@ -403,8 +403,9 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
             });
             pendingChars = '';
           }
+          console.log('*** pushing:', this._chipTypedText![i]!);  // DEBUG
           tokens.push({
-            value: removePeriods(this._chipTypedText![i]!),
+            value: removePunctuation(this._chipTypedText![i]!).trim(),
             isKeyword: true,
           });
         } else {
@@ -421,7 +422,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
       abbreviationSpec = {
         tokens,
         readableString:
-            tokens.map(token => removePeriods(token.value)).join(' '),
+            tokens.map(token => removePunctuation(token.value)).join(' '),
         precedingText,
         eraserSequence: repeatVirtualKey(VIRTUAL_KEY.BACKSPACE, eraserLength),
         lineageId: createUuid(),
@@ -452,10 +453,10 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     let readableString: string = '';
     headKeywords.forEach(keyword => {
       tokens.push({
-        value: removePeriods(keyword),
+        value: removePunctuation(keyword),
         isKeyword: true,
       });
-      readableString += removePeriods(keyword) + ' ';
+      readableString += removePunctuation(keyword) + ' ';
     });
     readableString += abbrevText;
     tokens.push({

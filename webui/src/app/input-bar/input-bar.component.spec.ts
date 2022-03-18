@@ -423,7 +423,6 @@ describe('InputBarComponent', () => {
     expect(LoadLexiconRequests[0]).toEqual({prefix: 'b'});
   });
 
-
   it('backspace during spelling: reconstructs correct word', () => {
     const keySequence = ['a', 'b', 'c'];
     const reconstructedText = keySequence.join('');
@@ -453,32 +452,36 @@ describe('InputBarComponent', () => {
   });
 
   for (const triggerKey of [VIRTUAL_KEY.SPACE, VIRTUAL_KEY.ENTER]) {
-    it('spelling word then enter trigger key triggers AE: ' +
-           `trigger key = ${triggerKey}`,
-       () => {
-         const keySequence = ['a', 'b', 'c'];
-         const reconstructedText = keySequence.join('');
-         enterKeysIntoComponent(keySequence, reconstructedText);
-         const spellButton =
-             fixture.debugElement.query(By.css('.spell-button'));
-         spellButton.nativeElement.click();
-         fixture.detectChanges();
-         const spellSequence = ['b', 'i', 't', VIRTUAL_KEY.SPACE];
-         const spellReconstructedText =
-             spellSequence.join('') + reconstructedText;
-         enterKeysIntoComponent(spellSequence, spellReconstructedText);
+    for (const endPunctuation of ['.', '?', '!']) {
+      it('spelling word then enter trigger key triggers AE: ' +
+             `trigger key = ${triggerKey}; ` +
+             `ending punctuation = ${endPunctuation}`,
+         () => {
+           const keySequence = ['a', 'b', 'c'];
+           const reconstructedText = keySequence.join('');
+           enterKeysIntoComponent(keySequence, reconstructedText);
+           const spellButton =
+               fixture.debugElement.query(By.css('.spell-button'));
+           spellButton.nativeElement.click();
+           fixture.detectChanges();
+           // The ending punctuation should be ignored by keyword AE.
+           const spellSequence = ['b', 'i', 't', endPunctuation, triggerKey];
+           const spellReconstructedText =
+               spellSequence.join('') + reconstructedText;
+           enterKeysIntoComponent(spellSequence, spellReconstructedText);
 
-         expect(inputAbbreviationChangeEvents.length).toEqual(1);
-         expect(inputAbbreviationChangeEvents[0].requestExpansion).toBeTrue();
-         const {abbreviationSpec} = inputAbbreviationChangeEvents[0];
-         expect(abbreviationSpec.tokens.length).toEqual(3);
-         expect(abbreviationSpec.readableString).toEqual('a bit c');
-         // TODO(cais): Make assertion about eraseSequence with spelling.
-         const {tokens} = abbreviationSpec;
-         expect(tokens[0]).toEqual({value: 'a', isKeyword: false});
-         expect(tokens[1]).toEqual({value: 'bit', isKeyword: true});
-         expect(tokens[2]).toEqual({value: 'c', isKeyword: false});
-       });
+           expect(inputAbbreviationChangeEvents.length).toEqual(1);
+           expect(inputAbbreviationChangeEvents[0].requestExpansion).toBeTrue();
+           const {abbreviationSpec} = inputAbbreviationChangeEvents[0];
+           expect(abbreviationSpec.tokens.length).toEqual(3);
+           expect(abbreviationSpec.readableString).toEqual('a bit c');
+           // TODO(cais): Make assertion about eraseSequence with spelling.
+           const {tokens} = abbreviationSpec;
+           expect(tokens[0]).toEqual({value: 'a', isKeyword: false});
+           expect(tokens[1]).toEqual({value: 'bit', isKeyword: true});
+           expect(tokens[2]).toEqual({value: 'c', isKeyword: false});
+         });
+    }
   }
 
   it('spelling word with extraneous period then enter trigger key triggers AE: ',

@@ -10,7 +10,7 @@ _DUMMY_DATETIME_FORMAT_WITH_MILLIS = "%Y-%m-%dT%H:%M:%S.%f"
 _REDACTION_MASK_REGEX = r"\[Redacted.*\]"
 _SPEAKER_ID_REGEX = r"\[(Speaker:|SpeakerTTS:).*\]"
 _SPEECH_TRANSCRIPT_CONTENT_REGEX = re.compile(
-    ".+(\[(Speaker|SpeakerTTS):?\s?([A-Za-z0-9#]+)\])$")
+    ".+(\[(Speaker|SpeakerTTS):?\s?([A-Za-z0-9_#]+)\])$")
 _UTTERANCE_ID_REGEX = r"\[U[0-9]+\]"
 
 

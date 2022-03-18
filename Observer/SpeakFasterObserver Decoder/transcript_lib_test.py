@@ -41,6 +41,13 @@ class ExtractSpeakerTagTest(tf.test.TestCase):
     self.assertEqual(tag_type, "SpeakerTTS")
     self.assertEqual(tag_value, "User001")
 
+  def testExtractsTagWithPseudonymTag(self):
+    tag, tag_type, tag_value = transcript_lib.extract_speaker_tag(
+        "Good morning [U1] [SpeakerTTS:John_D]")
+    self.assertEqual(tag, "[SpeakerTTS:John_D]")
+    self.assertEqual(tag_type, "SpeakerTTS")
+    self.assertEqual(tag_value, "John_D")
+
 
 class ExtractSpeechContentTest(tf.test.TestCase):
 

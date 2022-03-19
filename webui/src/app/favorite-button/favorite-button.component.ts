@@ -34,7 +34,8 @@ export class FavoriteButtonComponent implements OnInit, OnDestroy {
   @Input() phraseId?: string;
   @Input() sendAsUserFeedback: boolean = false;
   @Input()
-  tags: string[] = [FavoriteButtonComponent.DEFAULT_CONTEXTUAL_PHRASE_TAG];
+  tags: string[]|undefined =
+      [FavoriteButtonComponent.DEFAULT_CONTEXTUAL_PHRASE_TAG];
   @Input() inputBarControlSubject?: Subject<InputBarControlEvent>;
 
   state: State = State.READY;
@@ -79,7 +80,8 @@ export class FavoriteButtonComponent implements OnInit, OnDestroy {
         const contextualPhrase = {
           phraseId: '',  // For AddContextualPhraseRequest, this is ignored.
           text: this.phrase.trim(),
-          tags: this.tags,
+          tags: this.tags ||
+              [FavoriteButtonComponent.DEFAULT_CONTEXTUAL_PHRASE_TAG],
         };
         this.eventLogger.logContextualPhraseAdd(
             getContextualPhraseStats(contextualPhrase));

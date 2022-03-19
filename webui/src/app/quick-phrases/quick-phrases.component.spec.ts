@@ -140,6 +140,18 @@ describe('QuickPhrasesComponent', () => {
     expect(error).toBeNull();
   });
 
+  it('sets the tags of PhraseComponets correctly', async () => {
+    fixture.componentInstance.allowedTag = 'counting';
+    fixture.componentInstance.ngOnChanges({
+      allowedTag: new SimpleChange('favorite', 'counting', true),
+    });
+    await fixture.whenStable();
+    const phraseComponents =
+        fixture.debugElement.queryAll(By.css('app-phrase-component'));
+
+    expect(phraseComponents[0].componentInstance.tags).toEqual(['counting']);
+  });
+
   it('hides progress spinner after successful prhase retrieval', async () => {
     fixture.componentInstance.allowedTag = 'favorite';
     fixture.componentInstance.ngOnChanges({
@@ -225,16 +237,14 @@ describe('QuickPhrasesComponent', () => {
         .toEqual('Thank you');
   });
 
-  // it('when overflow happens, shows scroll buttons and registers
-  // buttonsboxes',
+  // it('when overflow happens, shows scroll buttons and registers buttonsboxes',
   //    async () => {
-  //      // Assume that 30 phrases of 'Counting ...' is enough to cause
-  //      overflow
+  //      // Assume that 30 phrases of 'Counting ...' is enough to cause overflow
   //      // and therefore scrolling. Same below.
   //      fixture.componentInstance.allowedTag = 'counting';
   //      fixture.componentInstance.ngOnChanges({
   //        allowedTag: new SimpleChange(
-  //            undefined, fixture.componentInstance.allowedTags, true),
+  //            undefined, 'counting', true),
   //      });
   //      await fixture.whenStable();
   //      const phrasesContainer =

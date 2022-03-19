@@ -23,6 +23,7 @@ export class PhraseComponent implements AfterViewInit, OnDestroy {
   @Input() phraseText!: string;
   @Input() phraseIndex!: number;
   @Input() phraseId?: string;
+  @Input() tags?: string[];
   @Input() color: string = '#093F3A';
   @Input() showFavoriteButton: boolean = false;
   @Input() showExpandButton: boolean = false;

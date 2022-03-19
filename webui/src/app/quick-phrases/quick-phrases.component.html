@@ -135,6 +135,7 @@ mat-progress-spinner {
         [phraseIndex]="i"
         [showFavoriteButton]="showDeleteButtons || hasSubTag"
         [showExpandButton]="showExpandButtons && !hasSubTag"
+        [tags]="[effectiveAllowedTag]"
         [color]="color"
         (speakButtonClicked)="onSpeakOptionButtonClicked($event)"
         (injectButtonClicked)="onInjectionOptionButtonClicked($event)"

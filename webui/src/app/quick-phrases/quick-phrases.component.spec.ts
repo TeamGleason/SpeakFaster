@@ -1,6 +1,6 @@
 /** Unit tests for QuickPhrasesComponent. */
 import {Injectable, SimpleChange} from '@angular/core';
-import {ComponentFixture, TestBed} from '@angular/core/testing';
+import {ComponentFixture, fakeAsync, TestBed, tick} from '@angular/core/testing';
 import {By} from '@angular/platform-browser';
 import {Observable, of, Subject, throwError} from 'rxjs';
 import {createUuid} from 'src/utils/uuid';
@@ -49,7 +49,7 @@ class SpeakFasterServiceForTest {
     for (let i = 0; i < 30; ++i) {
       this.contextualPhrases.push({
         phraseId: createUuid(),
-        text: `Count %{i}`,
+        text: `Count ${i}`,
         tags: ['counting'],
       });
     }
@@ -237,66 +237,69 @@ describe('QuickPhrasesComponent', () => {
         .toEqual('Thank you');
   });
 
-  // it('when overflow happens, shows scroll buttons and registers buttonsboxes',
-  //    async () => {
-  //      // Assume that 30 phrases of 'Counting ...' is enough to cause overflow
-  //      // and therefore scrolling. Same below.
-  //      fixture.componentInstance.allowedTag = 'counting';
-  //      fixture.componentInstance.ngOnChanges({
-  //        allowedTag: new SimpleChange(
-  //            undefined, 'counting', true),
-  //      });
-  //      await fixture.whenStable();
-  //      const phrasesContainer =
-  //          fixture.debugElement.query(By.css('.quick-phrases-container'));
+  it('when overflow happens, shows scroll buttons and registers buttonsboxes',
+     async () => {
+       // Assume that 30 phrases of 'Counting ...' is enough to cause overflow
+       // and therefore scrolling. Same below.
+       fixture.componentInstance.allowedTag = 'counting';
+       fixture.componentInstance.ngOnChanges({
+         allowedTag: new SimpleChange(undefined, 'counting', true),
+       });
+       fixture.detectChanges();
+       await fixture.whenStable();
 
-  //      const scrollButtons =
-  //          fixture.debugElement.queryAll(By.css('.scroll-button'));
-  //      expect(scrollButtons.length).toEqual(2);
-  //      expect(phrasesContainer.nativeElement.scrollTop).toEqual(0);
-  //      const buttonBoxCalls = testListener.updateButtonBoxesCalls.filter(
-  //          (call) => {return call[0].startsWith('QuickPhrasesComponent_')});
-  //      const lastButtonBoxCall = buttonBoxCalls[buttonBoxCalls.length - 1];
-  //      expect(lastButtonBoxCall[1].length).toEqual(2);
-  //      expect(lastButtonBoxCall[1][0].length).toEqual(4);
-  //      expect(lastButtonBoxCall[1][1].length).toEqual(4);
-  //    });
+       const phrasesContainer =
+           fixture.debugElement.query(By.css('.quick-phrases-container'));
+       const phrases =
+           fixture.debugElement.queryAll(By.css('app-phrase-component'));
+       expect(phrases.length).toEqual(30);
+       const scrollButtons =
+           fixture.debugElement.queryAll(By.css('.scroll-button'));
+       expect(scrollButtons.length).toEqual(2);
+       expect(phrasesContainer.nativeElement.scrollTop).toEqual(0);
+       const buttonBoxCalls = testListener.updateButtonBoxesCalls.filter(
+           (call) => {return call[0].startsWith('QuickPhrasesComponent_')});
+       const lastButtonBoxCall = buttonBoxCalls[buttonBoxCalls.length - 1];
+       expect(lastButtonBoxCall[1].length).toEqual(2);
+       expect(lastButtonBoxCall[1][0].length).toEqual(4);
+       expect(lastButtonBoxCall[1][1].length).toEqual(4);
+     });
 
-  // it('clicking scroll down button updates scrollTop', async () => {
-  //   fixture.componentInstance.allowedTag = 'counting';
-  //   fixture.componentInstance.ngOnChanges({
-  //     allowedTags: new SimpleChange(
-  //         undefined, fixture.componentInstance.allowedTags, true),
-  //   });
-  //   await fixture.whenStable();
-  //   const phrasesContainer =
-  //       fixture.debugElement.query(By.css('.quick-phrases-container'));
+  it('clicking scroll down button updates scrollTop', async () => {
+    fixture.componentInstance.allowedTag = 'counting';
+    fixture.componentInstance.ngOnChanges({
+      allowedTag: new SimpleChange(
+          undefined, fixture.componentInstance.allowedTag, true),
+    });
+    await fixture.whenStable();
+    const phrasesContainer =
+        fixture.debugElement.query(By.css('.quick-phrases-container'));
 
-  //   const scrollButtons =
-  //       fixture.debugElement.queryAll(By.css('.scroll-button'));
-  //   scrollButtons[1].nativeElement.click();
-  //   await fixture.whenStable();
-  //   expect(phrasesContainer.nativeElement.scrollTop).toBeGreaterThan(0);
-  // });
+    const scrollButtons =
+        fixture.debugElement.queryAll(By.css('.scroll-button'));
+    scrollButtons[1].nativeElement.click();
+    await fixture.whenStable();
+    expect(phrasesContainer.nativeElement.scrollTop).toBeGreaterThan(0);
+  });
 
-  // it('clicking scroll down then scroll up updates scrollTop', async () => {
-  //   fixture.componentInstance.allowedTag = 'counting';
-  //   fixture.componentInstance.ngOnChanges({
-  //     allowedTag: new SimpleChange(
-  //         undefined, fixture.componentInstance.allowedTags, true),
-  //   });
-  //   await fixture.whenStable();
-  //   const phrasesContainer =
-  //       fixture.debugElement.query(By.css('.quick-phrases-container'));
+  it('clicking scroll down then scroll up updates scrollTop', async () => {
+    fixture.componentInstance.allowedTag = 'counting';
+    fixture.componentInstance.ngOnChanges({
+      allowedTag: new SimpleChange(
+          undefined, fixture.componentInstance.allowedTag, true),
+    });
+    await fixture.whenStable();
+    const phrasesContainer =
+        fixture.debugElement.query(By.css('.quick-phrases-container'));
 
-  //   const scrollButtons =
-  //       fixture.debugElement.queryAll(By.css('.scroll-button'));
-  //   scrollButtons[1].nativeElement.click();
-  //   await fixture.whenStable();
-  //   scrollButtons[0].nativeElement.click();
-  //   await fixture.whenStable();
-  //   expect(phrasesContainer.nativeElement.scrollTop).toEqual(0);
-  // });
+    const scrollButtons =
+        fixture.debugElement.queryAll(By.css('.scroll-button'));
+    scrollButtons[1].nativeElement.click();
+    await fixture.whenStable();
+    scrollButtons[0].nativeElement.click();
+    await fixture.whenStable();
+    expect(phrasesContainer.nativeElement.scrollTop).toEqual(0);
+  });
 
   it('shows progress spinner during request', () => {
     const retrievingPhrases =

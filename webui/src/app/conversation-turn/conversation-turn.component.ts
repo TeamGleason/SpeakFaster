@@ -81,7 +81,6 @@ export class ConversationTurnComponent implements AfterViewInit,
       this.isVisible = false;
       updateButtonBoxesToEmpty(this.instanceId);
     }
-    // TODO(cais): Update unit tests.
   }
 
   ngOnDestroy() {

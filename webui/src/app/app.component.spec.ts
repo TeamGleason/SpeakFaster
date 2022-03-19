@@ -40,6 +40,7 @@ describe('AppComponent', () => {
     fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
     AppComponent.clearAppResizeCallback();
+    clearSettings();
   });
 
   it('should create the app', () => {

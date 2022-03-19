@@ -17,7 +17,6 @@ import {PartnerModule} from './partner/partner.module';
 import {QuickPhrasesModule} from './quick-phrases/quick-phrases.module';
 import {SettingsEyeGazeModule} from './settings-eye-gaze/settings-eye-gaze.module';
 import {SettingsModule} from './settings/settings.module';
-import {TextPredictionModule} from './text-prediction/text-prediction.module';
 import {TextToSpeechModule} from './text-to-speech/text-to-speech.module';
 
 @NgModule({
@@ -39,7 +38,6 @@ import {TextToSpeechModule} from './text-to-speech/text-to-speech.module';
     QuickPhrasesModule,
     SettingsModule,
     SettingsEyeGazeModule,
-    TextPredictionModule,
     TextToSpeechModule,
   ],
   providers: [],

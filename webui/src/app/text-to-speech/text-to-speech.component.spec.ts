@@ -182,6 +182,7 @@ describe('TextToSpeechCmponent', () => {
 
   it('event with empty text and repeat request speaks out loud spoken phrase',
      fakeAsync(() => {
+       setTtsVoiceType('PERSONALIZED');
        spyOn(component.textToSpeechService, 'synthesizeSpeech')
            .and.returnValue(of({
              audio_content: '0123abcd',
@@ -221,44 +222,44 @@ describe('TextToSpeechCmponent', () => {
      }));
 
   it('event with empty text and repeat request speaks out loud last injected phrase',
-      fakeAsync(() => {
-        setTtsVoiceType('PERSONALIZED');
-        spyOn(component.textToSpeechService, 'synthesizeSpeech')
-            .and.returnValue(of({
-              audio_content: '0123abcd',
-              audio_config: {
-                audio_encoding: 'LINEAR16',
-                speaking_rate: 1.0,
-                volume_gain_db: 0.0,
-              }
-            }));
-        const recordedEvents: TextToSpeechEvent[] = [];
-        const listener: TextToSpeechListener = (event: TextToSpeechEvent) => {
-          recordedEvents.push(event);
-        };
-        TextToSpeechComponent.registerTextToSpeechListener(listener);
-        textEntryEndSubject.next({
-          text: 'hi',
-          timestampMillis: new Date().getTime(),
-          isFinal: true,
-          injectedKeys: ['h', 'i'],
-          inAppTextToSpeechAudioConfig: undefined,
-        });
-        tick();
+     fakeAsync(() => {
+       setTtsVoiceType('PERSONALIZED');
+       spyOn(component.textToSpeechService, 'synthesizeSpeech')
+           .and.returnValue(of({
+             audio_content: '0123abcd',
+             audio_config: {
+               audio_encoding: 'LINEAR16',
+               speaking_rate: 1.0,
+               volume_gain_db: 0.0,
+             }
+           }));
+       const recordedEvents: TextToSpeechEvent[] = [];
+       const listener: TextToSpeechListener = (event: TextToSpeechEvent) => {
+         recordedEvents.push(event);
+       };
+       TextToSpeechComponent.registerTextToSpeechListener(listener);
+       textEntryEndSubject.next({
+         text: 'hi',
+         timestampMillis: new Date().getTime(),
+         isFinal: true,
+         injectedKeys: ['h', 'i'],
+         inAppTextToSpeechAudioConfig: undefined,
+       });
+       tick();
 
-        textEntryEndSubject.next({
-          text: '',
-          repeatLastNonEmpty: true,
-          timestampMillis: new Date().getTime(),
-          isFinal: true,
-          inAppTextToSpeechAudioConfig: {},
-        });
-        tick();
-        expect(recordedEvents.length).toEqual(1);
-        expect(recordedEvents[0])
-            .toEqual({state: 'REQUESTING', errorMessage: undefined});
-        expect(component.audioPlayCallCount).toEqual(1);
-        expect(component.ttsAudioElements.first.nativeElement.src)
-            .toEqual('data:audio/wav;base64,0123abcd');
-      }));
+       textEntryEndSubject.next({
+         text: '',
+         repeatLastNonEmpty: true,
+         timestampMillis: new Date().getTime(),
+         isFinal: true,
+         inAppTextToSpeechAudioConfig: {},
+       });
+       tick();
+       expect(recordedEvents.length).toEqual(1);
+       expect(recordedEvents[0])
+           .toEqual({state: 'REQUESTING', errorMessage: undefined});
+       expect(component.audioPlayCallCount).toEqual(1);
+       expect(component.ttsAudioElements.first.nativeElement.src)
+           .toEqual('data:audio/wav;base64,0123abcd');
+     }));
 });

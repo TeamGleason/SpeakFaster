@@ -131,7 +131,7 @@ export class QuickPhrasesComponent implements AfterViewInit, OnInit, OnChanges,
 
   get effectiveAllowedTag(): string {
     return this._subTag === null ? this.allowedTag :
-                                  this.allowedTag + ':' + this._subTag;
+                                   this.allowedTag + ':' + this._subTag;
   }
 
   ngOnInit() {

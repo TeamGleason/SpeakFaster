@@ -1,4 +1,4 @@
-import {ComponentFixture, TestBed} from '@angular/core/testing';
+import {ComponentFixture, fakeAsync, TestBed, tick} from '@angular/core/testing';
 import {By} from '@angular/platform-browser';
 
 import * as cefSharp from '../../utils/cefsharp';
@@ -76,20 +76,21 @@ describe('ConversationTurnComponent', () => {
     });
   }
 
-  // TODO(cais): Reinstate tests.
-  // it('calls updateButtonBoxesCalls', async () => {
-  //   fixture.componentInstance.turn = {
-  //     speakerId: 'foo_speaker',
-  //     startTimestamp: new Date(),
-  //     speechContent: 'Hi, there!',
-  //   };
-  //   fixture.detectChanges();
-  //   await fixture.whenStable();
-  //   const calls = testListener.updateButtonBoxesCalls;
-  //   expect(calls.length).toBeGreaterThanOrEqual(1);
-  //   const lastCall = calls[calls.length - 1];
-  //   expect(lastCall[0].indexOf('ConversationTurnComponent')).toEqual(0);
-  //   expect(lastCall[1].length).toEqual(1);
-  //   expect(lastCall[1][0].length).toEqual(4);
-  // });
+  it('calls updateButtonBoxesCalls', fakeAsync(() => {
+    fixture.componentInstance.turn = {
+      speakerId: 'foo_speaker',
+      startTimestamp: new Date(),
+      speechContent: 'Hi, there!',
+    };
+    fixture.detectChanges();
+    fixture.componentInstance.ngAfterContentChecked();
+    tick();
+
+    const calls = testListener.updateButtonBoxesCalls;
+    expect(calls.length).toBeGreaterThan(0);
+    const lastCall = calls[calls.length - 1];
+    expect(lastCall[0].indexOf('ConversationTurnComponent')).toEqual(0);
+    expect(lastCall[1].length).toEqual(1);
+    expect(lastCall[1][0].length).toEqual(4);
+  }));
 });

@@ -166,7 +166,7 @@ export class QuickPhrasesComponent implements AfterViewInit, OnInit, OnChanges,
               changes.allowedTag.currentValue) {
         return;
       }
-      this._subTag = null;  // TODO(cais): Add unit test.
+      this._subTag = null;
       this.retrievePhrases();
     }
   }

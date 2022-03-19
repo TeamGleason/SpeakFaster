@@ -119,7 +119,7 @@ export class ContextComponent implements OnInit, AfterViewInit {
         getConversationTurnContextSignal(
             this.userId,
             {
-              speakerId: this.userId,  // Is this right?
+              speakerId: this.userId,
               speechContent: text,
               startTimestamp: new Date(),
               isTts: false,

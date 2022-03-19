@@ -159,9 +159,9 @@ host. Below we describe their use respectively.
 The contract of the `injectKeys()` function is it will issue the keys in `virtualKeys`
 programmatically in the specified order.
 
-#### 3.2. Request external softkeyboard to reset state
+#### 3.2. Request external soft keyboard to reset state
 
-Occasionally the WebUI needs to request a state reset in the softkeyboard
+Occasionally the WebUI needs to request a state reset in the soft keyboard
 attached to the host application. For example, when the user starts to spell
 a word out after an initial abbreviation-expansion request, such a reset will
 allow the user to utilize the external keyboard's word prediction without

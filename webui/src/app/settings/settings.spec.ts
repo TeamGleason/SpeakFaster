@@ -1,10 +1,11 @@
 /** Unit tests for settings. */
 import {BOUND_LISTENER_NAME} from '../../utils/cefsharp';
 
-import {clearSettings, ensureAppSettingsLoaded, LOCAL_STORAGE_ITEM_NAME, setTtsVoiceType, setTtsVolume, tryLoadSettings} from './settings';
+import {clearSettings, ensureAppSettingsLoaded, getAppSettings, LOCAL_STORAGE_ITEM_NAME, modifyAppSettingsForTest, setDwellDelayMillis, setGazeFuzzyRadius, setShowGazeTracker, setTtsSpeakingRate, setTtsVoiceType, setTtsVolume, tryLoadSettings, trySaveSettings} from './settings';
 
 describe('settings', () => {
   beforeEach(async () => {
+    (window as any)[BOUND_LISTENER_NAME] = undefined;
     clearSettings();
     localStorage.removeItem(LOCAL_STORAGE_ITEM_NAME);
   });
@@ -20,9 +21,26 @@ describe('settings', () => {
        await ensureAppSettingsLoaded();
        const settings = await tryLoadSettings();
        expect(settings).not.toBeNull();
-       expect(settings!.ttsVoiceType).toEqual('PERSONALIZED');
+       expect(settings!.ttsVoiceType).toEqual('GENERIC');
        expect(settings!.ttsVolume).toEqual('MEDIUM');
+       expect(settings!.showGazeTracker).toEqual('YES');
+       expect(settings!.gazeFuzzyRadius).toEqual(20);
+       expect(settings!.dwellDelayMillis).toEqual(400);
      });
+
+  it('ensureAppSettingsLoaded updates missing fields', async () => {
+    modifyAppSettingsForTest({
+      ttsVoiceType: 'PERSONALIZED',
+      ttsVolume: 'MEDIUM_LOUD',
+    });
+    await ensureAppSettingsLoaded();
+    const settings = await getAppSettings();
+
+    expect(settings!.ttsVoiceType).toEqual('PERSONALIZED');
+    expect(settings!.ttsVolume).toEqual('MEDIUM_LOUD');
+    expect(settings!.showGazeTracker).toEqual('YES');
+    expect(settings!.gazeFuzzyRadius).toEqual(20);
+  });
 
   it('setting tts voice type succeeds', async () => {
     await setTtsVoiceType('GENERIC');
@@ -36,7 +54,66 @@ describe('settings', () => {
     await setTtsVolume('QUIET');
     const settings = await tryLoadSettings();
     expect(settings).not.toBeNull();
-    expect(settings!.ttsVoiceType).toEqual('PERSONALIZED');
+    expect(settings!.ttsVoiceType).toEqual('GENERIC');
     expect(settings!.ttsVolume).toEqual('QUIET');
+  });
+
+  it('setting tts speaking rate succeeds', async () => {
+    await setTtsSpeakingRate(0.8);
+    const settings = await tryLoadSettings();
+    expect(settings).not.toBeNull();
+    expect(settings!.ttsSpeakingRate).toEqual(0.8);
+  });
+
+  it('setting tts speaking rate to invalid value raises error', async () => {
+    await expectAsync(setTtsSpeakingRate(-1)).toBeRejectedWithError();
+    await expectAsync(setTtsSpeakingRate(0)).toBeRejectedWithError();
+    await expectAsync(setTtsSpeakingRate(0.1)).toBeRejectedWithError();
+    await expectAsync(setTtsSpeakingRate(10)).toBeRejectedWithError();
+    await expectAsync(setTtsSpeakingRate(Infinity)).toBeRejectedWithError();
+    await expectAsync(setTtsSpeakingRate(-Infinity)).toBeRejectedWithError();
+    await expectAsync(setTtsSpeakingRate(NaN)).toBeRejectedWithError();
+  });
+
+  it('setting showGazeTrakcer succeeds', async () => {
+    await setShowGazeTracker('NO');
+    await trySaveSettings();
+    const settings = await tryLoadSettings();
+    expect(settings).not.toBeNull();
+    expect(settings!.showGazeTracker).toEqual('NO');
+  });
+
+  for (const radius of [0, 30]) {
+    it(`setting setGazeFuzzyRadius succeeds: radius=${radius}`, async () => {
+      await setGazeFuzzyRadius(radius);
+      await trySaveSettings();
+      const settings = await tryLoadSettings();
+      expect(settings).not.toBeNull();
+      expect(settings!.gazeFuzzyRadius).toEqual(radius);
+    });
+  }
+
+  it('setting gaze fuzzy radius to invalid values raises error', async () => {
+    await expectAsync(setGazeFuzzyRadius(-10)).toBeRejectedWithError();
+    await expectAsync(setGazeFuzzyRadius(NaN)).toBeRejectedWithError();
+    await expectAsync(setGazeFuzzyRadius(Infinity)).toBeRejectedWithError();
+  });
+
+  for (const dwellDelayMillis of [300, 500]) {
+    it(`setting dwell time millis succeeds: dwellDelayMillis=${
+           dwellDelayMillis}`,
+       async () => {
+         await setDwellDelayMillis(dwellDelayMillis);
+         await trySaveSettings();
+         const settings = await tryLoadSettings();
+         expect(settings).not.toBeNull();
+         expect(settings!.dwellDelayMillis).toEqual(dwellDelayMillis);
+       });
+  }
+
+  it('setting dwell time to invalid values raises error', async () => {
+    await expectAsync(setDwellDelayMillis(-10)).toBeRejectedWithError();
+    await expectAsync(setDwellDelayMillis(NaN)).toBeRejectedWithError();
+    await expectAsync(setDwellDelayMillis(Infinity)).toBeRejectedWithError();
   });
 });

@@ -25,7 +25,7 @@
 
 .metric-container {
   display: inline-block;
-  border-radius: 5px;
+  border-radius: 4px;
   color: #999;
   line-height: 24px;
   font-size: 21px;
@@ -45,35 +45,33 @@
 </style>
 
 <div class="container">
+  <div class="icon-tag">
+    ⏱️
+  </div>
 
-<div class="icon-tag">
-  ⏱️
-</div>
+  <div
+      class="metric-container wpm"
+      *ngIf="overallWpm !== null">
+    <span>WPM:</span>
+    <span class="overall-metric-value" >
+        {{overallWpm.toFixed(1)}}
+    </span>
 
-<div
-    class="metric-container wpm"
-    *ngIf="overallWpm !== null">
-  <span>WPM:</span>
-  <span class="overall-metric-value" >
-      {{overallWpm.toFixed(1)}}
-  </span>
+    <span class="latest-metric" *ngIf="latestWpm !== null">
+      (latest:{{latestWpm.toFixed(1)}})
+    </span>
+  </div>
 
-  <span class="latest-metric" *ngIf="latestWpm !== null">
-    (latest:{{latestWpm.toFixed(1)}})
-  </span>
-</div>
+  <div
+      class="metric-container ksr"
+      *ngIf="overallKsr !== null">
+    <span>KSR:</span>
+    <span class="overall-metric-value">
+        {{overallKsr.toFixed(2)}}
+    </span>
 
-<div
-    class="metric-container ksr"
-    *ngIf="overallKsr !== null">
-  <span>KSR:</span>
-  <span class="overall-metric-value">
-      {{overallKsr.toFixed(2)}}
-  </span>
-
-  <span class="latest-metric" *ngIf="latestKsr !== null">
-    (latest:{{latestKsr.toFixed(2)}})
-  </span>
-</div>
-
+    <span class="latest-metric" *ngIf="latestKsr !== null">
+      (latest:{{latestKsr.toFixed(2)}})
+    </span>
+  </div>
 </div>

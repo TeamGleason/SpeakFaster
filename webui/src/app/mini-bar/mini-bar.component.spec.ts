@@ -40,7 +40,7 @@ describe('MiniBarComponent', () => {
   it('registers button box', async () => {
     await fixture.whenStable();
 
-    expect(testListener.updateButtonBoxesCalls.length).toEqual(1);
+    expect(testListener.updateButtonBoxesCalls.length).toBeGreaterThan(0);
     const lastCall =
         testListener
             .updateButtonBoxesCalls[testListener.updateButtonBoxesCalls.length - 1];

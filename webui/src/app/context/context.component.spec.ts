@@ -1,12 +1,24 @@
+import {HttpClientModule} from '@angular/common/http';
+import {Injectable} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {By} from '@angular/platform-browser';
-import {Subject} from 'rxjs';
+import {Observable, of, Subject} from 'rxjs';
 
-import {HttpEventLogger} from '../event-logger/event-logger-impl';
+import {RetrieveContextResponse, SpeakFasterService} from '../speakfaster-service';
 import {TextEntryEndEvent} from '../types/text-entry';
 
 import {ContextComponent} from './context.component';
 import {ContextModule} from './context.module';
+
+@Injectable()
+class SpeakFasterServiceForTest {
+  retrieveContext(userId: string): Observable<RetrieveContextResponse> {
+    return of({
+      result: 'SUCCESS',
+      contextSignals: [],
+    });
+  }
+}
 
 describe('ContextComponent', () => {
   let fixture: ComponentFixture<ContextComponent>;
@@ -15,16 +27,19 @@ describe('ContextComponent', () => {
   beforeEach(async () => {
     await TestBed
         .configureTestingModule({
-          imports: [ContextModule],
+          imports: [ContextModule, HttpClientModule],
           declarations: [ContextComponent],
-          providers: [
-            {provide: HttpEventLogger, useValue: new HttpEventLogger(null)},
-          ]
+          providers: [{
+            provide: SpeakFasterService,
+            useValue: new SpeakFasterServiceForTest()
+          }],
         })
         .compileComponents();
     textEntryEndSubject = new Subject();
     fixture = TestBed.createComponent(ContextComponent);
+    fixture.componentInstance.disableContinuousContextRetrieval();
     fixture.componentInstance.textEntryEndSubject = textEntryEndSubject;
+    fixture.componentInstance.userId = 'testuser';
     fixture.detectChanges();
   });
 
@@ -47,7 +62,6 @@ describe('ContextComponent', () => {
     const turnComponent = turnComponents[0];
     expect(turnComponent.query(By.css('.turn-content')).nativeElement.innerText)
         .toEqual('Hello, world');
-    expect(turnComponent.query(By.css('.tts-tag'))).not.toBeNull();
   });
 
   it('displays no context signal if text-entry-end event is not final', () => {
@@ -62,10 +76,10 @@ describe('ContextComponent', () => {
     expect(turnComponents.length).toEqual(0);
   });
 
-  it('displays the latest four elements if there are more than four', () => {
+  it('displays the latest three elements if there are more than three', () => {
     for (let i = 0; i < 5; ++i) {
       textEntryEndSubject.next({
-        text: `Hello, #${i}`,
+        text: `Hello, #${i + 1}`,
         timestampMillis: i * 1000,
         isFinal: true,
       });
@@ -73,22 +87,18 @@ describe('ContextComponent', () => {
     }
     const turnComponents = fixture.debugElement.queryAll(
         By.css('app-conversation-turn-component'));
-    expect(turnComponents.length).toEqual(4);
+    expect(turnComponents.length).toEqual(3);
     expect(turnComponents[0]
                .query(By.css('.turn-content'))
                .nativeElement.innerText)
-        .toEqual('Hello, #1');
+        .toEqual('Hello, #3');
     expect(turnComponents[1]
                .query(By.css('.turn-content'))
                .nativeElement.innerText)
-        .toEqual('Hello, #2');
+        .toEqual('Hello, #4');
     expect(turnComponents[2]
                .query(By.css('.turn-content'))
                .nativeElement.innerText)
-        .toEqual('Hello, #3');
-    expect(turnComponents[3]
-               .query(By.css('.turn-content'))
-               .nativeElement.innerText)
-        .toEqual('Hello, #4');
+        .toEqual('Hello, #5');
   });
 });

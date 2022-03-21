@@ -25,6 +25,7 @@ export function isTextContentKey(event: KeyboardEvent) {
       event.key.length === 1 &&
       ((event.key >= 'A' && event.key <= 'Z') ||
        (event.key >= 'a' && event.key <= 'z') ||
-       (event.key >= '0' && event.key <= '9') ||
-       PUNCTUATION_KEYS.indexOf(event.key) !== -1 || (event.key === ' ')));
+       (event.key >= '0' && event.key <= '9') || event.key === '\'' ||
+       event.key === ';' || PUNCTUATION_KEYS.indexOf(event.key) !== -1 ||
+       (event.key === ' ')));
 }

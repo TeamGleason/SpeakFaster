@@ -1,0 +1,50 @@
+<style>
+
+:host {
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+}
+
+.chip-button {
+  background: #0687BE;
+  border: none;
+  border-radius: 8px;
+  color: #eee;
+  flex: 1;
+  font-size: 20px;
+  font-weight: 600;
+  height: 48px;
+  margin: 0 5px;
+  min-width: 65px;
+  order: 2;
+  padding: 0 4px;
+  vertical-align: middle;
+  width: fit-content;
+}
+
+.chip-button.chip-focused {
+  background: darkgreen;
+}
+
+.chip-button.cut-button {
+  background: #ccc;
+}
+
+</style>
+
+<button
+    #clickableButton
+    class="chip-button"
+    [ngClass]="{'chip-focused': focused}">
+  {{text}}
+  <span *ngIf="typed">|</span>
+</button>
+
+<button
+    #clickableButton
+    *ngIf="focused && supportsCut"
+    class="chip-button cut-button"
+    (click)="onCutButtonClicked($event)">
+  ✂️
+</button>

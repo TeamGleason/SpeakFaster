@@ -2,9 +2,10 @@
 
 import {ComponentFixture, fakeAsync, TestBed, tick} from '@angular/core/testing';
 import {By} from '@angular/platform-browser';
-import {Observable, of, throwError} from 'rxjs';
+import {Observable, of, Subject, throwError} from 'rxjs';
 
 import {HttpEventLogger} from '../event-logger/event-logger-impl';
+import {InputBarControlEvent} from '../input-bar/input-bar.component';
 import {SpeakFasterService} from '../speakfaster-service';
 import {AddContextualPhraseRequest, AddContextualPhraseResponse, DeleteContextualPhraseRequest, DeleteContextualPhraseResponse} from '../types/contextual_phrase';
 
@@ -26,10 +27,17 @@ class SpeakFasterServiceForTest {
 describe('FavoriteButton', () => {
   let fixture: ComponentFixture<FavoriteButtonComponent>;
   let speakFasterServiceForTest: SpeakFasterServiceForTest;
+  let inputBarControlSubject: Subject<InputBarControlEvent>;
+  let inputBarControlEvents: InputBarControlEvent[];
   let httpEventLoggerForTest: HttpEventLogger;
 
   beforeEach(async () => {
     speakFasterServiceForTest = new SpeakFasterServiceForTest();
+    inputBarControlSubject = new Subject();
+    inputBarControlEvents = [];
+    inputBarControlSubject.subscribe((event) => {
+      inputBarControlEvents.push(event);
+    });
     httpEventLoggerForTest = new HttpEventLogger(null);
     await TestBed
         .configureTestingModule({
@@ -42,6 +50,7 @@ describe('FavoriteButton', () => {
         })
         .compileComponents();
     fixture = TestBed.createComponent(FavoriteButtonComponent);
+    fixture.componentInstance.inputBarControlSubject = inputBarControlSubject;
     fixture.detectChanges();
   });
 
@@ -97,6 +106,11 @@ describe('FavoriteButton', () => {
            tags: ['favorite'],
          },
        });
+       expect(inputBarControlEvents.length).toEqual(1);
+       expect(inputBarControlEvents[0]).toEqual({
+         clearAll: true,
+         refreshContextualPhrases: true,
+       })
 
        tick(2000);
        expect(fixture.componentInstance.state).toEqual(State.READY);
@@ -128,49 +142,55 @@ describe('FavoriteButton', () => {
        expect(fixture.componentInstance.state).toEqual(State.READY);
      }));
 
-  it('deleting phrase, clicking button toggles betweee and and delete calls',
-     () => {
-       fixture.componentInstance.isDeletion = true;
-       fixture.componentInstance.userId = 'testuser1';
-       fixture.componentInstance.phrase = 'hi there!';
-       fixture.componentInstance.phraseId = 'deadbeef';
-       fixture.detectChanges();
-       const button = fixture.debugElement.query(By.css('.favorite-button'));
-       const addSpy = spyOn(speakFasterServiceForTest, 'addContextualPhrase')
-                          .and.callThrough();
-       const deleteSpy =
-           spyOn(speakFasterServiceForTest, 'deleteContextualPhrase')
-               .and.callThrough();
-       button.nativeElement.click();
-       fixture.detectChanges();
+  for (const [originalTags, expectedRestoreTags] of [
+           [['tag1', 'tag2'], ['tag1', 'tag2']],
+           [['favorite'], ['favorite']],
+  ]) {
+    it('deleting phrase, clicking button toggles betweee and and delete calls',
+       () => {
+         fixture.componentInstance.isDeletion = true;
+         fixture.componentInstance.userId = 'testuser1';
+         fixture.componentInstance.phrase = 'hi there!';
+         fixture.componentInstance.phraseId = 'deadbeef';
+         fixture.componentInstance.tags = originalTags.slice();
+         fixture.detectChanges();
+         const button = fixture.debugElement.query(By.css('.favorite-button'));
+         const addSpy = spyOn(speakFasterServiceForTest, 'addContextualPhrase')
+                            .and.callThrough();
+         const deleteSpy =
+             spyOn(speakFasterServiceForTest, 'deleteContextualPhrase')
+                 .and.callThrough();
+         button.nativeElement.click();
+         fixture.detectChanges();
 
-       expect(fixture.componentInstance.state).toEqual(State.SUCCESS);
-       expect(addSpy).not.toHaveBeenCalled();
-       expect(deleteSpy).toHaveBeenCalledOnceWith({
-         userId: 'testuser1',
-         phraseId: 'deadbeef',
+         expect(fixture.componentInstance.state).toEqual(State.SUCCESS);
+         expect(addSpy).not.toHaveBeenCalled();
+         expect(deleteSpy).toHaveBeenCalledOnceWith({
+           userId: 'testuser1',
+           phraseId: 'deadbeef',
+         });
+
+         expect(button.query(By.css('.button-image'))
+                    .nativeElement.src.indexOf('/assets/images/repeat.png'))
+             .toBeGreaterThanOrEqual(0);
+         button.nativeElement.click();
+         fixture.detectChanges();
+
+         expect(fixture.componentInstance.state).toEqual(State.RESTORED);
+         expect(addSpy).toHaveBeenCalledOnceWith({
+           userId: 'testuser1',
+           contextualPhrase: {
+             phraseId: '',
+             text: 'hi there!',
+             tags: expectedRestoreTags.slice(),
+           },
+         });
+
+         expect(button.query(By.css('.button-image'))
+                    .nativeElement.src.indexOf('/assets/images/delete.png'))
+             .toBeGreaterThanOrEqual(0);
        });
-
-       expect(button.query(By.css('.button-image'))
-                  .nativeElement.src.indexOf('/assets/images/repeat.png'))
-           .toBeGreaterThanOrEqual(0);
-       button.nativeElement.click();
-       fixture.detectChanges();
-
-       expect(fixture.componentInstance.state).toEqual(State.RESTORED);
-       expect(addSpy).toHaveBeenCalledOnceWith({
-         userId: 'testuser1',
-         contextualPhrase: {
-           phraseId: '',
-           text: 'hi there!',
-           tags: ['favorite'],
-         },
-       });
-
-       expect(button.query(By.css('.button-image'))
-                  .nativeElement.src.indexOf('/assets/images/delete.png'))
-           .toBeGreaterThanOrEqual(0);
-     });
+  }
 
   it('send user feedback: clicking button calls addContextualPhrase and shows spinner',
      () => {

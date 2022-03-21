@@ -2,18 +2,42 @@
 
 :host {
   box-sizing: border-box;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  font-family: "Google Sans", "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+}
+
+button {
+  background: #484747;
+  border: 1px #eee solid;
+  border-radius: 4px;
+  box-sizing: border-box;
+  color: white;
+  flex: 1;
+  font-weight: bold;
+  font-size: 30px;
+  margin: 4px;
+  width: 60px;
 }
 
 app-phrase-component {
   display: inline-block;
-  margin: 3px 5px;
+  margin: 2px 4px;
 }
 
 mat-progress-spinner {
   display: inline-block;
   stroke: #ddd;
   zoom: 0.3;
+}
+
+.button-image {
+  height: 36px;
+  width: 36px;
+  vertical-align: middle;
+}
+
+.close-sub-tag-button {
+  height: 60px;
+  padding: 4px;
 }
 
 .container {
@@ -36,8 +60,7 @@ mat-progress-spinner {
 }
 
 .quick-phrases-container {
-  height: 300px;
-  max-height: 365px;
+  max-height: 305px;
   overflow-y: hidden;
 }
 
@@ -49,16 +72,6 @@ mat-progress-spinner {
 }
 
 .scroll-button {
-  background: #484747;
-  border: 1px #eee solid;
-  border-radius: 5px;
-  box-sizing: border-box;
-  color: white;
-  flex: 1;
-  font-weight: bold;
-  font-size: 30px;
-  margin: 5px;
-  width: 60px;
 }
 
 .scroll-button-disabled {
@@ -73,23 +86,60 @@ mat-progress-spinner {
   width: fit-content;
 }
 
+.sub-tag-name {
+  font-weight: 800;
+}
+
+.sub-tag-section {
+  margin-top: 12px;
+  max-width: 80px;
+}
+
+.sub-tag-title {
+  color: #eee;
+  margin: 4px;
+}
+
 </style>
 
 <div class="container">
+  <div *ngIf="hasSubTag" class="sub-tag-section">
+    <div class="sub-tag-title">
+      Phrases for
+      <span class="sub-tag-name">{{subTag}}</span>
+    </div>
+
+    <button
+        #clickableButton
+        class="close-sub-tag-button"
+        (click)="onCloseSubTagButtonClicked($event)">
+      <img
+          class="button-image"
+          src="/assets/images/back.png"
+          alt="add to favorite" />
+    </button>
+  </div>
+
   <div
       #quickPhrasesContainer
       class="quick-phrases-container">
 
     <app-phrase-component
-        *ngFor="let phrase of phrases; let i = index"
+        *ngFor="let phrase of filteredPhrases; let i = index"
         #phraseOption
         class="item{{i + 1}}"
-        [phraseText]="phrase"
+        [userId]="userId"
+        [phraseId]="phrase.phraseId"
+        [scaleFontSize]="true"
+        [phraseText]="phrase.text"
         [phraseIndex]="i"
-        [showFavoriteButton]="true"
+        [showFavoriteButton]="showDeleteButtons || hasSubTag"
+        [showExpandButton]="showExpandButtons && !hasSubTag"
+        [tags]="[effectiveAllowedTag]"
         [color]="color"
         (speakButtonClicked)="onSpeakOptionButtonClicked($event)"
-        (injectButtonClicked)="onInjectionOptionButtonClicked($event)">
+        (injectButtonClicked)="onInjectionOptionButtonClicked($event)"
+        (expandButtonClicked)="onExpandButtonClicked($event)">
     </app-phrase-component>
 
     <div
@@ -103,7 +153,7 @@ mat-progress-spinner {
     </div>
 
     <div
-        *ngIf="state === 'RETRIEVED_PHRASES' && phrases.length === 0"
+        *ngIf="state === 'RETRIEVED_PHRASES' && filteredPhrases.length === 0"
         class="no-quick-phrases">
         No quick phrases found
     </div>
@@ -122,16 +172,32 @@ mat-progress-spinner {
     <button
         #clickableButton
         class="scroll-button"
-        [ngClass]="{'scroll-button-disabled': isScrollButtonDisabled('up')}"
         (click)="onScrollButtonClicked($event, 'up')">
-      ↑
+      <img
+          *ngIf="!isScrollButtonDisabled('up')"
+          class="button-image"
+          src="/assets/images/arrow_up.png"
+          alt="add to favorite" />
+      <img
+          *ngIf="isScrollButtonDisabled('up')"
+          class="button-image"
+          src="/assets/images/arrow_up_disabled.png"
+          alt="add to favorite" />
     </button>
     <button
         #clickableButton
         class="scroll-button"
-        [ngClass]="{'scroll-button-disabled': isScrollButtonDisabled('down')}"
         (click)="onScrollButtonClicked($event, 'down')">
-      ↓
+      <img
+          *ngIf="!isScrollButtonDisabled('down')"
+          class="button-image"
+          src="/assets/images/arrow_down.png"
+          alt="add to favorite" />
+      <img
+          *ngIf="isScrollButtonDisabled('down')"
+          class="button-image"
+          src="/assets/images/arrow_down_disabled.png"
+          alt="add to favorite" />
     </button>
   </div>
 </div>

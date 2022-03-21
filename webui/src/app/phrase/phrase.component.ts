@@ -3,6 +3,11 @@ import {AfterViewInit, Component, ElementRef, EventEmitter, Input, OnDestroy, Ou
 import {updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
 import {createUuid} from 'src/utils/uuid';
 
+export enum State {
+  READY = 'READY',
+  CONFIRMING_DELETION = 'CONFIRMING_DELETION',
+}
+
 @Component({
   selector: 'app-phrase-component',
   templateUrl: './phrase.component.html',
@@ -13,11 +18,20 @@ export class PhraseComponent implements AfterViewInit, OnDestroy {
   private readonly instanceId = PhraseComponent._NAME + '_' + createUuid();
   private static readonly BASE_FONT_SIZE_PX = 22;
   private static readonly FONT_SCALING_LENGTH_THRESHOLD = 32;
-  @Input() color: string = '#093F3A';
+  private static readonly MIN_FONT_SIZE_PX = 16;
+  @Input() userId!: string;
   @Input() phraseText!: string;
   @Input() phraseIndex!: number;
+  @Input() phraseId?: string;
+  @Input() tags?: string[];
+  @Input() color: string = '#093F3A';
   @Input() showFavoriteButton: boolean = false;
+  @Input() showExpandButton: boolean = false;
   @Input() scaleFontSize = false;
+  @Input() isTextClickable: boolean = false;
+  @Output()
+  textClicked: EventEmitter<{phraseText: string, phraseIndex: number}> =
+      new EventEmitter();
   @Output()
   speakButtonClicked: EventEmitter<{phraseText: string, phraseIndex: number}> =
       new EventEmitter();
@@ -25,19 +39,21 @@ export class PhraseComponent implements AfterViewInit, OnDestroy {
   injectButtonClicked: EventEmitter<{phraseText: string, phraseIndex: number}> =
       new EventEmitter();
   @Output()
-  favoriteButtonClicked:
-      EventEmitter<{phraseText: string, phraseIndex: number}> =
-          new EventEmitter();
+  expandButtonClicked: EventEmitter<{phraseText: string, phraseIndex: number}> =
+      new EventEmitter();
 
   @ViewChild('phrase') phraseElement!: ElementRef<HTMLDivElement>;
-
-  public updateButtonBoxesWithContainerRect(containerRect: DOMRect) {
-    updateButtonBoxesForElements(
-        this.instanceId, this.clickableButtons, containerRect);
-  }
-
   @ViewChildren('clickableButton')
   clickableButtons!: QueryList<ElementRef<HTMLElement>>;
+  @ViewChildren('clickableButton,phrase')
+  clickableButtonsAndText!: QueryList<ElementRef<HTMLElement>>;
+
+  public updateButtonBoxesWithContainerRect(containerRect: DOMRect) {
+    const clicakbleAreas = this.isTextClickable ? this.clickableButtonsAndText :
+                                                  this.clickableButtons;
+    updateButtonBoxesForElements(
+        this.instanceId, clicakbleAreas, containerRect);
+  }
 
   ngAfterViewInit() {
     let fontSizePx = PhraseComponent.BASE_FONT_SIZE_PX;
@@ -47,36 +63,55 @@ export class PhraseComponent implements AfterViewInit, OnDestroy {
       fontSizePx /= Math.pow(
           (this.phraseText.length /
            PhraseComponent.FONT_SCALING_LENGTH_THRESHOLD),
-          1.2);
+          1.1);
+      if (fontSizePx < PhraseComponent.MIN_FONT_SIZE_PX) {
+        fontSizePx = PhraseComponent.MIN_FONT_SIZE_PX;
+      }
       this.phraseElement.nativeElement.style.fontSize =
           `${fontSizePx.toFixed(1)}px`;
       const lineHeightPx = fontSizePx + 2;
       this.phraseElement.nativeElement.style.lineHeight =
           `${lineHeightPx.toFixed(1)}px`;
     }
-    updateButtonBoxesForElements(this.instanceId, this.clickableButtons);
-    this.clickableButtons.changes.subscribe(
-        (queryList: QueryList<ElementRef>) => {
-          updateButtonBoxesForElements(this.instanceId, queryList);
-        });
+    // TODO(cais): Add unit test.
+    const clicakbleAreas = this.isTextClickable ? this.clickableButtonsAndText :
+                                                  this.clickableButtons;
+    updateButtonBoxesForElements(this.instanceId, clicakbleAreas);
+    clicakbleAreas.changes.subscribe((queryList: QueryList<ElementRef>) => {
+      updateButtonBoxesForElements(this.instanceId, queryList);
+    });
   }
 
   ngOnDestroy() {
     updateButtonBoxesToEmpty(this.instanceId);
   }
 
+  onTextClicked(event: Event) {
+    if (!this.isTextClickable) {
+      return;
+    }
+    this.textClicked.emit({
+      phraseText: this.phraseText,
+      phraseIndex: this.phraseIndex,
+    });  // TODO(cais): Add unit test.
+  }
+
   onSpeakButtonClicked(event: Event) {
+    (event.target as HTMLButtonElement).blur();
+    // TODO(cais): Add unit test.
     this.speakButtonClicked.emit(
         {phraseText: this.phraseText, phraseIndex: this.phraseIndex});
   }
 
   onInjectButtonClicked(event: Event) {
+    (event.target as HTMLButtonElement).blur();
     this.injectButtonClicked.emit(
         {phraseText: this.phraseText, phraseIndex: this.phraseIndex});
   }
 
-  onFavoriteButtonClicked(event: Event) {
-    this.favoriteButtonClicked.emit(
+  onExpandButtonClicked(event: Event) {
+    (event.target as HTMLButtonElement).blur();
+    this.expandButtonClicked.emit(
         {phraseText: this.phraseText, phraseIndex: this.phraseIndex});
   }
 }

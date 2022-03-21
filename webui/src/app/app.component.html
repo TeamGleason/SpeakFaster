@@ -4,7 +4,7 @@
   background-color: black;
   box-sizing: border-box;
   color: #333;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  font-family: "Google Sans", "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
   font-size: 16px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -21,6 +21,10 @@ app-context-component {
 
 app-text-to-speech-component {
   float: right;
+}
+
+.app-context-component-area-hidden {
+  display: none;
 }
 
 .auth-area {
@@ -47,6 +51,11 @@ app-text-to-speech-component {
   width: fit-content;
 }
 
+.context-and-quick-phrase-container {
+  max-height: 300px;
+  overflow-y: hidden;
+}
+
 .main-area {
   display: flex;
   height: fit-content;
@@ -55,13 +64,18 @@ app-text-to-speech-component {
   width: 1200px;
 }
 
+.main-area.main-area-hidden {
+  display: none;
+}
+
 .main-left-pane {
   align-items:flex-end;
   box-sizing: border-box;
   display: flex;
   min-height: 100%;
   justify-content: flex-end;
-  padding-bottom: 10px;
+  padding-top: 10px;
+  padding-bottom: 6px;
   width: fit-content;
 }
 
@@ -69,17 +83,13 @@ app-text-to-speech-component {
   height: 360px;
 }
 
-.mode-quick-phrases {
-  height: 240px;
-}
-
 .side-pane-button {
   background: transparent;
   border: none;
   display: block;
-  height: 50px;
-  margin: 10px 0 0;
-  width: 50px;
+  height: 72px;
+  padding: 12px;
+  width: 72px;
 }
 
 .side-pane-button-container {
@@ -93,6 +103,10 @@ app-text-to-speech-component {
     *ngIf="getUserRole() === 'AAC_USER' else partnerBlock"
     class="content"
     role="main">
+
+  <!-- This is a "virtual" component without any UI. It is purely for
+       handling keyboard events. -->
+  <app-keyboard-component></app-keyboard-component>
 
   <div *ngIf="!hasAccessToken()" class="auth-area">
     <app-auth-component (newAccessToken)="onNewAccessToken($event)"></app-auth-component>
@@ -124,9 +138,17 @@ app-text-to-speech-component {
       [textEntryEndSubject]="textEntryEndSubject">
   </app-metrics-component>
 
+  <app-lexicon-component
+      *ngIf="hasAccessToken()"
+      [languageCode]="languageCode"
+      [userId]="userId"
+      [loadPrefixedLexiconRequestSubject]="loadPrefixedLexiconRequestSubject"
+  ></app-lexicon-component>
+
   <div
       class="main-area"
-      *ngIf="hasAccessToken() && appState !== 'MINIBAR'">
+      *ngIf="hasAccessToken()"
+      [ngClass]="{'main-area-hidden': appState === 'MINIBAR'}">
     <div class="main-left-pane">
       <div class="side-pane-button-container">
         <button
@@ -156,35 +178,71 @@ app-text-to-speech-component {
       </div>
     </div>
 
-    <div
-        class="main-right-pane mode-quick-pharses">
+    <div class="main-right-pane">
+      <app-context-component
+        [ngClass]="{'app-context-component-area-hidden': appState !== 'ABBREVIATION_EXPANSION'}"
+        [userId]="userId"
+        [textEntryEndSubject]="textEntryEndSubject"
+        [isDev]="isDev"
+        (contextStringsUpdated)="onContextStringsUpdated($event)"
+        (contextStringsSelected)="onContextStringsSelected($event)"
+      ></app-context-component>
+
       <app-quick-phrases-component
-          *ngIf="hasAccessToken() && isQuickPhrasesAppState()"
-          [allowedTags]="getQuickPhrasesAllowedTags()"
+          *ngIf="isQuickPhrasesAppState()"
+          [userId]="userId"
+          [allowedTag]="getQuickPhrasesAllowedTag()"
+          [showDeleteButtons]="getQuickPhrasesShowDeleteButtons()"
+          [showExpandButtons]="getQuickPhrasesShowExpandButtons()"
           [color]="getQuickPhrasesColor()"
           [textEntryBeginSubject]="textEntryBeginSubject"
           [textEntryEndSubject]="textEntryEndSubject"
+          [inputBarControlSubject]="inputBarControlSubject"
+          [filterPrefix]="inputString.trim()"
       ></app-quick-phrases-component>
 
-      <app-context-component
-        *ngIf="hasAccessToken() && appState === 'ABBREVIATION_EXPANSION'"
-        [textEntryEndSubject]="textEntryEndSubject"
-      ></app-context-component>
-
       <app-abbreviation-component
-        *ngIf="hasAccessToken() && appState === 'ABBREVIATION_EXPANSION'"
-        [contextStrings]="contextStrings"
+        *ngIf="isMinimizedOrNonMinimizedAbbreviationExpansionState"
+        [userId]="userId"
+        [conversationTurns]="conversationTurnsSelected.slice()"
         [abbreviationExpansionTriggers]="abbreviationExpansionTriggers"
+        [fillMaskTriggers]="fillMaskTriggers"
+        [textEntryBeginSubject]="textEntryBeginSubject"
         [textEntryEndSubject]="textEntryEndSubject"
+        [inputBarControlSubject]="inputBarControlSubject"
       ></app-abbreviation-component>
 
       <app-settings-component
-          *ngIf="appState === 'SETTINGS'">
+          *ngIf="appState === 'SETTINGS'"
+          [userId]="userId"
+          [userEmail]="userEmail"
+          [userGivenName]="userGivenName"
+          (helpButtonClicked)="onHelpButtonClicked($event)"
+          (eyeGazeSettingsButtonClicked)="onEyeGazeSettingsButtonClicked($event)">
       </app-settings-component>
+
+      <app-settings-eye-gaze-component
+          *ngIf="appState === 'EYE_GAZE_SETTINGS'">
+      </app-settings-eye-gaze-component>
+
+      <app-help-component
+          *ngIf="appState === 'HELP'">
+      </app-help-component>
 
       <div class="bottom-area">
         <app-input-bar-component
+            [userId]="userId"
+            [contextStrings]="contextStringsSelected.slice()"
+            [languageCode]="languageCode"
             [textEntryEndSubject]="textEntryEndSubject"
+            [supportsAbbrevationExpansion]="appState === 'ABBREVIATION_EXPANSION'"
+            [favoriteButtonSendsUserFeedback]="appState === 'SETTINGS' || appState === 'HELP'"
+            [inputBarControlSubject]="inputBarControlSubject"
+            [loadPrefixedLexiconRequestSubject]="loadPrefixedLexiconRequestSubject"
+            [abbreviationExpansionTriggers]="abbreviationExpansionTriggers"
+            [fillMaskTriggers]="fillMaskTriggers"
+            [isFocused]="isFocused"
+            (inputStringChanged)="onInputStringChanged($event)"
         ></app-input-bar-component>
       </div>
     </div>

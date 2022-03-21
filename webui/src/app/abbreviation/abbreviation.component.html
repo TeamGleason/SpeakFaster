@@ -3,18 +3,20 @@
 :host {
   box-sizing: border-box;
   color: #EEE;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  font-family: "Google Sans", "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
   font-size: 32px;
+  position: relative;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-.abbreviation-expansion {
-  align-self: center;
-  display: inline;
-  flex: 5;
-  white-space: pre-wrap;
-  vertical-align: middle;
+app-quick-phrases-component {
+  bottom: 0;
+  display: block;
+  left: 0;
+  margin-bottom: 0;
+  max-height: 100px;
+  position: absolute;
 }
 
 mat-progress-spinner {
@@ -25,7 +27,7 @@ mat-progress-spinner {
 
 .abbreviation-option {
   background: #333;
-  border-radius: 5px;
+  border-radius: 4px;
   color: #eee;
   display: flex;
   font-size: 22px;
@@ -44,18 +46,28 @@ mat-progress-spinner {
 .abbreviation-options-grid {
   align-items: start;
   display: grid;
-  gap: 5px;
+  gap: 1px 5px;
   grid-auto-columns: minmax(0, 1fr);
   grid-auto-flow: column;
   grid-template-areas:
-    "a a a a c c c c e e e e"
-    "a a a a c c c c e e e e"
-    "b b b b d d d d f f f f"
-    "b b b b d d d d f f f f";
+    "a a a a d d d d"
+    "a a a a d d d d"
+    "b b b b e e e e"
+    "b b b b e e e e"
+    "c c c c f f f f"
+    "c c c c f f f f";
+  padding-left: 3px;
+}
+
+.button-image {
+  margin-right: 5px;
+  max-width: 80%;
+  max-height: 80%;
 }
 
 .item {
-  width: 355px;
+  padding: 1px;
+  width: 525px;
 }
 
 .item1 {
@@ -84,8 +96,8 @@ mat-progress-spinner {
 
 .action-button {
   background: darkgreen;
-  border: 2px solid #888;
-  border-radius: 5px;
+  border: 1px solid #888;
+  border-radius: 4px;
   color: #eee;
   display: inline-block;
   font-size: 28px;
@@ -106,8 +118,49 @@ mat-progress-spinner {
   width: 66px;
 }
 
-.expansions {
+.action-button.repeat-button {
+  align-items: center;
+  background-color: rgb(122, 102, 7);
+  border-radius: 8px;
+  bottom: 0;
+  display: flex;
+  flex-direction: row;
+  font-size: 22px;
+  height: 64px;
+  margin: 4px 0;
+  position: absolute;
+  right: 0;
+}
+
+.action-button.text-prediction-button {
+  border-width: 1px;
+  min-width: 80px;
+}
+
+.edit-token {
+  background: #333;
+  border: 2px solid #888;
+  border-radius: 4px;
+  color: #eee;
   display: inline-block;
+  font-size: 28px;
+  line-height: 32px;
+  margin: 10px;
+  min-width: 120px;
+  padding: 15px;
+  vertical-align: middle;;
+  width: fit-content;
+}
+
+.empty-options-container {
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+}
+
+.expansions {
+  display: inline-flex;
+  flex-direction: row;
   white-space: nowrap;
 }
 
@@ -118,6 +171,38 @@ mat-progress-spinner {
 
 .is-selected {
   border: 3px solid cyan;
+}
+
+.is-token-selected {
+  background-color: lightblue;
+  color: #111;
+}
+
+.option-button {
+  background: darkgreen;
+  border: 2px solid #888;
+  border-radius: 4px;
+  color: #eee;
+  display: inline-block;
+  font-size: 28px;
+  height: 72px;
+  line-height: 32px;
+  margin: 10px;
+  min-width: 72px;
+  padding: 15px;
+  vertical-align: top;
+  width: fit-content;
+}
+
+.refinement-button {
+  height: 64px;
+  margin: 4px 6px 9px;
+}
+
+.refinement-buttons-container {
+  display: inline-flex;
+  margin: 0 0 0 3px;
+  flex-direction: column;
 }
 
 .request-ongoing {
@@ -133,37 +218,38 @@ mat-progress-spinner {
 }
 
 .response-error {
+  align-items: center;
   color: orange;
+  display: flex;
+  flex-direction: row;
+  line-height: 50px;
+  margin: 15px;
 }
 
-.speak-button {
-  width: 70px;
+.token-input {
+  border: 2px solid #888;
+  border-radius: 3px;
+  font-size: 32px;
+  margin: 6px 8px;
+  padding: 2px 4px;
+  width: 150px;
 }
 
 .try-again-button {
   font-size: 18px;
   height: fit-content;
-  line-height: 32px;
-  padding: 5px;
+  padding: 10px;
   vertical-align: top;
   width: 120px;
 }
 
 .upper-container {
-  height: 150px;
+  height: 200px;
 }
 
 </style>
 
 <div class="upper-container">
-
-<button
-    #clickableButton
-    *ngIf="state === 'PRE_CHOOSING_EXPANSION' && !isInputAbbreviationEmpty"
-    class="action-button expand-abbreviation-button"
-    (click)="onExpandAbbreviationButtonClicked($event)">
-  Expand abbreviation
-</button>
 
 <div *ngIf="state == 'REQUEST_ONGOING'" class="info request-ongoing">
   <mat-progress-spinner
@@ -174,12 +260,9 @@ mat-progress-spinner {
 </div>
 <div *ngIf="responseError !== null" class="info response-error">
   Error: {{responseError}}
-</div>
-<div *ngIf="receivedEmptyOptions" class="empty-options-container">
-  <span class="info response-empty">Found no expansions</span>
   <button
       #clickableButton
-      class="option-button try-again-button"
+      class="action-button try-again-button"
       (click)="onTryAgainButtonClicked($event)">
     Try again
   </button>
@@ -187,33 +270,75 @@ mat-progress-spinner {
 <div
     *ngIf="state === 'CHOOSING_EXPANSION' || state == 'SPELLING'"
     class="expansions">
+
+  <div *ngIf="receivedEmptyOptions" class="empty-options-container">
+    <span class="info response-empty">Found no expansions</span>
+    <button
+        #clickableButton
+        class="action-button try-again-button"
+        (click)="onTryAgainButtonClicked($event)">
+      Try again
+    </button>
+  </div>
   <div class="abbreviation-options-container">
     <div class="abbreviation-options-grid">
       <app-phrase-component
           *ngFor="let abbreviationOption of abbreviationOptions; let i = index"
           #abbreviationOption
           class="item item{{i + 1}}"
+          [userId]="userId"
           [phraseText]="abbreviationOption"
           [phraseIndex]="i"
           [scaleFontSize]="true"
+          [showFavoriteButton]="true"
+          [color]="phraseBackgroundColor"
+          [isTextClickable]="true"
+          (textClicked)="onTextClicked($event)"
           (speakButtonClicked)="onSpeakOptionButtonClicked($event)"
           (injectButtonClicked)="onExpansionOptionButtonClicked($event)">
       </app-phrase-component>
-      <button
-          #clickableButton
-          class="action-button action-abort-button"
-          (click)="onAbortButtonClicked($event)">
-          🗙
-      </button>
     </div>
   </div>
 </div>
 
+<div
+    *ngIf="state === 'PRE_CHOOSING_EXPANSION' ||
+           state === 'POST_CHOOSING_EXPANSION'">
+  <button
+      #clickableButton
+      *ngFor="let text of textPredictions; let i = index"
+      class="action-button text-prediction-button"
+      (click)="onTextPredictionButtonClicked($event, i)">
+    {{text}}
+  </button>
+
+  <app-quick-phrases-component
+      [userId]="userId"
+      [allowedTag]="'temporal'"
+      [maxNumPhrases]="3"
+      [showDeleteButtons]="false"
+      [textEntryBeginSubject]="textEntryBeginSubject"
+      [textEntryEndSubject]="textEntryEndSubject"
+  ></app-quick-phrases-component>
 </div>
 
-<app-spell-component
-    *ngIf="abbreviation !== null && (state === 'SPELLING' || state === 'CHOOSING_EXPANSION' || state === 'REQUEST_ONGOING')"
-    class="spell-component"
-    [originalAbbreviationSpec]="abbreviation!"
-    (newAbbreviationSpec)="onNewAbbreviationSpec($event)"
-></app-spell-component>
+<app-abbreviation-refinement-component
+    *ngIf="state === 'REFINING_EXPANSION'"
+    [refinementType]="refinementType"
+    [fillMaskRequest]="fillMaskRequest!"
+    (refinementResult)="onRefinementResult($event)">
+</app-abbreviation-refinement-component>
+
+<button
+    #clickableButton
+    *ngIf="state === 'POST_CHOOSING_EXPANSION'"
+    class="action-button repeat-button"
+    (click)="onRepeatButtonClicked($event)">
+  <img
+      class="button-image"
+      src="/assets/images/repeat.png"
+      alt="Show options again" />
+  Show options again
+</button>
+
+</div>

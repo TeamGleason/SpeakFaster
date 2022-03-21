@@ -2,9 +2,11 @@
  * A button for adding a phrase to favorite. Supports animation that
  * indicates states such as ongoing request, success and error.
  */
-import {Component, EventEmitter, Input, OnDestroy, OnInit, Output} from '@angular/core';
+import {Component, Input, OnDestroy, OnInit} from '@angular/core';
+import {Subject} from 'rxjs';
 
 import {getContextualPhraseStats, getPhraseStats, HttpEventLogger} from '../event-logger/event-logger-impl';
+import {InputBarControlEvent} from '../input-bar/input-bar.component';
 import {SpeakFasterService} from '../speakfaster-service';
 import {AddContextualPhraseResponse} from '../types/contextual_phrase';
 
@@ -31,6 +33,10 @@ export class FavoriteButtonComponent implements OnInit, OnDestroy {
   // Phrase ID: must be provided if isDeleteion is true.
   @Input() phraseId?: string;
   @Input() sendAsUserFeedback: boolean = false;
+  @Input()
+  tags: string[]|undefined =
+      [FavoriteButtonComponent.DEFAULT_CONTEXTUAL_PHRASE_TAG];
+  @Input() inputBarControlSubject?: Subject<InputBarControlEvent>;
 
   state: State = State.READY;
 
@@ -74,7 +80,8 @@ export class FavoriteButtonComponent implements OnInit, OnDestroy {
         const contextualPhrase = {
           phraseId: '',  // For AddContextualPhraseRequest, this is ignored.
           text: this.phrase.trim(),
-          tags: [FavoriteButtonComponent.DEFAULT_CONTEXTUAL_PHRASE_TAG],
+          tags: this.tags ||
+              [FavoriteButtonComponent.DEFAULT_CONTEXTUAL_PHRASE_TAG],
         };
         this.eventLogger.logContextualPhraseAdd(
             getContextualPhraseStats(contextualPhrase));
@@ -99,6 +106,7 @@ export class FavoriteButtonComponent implements OnInit, OnDestroy {
                     this.phraseId = data.phraseId;
                   } else {
                     this.state = State.SUCCESS;
+                    this.sendContextualPhraseRrefreshSignal();
                     this.scheduleReset();
                   }
                 },
@@ -143,6 +151,15 @@ export class FavoriteButtonComponent implements OnInit, OnDestroy {
                 this.scheduleReset();
                 console.error('Deleting quick phrase failed:', error);
               });
+    }
+  }
+
+  private sendContextualPhraseRrefreshSignal() {
+    if (this.inputBarControlSubject) {
+      this.inputBarControlSubject.next({
+        clearAll: true,
+        refreshContextualPhrases: true,
+      });
     }
   }
 

@@ -2,7 +2,7 @@
 
 import {ElementRef, QueryList} from '@angular/core';
 import {getVirtualkeyCode, VIRTUAL_KEY} from 'src/app/external/external-events.component';
-import {AppSettings} from 'src/app/settings/settings';
+import {AppSettings, DEFAULT_DWELL_DELAY_MILLIS, DEFAULT_GAZE_FUZZY_RADIUS, getAppSettings, setShowGazeTracker} from 'src/app/settings/settings';
 
 const CEFSHARP_OBJECT_NAME = 'CefSharp';
 export const BOUND_LISTENER_NAME = 'boundListener';
@@ -20,6 +20,17 @@ export async function bindCefSharpListener() {
   console.log(
       `Bound CefSharp object: ${BOUND_LISTENER_NAME}:`,
       (window as any)[BOUND_LISTENER_NAME])
+}
+
+export function registerNewAccessToken(accessToken: string) {
+  if ((window as any)[BOUND_LISTENER_NAME] == null) {
+    console.warn(`Cannot call registerNewAccessToken(), because object ${
+        BOUND_LISTENER_NAME} is not found`)
+    return;
+  }
+  ((window as any)[BOUND_LISTENER_NAME] as any)
+      .registerNewAccessToken(accessToken);
+  console.log('Called registerNewAccessToken()');
 }
 
 /**
@@ -55,6 +66,27 @@ export function updateButtonBoxesForElements(
   }, 0);
 }
 
+/**
+ * Updates the host app regarding eye tracking options.
+ * @param showGazeTracker Whether the dot that tracks the gaze point is
+ *     shown.
+ * @param gazeFuzzyRadius The radius for the fuzzy gaze pointer (e.g, 20).
+ * @param dwellDelayMillis The dwell delay for gaze clicking, in milliseconds.
+ */
+export function setEyeGazeOptions(
+    showGazeTracker: boolean, gazeFuzzyRadius: number,
+    dwellDelayMillis: number) {
+  if ((window as any)[BOUND_LISTENER_NAME] == null) {
+    console.warn(`Cannot call setEyeGazeOptions(), because object ${
+        BOUND_LISTENER_NAME} is not found`)
+    return;
+  }
+  console.log(`Calling host setEyeGazeOptions with: setEyeGazeOptions=${
+      setShowGazeTracker}, gazeFuzzyRadius=${gazeFuzzyRadius}`);
+  ((window as any)[BOUND_LISTENER_NAME] as any)
+      .setEyeGazeOptions(showGazeTracker, gazeFuzzyRadius, dwellDelayMillis);
+}
+
 function isRectVisibleInsideContainer(rect: DOMRect, containerRect: DOMRect) {
   const {bottom, height, top} = rect;
   return top <= containerRect.top ? containerRect.top - top <= height :
@@ -85,17 +117,28 @@ function updateButtonBoxes(
  *   Non-special keys (e.g., letters, numbers, and punctuation) should be in
  *   their literal form.
  */
-export function injectKeys(virtualKeys: Array<string|VIRTUAL_KEY>) {
+export function injectKeys(virtualKeys: Array<string|VIRTUAL_KEY>): number {
   if ((window as any)[BOUND_LISTENER_NAME] == null) {
     console.warn(`Cannot call injectKeys(), because object ${
         BOUND_LISTENER_NAME} is not found`)
-    return;
+    return 0;
   }
   const virtualKeyCodes: number[] = [];
   for (const virtualKey of virtualKeys) {
     virtualKeyCodes.push(...getVirtualkeyCode(virtualKey));
   }
-  ((window as any)[BOUND_LISTENER_NAME] as any).injectKeys(virtualKeyCodes);
+  return ((window as any)[BOUND_LISTENER_NAME] as any)
+             .injectKeys(virtualKeyCodes) as number;
+}
+
+/** Request host app to reset the state of the attached soft keyboard. */
+export function requestSoftKeyboardReset() {
+  if ((window as any)[BOUND_LISTENER_NAME] == null) {
+    console.warn(`Cannot call requestSoftKeyboardReset(), because object ${
+        BOUND_LISTENER_NAME} is not found`)
+    return;
+  }
+  ((window as any)[BOUND_LISTENER_NAME] as any).requestSoftKeyboardReset();
 }
 
 /**
@@ -116,6 +159,25 @@ export type ExternalKeypressHook = (vkCode: number) => void;
 
 export function registerExternalKeypressHook(callback: ExternalKeypressHook) {
   (window as any)['externalKeypressHook'] = callback;
+}
+
+export type HostWindowFocusHook = (isFocused: boolean) => void;
+
+export function registerHostWindowFocusHook(callback: HostWindowFocusHook) {
+  (window as any)['setHostWindowFocus'] = callback;
+}
+
+export type ExternalAccessTokenHook = (accessToken: string) => void;
+
+/**
+ * Hook used to receive access token from external sources (e.g., the host
+ * app). The host app may periodically poll for new access tokens by using
+ * a refresh token and this hook is the mechanism through which the new
+ * access token is provided to the WebUI.
+ */
+export function registerExternalAccessTokenHook(
+    callback: ExternalAccessTokenHook) {
+  (window as any)['externalAccessTokenHook'] = callback;
 }
 
 /**
@@ -161,4 +223,26 @@ export async function loadSettings(): Promise<AppSettings|null> {
   } catch (error) {
     return null;
   }
+}
+
+/** Request the host app to quit. */
+export function requestQuitApp(): void {
+  if ((window as any)[BOUND_LISTENER_NAME] == null) {
+    console.warn(
+        `Cannot call requestQuitApp() ` +
+        `because object ${BOUND_LISTENER_NAME} is not found`);
+    return;
+  }
+  ((window as any)[BOUND_LISTENER_NAME] as any).requestQuitApp();
+}
+
+export async function setHostEyeGazeOptions() {
+  const appSettings = await getAppSettings();
+  setEyeGazeOptions(
+      appSettings.showGazeTracker === 'YES',
+      appSettings.gazeFuzzyRadius === undefined ? DEFAULT_GAZE_FUZZY_RADIUS :
+                                                  appSettings.gazeFuzzyRadius,
+      appSettings.dwellDelayMillis === undefined ?
+          DEFAULT_DWELL_DELAY_MILLIS :
+          appSettings.dwellDelayMillis);
 }

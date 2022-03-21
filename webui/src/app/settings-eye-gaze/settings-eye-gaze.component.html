@@ -1,0 +1,187 @@
+<style>
+:host {
+  background-color: black;
+  box-sizing: border-box;
+  color: #eee;
+  font-family: "Google Sans", "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  font-size: 16px;
+  margin-left: 12px;
+  position: fixed;
+  width: 800px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.app-title {
+  align-items: center;
+  color: #aaa;
+  display: flex;
+  flex-direction: row;
+  font-size: 20px;
+}
+
+.bottom-section {
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+  justify-content:space-between;
+}
+
+.header-section {
+  align-items: center;
+  border-bottom: 0.5px solid #444;
+  display: flex;
+  flex-direction: row;
+  height: 40px;
+}
+
+.icon-image {
+  align-self: center;
+  margin: 10px;
+  height: 36px;
+  width: 32px;
+}
+
+.option-button {
+  align-items: center;
+  background: #333;
+  border: 1px solid #888;
+  border-radius: 4px;
+  color: #eee;
+  display: inline-flex;
+  flex-direction: row;
+  font-size: 22px;
+  height: 60px;
+  line-height: 32px;
+  margin: 10px;
+  min-width: 80px;
+  padding: 8px;
+  vertical-align: top;
+  width: fit-content;
+}
+
+.option-button.active-button {
+  background: darkgreen;
+}
+
+.section-title {
+  display: inline-block;
+  font-size: 16px;
+  width: 120px;
+}
+
+.settings-section {
+  align-items: center;
+  border-bottom: 0.5px solid #444;
+  display: flex;
+  flex-direction: row;
+  height: fit-content;
+  width: 100%;
+}
+
+</style>
+
+<div class="header-section">
+  <div class="app-title">
+    <img class="icon-image" src="/assets/images/eye.png">
+    Eye-gaze settings
+  </div>
+</div>
+
+<div
+    *ngIf="appSettings !== null"
+    class="settings-section show-gaze-tracker-section">
+  <div class="section-title">Show gaze tracker:</div>
+
+  <button
+      #clickableButton
+      class="option-button"
+      [ngClass]="{'active-button': appSettings!.showGazeTracker === 'YES'}"
+      (click)="setShowGazeTracker('YES')">
+    Yes
+  </button>
+  <button
+      #clickableButton
+      class="option-button"
+      [ngClass]="{'active-button': appSettings!.showGazeTracker === 'NO'}"
+      (click)="setShowGazeTracker('NO')">
+    No
+  </button>
+</div>
+
+<div
+    *ngIf="appSettings !== null"
+    class="settings-section gaze-fuzzy-radius-section">
+  <div class="section-title">Gaze fuzzy radius:</div>
+
+  <button
+      #clickableButton
+      class="option-button"
+      [ngClass]="{'active-button': appSettings!.gazeFuzzyRadius === 0}"
+      (click)="setGazeFuzzyRadius(0)">
+    0
+  </button>
+  <button
+      #clickableButton
+      class="option-button"
+      [ngClass]="{'active-button': appSettings!.gazeFuzzyRadius === 10}"
+      (click)="setGazeFuzzyRadius(10)">
+    10
+  </button>
+  <button
+      #clickableButton
+      class="option-button"
+      [ngClass]="{'active-button': appSettings!.gazeFuzzyRadius === 20}"
+      (click)="setGazeFuzzyRadius(20)">
+    20
+  </button>
+  <button
+      #clickableButton
+      class="option-button"
+      [ngClass]="{'active-button': appSettings!.gazeFuzzyRadius === 30}"
+      (click)="setGazeFuzzyRadius(30)">
+    30
+  </button>
+  <button
+      #clickableButton
+      class="option-button"
+      [ngClass]="{'active-button': appSettings!.gazeFuzzyRadius === 40}"
+      (click)="setGazeFuzzyRadius(40)">
+    40
+  </button>
+</div>
+
+<div
+    *ngIf="appSettings !== null"
+    class="settings-section dwell-delay-section">
+  <div class="section-title">Dwell time (milliseconds):</div>
+
+  <button
+      #clickableButton
+      class="option-button"
+      [ngClass]="{'active-button': appSettings!.dwellDelayMillis === 300}"
+      (click)="setDwellDelayMillis(300)">
+    300
+  </button>
+  <button
+      #clickableButton
+      class="option-button"
+      [ngClass]="{'active-button': appSettings!.dwellDelayMillis === 400}"
+      (click)="setDwellDelayMillis(400)">
+    400
+  </button>
+  <button
+      #clickableButton
+      class="option-button"
+      [ngClass]="{'active-button': appSettings!.dwellDelayMillis === 500}"
+      (click)="setDwellDelayMillis(500)">
+    500
+  </button>
+  <button
+      #clickableButton
+      class="option-button"
+      [ngClass]="{'active-button': appSettings!.dwellDelayMillis === 600}"
+      (click)="setDwellDelayMillis(600)">
+    600
+  </button>
+</div>

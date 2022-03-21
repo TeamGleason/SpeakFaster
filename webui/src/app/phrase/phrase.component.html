@@ -2,7 +2,7 @@
 
 :host {
   box-sizing: border-box;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  font-family: "Google Sans", "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
 }
 
 .action-button {
@@ -13,20 +13,21 @@
   float: right;
   height: 64px;
   font-size: 20px;
-  margin-left: 5px;
+  margin-left: 4px;
   width: 75px;
-  padding: 2px 5px;
+  padding: 5px;
 }
 
 .button-image {
-  max-width: 45%;
-  max-height: 45%;
+  height: 36px;
+  width: 36px;
 }
 
 .phrase {
   align-self: center;
-  display: inline;
+  display: inline-flex;
   flex: 5;
+  height: 100%;
   white-space: pre-wrap;
   vertical-align: middle;
 }
@@ -46,8 +47,12 @@
   white-space: nowrap;
 }
 
+.phrase-text {
+  align-self: center;
+}
+
 .speak-button {
-  width: 70px;
+  width: 72px;
 }
 
 </style>
@@ -55,7 +60,12 @@
 <div class="phrase-container"
   style="background-color: {{color}}">
 
-  <div #phrase class="phrase">{{phraseText}}</div>
+  <div
+      #phrase
+      class="phrase"
+      (click)="onTextClicked($event)">
+    <span class="phrase-text">{{phraseText}}</span>
+  </div>
   <button
       #clickableButton
       class="action-button speak-button"
@@ -73,9 +83,22 @@
   <button
       #clickableButton
       *ngIf="showFavoriteButton"
-      class="action-button favorite-button"
-      (click)="onFavoriteButtonClicked($event)">
-    <img class="button-image" src="/assets/images/favorite.png" alt="favorite phrase" />
+      class="action-button favorite-button">
+    <app-favorite-button-component
+        [isDeletion]="phraseId !== undefined && phraseId.length > 0"
+        [userId]="userId"
+        [phraseId]="phraseId"
+        [phrase]="phraseText"
+        [tags]="tags">
+    </app-favorite-button-component>
+  </button>
+
+  <button
+      #clickableButton
+      *ngIf="showExpandButton"
+      class="action-button expand-button"
+      (click)="onExpandButtonClicked($event)">
+      <img class="button-image" src="/assets/images/partner-phrases.png" alt="expand" />
   </button>
 
 </div>

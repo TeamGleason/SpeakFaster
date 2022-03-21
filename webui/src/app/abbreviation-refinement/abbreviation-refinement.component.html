@@ -1,0 +1,104 @@
+<style>
+
+:host {
+    background-color: black;
+    box-sizing: border-box;
+    color: #333;
+    font-family: "Product Sans", "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+mat-progress-spinner {
+  display: inline-block;
+  stroke: #ddd;
+  zoom: 0.3;
+}
+
+button {
+  background: #333;
+  border: 2px solid #888;
+  border-radius: 4px;
+  color: #ddd;
+  display: inline-block;
+  font-size: 24px;
+  line-height: 24px;
+  margin: 5px 0 5px 10px;
+  min-width: 75px;
+  padding: 15px;
+  vertical-align: middle;;
+  width: fit-content;
+}
+
+.abort-button {
+  background-color: brown;
+  display: inline-block;
+  height: 60px;
+  margin-left: 20px;
+  width: 66px;
+}
+
+.instruction {
+  color: #888;
+  font-size: 20px;
+  margin: 6px;
+}
+
+.request-ongoing-message {
+  color: #888;
+  font-size: 20px;
+  margin: 6px;
+}
+
+.replacements-container {
+  border: dashed 1px #888;
+  margin-left: 20px;
+}
+
+.token-chosen {
+  background-color: darkgreen;
+  color: #fff;
+}
+
+.token-replacement {
+  background-color: darkgreen;
+}
+
+.tokens-container {
+  margin-left: 20px;
+}
+
+</style>
+
+<div *ngIf="state == 'REQUEST_ONGOING'" class="request-ongoing">
+  <mat-progress-spinner
+      [mode]="'indeterminate'"
+      [value]="50">
+  </mat-progress-spinner>
+  <span class="request-ongoing-message">Getting replacement words...</span>
+</div>
+
+<div
+    class="replacements-container"
+    *ngIf="state === 'CHOOSING_TOKEN_REPLACEMNT'">
+
+  <button
+      #clickableButton
+      *ngFor="let replacement of replacements; let i = index"
+      class="token token-replacement"
+      (click)="onReplacementButtonClicked($event, i)">
+    {{replacement}}
+  </button>
+
+  <div
+      *ngIf="replacementsEmpty"
+      class="instruction">
+    Found no replacements
+    <button
+        class="retry-button"
+        (click)="onTryAgainButtonClicked($event)">
+      Try again
+    </button>
+  </div>
+</div>

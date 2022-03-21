@@ -1,12 +1,11 @@
 /** Unit tests for event-logger-impl. */
 
-import { HttpHandler } from '@angular/common/http';
 import {createUuid} from 'src/utils/uuid';
 
 import {AbbreviationSpec} from '../types/abbreviation';
 import {ContextualPhrase} from '../types/contextual_phrase';
 
-import {getAbbreviationExpansionRequestStats, getAbbreviationExpansionResponseStats, getContextualPhraseStats, getPhraseStats, HttpEventLogger} from './event-logger-impl';
+import {getAbbreviationExpansionRequestStats, getAbbreviationExpansionResponseStats, getContextualPhraseStats, getPhraseStats} from './event-logger-impl';
 
 describe('EventLogger', () => {
   describe('getPhraseStats', () => {

@@ -1,14 +1,14 @@
 import {NgModule} from '@angular/core';
 import {BrowserModule} from '@angular/platform-browser';
 
-import {SpellComponent} from './spell.component';
+import {HelpComponent} from './help.component';
 
 @NgModule({
-  declarations: [SpellComponent],
+  declarations: [HelpComponent],
   imports: [
     BrowserModule,
   ],
-  exports: [SpellComponent],
+  exports: [HelpComponent],
 })
-export class SpellModule {
+export class HelpModule {
 }

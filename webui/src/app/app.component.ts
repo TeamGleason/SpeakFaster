@@ -2,15 +2,19 @@ import {AfterViewInit, Component, ElementRef, OnDestroy, OnInit, QueryList, View
 import {ActivatedRoute} from '@angular/router';
 import {Subject} from 'rxjs';
 
-import {bindCefSharpListener, registerExternalKeypressHook, resizeWindow, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from '../utils/cefsharp';
+import {bindCefSharpListener, registerExternalAccessTokenHook, registerExternalKeypressHook, registerHostWindowFocusHook, resizeWindow, setHostEyeGazeOptions, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from '../utils/cefsharp';
 import {createUuid} from '../utils/uuid';
 
 import {registerAppState} from './app-state-registry';
 import {HttpEventLogger} from './event-logger/event-logger-impl';
 import {ExternalEventsComponent} from './external/external-events.component';
-import {configureService, SpeakFasterService} from './speakfaster-service';
+import {InputBarControlEvent} from './input-bar/input-bar.component';
+import {LoadLexiconRequest} from './lexicon/lexicon.component';
+import {configureService, FillMaskRequest, GetUserIdResponse, SpeakFasterService} from './speakfaster-service';
 import {InputAbbreviationChangedEvent} from './types/abbreviation';
 import {AppState} from './types/app-state';
+import {AddContextualPhraseRequest} from './types/contextual_phrase';
+import {ConversationTurn} from './types/conversation';
 import {TextEntryBeginEvent, TextEntryEndEvent} from './types/text-entry';
 
 
@@ -43,23 +47,38 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   appState: AppState = AppState.ABBREVIATION_EXPANSION;
   private previousNonMinimizedAppState: AppState = this.appState;
 
+  private _isDev = false;
   private _isPartner = false;
   private _showMetrics = false;
   // Set this to `false` to skip using access token (e.g., developing with
   // an automatically authorized browser context.)
   private useAccessToken = true;
 
-  // TODO(cais): Control with URL parameter.
-  private _userId: string = 'testuser';
+  private _userId: string =
+      'testuser';  // Can be overridden by URL params later.
+  private _userGivenName: string|null = null;
+  private _userEmail: string|null = null;
   private _endpoint: string = '';
   private _accessToken: string = '';
+  private _isFocused: boolean = true;
+  isSpelling = false;
 
   abbreviationExpansionTriggers: Subject<InputAbbreviationChangedEvent> =
       new Subject();
+  fillMaskTriggers: Subject<FillMaskRequest> = new Subject();
   textEntryBeginSubject: Subject<TextEntryBeginEvent> =
       new Subject<TextEntryBeginEvent>();
   textEntryEndSubject: Subject<TextEntryEndEvent> = new Subject();
-  readonly contextStrings: string[] = [];
+  addContextualPhraseSubject: Subject<AddContextualPhraseRequest> =
+      new Subject();
+  inputBarControlSubject: Subject<InputBarControlEvent> = new Subject();
+  loadPrefixedLexiconRequestSubject: Subject<LoadLexiconRequest> =
+      new Subject();
+
+  // Context speech content used for AE and other text predictions.
+  readonly conversationTurnsAvailable: ConversationTurn[] = [];
+  readonly conversationTurnsSelected: ConversationTurn[] = [];
+  inputString: string = '';
 
   @ViewChildren('clickableButton')
   clickableButtons!: QueryList<ElementRef<HTMLElement>>;
@@ -70,16 +89,21 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       public eventLogger: HttpEventLogger) {
     this.eventLogger.setUserId(this._userId);
     console.log('Event logger session ID:', this.eventLogger.sessionId);
-}
+  }
 
   ngOnInit() {
+    // Disable accidental activation of the context menu.
+    document.addEventListener('contextmenu', event => event.preventDefault());
     registerAppState(this.appState);
-    bindCefSharpListener();
+    bindCefSharpListener().then(() => {
+      setHostEyeGazeOptions();
+    });
     this.route.queryParams.subscribe(params => {
+      if (params['dev']) {
+        this._isDev = this.stringValueMeansTrue(params['dev']);
+      }
       if (params['partner']) {
-        const partnerFlag = params['partner'].toLocaleLowerCase();
-        this._isPartner = partnerFlag === 'true' || partnerFlag === '1' ||
-            partnerFlag === 't';
+        this._isPartner = this.stringValueMeansTrue(params['partner']);
       }
       if (params['endpoint'] && this.endpoint === '') {
         this._endpoint = params['endpoint'];
@@ -96,12 +120,33 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
           accessToken: '',
         })
       }
-    });
-    this.textEntryEndSubject.subscribe(textEntryEndEvent => {
-      if (textEntryEndEvent.text.length > 0) {
-        // TODO(#59): Support multiple contexts, with timing information.
-        this.contextStrings.splice(0);
-        this.contextStrings.push(textEntryEndEvent.text);
+      // TODO(cais): Add unit tests.
+      const userEmail = params['user_email'];
+      console.log(`Got user email from URL parameters: ${userEmail}`);
+      if (userEmail && userEmail !== this._userEmail) {
+        this._userEmail = userEmail;
+        this.speakFasterService.getUserId(userEmail).subscribe(
+            (response: GetUserIdResponse) => {
+              if (response.error) {
+                console.error(
+                    `Failed to convert user email to user ID: response error: ${
+                        response.error}`);
+              }
+              if (response.user_id) {
+                this._userId = response.user_id;
+                console.log('Got user ID from email address:', this.userId);
+                this.eventLogger.setUserId(this.userId);
+                this.eventLogger.logSessionStart();
+              }
+            },
+            error => {
+              console.error(
+                  'Failed to convert user email to user ID:', this.userEmail);
+            });
+      }
+      const userGivenName = params['user_given_name'];
+      if (userGivenName && userGivenName !== this._userGivenName) {
+        this._userGivenName = userGivenName;
       }
     });
   }
@@ -112,9 +157,17 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   ngAfterViewInit() {
-    registerExternalKeypressHook(
-        this.externalEventsComponent.externalKeypressHook.bind(
-            this.externalEventsComponent));
+    registerExternalAccessTokenHook((externalAccessToken: string) => {
+      console.log(`Received new external access token: ${externalAccessToken}`);
+      this.onNewAccessToken(externalAccessToken);
+    });
+    registerHostWindowFocusHook((isFocused: boolean) => {
+      this._isFocused = isFocused;
+    });
+    registerExternalKeypressHook((vkCode: number) => {
+      ExternalEventsComponent.externalKeypressHook(
+          vkCode, /* isExternal= */ false);
+    });
     const resizeObserver = new ResizeObserver(entries => {
       if (entries.length > 1) {
         throw new Error(
@@ -162,7 +215,18 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       return;
     }
     this.eventLogger.logAppStageChange(this.appState, newState);
+    // TODO(cais): Debug the case of finishing an AE in InputBarComponent then
+    // switching to a QuickPhraseComponent to do filtering.
+    if (newState !== AppState.MINIBAR && this.appState !== AppState.MINIBAR &&
+        newState !== AppState.ABBREVIATION_EXPANSION) {
+      // When minimizing to or restoring from the mini-bar, we don't reset the
+      // text in the input bar.
+      this.inputBarControlSubject.next({
+        clearAll: true,
+      });
+    }
     this.appState = newState;
+    registerAppState(this.appState);
     if (this.appState !== AppState.MINIBAR) {
       this.previousNonMinimizedAppState = this.appState;
     }
@@ -172,8 +236,28 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     return this._isPartner ? UserRole.PARTNER : UserRole.AAC_USER;
   }
 
+  get isDev(): boolean {
+    return this._isDev;
+  }
+
+  get userId(): string {
+    return this._userId;
+  }
+
+  get userEmail(): string|null {
+    return this._userEmail;
+  }
+
+  get userGivenName(): string|null {
+    return this._userGivenName;
+  }
+
   get showMetrics(): boolean {
     return this._showMetrics;
+  }
+
+  get isFocused(): boolean {
+    return this._isFocused;
   }
 
   onNewAccessToken(accessToken: string) {
@@ -196,8 +280,34 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     return this._accessToken;
   }
 
+  get isMinimizedOrNonMinimizedAbbreviationExpansionState() {
+    return this.appState === AppState.ABBREVIATION_EXPANSION ||
+        this.appState === AppState.MINIBAR;
+  }
+
+  onInputStringChanged(str: string) {
+    this.inputString = str;
+  }
+
   onMinimizeButtonClicked(event: Event) {
     this.changeAppState(AppState.MINIBAR);
+  }
+
+  onContextStringsUpdated(conversationTurns: ConversationTurn[]) {
+    // TODO(cais): Add unit tests.
+    this.conversationTurnsAvailable.splice(0);
+    this.conversationTurnsAvailable.push(...conversationTurns);
+  }
+
+  onContextStringsSelected(conversationTurns: ConversationTurn[]) {
+    // TODO(cais): Add unit tests.
+    this.conversationTurnsSelected.splice(0);
+    this.conversationTurnsSelected.push(...conversationTurns);
+  }
+
+  onAbbreviationInputChanged(abbreviationChangedEvent:
+                                 InputAbbreviationChangedEvent) {
+    this.abbreviationExpansionTriggers.next(abbreviationChangedEvent);
   }
 
   /**
@@ -214,7 +324,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     }
   }
 
-
   /** Clear all reigstered app-resize callbacks. */
   public static clearAppResizeCallback() {
     AppComponent.appResizeCallbacks.splice(0);
@@ -228,9 +337,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       case 'QUICK_PHRASES_PARTNERS':
         this.changeAppState(AppState.QUICK_PHRASES_PARTNERS);
         break;
-      case 'QUICK_PHRASES_CARE':
-        this.changeAppState(AppState.QUICK_PHRASES_CARE);
-        break;
       case 'ABBREVIATION_EXPANSION':
         this.changeAppState(AppState.ABBREVIATION_EXPANSION);
         break;
@@ -243,16 +349,36 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     this.changeAppState(AppState.SETTINGS);
   }
 
+  onHelpButtonClicked(event: Event) {
+    this.changeAppState(AppState.HELP);
+  }
+
+  onEyeGazeSettingsButtonClicked(event: Event) {
+    this.changeAppState(AppState.EYE_GAZE_SETTINGS);
+  }
+
   isQuickPhrasesAppState() {
     return this.appState === AppState.QUICK_PHRASES_FAVORITE ||
-        this.appState === AppState.QUICK_PHRASES_PARTNERS ||
-        this.appState === AppState.QUICK_PHRASES_CARE;
+        this.appState === AppState.QUICK_PHRASES_PARTNERS;
+  }
+
+  get anyContextStringsAvailable(): boolean {
+    return this.conversationTurnsAvailable.length > 0;
+  }
+
+  get contextStringsSelected(): string[] {
+    return this.conversationTurnsSelected.map(turn => turn.speechContent);
+  }
+
+  get inputStringIsCompatibleWithAbbreviationExpansion(): boolean {
+    return this.inputString.trim().length > 0;
   }
 
   get nonMinimizedStatesAppStates(): AppState[] {
     return [
-      AppState.QUICK_PHRASES_FAVORITE, AppState.QUICK_PHRASES_PARTNERS,
-      AppState.QUICK_PHRASES_CARE, AppState.ABBREVIATION_EXPANSION
+      AppState.QUICK_PHRASES_PARTNERS,
+      AppState.QUICK_PHRASES_FAVORITE,
+      AppState.ABBREVIATION_EXPANSION,
     ];
   }
 
@@ -263,8 +389,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
         return `/assets/images/quick-phrases-favorite-${activeStateString}.png`;
       case AppState.QUICK_PHRASES_PARTNERS:
         return `/assets/images/quick-phrases-partners-${activeStateString}.png`;
-      case AppState.QUICK_PHRASES_CARE:
-        return `/assets/images/quick-phrases-care-${activeStateString}.png`;
       case AppState.ABBREVIATION_EXPANSION:
         return `/assets/images/abbreviation-expansion-${activeStateString}.png`;
       default:
@@ -277,18 +401,37 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     return `/assets/images/menu-${activeStateString}.png`;
   }
 
-  getQuickPhrasesAllowedTags(): string[] {
+  getQuickPhrasesAllowedTag(): string {
     switch (this.appState) {
       case AppState.QUICK_PHRASES_FAVORITE:
-        return ['favorite'];
+        return 'favorite';
       case AppState.QUICK_PHRASES_PARTNERS:
-        return ['partner'];
-      case AppState.QUICK_PHRASES_CARE:
-        return ['care'];
+        return 'partner-name';
       default:
         throw new Error(`Invalid app state: ${this.appState}`);
     }
-  };
+  }
+
+  getQuickPhrasesShowDeleteButtons(): boolean {
+    switch (this.appState) {
+      case AppState.QUICK_PHRASES_FAVORITE:
+      case AppState.QUICK_PHRASES_PARTNERS:
+        return true;
+      default:
+        throw new Error(`Invalid app state: ${this.appState}`);
+    }
+  }
+
+  getQuickPhrasesShowExpandButtons(): boolean {
+    switch (this.appState) {
+      case AppState.QUICK_PHRASES_PARTNERS:
+        return true;
+      case AppState.QUICK_PHRASES_FAVORITE:
+        return false;
+      default:
+        throw new Error(`Invalid app state: ${this.appState}`);
+    }
+  }
 
   getQuickPhrasesColor(): string {
     switch (this.appState) {
@@ -296,8 +439,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
         return '#473261';
       case AppState.QUICK_PHRASES_PARTNERS:
         return '#3F0909';
-      case AppState.QUICK_PHRASES_CARE:
-        return '#093F3A';
       default:
         throw new Error(`Invalid app state: ${this.appState}`);
     }

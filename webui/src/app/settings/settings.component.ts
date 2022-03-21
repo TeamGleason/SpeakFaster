@@ -1,11 +1,11 @@
 /** Quick phrase list for direct selection. */
-import {AfterViewInit, ChangeDetectorRef, Component, ElementRef, Input, OnDestroy, OnInit, QueryList, ViewChildren} from '@angular/core';
-import {updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
+import {AfterViewInit, ChangeDetectorRef, Component, ElementRef, EventEmitter, Input, OnDestroy, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
+import {requestQuitApp, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
 import {createUuid} from 'src/utils/uuid';
 
 import {HttpEventLogger} from '../event-logger/event-logger-impl';
 
-import {AppSettings, getAppSettings, setTtsVoiceType, setTtsVolume, TtsVoiceType, TtsVolume} from './settings';
+import {AppSettings, getAppSettings, setTtsSpeakingRate, setTtsVoiceType, setTtsVolume, TtsVoiceType, TtsVolume} from './settings';
 import {VERSION} from './version';
 
 @Component({
@@ -19,6 +19,11 @@ export class SettingsComponent implements AfterViewInit, OnInit, OnDestroy {
   appSettings: AppSettings|null = null;
 
   @Input() userId!: string;
+  @Input() userEmail!: string|null;
+  @Input() userGivenName!: string|null;
+  @Output() helpButtonClicked: EventEmitter<Event> = new EventEmitter();
+  @Output()
+  eyeGazeSettingsButtonClicked: EventEmitter<Event> = new EventEmitter();
 
   constructor(
       private cdr: ChangeDetectorRef, private eventLogger: HttpEventLogger) {}
@@ -60,9 +65,27 @@ export class SettingsComponent implements AfterViewInit, OnInit, OnDestroy {
     this.refreshSettings();
   }
 
+  setTtsSpeakingRate(ttsSpeakingRate: number) {
+    setTtsSpeakingRate(ttsSpeakingRate);
+    this.eventLogger.logSettingsChange('TtsSpeakingRate');
+    this.refreshSettings();
+  }
+
   onReloadAppButtonClicked(event: Event) {
     // Force reload.
     window.location.reload(true);
+  }
+
+  onQuitAppButtonClicked(even: Event) {
+    requestQuitApp();
+  }
+
+  onHelpButtonClicked(event: Event) {
+    this.helpButtonClicked.emit(event);
+  }
+
+  onEyeGazeSettingsButtonClicked(event: Event) {
+    this.eyeGazeSettingsButtonClicked.emit(event);
   }
 
   get versionString(): string {

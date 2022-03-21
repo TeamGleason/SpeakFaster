@@ -45,7 +45,8 @@ export interface AbbreviationExpansionResponseStats {
 }
 
 // Name of an app setting.
-export type SettingName = 'TtsVoiceType'|'TtsVolume';
+export type SettingName = 'TtsVoiceType'|'TtsVolume'|'TtsSpeakingRate'|
+    'ShowGazeTracker'|'GazeFuzzyRadius'|'DwellDelayMillis';
 
 export interface UserFeedback {
   // The feedback message that the user typed.
@@ -78,6 +79,9 @@ export interface EventLogger {
   /** Log the clicking of the speak button in the input bar. */
   logInputBarSpeakButtonClick(phraseStats: PhraseStats): Promise<void>;
 
+  /** Log the clicking of the inject button in the input bar. */
+  logInputBarInjectButtonClick(phraseStats: PhraseStats): Promise<void>;
+
   /**
    * Log the selection of a quick phrase for output.
    * @param contextualPhraseStats
@@ -86,6 +90,14 @@ export interface EventLogger {
   logContextualPhraseSelection(
       contextualPhraseStats: ContextualPhraseStats,
       textSelectionType: TextSelectionType): Promise<void>;
+
+
+  /**
+   * Log the copying of a contextual phrase into the input bar for further
+   * editing.
+   */
+  logContextualPhraseCopying(contextualPhraseStats: ContextualPhraseStats):
+      Promise<void>;
 
   /** Log the addition of a quick phrase. */
   logContextualPhraseAdd(contextualPhraseStats: ContextualPhraseStats):
@@ -108,9 +120,15 @@ export interface EventLogger {
   logAbbreviationExpansionResponse(stats: AbbreviationExpansionResponseStats):
       Promise<void>;
 
-  /** Log selection of abbreviation expansion option. */
+  /**
+   * Log selection of abbreviation expansion option.
+   * @param phraseStats Statistics about the selected phrase.
+   * @param index 0-based index for the selected phrase among all options.
+   * @param numOptions How many options were provided in total.
+   * @param textSelectionType Whether the selection is for TTS or injection.
+   */
   logAbbreviationExpansionSelection(
-      phraseStats: PhraseStats,
+      phraseStats: PhraseStats, index: number, numOptions: number,
       textSelectionType: TextSelectionType): Promise<void>;
 
   /** Log entering word-refinement mode for abbreviation expansion. */

@@ -28,7 +28,7 @@ export function limitStringLength(
 /** Determines if an array of strings ends with the specified suffix. */
 export function keySequenceEndsWith(
     keySequence: string[], suffix: string[]): boolean {
-  return keySequence.length > suffix.length &&
+  return keySequence.length >= suffix.length &&
       allItemsEqual(
              keySequence.slice(keySequence.length - suffix.length), suffix);
 }
@@ -52,4 +52,28 @@ export function isAlphanumericChar(str: string): boolean {
   }
   str = str.toLowerCase();
   return str >= 'a' && str <= 'z' || str >= '0' && str <= '9';
+}
+
+/** Determine whether a string ends with sentence-end punctuation. */
+export function endsWithSentenceEndPunctuation(text: string): boolean {
+  text = text.trim();
+  return text.match(/.*[\.\!\?]$/) !== null;
+}
+
+/**
+ * Trim string from the head, respecting word boundary.
+ * @param str Input string.
+ * @param maxLength Maximum allowed length.
+ */
+export function trimStringAtHead(str: string, maxLength: number): string {
+  const length = str.length;
+  if (length <= maxLength) {
+    return str;
+  }
+  const trimAt = length - maxLength;
+  let trimmed = str.substring(length - maxLength, length);
+  if (!str[trimAt - 1].match(/^\s$/)) {
+    trimmed = trimmed.substring(trimmed.search(/\s/));
+  }
+  return trimmed.trim();
 }

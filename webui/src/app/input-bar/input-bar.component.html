@@ -1,51 +1,12 @@
 <style>
 
 :host {
-    box-sizing: border-box;
-    color: #EEE;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
-    font-size: 32px;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-}
-
-input[type="text"]:disabled{
-  background: #272626;
-  color: white;
-  font-size: 30px;
-  height: 48px;
-}
-
-.button-image {
-  max-width: 50%;
-  max-height: 50%;
-}
-
-.input-box {
-  border: none;
-  border-radius: 8px;
-  flex: 1;
-  margin: 0 8px;
-  min-width: 100%;
-  width: 100%;
-}
-
-.button-shortcut-key {
-  font-size: 18px;
-  color: #888;
-}
-
-.container {
-  display: flex;
-  flex-direction: row;
-  line-height: 45px;
-  padding: 0 0 5px;
-  vertical-align: middle;
-  width: 800px;
-}
-
-.hidden {
-  display: none;
+  box-sizing: border-box;
+  color: #EEE;
+  font-family: "Google Sans", "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  font-size: 32px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .action-button {
@@ -55,43 +16,247 @@ input[type="text"]:disabled{
   color: #eee;
   flex: 1;
   font-size: 20px;
-  height: 50px;
-  margin: 0 10px;
-  min-width: 100px;
+  height: 56px;
+  margin: 0 5px;
+  order: 2;
   padding: 0;
   vertical-align: middle;
+  width: 85px;
+}
+
+.action-button.abort-button {
+  background: #525453;
+  min-width: 60px;
+}
+
+.action-button.expand-button {
+  background-color: #525453;
   width: 100px;
+}
+
+.action-button.inject-button {
+  background-color: rgb(101, 183, 211);
+}
+
+.base-text-area {
+  display: inline-block;
+}
+
+.buttons-container {
+  align-items: center;
+  display: inline-flex;
+  flex-direction: row;
+}
+
+.button-image {
+  max-height: 36px;
+  max-width: 36px;
+}
+
+.button-shortcut-key {
+  font-size: 18px;
+  color: #888;
+}
+
+.chips-container {
+  display: inline-flex;
+}
+
+.container {
+  display: flex;
+  flex-direction: row;
+  padding: 0 0 5px;
+  vertical-align: middle;
+  width: 1080px;
 }
 
 .favorite-button {
   background: #473261;
 }
 
+.input-box {
+  background: #272626;
+  border: none;
+  border-radius: 8px;
+  color: white;
+  display: flex;
+  font-size: 30px;
+  height: 66px;
+  line-height: 66px;
+  margin: 0 8px;
+  min-width: 100%;
+  padding: 0 4px;
+  width: 100%;
+}
+
+.input-text {
+  color: white;
+  display: inline-block;
+  line-height: 30px;
+  overflow-wrap: break-word;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.length-limit-exceeded {
+  background: orange;
+  border-radius: 4px;;
+  color: black;
+  display: inline-block;
+  font-size: 14px;
+  height: 48px;
+  line-height: 16px;
+  max-width: 80px;
+  text-align: center;
+  white-space: pre-line;
+}
+
+.main-area {
+  display: flex;
+  flex-direction: row;
+  flex: 1;
+}
+
+.right-buttons-container {
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+  width: fit-content;
+}
+
+.send-user-feedback {
+  font-size: 16px;
+}
+
+.simulated-cursor {
+  animation: blink 1.1s linear infinite alternate;
+  font-weight: 900;
+  font-size: 30px;
+  margin-left: 0.1em;
+}
+
+.simulated-cursor-hidden {
+  display: none;
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
 </style>
 
 <div class="container">
 
-  <input
-      class="input-box"
-      type="text"
-      disabled="true"
-      value="{{inputString}}" />
+  <div class="input-box">
+    <div class="main-area">
+      <div
+          class="base-text-area"
+          *ngIf="state !== 'CHOOSING_LETTER_CHIP' &&
+                 state !== 'FOCUSED_ON_LETTER_CHIP' &&
+                 state !== 'CHOOSING_WORD_CHIP' &&
+                 state !== 'FOCUSED_ON_WORD_CHIP'">
+        <span
+            #inputText class="input-text">{{inputString}}<span
+                class="simulated-cursor"
+                [ngClass]="{'simulated-cursor-hidden': !isFocused}"
+            >|</span></span>
+      </div>
+      <div
+          class="chips-container"
+          *ngIf="state === 'CHOOSING_LETTER_CHIP' ||
+                 state === 'FOCUSED_ON_LETTER_CHIP' ||
+                 state === 'CHOOSING_WORD_CHIP' ||
+                 state === 'FOCUSED_ON_WORD_CHIP'">
+        <app-input-bar-chip-component
+            *ngFor="let chip of chips; let i = index"
+            [text]="getChipText(i)"
+            [typed]="i === focusChipIndex && isChipTyped(i)"
+            [supportsCut]="state === 'FOCUSED_ON_WORD_CHIP' && i !== chips.length - 1"
+            [focused]="i === focusChipIndex"
+            (click)="onChipClicked(i)"
+            (cutClicked)="onChipCutClicked($event, i)">
+        </app-input-bar-chip-component>
+      </div>
 
-  <button
-      #clickableButton
-      class="action-button speak-button"
-      (click)="onSpeakAsIsButtonClicked($event)">
-    <app-speak-button-component
-        [phrase]="inputString"
-        (speakButtonClicked)="onSpeakAsIsButtonClicked($event)">
-    </app-speak-button-component>
-  </button>
+      <div class="buttons-container">
+        <button
+            #clickableButton
+            *ngIf="(state === 'ENTERING_BASE_TEXT' ||
+                    state === 'CHOOSING_PHRASES' ||
+                    state === 'FOCUSED_ON_LETTER_CHIP' ||
+                    state === 'AFTER_CUT') &&
+                    inputStringIsCompatibleWithAbbreviationExpansion && supportsAbbrevationExpansion"
+            class="action-button expand-button"
+            (click)="onExpandButtonClicked($event)">
+          Expand
+        </button>
 
-  <button
-      #clickableButton
-      class="action-button favorite-button"
-      (click)="onFavoriteButtonClicked($event)">
-      <img class="button-image" src="/assets/images/favorite.png" alt="add phrase to favorite" />
-  </button>
+        <button
+            #clickableButton
+            *ngIf="((state === 'ENTERING_BASE_TEXT') ||
+                    (state === 'CHOOSING_PHRASES') ||
+                    state === 'CHOOSING_WORD_CHIP' ||
+                    state === 'FOCUSED_ON_WORD_CHIP' ||
+                    state === 'AFTER_CUT') &&
+                   inputStringIsCompatibleWithAbbreviationExpansion &&
+                   supportsAbbrevationExpansion &&
+                   !hasOnlyOneTextPredictionChip"
+            class="action-button spell-button"
+            (click)="onSpellButtonClicked($event)">
+          Spell
+        </button>
+
+        <button
+            #clickableButton
+            *ngIf="hasInputStringOrChips"
+            class="action-button abort-button"
+            (click)="onAbortButtonClicked($event)">
+          X
+        </button>
+
+        <div
+            *ngIf="inputStringExceedsAbbreviationExpansionLimit"
+            class="length-limit-exceeded">
+          {{abbreviationExpansionLengthLimitExceededMessage}}
+        </div>
+      </div>
+    </div>
+
+    <div class="right-buttons-container">
+      <button
+          #clickableButton
+          class="action-button speak-button">
+        <app-speak-button-component
+            [phrase]="effectivePhrase"
+            (speakButtonClicked)="onSpeakAsIsButtonClicked($event)">
+        </app-speak-button-component>
+      </button>
+
+      <button
+          #clickableButton
+          class="action-button inject-button"
+          (click)="onInjectButtonClicked($event)">
+        <img class="button-image" src="/assets/images/inject.png" alt="inject phrase" />
+      </button>
+
+      <button
+          #clickableButton
+          class="action-button favorite-button">
+        <app-favorite-button-component
+            [userId]="userId"
+            [phrase]="effectivePhrase"
+            [sendAsUserFeedback]="favoriteButtonSendsUserFeedback"
+            [inputBarControlSubject]="inputBarControlSubject"
+            [tags]="contextualPhraseTags">
+        </app-favorite-button-component>
+      </button>
+    </div>
+
+  </div>
 
 </div>

@@ -1,11 +1,18 @@
 /** Data types and logic related to app settings. */
 
 import {VERSION} from '@angular/core';
+import {ObjectUnsubscribedError} from 'rxjs';
 import {loadSettings, saveSettings} from 'src/utils/cefsharp';
 
 export type TtsVoiceType = 'PERSONALIZED'|'GENERIC';
 
-export type TtsVolume = 'QUIET'|'MEDIUM'|'LOUD';
+export type TtsVolume = 'QUIET'|'MEDIUM_QUIET'|'MEDIUM'|'MEDIUM_LOUD'|'LOUD';
+
+export type ShowGazeTracker = 'YES'|'NO';
+
+export const DEFAULT_GAZE_FUZZY_RADIUS = 20;
+
+export const DEFAULT_DWELL_DELAY_MILLIS = 400;
 
 export const LOCAL_STORAGE_ITEM_NAME = 'GoogleSpeakFasterWebUiSettings.json';
 
@@ -13,27 +20,60 @@ export interface AppSettings {
   ttsVoiceType: TtsVoiceType;
 
   ttsVolume: TtsVolume;
+
+  // Between 0.25 and 4.0. 1.0 is normal speaking rate.
+  ttsSpeakingRate?: number;
+
+  // Whether the dot that indicates the current gaze location is shown.
+  showGazeTracker?: ShowGazeTracker;
+
+  // The radius of the fuzziness for matching gaze point to clickable items on
+  // the screen.
+  gazeFuzzyRadius?: number;
+
+  // Dwell delay for gaze clicking in the app. Unit: milliseconds.
+  dwellDelayMillis?: number;
 }
 
 let appSettings: AppSettings|null = null;
 
-function getDefaultAppSettings(): AppSettings {
+export function getDefaultAppSettings(): AppSettings {
   return {
-    ttsVoiceType: 'PERSONALIZED',
+    ttsVoiceType: 'GENERIC',
     ttsVolume: 'MEDIUM',
+    ttsSpeakingRate: 1.0,
+    showGazeTracker: 'YES',
+    gazeFuzzyRadius: DEFAULT_GAZE_FUZZY_RADIUS,
+    dwellDelayMillis: DEFAULT_DWELL_DELAY_MILLIS,
   };
+}
+
+export function modifyAppSettingsForTest(settings: AppSettings) {
+  appSettings = settings;
 }
 
 export async function ensureAppSettingsLoaded(): Promise<void> {
   if (appSettings !== null) {
+    addMissingSettingsFields()
     return;
   }
   appSettings = await tryLoadSettings();
   if (appSettings !== null) {
+    addMissingSettingsFields();
     return;
   }
   appSettings = getDefaultAppSettings();
   await trySaveSettings();
+}
+
+function addMissingSettingsFields() {
+  const defaultSettings = getDefaultAppSettings();
+  // Add missing fields.
+  for (const key in defaultSettings) {
+    if ((appSettings as any)[key] === undefined) {
+      (appSettings as any)[key] = (defaultSettings as any)[key];
+    }
+  }
 }
 
 /**
@@ -92,6 +132,40 @@ export async function setTtsVoiceType(ttsVoiceType: TtsVoiceType) {
 export async function setTtsVolume(ttsVolume: TtsVolume) {
   await ensureAppSettingsLoaded();
   appSettings!.ttsVolume = ttsVolume;
+  await trySaveSettings();
+}
+
+export async function setTtsSpeakingRate(ttsSpeakingRate: number) {
+  if (!(ttsSpeakingRate >= 0.25 && ttsSpeakingRate <= 4.0)) {
+    throw new Error(`ttsSpeakingRate out of bound: ${ttsSpeakingRate}`);
+  }
+  await ensureAppSettingsLoaded();
+  appSettings!.ttsSpeakingRate = ttsSpeakingRate;
+  await trySaveSettings();
+}
+
+export async function setShowGazeTracker(showGazeTracker: ShowGazeTracker) {
+  await ensureAppSettingsLoaded();
+  appSettings!.showGazeTracker = showGazeTracker;
+  await trySaveSettings();
+}
+
+export async function setGazeFuzzyRadius(radius: number) {
+  if (!(radius >= 0 && isFinite(radius))) {
+    throw new Error(`Required gaze fuzzy radius to be >= 0, but got ${radius}`);
+  }
+  await ensureAppSettingsLoaded();
+  appSettings!.gazeFuzzyRadius = radius;
+  await trySaveSettings();
+}
+
+export async function setDwellDelayMillis(dwellDelayMillis: number) {
+  if (!(dwellDelayMillis >= 0 && isFinite(dwellDelayMillis))) {
+    throw new Error(`Required dwell deay (milliseconds) to be >= 0, but got ${
+        dwellDelayMillis}`);
+  }
+  await ensureAppSettingsLoaded();
+  appSettings!.dwellDelayMillis = dwellDelayMillis;
   await trySaveSettings();
 }
 

@@ -20,6 +20,9 @@ export interface TextEntryBeginEvent {
  */
 export interface TextEntryEndEvent {
   // A human-oriented, human-readable form of the entered text.
+  // If text is an empty string and the field `repeatLast` is `true` (see below),
+  // it is interpreted as repeating the last non-empty text output, e.g., for
+  // TTS output.
   text: string;
 
   // Total number of key presses, including backspaces, function keys and other
@@ -47,4 +50,7 @@ export interface TextEntryEndEvent {
 
   // Whether this is an aborted text entry event.
   isAborted?: boolean;
+
+  // Whether this end mean repeating the last non-empty text output.
+  repeatLastNonEmpty?: boolean;
 }

@@ -3,49 +3,86 @@
 :host {
     box-sizing: border-box;
     color: #EEE;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+    font-family: "Google Sans", "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
     font-size: 32px;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
 
 .conversation-turn {
-  background: #333;
-  border: 2px solid #888;
-  border-radius: 5px;
+  align-items: center;
+  background: rgb(48, 48, 48);
+  border: 1px solid #888;
+  border-radius: 4px;
+  box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
   color: #eee;
   display: flex;
+  flex-direction: row;
   font-size: 26px;
+  height: 72px;
   margin: 5px;
   min-width: 250px;
-  max-height: 80px;
-  max-width: 420px;
+  max-width: 360px;
   padding: 12px 5px;
   text-align: left;
   white-space: nowrap;
   width: fit-content;
 }
 
-.speaker-tag {
-  background-color: green;
-  border: 2px solid #888;
-  color: gold;
-  border-radius: 5px;
+.focused-turn {
+  border: 2px solid gold;
+}
+
+.hardcode-tag {
+  background-color: lightgrey;
+  border: 1px solid #888;
+  color: black;
+  border-radius: 4px;
   display: inline-block;
   font-size: 24px;
   margin-right: 10px;
   padding: 2px 5px;
 }
 
+.speaker-tag {
+  background-color: green;
+  border: 2px solid #888;
+  color: gold;
+  border-radius: 4px;
+  display: inline-block;
+  font-size: 21px;
+  margin-right: 10px;
+  padding: 2px 5px;
+}
+
+.time-tag {
+  background-color: lightblue;
+  border: 2px solid #888;
+  color: black;
+  border-radius: 4px;
+  display: inline-block;
+  font-size: 24px;
+  margin-right: 10px;
+  padding: 2px 4px;
+  text-align: center;
+  width: 48px;
+}
+
 .tts-tag {
   background-color: rgb(84, 180, 84);
   border: 2px solid #888;
   color: black;
-  border-radius: 5px;
+  border-radius: 4px;
   display: inline-block;
   font-size: 24px;
   margin-right: 10px;
-  padding: 2px 5px;
+  padding: 2px 4px;
+}
+
+.self-turn {
+  background-color: rgb(90, 90, 90);
 }
 
 .turn-content {
@@ -58,12 +95,23 @@
 
 </style>
 
-<button #button class="conversation-turn">
-  <div *ngIf="turn.speakerId != null && turn.speakerId.length > 0" class="speaker-tag">
+<button
+    #button
+    class="conversation-turn"
+    [ngClass]="{'focused-turn': isFocus, 'self-turn': isSelf}">
+  <div
+      *ngIf="!turn.isTts && turn.speakerId != null && turn.speakerId.length > 0"
+      class="speaker-tag">
     {{turn.speakerId}}
   </div>
-  <div *ngIf="turn.isTts" class="tts-tag">
-    ⌨️
+  <div *ngIf="showTimestamp && !turn.isHardcoded" class="time-tag">
+    {{agoString}}
   </div>
-  <div class="turn-content" #turnContent>{{contentString}}</div>
+  <div *ngIf="turn.isHardcoded" class="hardcode-tag">
+    📌
+  </div>
+  <div
+      #turnContent
+      class="turn-content"
+  >{{contentString}}</div>
 </button>

@@ -1,8 +1,10 @@
-import {Component, ElementRef, EventEmitter, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
+import {AfterViewInit, Component, ElementRef, EventEmitter, OnDestroy, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
 import {MatSnackBar, MatSnackBarConfig} from '@angular/material/snack-bar';
 import {ActivatedRoute} from '@angular/router';
-import {updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
 import {createUuid} from 'src/utils/uuid';
+
+import {registerNewAccessToken, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from '../../utils/cefsharp';
+import {isPlainAlphanumericKey} from '../../utils/keyboard-utils';
 
 import {DeviceCodeResponse, GoogleDeviceAuthService, TokenResponse} from './google-device-auth-service';
 
@@ -11,13 +13,14 @@ import {DeviceCodeResponse, GoogleDeviceAuthService, TokenResponse} from './goog
   templateUrl: './auth.component.html',
   providers: [GoogleDeviceAuthService],
 })
-export class AuthComponent implements OnInit {
+export class AuthComponent implements OnInit, AfterViewInit, OnDestroy {
   private static readonly _NAME = 'AuthComponent';
 
   clientId = '';
   clientSecret = '';
   accessToken = '';
   refreshToken = '';
+  showAuthButton = false;
 
   private readonly instanceId = AuthComponent._NAME + '_' + createUuid();
   private refreshTokenIntervalSeconds = 60 * 5;
@@ -88,8 +91,12 @@ export class AuthComponent implements OnInit {
             });
   }
 
-  clientSecretChange(event: Event) {
-    this.clientSecret = (event.target as HTMLInputElement).value.trim();
+  handleKeyboardEvent(event: KeyboardEvent): boolean {
+    if (isPlainAlphanumericKey(event, 'a') && this.deviceCodeData === null) {
+      this.authenticate();
+      return true;
+    }
+    return false;
   }
 
   private async sleepForSeconds(seconds: number) {
@@ -148,6 +155,8 @@ export class AuthComponent implements OnInit {
           this.accessToken = tokenResponse.access_token;
           this.refreshToken = tokenResponse.refresh_token!;
           this.newAccessToken.emit(this.accessToken);
+          registerNewAccessToken(this.accessToken);
+          console.log(`New accessToken: ${this.accessToken}`);
           break;
         }
       } catch (error) {
@@ -176,7 +185,9 @@ export class AuthComponent implements OnInit {
         if (tokenResponse.access_token != null) {
           this.accessToken = tokenResponse.access_token;
           this.newAccessToken.emit(this.accessToken);
+          registerNewAccessToken(this.accessToken);
           console.log('Access token refreshed successfully');
+          console.log(`New accessToken: ${this.accessToken}`);
         } else {
           console.log(
               'Application of refresh token failed: No access_token found in response');

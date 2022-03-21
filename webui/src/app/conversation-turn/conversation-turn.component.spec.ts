@@ -1,4 +1,4 @@
-import {ComponentFixture, TestBed} from '@angular/core/testing';
+import {ComponentFixture, fakeAsync, TestBed, tick} from '@angular/core/testing';
 import {By} from '@angular/platform-browser';
 
 import * as cefSharp from '../../utils/cefsharp';
@@ -21,11 +21,6 @@ describe('ConversationTurnComponent', () => {
         })
         .compileComponents();
     fixture = TestBed.createComponent(ConversationTurnComponent);
-    jasmine.getEnv().allowRespy(true);
-  });
-
-  afterAll(async () => {
-    delete (window as any)[cefSharp.BOUND_LISTENER_NAME];
   });
 
   it('displays short tts turn text without ellipses', () => {
@@ -33,17 +28,38 @@ describe('ConversationTurnComponent', () => {
       speakerId: 'foo_speaker',
       startTimestamp: new Date(),
       speechContent: 'Hi, there!',
-      isTts: true,
+      isTts: false,
     };
     fixture.detectChanges();
     const turnContent =
         fixture.debugElement.query(By.css('.turn-content')).nativeElement;
     expect(turnContent.innerText).toEqual('Hi, there!');
     const speakerTag =
-        fixture.debugElement.query(By.css('.speaker-tag')).nativeElement
+        fixture.debugElement.query(By.css('.speaker-tag')).nativeElement;
     expect(speakerTag.innerText).toEqual('foo_speaker');
-    const ttsTag = fixture.debugElement.query(By.css('.tts-tag'));
-    expect(ttsTag).not.toBeNull();
+  });
+
+  it('displays long tts turn with ellipses', () => {
+    fixture.componentInstance.turn = {
+      speakerId: 'bar_speaker',
+      startTimestamp: new Date(),
+      speechContent:
+          'The rose is red, the violet is blue, the honey is sweet, ' +
+          'and so are you. ' +
+          'The rose is red, the violet is blue, the honey is sweet, ' +
+          'and so are you. ' +
+          'The rose is red, the violet is blue, the honey is sweet, ' +
+          'and so are you.',
+      isTts: true,
+    };
+    fixture.detectChanges();
+    const turnContent =
+        fixture.debugElement.query(By.css('.turn-content')).nativeElement;
+    expect(turnContent.innerText)
+        .toEqual(
+            '...so are you. ' +
+            'The rose is red, the violet is blue, the honey is sweet, and so are you. ' +
+            'The rose is red, the violet is blue, the honey is sweet, and so are you.');
   });
 
   for (const isTts of [undefined, false]) {
@@ -60,18 +76,21 @@ describe('ConversationTurnComponent', () => {
     });
   }
 
-  it('calls updateButtonBoxesCalls', async () => {
+  it('calls updateButtonBoxesCalls', fakeAsync(() => {
     fixture.componentInstance.turn = {
       speakerId: 'foo_speaker',
       startTimestamp: new Date(),
       speechContent: 'Hi, there!',
     };
     fixture.detectChanges();
-    await fixture.whenStable();
+    fixture.componentInstance.ngAfterContentChecked();
+    tick();
+
     const calls = testListener.updateButtonBoxesCalls;
-    expect(calls.length).toEqual(1);
-    expect(calls[0][0].indexOf('ConversationTurnComponent')).toEqual(0);
-    expect(calls[0][1].length).toEqual(1);
-    expect(calls[0][1][0].length).toEqual(4);
-  });
+    expect(calls.length).toBeGreaterThan(0);
+    const lastCall = calls[calls.length - 1];
+    expect(lastCall[0].indexOf('ConversationTurnComponent')).toEqual(0);
+    expect(lastCall[1].length).toEqual(1);
+    expect(lastCall[1][0].length).toEqual(4);
+  }));
 });

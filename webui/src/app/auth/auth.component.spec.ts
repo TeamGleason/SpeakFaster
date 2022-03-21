@@ -1,5 +1,5 @@
 import {Injectable} from '@angular/core';
-import {ComponentFixture, TestBed} from '@angular/core/testing';
+import {ComponentFixture, fakeAsync, TestBed, tick} from '@angular/core/testing';
 import {By} from '@angular/platform-browser';
 import {ActivatedRoute} from '@angular/router';
 import {RouterTestingModule} from '@angular/router/testing';
@@ -144,57 +144,13 @@ describe('AuthComponent', () => {
     }, interval * 1e3);
   });
 
-  it('applying refresh token should update access token', done => {
-    mockActivatedRoute.testParams = {
-      client_id: 'foo_client_id',
-      client_secret: 'bar_client_secret'
-    };
-    fixture.detectChanges();
-    const interval = 0.1;
-    const refreshTokenInterval = 0.1;
-    let seenAccessToken = '';
-    spyOn(component.authService, 'getDeviceCode').and.returnValue(of({
-      user_code: 'test_user_code',
-      verification_url: 'https://www.google.com/device',
-      interval,
-      device_code: 'test_device_Code',
-    }));
-    spyOn(component.authService, 'pollForAccessToken').and.returnValue(of({
-      access_token: 'test_access_token',
-      refresh_token: 'test_refresh_token',
-    }));
-    spyOn(component.authService, 'applyRefreshToken').and.returnValue(of({
-      access_token: 'new_test_access_token',
-      refresh_token: 'test_refresh_token',
-    }));
-    component.setRefreshTokenIntervalSecondsForTest(refreshTokenInterval);
-    const button = fixture.debugElement.query(By.css('#authenticate'));
-    button.triggerEventHandler('click', null);
-    fixture.detectChanges();
-
-    setTimeout(() => {
-      fixture.detectChanges();
-      component.newAccessToken.subscribe(accessToken => {
-        seenAccessToken = accessToken;
-        component.stopRefreshTokenForTest();
-      });
-      setTimeout(() => {
-        fixture.detectChanges();
-        expect(seenAccessToken).toEqual('new_test_access_token');
-        done();
-      }, refreshTokenInterval * 1e3);
-    }, interval * 1e3);
-  });
-
   it('including access_token parameter in route fires newAccessToken', () => {
     const seenAccessTokens: string[] = [];
     component.newAccessToken.subscribe(accessToken => {
       seenAccessTokens.push(accessToken);
       component.stopRefreshTokenForTest();
     });
-    mockActivatedRoute.testParams = {
-      access_token: 'foo-access-token'
-    };
+    mockActivatedRoute.testParams = {access_token: 'foo-access-token'};
     fixture.detectChanges();
 
     expect(seenAccessTokens).toEqual(['foo-access-token']);

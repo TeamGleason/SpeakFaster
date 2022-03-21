@@ -1,11 +1,17 @@
 /** Unit tests for PhraseComponent. */
+import {HttpClientModule} from '@angular/common/http';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
+import {By} from '@angular/platform-browser';
 
 import * as cefSharp from '../../utils/cefsharp';
+import {FavoriteButtonComponent} from '../favorite-button/favorite-button.component';
+import {SpeakFasterService} from '../speakfaster-service';
 import {TestListener} from '../test-utils/test-cefsharp-listener';
 
 import {PhraseComponent} from './phrase.component';
 import {PhraseModule} from './phrase.module';
+
+class SpeakFasterServiceForTest {}
 
 describe('PhraseComponent', () => {
   let fixture: ComponentFixture<PhraseComponent>;
@@ -16,9 +22,12 @@ describe('PhraseComponent', () => {
     (window as any)[cefSharp.BOUND_LISTENER_NAME] = testListener;
     await TestBed
         .configureTestingModule({
-          imports: [PhraseModule],
-          declarations: [PhraseComponent],
-          providers: [],
+          imports: [PhraseModule, HttpClientModule],
+          declarations: [PhraseComponent, FavoriteButtonComponent],
+          providers: [{
+            provide: SpeakFasterService,
+            useValue: new SpeakFasterServiceForTest(),
+          }],
         })
         .compileComponents();
     fixture = TestBed.createComponent(PhraseComponent);
@@ -41,6 +50,12 @@ describe('PhraseComponent', () => {
   it('does not show favorite button by default', () => {
     const favoriteButton =
         fixture.nativeElement.querySelector('.favorite-button');
+    expect(favoriteButton).toBeNull();
+  });
+
+  it('does not show expand button by default', () => {
+    const favoriteButton =
+        fixture.nativeElement.querySelector('.expand-button');
     expect(favoriteButton).toBeNull();
   });
 
@@ -68,25 +83,22 @@ describe('PhraseComponent', () => {
     expect(emittedEvents).toEqual([{phraseText: 'my phrase', phraseIndex: 2}]);
   });
 
-  it('shows favorite button, which when clicked, fires favoriteButtonClicked',
-     () => {
-       fixture.componentInstance.showFavoriteButton = true;
-       const emittedEvents: Array<{phraseText: string, phraseIndex: number}> =
-           [];
-       fixture.componentInstance.favoriteButtonClicked.subscribe((event) => {
-         emittedEvents.push(event);
-       });
-       fixture.detectChanges();
-       const favoriteButton = fixture.nativeElement.querySelector(
-                                  '.favorite-button') as HTMLButtonElement;
-       favoriteButton.click();
-       expect(emittedEvents).toEqual([
-         {phraseText: 'my phrase', phraseIndex: 2}
-       ]);
-     });
+  it('clicking expand button fires expandButtonClicked', () => {
+    fixture.componentInstance.showExpandButton = true;
+    fixture.detectChanges();
+    const emittedEvents: Array<{phraseText: string, phraseIndex: number}> = [];
+    fixture.componentInstance.expandButtonClicked.subscribe((event) => {
+      emittedEvents.push(event);
+    });
+    fixture.detectChanges();
+    const speakButton = fixture.nativeElement.querySelector('.expand-button') as
+        HTMLButtonElement;
+    speakButton.click();
+    expect(emittedEvents).toEqual([{phraseText: 'my phrase', phraseIndex: 2}]);
+  });
 
-  for (const [showFavoriteButton, expectedNumButtons] of [
-           [false, 2], [true, 3]] as Array<[boolean, number]>) {
+  for (const [showFavoriteButton, expectedNumButtons] of [[false, 2]] as
+       Array<[boolean, number]>) {
     it(`calls updateButtonBoxes: showFavoriteButton=${showFavoriteButton}`,
        async () => {
          fixture.componentInstance.showFavoriteButton = showFavoriteButton;
@@ -111,4 +123,17 @@ describe('PhraseComponent', () => {
     expect(lastCall[0].indexOf('PhraseComponent_')).toEqual(0);
     expect(lastCall[1].length).toEqual(0);
   });
+
+  it('favorite button inherits explicitly set tags', () => {
+    fixture.componentInstance.tags = ['tag1', 'tag2'];
+    fixture.componentInstance.phraseText = 'hi';
+    fixture.componentInstance.phraseIndex = 0;
+    fixture.componentInstance.showFavoriteButton = true;
+    fixture.detectChanges();
+
+    const favoriteButton =
+        fixture.debugElement.query(By.css('app-favorite-button-component'));
+    expect(favoriteButton.componentInstance.tags).toEqual(['tag1', 'tag2']);
+  });
+
 });

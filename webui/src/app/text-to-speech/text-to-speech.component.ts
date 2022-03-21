@@ -20,17 +20,23 @@ export interface TextToSpeechEvent {
 
 export type TextToSpeechListener = (event: TextToSpeechEvent) => void;
 
+export const VOLUME_STEP_DB = 3;
+
 export function getCloudTextToSpeechVolumeGainDb(appSettings: AppSettings):
     number {
   // Unit: dB. Default is 0.
   const volume = appSettings.ttsVolume;
   switch (volume) {
     case 'QUIET':
-      return -10.0;
+      return -2 * VOLUME_STEP_DB;
+    case 'MEDIUM_QUIET':
+      return -VOLUME_STEP_DB;
     case 'MEDIUM':
       return 0.0;
+    case 'MEDIUM_LOUD':
+      return VOLUME_STEP_DB;
     case 'LOUD':
-      return 16.0;
+      return 2 * VOLUME_STEP_DB;
   }
 }
 
@@ -38,9 +44,13 @@ export function getLocalTextToSpeechVolume(appSettings: AppSettings): number {
   const volume = appSettings.ttsVolume;
   switch (volume) {
     case 'QUIET':
-      return 0.2;
+      return 1.0 / Math.pow(10, 4 * VOLUME_STEP_DB / 20);
+    case 'MEDIUM_QUIET':
+      return 1.0 / Math.pow(10, 3 * VOLUME_STEP_DB / 20);
     case 'MEDIUM':
-      return 0.5;
+      return 1.0 / Math.pow(10, 2 * VOLUME_STEP_DB / 20);
+    case 'MEDIUM_LOUD':
+      return 1.0 / Math.pow(10, VOLUME_STEP_DB / 20);
     case 'LOUD':
       return 1.0;
   }
@@ -61,6 +71,7 @@ export class TextToSpeechComponent implements OnInit {
   ttsAudioElements!: QueryList<ElementRef<HTMLAudioElement>>;
   private _audioPlayCallCount: number = 0;
   private audioPlayDisabledForTest = false;
+  private lastNonEmptySpokenText: string|null = null;
 
   constructor(
       public textToSpeechService: TextToSpeechService,
@@ -87,15 +98,28 @@ export class TextToSpeechComponent implements OnInit {
 
   ngOnInit() {
     this.textEntryEndSubject.subscribe(async event => {
-      if (!event.isFinal || event.inAppTextToSpeechAudioConfig === undefined) {
+      if (!event.isFinal) {
+        return;
+      }
+      let text = event.text.trim();
+      if (text === '') {
+        if (event.repeatLastNonEmpty && this.lastNonEmptySpokenText !== null) {
+          text = this.lastNonEmptySpokenText;
+        } else {
+          return;
+        }
+      } else {
+        this.lastNonEmptySpokenText = text;
+      }
+      if (!event.inAppTextToSpeechAudioConfig) {
         return;
       }
       const appSettings = await getAppSettings();
       const ttsVoiceType = appSettings.ttsVoiceType;
       if (ttsVoiceType === 'PERSONALIZED') {
-        this.doCloudTextToSpeech(event.text, appSettings);
+        this.doCloudTextToSpeech(text, appSettings);
       } else {
-        this.doLocalTextToSpeech(event.text, appSettings);
+        this.doLocalTextToSpeech(text, appSettings);
       }
     });
   }
@@ -117,7 +141,7 @@ export class TextToSpeechComponent implements OnInit {
           language: DEFAULT_LANGUAGE_CODE,
           audio_config: {
             audio_encoding: DEFAULT_AUDIO_ENCODING,
-            speaking_rate: 1.0,
+            speaking_rate: appSettings.ttsSpeakingRate || 1.0,
             volume_gain_db: getCloudTextToSpeechVolumeGainDb(appSettings),
           },
           access_token: this.accessToken,
@@ -138,7 +162,6 @@ export class TextToSpeechComponent implements OnInit {
                 TextToSpeechComponent.listeners.forEach(listener => {
                   listener({state: 'ERROR', errorMessage: 'Audio is empty'});
                 });
-                ;
                 return;
               }
               ttsAudioElement.src =
@@ -176,7 +199,10 @@ export class TextToSpeechComponent implements OnInit {
       this.setListenersState('END');
     };
     utterance.volume = getLocalTextToSpeechVolume(appSettings);
-    window.speechSynthesis.speak(utterance);
+    utterance.rate = appSettings.ttsSpeakingRate || 1.0;
+    if (!this.audioPlayDisabledForTest) {
+      window.speechSynthesis.speak(utterance);
+    }
   }
 
   private setListenersState(state: TextToSpeechState, errorMessage?: string) {

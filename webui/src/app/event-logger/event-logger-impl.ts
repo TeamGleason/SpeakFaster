@@ -4,11 +4,11 @@ import {HttpClient, HttpHeaders} from '@angular/common/http';
 import {Injectable} from '@angular/core';
 import {Observable, of} from 'rxjs';
 import {first} from 'rxjs/operators';
-import {isPlainAlphanumericKey, isTextContentKey} from 'src/utils/keyboard-utils';
+import {isTextContentKey} from 'src/utils/keyboard-utils';
 import {createUuid} from 'src/utils/uuid';
 
 import {getAppState} from '../app-state-registry';
-import {getVirtualkeyCode, VIRTUAL_KEY} from '../external/external-events.component';
+import {getVirtualkeyCode} from '../external/external-events.component';
 import {AbbreviationSpec} from '../types/abbreviation';
 import {AppState} from '../types/app-state';
 import {ContextualPhrase} from '../types/contextual_phrase';
@@ -29,9 +29,9 @@ export type EventName =
     'AbbreviationExpansionWordRefinementSelection'|'AppStateChange'|
     'ContextualPhraseAdd'|'ContextualPhraseAddError'|'ContextualPhraseDelete'|
     'ContextualPhraseDeleteError'|'ContextualPhraseSelection'|
-    'IncomingContextualTurn'|'InputBarInjectButtonClick'|
-    'InputBarSpeakButtonClick'|'Keypress'|'SessionEnd'|'SessionStart'|
-    'SettingsChange'|'UserFeedback';
+    'ContextualPhraseCopying'|'IncomingContextualTurn'|
+    'InputBarInjectButtonClick'|'InputBarSpeakButtonClick'|'Keypress'|
+    'SessionEnd'|'SessionStart'|'SettingsChange'|'UserFeedback';
 
 export type EventLogEntry = {
   userId: string;
@@ -106,9 +106,6 @@ export class HttpEventLogger implements EventLogger {
   constructor(private http: HttpClient|null) {};
 
   setUserId(userId: string) {
-    if (this._userId) {
-      throw new Error('Session ID is already set. Cannot set it again');
-    }
     if (userId.length === 0) {
       throw new Error('User ID is empty.')
     }
@@ -209,6 +206,21 @@ export class HttpEventLogger implements EventLogger {
           timezone: this.timezone,
           sessionId: this.sessionId,
           eventName: 'InputBarSpeakButtonClick',
+          eventData: JSON.stringify({phraseStats}),
+          appState: getAppState(),
+        })
+        .pipe(first())
+        .toPromise();
+  }
+
+  async logInputBarInjectButtonClick(phraseStats: PhraseStats) {
+    await this
+        .logEvent({
+          userId: this._userId!,
+          timestamp: this.getUtcEpochMillis(),
+          timezone: this.timezone,
+          sessionId: this.sessionId,
+          eventName: 'InputBarInjectButtonClick',
           eventData: JSON.stringify({phraseStats}),
           appState: getAppState(),
         })
@@ -326,7 +338,8 @@ export class HttpEventLogger implements EventLogger {
   }
 
   async logAbbreviationExpansionSelection(
-      phraseStats: PhraseStats, textSelectionType: TextSelectionType) {
+      phraseStats: PhraseStats, index: number, numOptions: number,
+      textSelectionType: TextSelectionType) {
     await this
         .logEvent({
           userId: this._userId!,
@@ -334,7 +347,8 @@ export class HttpEventLogger implements EventLogger {
           timezone: this.timezone,
           sessionId: this.sessionId,
           eventName: 'AbbreviationExpansionSelection',
-          eventData: JSON.stringify({phraseStats, textSelectionType}),
+          eventData: JSON.stringify(
+              {phraseStats, index, numOptions, textSelectionType}),
           appState: getAppState(),
         })
         .pipe(first())
@@ -350,6 +364,21 @@ export class HttpEventLogger implements EventLogger {
           timezone: this.timezone,
           sessionId: this.sessionId,
           eventName: 'AbbreviationExpansionEnterStartWordRefinmentMode',
+          eventData: JSON.stringify({phraseStats}),
+          appState: getAppState(),
+        })
+        .pipe(first())
+        .toPromise();
+  }
+
+  async logContextualPhraseCopying(phraseStats: ContextualPhraseStats) {
+    await this
+        .logEvent({
+          userId: this._userId!,
+          timestamp: this.getUtcEpochMillis(),
+          timezone: this.timezone,
+          sessionId: this.sessionId,
+          eventName: 'ContextualPhraseCopying',
           eventData: JSON.stringify({phraseStats}),
           appState: getAppState(),
         })

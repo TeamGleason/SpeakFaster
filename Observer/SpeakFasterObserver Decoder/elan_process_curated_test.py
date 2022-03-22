@@ -342,6 +342,9 @@ class CalculuateSpeechCurationStatsTest(tf.test.TestCase):
         (1.0, 2.0, "SpeechTranscript", "When do you want to sleep [U1] [Speaker #1]"),
         (10.0, 20.0, "SpeechTranscript", "How about kate o'clock [U2] [Speaker #2]"),
         (21.0, 22.0, "SpeechTranscript", "Beep [U3] [Speaker #1]"),
+        (30.0, 30.01, "Keypress", "a"),
+        (31.0, 31.01, "Keypress", "b"),
+        (32.0, 32.01, "Keypress", "c"),
     ]
     self.merged_tsv_path = os.path.join(self.get_temp_dir(), "merged.tsv")
     with open(self.merged_tsv_path, "w") as f:
@@ -469,6 +472,61 @@ class CalculuateSpeechCurationStatsTest(tf.test.TestCase):
         ValueError, r"multiple .* timestamp.*10.*20"):
       elan_process_curated.calculate_speech_curation_stats(
           self.merged_tsv_path, curated_rows, self.realname_to_pseudonym)
+
+  def testCheckKeypresse_letsCorrectDataPass(self):
+    curated_rows = [
+        [15.2, 16.0, "SpeechTranscript",
+         "I have <RedactedSensitive time=\"00:00:01.500-00:00:04\">abc</RedactedSensitive> [SpeakerTTS:Sean]"],
+        (30.0, 30.01, "Keypress", "a"),
+        (31.0, 31.01, "Keypress", "b"),
+        (32.0, 32.01, "Keypress", "c")]
+    elan_process_curated.check_keypresses(self.merged_tsv_path, curated_rows)
+    curated_rows = [
+        [30.0, 30.01, "Keypress", "a"],
+        [31.0, 31.01, "Keypress", "b"],
+        [32.0, 32.01, "Keypress", "c"]]
+    elan_process_curated.check_keypresses(self.merged_tsv_path, curated_rows)
+
+  def testCheckKeypresse_detectsAddedKeypresses(self):
+    curated_rows = [
+        (30.0, 30.01, "Keypress", "a"),
+        (30.5, 30.51, "Keypress", "A"),
+        (31.0, 31.01, "Keypress", "b"),
+        (32.0, 32.01, "Keypress", "c")]
+    with self.assertRaisesRegex(
+        ValueError,
+        r".*keypress row .*30\.5.*30\.51.*A.*missing from the original data.*"):
+      elan_process_curated.check_keypresses(self.merged_tsv_path, curated_rows)
+    curated_rows = [
+        (30.0, 30.01, "Keypress", "a"),
+        (30.5, 30.51, "Keypress", "A"),
+        (32.0, 32.01, "Keypress", "c")]
+    with self.assertRaisesRegex(
+        ValueError,
+        r".*keypress row .*30\.5.*30\.51.*A.*missing from the original data.*"):
+      elan_process_curated.check_keypresses(self.merged_tsv_path, curated_rows)
+    curated_rows = [
+        [30.0, 30.01, "Keypress", "a"],
+        [31.0, 31.01, "Keypress", "B"],
+        [32.0, 32.01, "Keypress", "c"]]
+    with self.assertRaisesRegex(
+        ValueError,
+        r".*keypress row .*31\.0.*31\.01.*B.*missing from the original data.*"):
+      elan_process_curated.check_keypresses(self.merged_tsv_path, curated_rows)
+
+  def testCheckKeypresse_detectsMissingKeypresses(self):
+    curated_rows = [
+        (30.0, 30.01, "Keypress", "a"),
+        (32.0, 32.01, "Keypress", "c")]
+    with self.assertRaisesRegex(
+        ValueError,
+        r".*keypress row .*31\.0.*31\.01.*b.*missing from the curated data.*"):
+      elan_process_curated.check_keypresses(self.merged_tsv_path, curated_rows)
+    curated_rows = []
+    with self.assertRaisesRegex(
+        ValueError,
+        r".*keypress row .*30\.0.*30\.01.*a.*missing from the curated data.*"):
+      elan_process_curated.check_keypresses(self.merged_tsv_path, curated_rows)
 
 
 if __name__ == "__main__":

@@ -186,6 +186,47 @@ def load_rows(tsv_path, column_order, has_header=False):
   return sorted(output_rows, key=lambda x: x[0])
 
 
+def check_keypresses(merged_tsv_path, curated_rows):
+  """Check for any accidentally-deleated keypress TSV rows.
+
+  Args:
+    merged_tsv_path: The path to the merged.tsv file that contains the raw
+      keypress data, potentially along with other types of data such as
+      SpeechTranscript.
+    curated_rows: TSV rows from after the curation, as a list of tuples or
+      lists. Each tuple or list should contain elements (tBegin, tEnd, tier,
+      content). The list may contain tuples that are of other types (e.g.,
+      SpeechTranscript).
+
+  Raises:
+    ValueError: if the set of keypresses in `curated_rows` does not
+      match those in `merged_tsv_path`.
+  """
+  column_order, has_header = infer_columns(merged_tsv_path)
+  original_rows = load_rows(
+      merged_tsv_path, column_order, has_header=has_header)
+  original_keypress_rows = [tuple(row) for row in original_rows if
+                            row[2] == tsv_data.KEYPRESS_TIER]
+  curated_keypress_rows = [tuple(row) for row in curated_rows if
+                           row[2] == tsv_data.KEYPRESS_TIER]
+  missing_from_original = [row for row in curated_keypress_rows
+                           if (row not in original_keypress_rows)]
+  if missing_from_original:
+    raise ValueError(
+        "The keypress row %s is presented in the curated data but missing "
+        "from the original data. Make sure you didn't add the "
+        "keypress row or change any keypress rows inadvertently." %
+        (missing_from_original[0],))
+  missing_from_curated = [row for row in original_keypress_rows
+                          if (row not in curated_keypress_rows)]
+  if missing_from_curated:
+    raise ValueError(
+        "The keypress row %s is presented in the original data but missing "
+        "from the curated data. Make sure you didn't delete the "
+        "keypress row or change any keypress rows inadvertently." %
+        (missing_from_curated[0],))
+
+
 def calculate_speech_curation_stats(merged_tsv_path,
                                     curated_rows,
                                     realname_to_pseudonym):
@@ -450,6 +491,7 @@ def postprocess_curated(input_dir, speaker_id_config_json_path):
   curated_tsv_path = os.path.join(input_dir, file_naming.CURATED_TSV_FILENAME)
   column_order, has_header = infer_columns(curated_tsv_path)
   rows = load_rows(curated_tsv_path, column_order, has_header=has_header)
+  check_keypresses(merged_tsv_path, rows)
   speech_curation_stats = calculate_speech_curation_stats(
       merged_tsv_path, rows, realname_to_pseudonym)
   keypress_redaction_time_ranges = apply_speaker_map_and_redaction_masks(

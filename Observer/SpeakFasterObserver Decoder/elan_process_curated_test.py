@@ -482,9 +482,9 @@ class CalculuateSpeechCurationStatsTest(tf.test.TestCase):
         (32.0, 32.01, "Keypress", "c")]
     elan_process_curated.check_keypresses(self.merged_tsv_path, curated_rows)
     curated_rows = [
-        (30.0, 30.01, "Keypress", "a"),
-        (31.0, 31.01, "Keypress", "b"),
-        (32.0, 32.01, "Keypress", "c")]
+        [30.0, 30.01, "Keypress", "a"],
+        [31.0, 31.01, "Keypress", "b"],
+        [32.0, 32.01, "Keypress", "c"]]
     elan_process_curated.check_keypresses(self.merged_tsv_path, curated_rows)
 
   def testCheckKeypresse_detectsAddedKeypresses(self):
@@ -506,9 +506,9 @@ class CalculuateSpeechCurationStatsTest(tf.test.TestCase):
         r".*keypress row .*30\.5.*30\.51.*A.*missing from the original data.*"):
       elan_process_curated.check_keypresses(self.merged_tsv_path, curated_rows)
     curated_rows = [
-        (30.0, 30.01, "Keypress", "a"),
-        (31.0, 31.01, "Keypress", "B"),
-        (32.0, 32.01, "Keypress", "c")]
+        [30.0, 30.01, "Keypress", "a"],
+        [31.0, 31.01, "Keypress", "B"],
+        [32.0, 32.01, "Keypress", "c"]]
     with self.assertRaisesRegex(
         ValueError,
         r".*keypress row .*31\.0.*31\.01.*B.*missing from the original data.*"):

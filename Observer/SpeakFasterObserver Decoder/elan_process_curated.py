@@ -193,9 +193,9 @@ def check_keypresses(merged_tsv_path, curated_rows):
     merged_tsv_path: The path to the merged.tsv file that contains the raw
       keypress data, potentially along with other types of data such as
       SpeechTranscript.
-    curated_rows: TSV rows from after the curation, as a list of tuples.
-      Each tuple should contain elements (tBegin, tEnd, tier, content).
-      The list may contain tuples that are of other types (e.g.,
+    curated_rows: TSV rows from after the curation, as a list of tuples or
+      lists. Each tuple or list should contain elements (tBegin, tEnd, tier,
+      content). The list may contain tuples that are of other types (e.g.,
       SpeechTranscript).
 
   Raises:

@@ -214,6 +214,7 @@ describe('QuickPhrasesComponent', () => {
     expect(endEvents[0].isFinal).toEqual(true);
     expect(endEvents[0].inAppTextToSpeechAudioConfig).toEqual({});
     expect(testListener.injectedKeysCalls.length).toEqual(0);
+    expect(testListener.injectedTextCalls.length).toEqual(0);
   });
 
   it('phrase inject button triggers input bar text append event', async () => {

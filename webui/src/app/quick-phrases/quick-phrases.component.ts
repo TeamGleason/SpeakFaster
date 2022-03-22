@@ -2,7 +2,6 @@
 import {AfterViewInit, ChangeDetectorRef, Component, ElementRef, Input, OnChanges, OnDestroy, OnInit, QueryList, SimpleChanges, ViewChild, ViewChildren} from '@angular/core';
 import {Subject} from 'rxjs';
 import {injectKeys, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
-import {allItemsEqual} from 'src/utils/text-utils';
 import {createUuid} from 'src/utils/uuid';
 
 import {AppComponent} from '../app.component';
@@ -294,7 +293,7 @@ export class QuickPhrasesComponent implements AfterViewInit, OnInit, OnChanges,
       // TODO(cais): Properly handle punctuation (if any).
       injectedKeys.push(...phrase.split(''));
       injectedKeys.push(VIRTUAL_KEY.SPACE);  // Append a space at the end.
-      injectKeys(injectedKeys);
+      injectKeys(injectedKeys, phrase);
     }
     this.eventLogger.logContextualPhraseSelection(
         getContextualPhraseStats(this.phrases[index]),

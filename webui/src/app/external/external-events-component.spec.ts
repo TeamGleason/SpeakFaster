@@ -353,6 +353,17 @@ describe('ExternalEventsComponent', () => {
     });
   }
 
+  it('LShift key enters upper case letter', () => {
+    const vkCodes = [160, 65, 66, 67, 160, 68, 162, END_KEY_CODE];
+    for (const vkCode of vkCodes) {
+      ExternalEventsComponent.externalKeypressHook(vkCode);
+    }
+    expect(beginEvents.length).toEqual(1);
+    expect(endEvents.length).toEqual(1);
+    expect(endEvents[0].text).toEqual('AbcD');
+    expect(endEvents[0].isFinal).toBeTrue();
+  });
+
   for (const keyCodes
            of [[65, 162, 8],
                [65, 162, 8, 162, 8],
@@ -688,16 +699,14 @@ describe('ExternalEventsComponent', () => {
 
   it('appendText updates recon state correctly', () => {
     ExternalEventsComponent.externalKeypressHook(65, /* isExternal= */ false);
-    ExternalEventsComponent.appendString(
-        'hi there', /* isExternal= */ false);
+    ExternalEventsComponent.appendString('hi there', /* isExternal= */ false);
 
     expect(ExternalEventsComponent.internalText).toEqual('a hi there ');
   });
 
   it('appendText followed by backspaces works', () => {
     ExternalEventsComponent.externalKeypressHook(65, /* isExternal= */ false);
-    ExternalEventsComponent.appendString(
-        'hi there', /* isExternal= */ false);
+    ExternalEventsComponent.appendString('hi there', /* isExternal= */ false);
     ExternalEventsComponent.externalKeypressHook(8, /* isExternal= */ false);
     ExternalEventsComponent.externalKeypressHook(8, /* isExternal= */ false);
 
@@ -706,8 +715,7 @@ describe('ExternalEventsComponent', () => {
 
   it('appendText followed by word backspace works', () => {
     ExternalEventsComponent.externalKeypressHook(65, /* isExternal= */ false);
-    ExternalEventsComponent.appendString(
-        'hi there', /* isExternal= */ false);
+    ExternalEventsComponent.appendString('hi there', /* isExternal= */ false);
     ExternalEventsComponent.externalKeypressHook(162, /* isExternal= */ false);
     ExternalEventsComponent.externalKeypressHook(160, /* isExternal= */ false);
     ExternalEventsComponent.externalKeypressHook(37, /* isExternal= */ false);

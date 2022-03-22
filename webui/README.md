@@ -130,7 +130,7 @@ it to have the following interface.
 
 ```typescript
 interface BoundObject {
-  function injectKey(virtualKeys: number[]): void;
+  function injectKeys(virtualKeys: number[], text: string): void;
 
   function requestSoftkeyboardRest(): number;
 
@@ -150,7 +150,7 @@ interface BoundObject {
 }
 ```
 
-The three interface methods, `injectKey()`, `updateButtonBoxes()`, and
+The three interface methods, `injectKeys()`, `updateButtonBoxes()`, and
 `resizeWindow()` allow the WebUI to send different types of information to the
 host. Below we describe their use respectively.
 

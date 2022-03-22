@@ -196,6 +196,7 @@ describe('AbbreviationComponent', () => {
     // 8]. Includes the leading eraser keys and the trailing space.
     expect(calls[0]).toEqual(
         [87, 72, 65, 84, 32, 84, 73, 77, 69, 32, 73, 83, 32, 73, 84, 190, 32]);
+    expect(testListener.injectedTextCalls).toEqual(['what time is it']);
   });
 
   it('clicking inject-button publishes to textEntryEndSubject', () => {

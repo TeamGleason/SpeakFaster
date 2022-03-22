@@ -116,8 +116,13 @@ function updateButtonBoxes(
  *   order. A special key (Backspace or Enter) must use the VIRTUAL_KEY enum.
  *   Non-special keys (e.g., letters, numbers, and punctuation) should be in
  *   their literal form.
+ * @param text (optional) the text to be injected. This doesn't include
+ *   non-text parts of `virtualKeys` such as the Backspaces for erasure. This
+ *   argument may be used for setting the system clipboard (for copy-pasting) on
+ *   the host side.
  */
-export function injectKeys(virtualKeys: Array<string|VIRTUAL_KEY>): number {
+export function injectKeys(
+    virtualKeys: Array<string|VIRTUAL_KEY>, text: string|null): number {
   if ((window as any)[BOUND_LISTENER_NAME] == null) {
     console.warn(`Cannot call injectKeys(), because object ${
         BOUND_LISTENER_NAME} is not found`)
@@ -128,7 +133,7 @@ export function injectKeys(virtualKeys: Array<string|VIRTUAL_KEY>): number {
     virtualKeyCodes.push(...getVirtualkeyCode(virtualKey));
   }
   return ((window as any)[BOUND_LISTENER_NAME] as any)
-             .injectKeys(virtualKeyCodes) as number;
+             .injectKeys(virtualKeyCodes, text) as number;
 }
 
 /** Request host app to reset the state of the attached soft keyboard. */

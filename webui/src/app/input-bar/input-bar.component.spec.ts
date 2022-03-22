@@ -188,6 +188,11 @@ describe('InputBarComponent', () => {
                ],
                 [['x', 'y', VIRTUAL_KEY.ENTER], 'xy\n', 'xy', 3],
                 [
+                  // Casing in abbreviation should be ignored.
+                  [VIRTUAL_KEY.LSHIFT, 'x', 'y', VIRTUAL_KEY.ENTER], 'Xy\n',
+                  'xy', 3
+                ],
+                [
                   ['x', 'y', VIRTUAL_KEY.SPACE, VIRTUAL_KEY.ENTER], 'xy \n',
                   'xy', 4
                 ],
@@ -517,8 +522,9 @@ describe('InputBarComponent', () => {
     const spellButton = fixture.debugElement.query(By.css('.spell-button'));
     spellButton.nativeElement.click();
     fixture.detectChanges();
-    const spellSequence = ['b', 'i', 't'];
-    const spellReconstructedText = spellSequence.join('') + reconstructedText;
+    // Letter casing should be ignored.
+    const spellSequence = [VIRTUAL_KEY.LSHIFT, 'b', 'i', 't'];
+    const spellReconstructedText = 'Bit';
     enterKeysIntoComponent(spellSequence, spellReconstructedText);
     const expandButton = fixture.debugElement.query(By.css('.expand-button'));
     expandButton.nativeElement.click();
@@ -931,6 +937,7 @@ describe('InputBarComponent', () => {
        const calls = testListener.injectedKeysCalls;
        expect(calls.length).toEqual(1);
        expect(calls[0]).toEqual([65, 76, 76, 32, 71, 79, 79, 68, 190, 32]);
+       expect(testListener.injectedTextCalls).toEqual(['all good. ']);
      });
 
   it('clicking inject text button injects keypresses without added final period',

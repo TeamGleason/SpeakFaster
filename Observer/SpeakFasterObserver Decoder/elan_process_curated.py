@@ -189,6 +189,8 @@ def load_rows(tsv_path, column_order, has_header=False):
 def check_keypresses(merged_tsv_path, curated_rows):
   """Check for any accidentally-deleated keypress TSV rows.
 
+  tEnd is ignored during checking. Only tBegin, tier and contents are checked.
+
   Args:
     merged_tsv_path: The path to the merged.tsv file that contains the raw
       keypress data, potentially along with other types of data such as
@@ -196,7 +198,7 @@ def check_keypresses(merged_tsv_path, curated_rows):
     curated_rows: TSV rows from after the curation, as a list of tuples or
       lists. Each tuple or list should contain elements (tBegin, tEnd, tier,
       content). The list may contain tuples that are of other types (e.g.,
-      SpeechTranscript).
+      SpeechTranscript). tEnd is ignored during checking.
 
   Raises:
     ValueError: if the set of keypresses in `curated_rows` does not
@@ -205,9 +207,9 @@ def check_keypresses(merged_tsv_path, curated_rows):
   column_order, has_header = infer_columns(merged_tsv_path)
   original_rows = load_rows(
       merged_tsv_path, column_order, has_header=has_header)
-  original_keypress_rows = [tuple(row) for row in original_rows if
+  original_keypress_rows = [(row[0], row[3]) for row in original_rows if
                             row[2] == tsv_data.KEYPRESS_TIER]
-  curated_keypress_rows = [tuple(row) for row in curated_rows if
+  curated_keypress_rows = [(row[0], row[3]) for row in curated_rows if
                            row[2] == tsv_data.KEYPRESS_TIER]
   missing_from_original = [row for row in curated_keypress_rows
                            if (row not in original_keypress_rows)]

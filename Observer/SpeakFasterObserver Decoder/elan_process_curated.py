@@ -493,7 +493,8 @@ def postprocess_curated(input_dir, speaker_id_config_json_path):
   curated_tsv_path = os.path.join(input_dir, file_naming.CURATED_TSV_FILENAME)
   column_order, has_header = infer_columns(curated_tsv_path)
   rows = load_rows(curated_tsv_path, column_order, has_header=has_header)
-  check_keypresses(merged_tsv_path, rows)
+  # TODO(cais): Reinstate the check in a more sensible way.
+  # check_keypresses(merged_tsv_path, rows)
   speech_curation_stats = calculate_speech_curation_stats(
       merged_tsv_path, rows, realname_to_pseudonym)
   keypress_redaction_time_ranges = apply_speaker_map_and_redaction_masks(

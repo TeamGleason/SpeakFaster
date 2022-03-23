@@ -302,7 +302,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
             this._chips.length, matchingChipIndices[0]);
         this.state = State.FOCUSED_ON_LETTER_CHIP;
         // Signal to soft keyboard a word boundary. TODO(cais): Decide.
-        injectKeys([VIRTUAL_KEY.SPACE]);
+        injectKeys([VIRTUAL_KEY.SPACE], null);
         this.baseReconstructedText = this.latestReconstructedString.slice(
             0, this.latestReconstructedString.length - 1);
         this._focusChipIndex = matchingChipIndices[0];
@@ -404,7 +404,9 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
             pendingChars = '';
           }
           tokens.push({
-            value: removePunctuation(this._chipTypedText![i]!).trim(),
+            value: removePunctuation(this._chipTypedText![i]!)
+                       .trim()
+                       .toLocaleLowerCase(),
             isKeyword: true,
           });
         } else {
@@ -420,8 +422,9 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
       }
       abbreviationSpec = {
         tokens,
-        readableString:
-            tokens.map(token => removePunctuation(token.value)).join(' '),
+        readableString: tokens.map(token => removePunctuation(token.value))
+                            .join(' ')
+                            .toLocaleLowerCase(),
         precedingText,
         eraserSequence: repeatVirtualKey(VIRTUAL_KEY.BACKSPACE, eraserLength),
         lineageId: createUuid(),
@@ -459,11 +462,12 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     });
     readableString += abbrevText;
     tokens.push({
-      value: abbrevText,
+      value: abbrevText.toLocaleLowerCase(),
       isKeyword: false,
-    })
+    });
     return {
-      tokens, readableString, precedingText: '',
+      tokens, readableString: readableString.toLocaleLowerCase(),
+          precedingText: '',
           eraserSequence: repeatVirtualKey(VIRTUAL_KEY.BACKSPACE, eraserLength),
           lineageId: createUuid(),
     }
@@ -629,7 +633,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     this.eventLogger.logInputBarInjectButtonClick(getPhraseStats(text));
     const injectedKeys: Array<string|VIRTUAL_KEY> = [];
     injectedKeys.push(...text.split(''));
-    injectKeys(injectedKeys);
+    injectKeys(injectedKeys, text);
     this.textEntryEndSubject.next({
       text,
       timestampMillis: Date.now(),

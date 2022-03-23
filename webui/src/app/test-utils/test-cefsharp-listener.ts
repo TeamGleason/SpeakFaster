@@ -5,6 +5,7 @@ import {AppSettings, getDefaultAppSettings, ShowGazeTracker, tryLoadSettings} fr
 export class TestListener {
   private readonly buttonBoxesCalls: Array<[string, number[][]]> = [];
   private readonly injectedKeys: Array<number[]> = [];
+  private readonly injectedTexts: string[] = [];
   private _numRequestSoftKeyboardResetCalls = 0;
   private readonly resizeWindowValues: Array<[number, number]> = [];
   private readonly _setEyeGazeOptionsCalls: Array<[boolean, number, number]> =
@@ -18,8 +19,9 @@ export class TestListener {
     return this.buttonBoxesCalls;
   }
 
-  public injectKeys(virtualKeys: number[]) {
+  public injectKeys(virtualKeys: number[], text: string) {
     this.injectedKeys.push(virtualKeys);
+    this.injectedTexts.push(text);
   }
 
   public requestSoftKeyboardReset() {
@@ -28,6 +30,10 @@ export class TestListener {
 
   get injectedKeysCalls(): Array<number[]> {
     return this.injectedKeys.slice();
+  }
+
+  get injectedTextCalls(): string[] {
+    return this.injectedTexts.slice();
   }
 
   get numRequestSoftkeyboardResetCalls(): number {

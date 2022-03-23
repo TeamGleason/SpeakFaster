@@ -147,11 +147,14 @@ function getKeyFromVirtualKeyCode(vkCode: number): string|null {
 }
 
 function insertCharAsCursorPos(char: string, reconState: TextReconState) {
+  const casedChar =
+      reconState.isShiftOn ? char.toLocaleUpperCase() : char.toLocaleLowerCase()
   if (reconState.cursorPos === reconState.text.length) {
-    reconState.text += char;
-  } else {
-    reconState.text = reconState.text.slice(0, reconState.cursorPos) + char +
-        reconState.text.slice(reconState.cursorPos);
+    reconState.text += casedChar;
+  }
+  else {
+    reconState.text = reconState.text.slice(0, reconState.cursorPos) +
+        casedChar + reconState.text.slice(reconState.cursorPos);
   }
   reconState.cursorPos += 1;
 }

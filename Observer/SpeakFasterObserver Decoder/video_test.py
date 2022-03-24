@@ -42,7 +42,7 @@ class StitchImagesIntoMp4Test(tf.test.TestCase):
     video_start_epoch_s = file_naming.parse_epoch_seconds_from_filename(
         "20210903T120000000-Screenshot.jpg", timezone)
     start_time_epoch_s = video_start_epoch_s - 10.0
-    out_mp4_path = os.path.join(self.get_temp_dir(), "stiched.mp4")
+    out_mp4_path = os.path.join(self.get_temp_dir(), "stitched.mp4")
     video.stitch_images_into_mp4(
         [image_path_1, image_path_2, image_path_3], start_time_epoch_s,
         timezone, out_mp4_path)

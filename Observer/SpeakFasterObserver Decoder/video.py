@@ -69,10 +69,10 @@ def stitch_images_into_mp4(image_paths,
   input_file_path = os.path.join(tmp_dir, "input.txt")
   with open(input_file_path, "w") as f:
     if initial_frame_duration_s > 0:
-      f.write("file %s\n" % initial_frame_image_path)
+      f.write("file %s\n" % normalize_path(initial_frame_image_path))
       f.write("duration %.6f\n" % initial_frame_duration_s)
     for i in range(n_images):
-      f.write("file %s\n" % image_paths[i])
+      f.write("file %s\n" % normalize_path(image_paths[i]))
       if i < n_images - 1:
         f.write("duration %.6f\n" % frame_durations_s[i])
 
@@ -80,6 +80,14 @@ def stitch_images_into_mp4(image_paths,
       "ffmpeg", "-f", "concat", "-safe", "0",
       "-i", input_file_path, out_mp4_path])
   shutil.rmtree(tmp_dir)
+
+
+def normalize_path(file_path):
+  """Normalizes path for ffmpeg, which requires forward slash.
+
+  This is the case even on Windows.
+  """
+  return "/".join(file_path.split(os.path.sep))
 
 
 def make_dummy_video_file(duration_s,
@@ -98,4 +106,4 @@ def make_dummy_video_file(duration_s,
   stream = ffmpeg.input(
       frame_image_path, pattern_type="glob", framerate=fps,
       stream_loop=np.ceil(duration_s) / fps)
-  stream.output(output_video_path).run()
+  stream.output(normalize_path(output_video_path)).run()

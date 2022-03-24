@@ -2,6 +2,7 @@
 
 import {ElementRef, QueryList} from '@angular/core';
 import {getVirtualkeyCode, VIRTUAL_KEY} from 'src/app/external/external-events.component';
+import {HostInfo} from 'src/app/settings/hostinfo';
 import {AppSettings, DEFAULT_DWELL_DELAY_MILLIS, DEFAULT_GAZE_FUZZY_RADIUS, getAppSettings, setShowGazeTracker} from 'src/app/settings/settings';
 
 const CEFSHARP_OBJECT_NAME = 'CefSharp';
@@ -225,6 +226,24 @@ export async function loadSettings(): Promise<AppSettings|null> {
   }
   try {
     return JSON.parse(appSettings) as AppSettings;
+  } catch (error) {
+    return null;
+  }
+}
+
+/** Retrieve host info, including host app version. */
+export async function getHostInfo(): Promise<HostInfo|null> {
+  if ((window as any)[BOUND_LISTENER_NAME] == null) {
+    console.warn(
+        `Cannot call getSerializedHostInfo() ` +
+        `because object ${BOUND_LISTENER_NAME} is not found`);
+    return null;
+  }
+  try {
+    const serializedHostInfo =
+        await ((window as any)[BOUND_LISTENER_NAME] as any)
+            .getSerializedHostInfo() as string;
+    return JSON.parse(serializedHostInfo) as HostInfo;
   } catch (error) {
     return null;
   }

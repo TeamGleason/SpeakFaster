@@ -146,6 +146,8 @@ interface BoundObject {
 
   async function loadSettings(): AppSettings|null;
 
+  async function getHostInfo(): string;
+
   function requestAppQuit(): void;
 }
 ```
@@ -221,7 +223,12 @@ back from the host. Note that WebViews such as CefSharp usually do not persist
 data stored in `localStorage` after the instance of WebView is destroyed, which
 necessitates settings storage at the host level.
 
-### 3.7. Requesting app quit
+### 3.7 Request info about the host
+
+The function `getHostInfo()` can be called by the WebUI to retrieve
+information about the host app and the environment it is running in.
+
+### 3.8. Requesting app quit
 
 To request the host app to close the WebUI and quit as a whole, call
 `requestAppQuit()`.

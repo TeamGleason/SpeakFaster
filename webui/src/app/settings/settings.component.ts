@@ -1,10 +1,11 @@
 /** Quick phrase list for direct selection. */
 import {AfterViewInit, ChangeDetectorRef, Component, ElementRef, EventEmitter, Input, OnDestroy, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
-import {requestQuitApp, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
+import {getHostInfo, requestQuitApp, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
 import {createUuid} from 'src/utils/uuid';
 
 import {HttpEventLogger} from '../event-logger/event-logger-impl';
 
+import {HostInfo} from './hostinfo';
 import {AppSettings, getAppSettings, setTtsSpeakingRate, setTtsVoiceType, setTtsVolume, TtsVoiceType, TtsVolume} from './settings';
 import {VERSION} from './version';
 
@@ -17,6 +18,7 @@ export class SettingsComponent implements AfterViewInit, OnInit, OnDestroy {
 
   private readonly instanceId = SettingsComponent._NAME + '_' + createUuid();
   appSettings: AppSettings|null = null;
+  private hostInfo: HostInfo|null = null;
 
   @Input() userId!: string;
   @Input() userEmail!: string|null;
@@ -33,6 +35,10 @@ export class SettingsComponent implements AfterViewInit, OnInit, OnDestroy {
 
   ngOnInit() {
     this.refreshSettings();
+    getHostInfo().then(hostInfo => {
+      this.hostInfo = hostInfo;
+      this.cdr.detectChanges();
+    })
   }
 
   private async refreshSettings() {
@@ -90,5 +96,9 @@ export class SettingsComponent implements AfterViewInit, OnInit, OnDestroy {
 
   get versionString(): string {
     return VERSION;
+  }
+
+  get hostAppVersionString(): string|null {
+    return this.hostInfo === null ? null : this.hostInfo.hostAppVersion;
   }
 }

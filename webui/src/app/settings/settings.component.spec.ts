@@ -9,6 +9,7 @@ import {HttpEventLogger} from '../event-logger/event-logger-impl';
 import {clearSettings, getAppSettings, LOCAL_STORAGE_ITEM_NAME, setTtsVolume} from './settings';
 import {SettingsComponent} from './settings.component';
 import {SettingsModule} from './settings.module';
+import {VERSION} from './version';
 
 describe('SettingsComponent', () => {
   let fixture: ComponentFixture<SettingsComponent>;
@@ -141,5 +142,27 @@ describe('SettingsComponent', () => {
     const userIdSpan = fixture.debugElement.query(By.css('.user-id'));
     expect(userIdSpan.nativeElement.innerText.trim())
         .toEqual('(ID: testuser2)');
+  });
+
+  it('shows app version string without host app version', () => {
+    const appTitle = fixture.debugElement.query(By.css('.app-title'));
+
+    expect(appTitle.nativeElement.innerText)
+        .toEqual(`SpeakFaster WebUI Prototype v${VERSION}`);
+  });
+
+  it('shows app version string with host app version', async () => {
+    await fixture.whenStable();
+    (fixture.componentInstance as any).hostInfo = {
+      hostAppVersion: '0.0.4',
+    };
+    fixture.detectChanges();
+
+    const appTitle = fixture.debugElement.query(By.css('.app-title'));
+    expect(appTitle.nativeElement.innerText.indexOf(
+               `SpeakFaster WebUI Prototype v${VERSION}`))
+        .toEqual(0);
+    expect(appTitle.nativeElement.innerText.indexOf('(Host app: v0.0.4)'))
+        .toBeGreaterThan(0);
   });
 });

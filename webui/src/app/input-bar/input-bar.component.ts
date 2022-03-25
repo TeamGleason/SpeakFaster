@@ -572,6 +572,16 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+  onFavoritePhraseAdded(event: {text: string, success: boolean}) {
+    if (event.success) {
+      this.textEntryEndSubject.next({
+        isFinal: true,
+        text: event.text,
+        timestampMillis: Date.now(),
+      });
+    }
+  }
+
   private refreshExternalSoftKeyboardState() {
     requestSoftKeyboardReset();
   }

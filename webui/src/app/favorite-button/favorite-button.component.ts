@@ -2,7 +2,7 @@
  * A button for adding a phrase to favorite. Supports animation that
  * indicates states such as ongoing request, success and error.
  */
-import {Component, Input, OnDestroy, OnInit} from '@angular/core';
+import {Component, EventEmitter, Input, OnDestroy, OnInit, Output} from '@angular/core';
 import {Subject} from 'rxjs';
 
 import {getContextualPhraseStats, getPhraseStats, HttpEventLogger} from '../event-logger/event-logger-impl';
@@ -37,6 +37,9 @@ export class FavoriteButtonComponent implements OnInit, OnDestroy {
   tags: string[]|undefined =
       [FavoriteButtonComponent.DEFAULT_CONTEXTUAL_PHRASE_TAG];
   @Input() inputBarControlSubject?: Subject<InputBarControlEvent>;
+  @Output()
+  favoritePhraseAdded: EventEmitter<{text: string, success: boolean}> =
+      new EventEmitter();
 
   state: State = State.READY;
 
@@ -77,9 +80,10 @@ export class FavoriteButtonComponent implements OnInit, OnDestroy {
                 });
       } else {
         // Add contextual phrase.
+        const text = this.phrase.trim();
         const contextualPhrase = {
           phraseId: '',  // For AddContextualPhraseRequest, this is ignored.
-          text: this.phrase.trim(),
+          text,
           tags: this.tags ||
               [FavoriteButtonComponent.DEFAULT_CONTEXTUAL_PHRASE_TAG],
         };
@@ -98,6 +102,7 @@ export class FavoriteButtonComponent implements OnInit, OnDestroy {
                     this.eventLogger.logContextualPhraseAddError(
                         data.errorMessage);
                     this.state = State.ERROR;
+                    this.favoritePhraseAdded.next({text, success: false});
                     this.scheduleReset();
                     return;
                   }
@@ -109,11 +114,13 @@ export class FavoriteButtonComponent implements OnInit, OnDestroy {
                     this.sendContextualPhraseRrefreshSignal();
                     this.scheduleReset();
                   }
+                  this.favoritePhraseAdded.next({text, success: true});
                 },
                 error => {
                   this.eventLogger.logContextualPhraseAddError('');
                   setTimeout(() => {
                     this.state = State.ERROR;
+                    this.favoritePhraseAdded.next({text, success: false});
                     this.scheduleReset();
                   });
                 });

@@ -1235,5 +1235,22 @@ describe('InputBarComponent', () => {
     expect(fixture.componentInstance.state).toEqual(State.ENTERING_BASE_TEXT);
   });
 
+  it('onFavoritePhraseAdded with success issues text-entry end event', () => {
+    fixture.componentInstance.onFavoritePhraseAdded(
+        {text: 'foo', success: true});
+
+    expect(textEntryEndEvents.length).toEqual(1);
+    expect(textEntryEndEvents[0].isFinal).toBeTrue();
+    expect(textEntryEndEvents[0].text).toEqual('foo');
+    expect(textEntryEndEvents[0].timestampMillis).toBeGreaterThan(0);
+  });
+
+  it('onFavoritePhraseAdded with failure issues text-entry end event', () => {
+    fixture.componentInstance.onFavoritePhraseAdded(
+        {text: 'foo', success: false});
+
+    expect(textEntryEndEvents.length).toEqual(0);
+  });
+
   // TODO(cais): Test spelling valid word triggers AE, with debounce.
 });

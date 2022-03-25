@@ -191,7 +191,9 @@ export class ContextComponent implements OnInit, AfterViewInit {
         .subscribe(
             data => {
               if (data.errorMessage != null) {
-                this.contextRetrievalError = 'Context retrieval error';
+                if (data.result !== 'ERROR_INVALID_USER_ID') {
+                  this.contextRetrievalError = 'Context retrieval error';
+                }
                 this.populateConversationTurnWithDefault();
                 return;
               }

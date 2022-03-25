@@ -148,7 +148,7 @@ describe('SettingsComponent', () => {
     const appTitle = fixture.debugElement.query(By.css('.app-title'));
 
     expect(appTitle.nativeElement.innerText)
-        .toEqual(`SpeakFaster WebUI Prototype v${VERSION}`);
+        .toEqual(`SpeakFaster Prototype v${VERSION}`);
   });
 
   it('shows app version string with host app version', async () => {
@@ -160,9 +160,9 @@ describe('SettingsComponent', () => {
 
     const appTitle = fixture.debugElement.query(By.css('.app-title'));
     expect(appTitle.nativeElement.innerText.indexOf(
-               `SpeakFaster WebUI Prototype v${VERSION}`))
+               `SpeakFaster Prototype v${VERSION}`))
         .toEqual(0);
-    expect(appTitle.nativeElement.innerText.indexOf('(Host app: v0.0.4)'))
+    expect(appTitle.nativeElement.innerText.indexOf('(Host: v0.0.4)'))
         .toBeGreaterThan(0);
   });
 });

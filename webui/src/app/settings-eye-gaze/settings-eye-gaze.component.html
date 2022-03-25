@@ -184,4 +184,18 @@
       (click)="setDwellDelayMillis(600)">
     600
   </button>
+  <button
+      #clickableButton
+      class="option-button"
+      [ngClass]="{'active-button': appSettings!.dwellDelayMillis === 700}"
+      (click)="setDwellDelayMillis(700)">
+    700
+  </button>
+  <button
+      #clickableButton
+      class="option-button"
+      [ngClass]="{'active-button': appSettings!.dwellDelayMillis === 800}"
+      (click)="setDwellDelayMillis(800)">
+    800
+  </button>
 </div>

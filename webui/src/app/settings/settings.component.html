@@ -138,6 +138,9 @@
   <div class="app-title">
     <img class="icon-image" src="/assets/images/minibar-icon.png">
     SpeakFaster WebUI Prototype v{{versionString}}
+    <span *ngIf="hostAppVersionString !== null">
+      &nbsp;(Host app: v{{hostAppVersionString}})
+    </span>
   </div>
 
   <button

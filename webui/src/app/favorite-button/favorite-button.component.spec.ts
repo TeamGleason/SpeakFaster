@@ -29,6 +29,7 @@ describe('FavoriteButton', () => {
   let speakFasterServiceForTest: SpeakFasterServiceForTest;
   let inputBarControlSubject: Subject<InputBarControlEvent>;
   let inputBarControlEvents: InputBarControlEvent[];
+  let addedEvents: Array<{text: string, success: boolean}>;
   let httpEventLoggerForTest: HttpEventLogger;
 
   beforeEach(async () => {
@@ -50,6 +51,9 @@ describe('FavoriteButton', () => {
         })
         .compileComponents();
     fixture = TestBed.createComponent(FavoriteButtonComponent);
+    addedEvents = [];
+    fixture.componentInstance.favoritePhraseAdded.subscribe(
+        event => addedEvents.push(event));
     fixture.componentInstance.inputBarControlSubject = inputBarControlSubject;
     fixture.detectChanges();
   });
@@ -110,7 +114,11 @@ describe('FavoriteButton', () => {
        expect(inputBarControlEvents[0]).toEqual({
          clearAll: true,
          refreshContextualPhrases: true,
-       })
+       });
+       expect(addedEvents).toEqual([{
+         text: 'hi there!',
+         success: true,
+       }]);
 
        tick(2000);
        expect(fixture.componentInstance.state).toEqual(State.READY);
@@ -137,6 +145,10 @@ describe('FavoriteButton', () => {
            tags: ['favorite'],
          },
        });
+       expect(addedEvents).toEqual([{
+        text: 'hi there!',
+        success: false,
+      }]);
 
        tick(2000);
        expect(fixture.componentInstance.state).toEqual(State.READY);

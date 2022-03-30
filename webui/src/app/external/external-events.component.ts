@@ -643,7 +643,7 @@ export class ExternalEventsComponent implements OnInit {
     for (const char of str) {
       reconState.keySequence.push(char);
     }
-    if (reconState.text && !reconState.text.match(/^\s$/)) {
+    if (reconState.text && !reconState.text.match(/^.*\s$/)) {
       reconState.text += ' ';
     }
     reconState.text += str;

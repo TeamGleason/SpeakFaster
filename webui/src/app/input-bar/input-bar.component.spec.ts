@@ -964,18 +964,30 @@ describe('InputBarComponent', () => {
        expect(event.timestampMillis).toBeGreaterThan(0);
      });
 
+  it('Text predicton word chip injection sets correct state', () => {
+    inputBarControlSubject.next({
+      chips: [
+        {
+          text: 'i am feeling',
+          isTextPrediction: true,
+        },
+      ]
+    });
+
+    expect(fixture.componentInstance.state).toEqual(State.AFTER_CUT);
+    expect(fixture.componentInstance.inputString).toEqual('i am feeling ');
+  });
+
   it('type after multi-word text prediction chip and then spell', () => {
     inputBarControlSubject.next({
       chips: [
         {
           text: 'i am feeling',
+          isTextPrediction: true,
         },
       ]
     });
-    (fixture.componentInstance as any).cutText = 'i am feeling';
-    fixture.componentInstance.state = State.AFTER_CUT;
-    fixture.detectChanges();
-    enterKeysIntoComponent(['s', 's', 'g'], 'ssg');
+    enterKeysIntoComponent(['s', 's', 'g'], 'i am feeling ssg', 13);
     const spellButton = fixture.debugElement.query(By.css('.spell-button'));
     spellButton.nativeElement.click();
     fixture.detectChanges();
@@ -1143,7 +1155,7 @@ describe('InputBarComponent', () => {
     expect(fixture.debugElement.query(By.css('.cut-button'))).toBeNull();
   });
 
-  it('typing then injecting text prediction combines tex twith prediction',
+  it('typing then injecting text prediction combines text with prediction',
      () => {
        enterKeysIntoComponent(['w', 'o', 'w'], 'wow');
        inputBarControlSubject.next({
@@ -1156,12 +1168,10 @@ describe('InputBarComponent', () => {
        const chips = fixture.debugElement.queryAll(
            By.css('app-input-bar-chip-component'));
 
-       expect(chips.length).toEqual(1);
-       expect(chips[0].nativeElement.innerText).toEqual('wow this is');
-       expect(fixture.componentInstance.state)
-           .toEqual(State.CHOOSING_WORD_CHIP);
-       expect(fixture.componentInstance.hasOnlyOneTextPredictionChip)
-           .toBeTrue();
+       expect(chips.length).toEqual(0);
+       const text = fixture.debugElement.query(By.css('.base-text-area'));
+       expect(text.nativeElement.innerText).toEqual('wow this is |');
+       expect(fixture.componentInstance.state).toEqual(State.AFTER_CUT);
        expect(fixture.debugElement.query(By.css('.spell-button'))).toBeNull();
      });
 

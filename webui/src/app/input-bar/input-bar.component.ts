@@ -11,7 +11,7 @@ import {ExternalEventsComponent, IgnoreMachineKeySequenceConfig, repeatVirtualKe
 import {LexiconComponent, LoadLexiconRequest} from '../lexicon/lexicon.component';
 import {FillMaskRequest, SpeakFasterService} from '../speakfaster-service';
 import {AbbreviationSpec, AbbreviationToken, InputAbbreviationChangedEvent} from '../types/abbreviation';
-import {TextEntryBeginEvent, TextEntryEndEvent} from '../types/text-entry';
+import {TextEntryEndEvent} from '../types/text-entry';
 
 export enum State {
   ENTERING_BASE_TEXT = 'ENTERING_BASE_TEXT',
@@ -178,12 +178,17 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
                 this.contextualPhraseTags);
           } else if (event.chips !== undefined) {
             let {chips} = event;
-            if (this.state === State.ENTERING_BASE_TEXT && this.inputString &&
+            if (this.state === State.ENTERING_BASE_TEXT &&
                 chips[0].isTextPrediction) {
+              const originalInputString = this.inputString;
               chips[0] = {
                 text: this.inputString.trim() + ' ' + chips[0].text,
                 isTextPrediction: chips[0].isTextPrediction,
               };
+              const appendedString =
+                  chips[0].text.substring(originalInputString.length).trim();
+              ExternalEventsComponent.appendString(
+                  appendedString, /* isExternal= */ false);
               this.baseReconstructedText = this.latestReconstructedString;
             }
             this._focusChipIndex = null;
@@ -203,12 +208,18 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
                 this._chipTypedText![i] = chip.text;
               }
             });
-            if (this._chips.length > 0) {
-              // if (!chips[0].isTextPrediction) {
+            if (this._chips.length > 1) {
               this.state = State.CHOOSING_WORD_CHIP;
-              // }
               this.eventLogger.logAbbreviationExpansionStartWordRefinementMode(
                   getPhraseStats(this._chips.map(chip => chip.text).join(' ')));
+            } else if (
+                this._chips.length === 1 && this._chips[0].isTextPrediction) {
+              this.state = State.AFTER_CUT;
+              this.cutText =
+                  this._chips.map(chip => chip.text.trim()).join(' ') + ' ';
+              this.inputString = this.cutText;
+              this.latestReconstructedString = '';
+              this.baseReconstructedText = '';
             }
           }
         });
@@ -271,7 +282,6 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
         this.state === State.AFTER_CUT) {
       if (this.state === State.AFTER_CUT) {
         this.updateInputString(
-            this.cutText +
             reconstructedText.slice(this.baseReconstructedText.length));
       } else {
         this.updateInputString(

@@ -65,18 +65,20 @@
 
 .option-button.eye-gaze-settings-button {
   line-height: 24px;
+  margin-right: 0;
 }
 
 .option-button.quit-button {
   background-color: rgb(210, 105, 0);
   font-size: 20px;
   height: 48px;
-  margin-left: 40px;
+  margin-left: 32px;
   padding-right: 8px;
 }
 
 .option-button.help-button {
   min-width: 120px;
+  margin-right: 0;
 }
 
 .option-button.reload-button {
@@ -93,6 +95,7 @@
   align-items: flex-end;
   display: flex;
   flex-direction: column;
+  width: 272px;
 }
 
 .section-title {
@@ -137,9 +140,9 @@
 <div class="header-section">
   <div class="app-title">
     <img class="icon-image" src="/assets/images/minibar-icon.png">
-    SpeakFaster WebUI Prototype v{{versionString}}
+    SpeakFaster Prototype v{{versionString}}
     <span *ngIf="hostAppVersionString !== null">
-      &nbsp;(Host app: v{{hostAppVersionString}})
+      &nbsp;(Host: v{{hostAppVersionString}})
     </span>
   </div>
 

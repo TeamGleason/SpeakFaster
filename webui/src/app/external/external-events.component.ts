@@ -638,12 +638,21 @@ export class ExternalEventsComponent implements OnInit {
     // TODO(cais): Take care of Shift+Backspace and Shift+Delete.
   }
 
+  /**
+   * Append a string to the current reconstruction state.
+   *
+   * If the current string doesn't end with a whitespace, a space character will
+   * be appending before the input string is appended.
+   *
+   * @param str
+   * @param isExternal
+   */
   public static appendString(str: string, isExternal: boolean) {
     const reconState = isExternal ? externalReconState : internalReconState;
     for (const char of str) {
       reconState.keySequence.push(char);
     }
-    if (reconState.text && !reconState.text.match(/^\s$/)) {
+    if (reconState.text && !reconState.text.match(/.*\s$/)) {
       reconState.text += ' ';
     }
     reconState.text += str;

@@ -57,7 +57,7 @@ export interface AbbreviationSpec {
 
 /** An event that signifies the change in an input abbreviation */
 export interface InputAbbreviationChangedEvent {
-  // Specification for the abbrevation.
+  // Specification for the abbreviation.
   readonly abbreviationSpec: AbbreviationSpec;
 
   // Whether abbreviation expansion is requested.

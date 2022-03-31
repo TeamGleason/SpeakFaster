@@ -406,7 +406,7 @@ def _check_time_interval_overlaps(time_intervals, tspan):
     if time_intervals_overlap(time_interval, tspan):
       raise ValueError(
           "Redaction time interval %s overlaps with %s (Unit: s). "
-          "Check your the time attributes in your Redaction tags." %
+          "Check the time attributes in your Redaction tags." %
           (time_interval, tspan))
 
 

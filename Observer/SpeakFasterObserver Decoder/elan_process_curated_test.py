@@ -253,6 +253,25 @@ class ApplySpeakerMapGetKeypressRedactionsTest(tf.test.TestCase):
         rows, self._realname_to_pseudonym)
     self.assertEqual(ranges, [])
 
+  def testOverlappingRedactionTimeRangesRaisesValueError(self):
+    rows = [
+        [0.1, 1.3, "SpeechTranscript", "Good morning. [Speaker:Danielle] "],
+        [1.8, 1.9, "Keypress", "a"],
+        [2.8, 2.9, "Keypress", "b"],
+        [3.8, 3.9, "Keypress", "c"],
+        [15.2, 16.0, "SpeechTranscript",
+         "I have <RedactedSensitive time=\"00:00:01.500-00:00:04\">abc</RedactedSensitive> [SpeakerTTS:Sean]"],
+        [21.8, 21.9, "Keypress", "d"],
+        [22.8, 22.9, "Keypress", "e"],
+        [23.8, 23.9, "Keypress", "f"],
+        [25.2, 26.0, "SpeechTranscript",
+         "I have <RedactedSensitive time=\"00:00:03.500-00:00:05\">de</RedactedSensitive> [SpeakerTTS:Sean]"]]
+    with self.assertRaisesRegexp(
+        ValueError,
+        r"Redaction time interval \(1\.5, 4\.0\) overlaps with \(3\.5, 5\.0\)\ \(Unit: s\). Check"):
+      elan_process_curated.apply_speaker_map_and_redaction_masks(
+          rows, self._realname_to_pseudonym)
+
   def testInvalidInitialLabelCausesValueError(self):
     rows = [
         [5.2, 6.0, "SpeechTranscript",
@@ -264,6 +283,38 @@ class ApplySpeakerMapGetKeypressRedactionsTest(tf.test.TestCase):
       elan_process_curated.apply_speaker_map_and_redaction_masks(
           rows, self._realname_to_pseudonym)
 
+
+class TimeIntervalsOverlapTest(tf.test.TestCase):
+
+  def testReturnsTrueForOverlappingCases(self):
+    self.assertTrue(elan_process_curated.time_intervals_overlap(
+        (50.0, 60.0), (59.0, 70.0)))
+    self.assertTrue(elan_process_curated.time_intervals_overlap(
+        (59.0, 70.0), (50.0, 60.0)))
+    self.assertTrue(elan_process_curated.time_intervals_overlap(
+        (50.0, 60.0), (49.0, 61.0)))
+    self.assertTrue(elan_process_curated.time_intervals_overlap(
+        (49.0, 61.0), (50.0, 60.0)))
+    self.assertTrue(elan_process_curated.time_intervals_overlap(
+        (50.0, 60.0), (50.0, 60.0)))
+
+  def testReturnsFalseForNonoverlappingCases(self):
+    self.assertFalse(elan_process_curated.time_intervals_overlap(
+        (50.0, 60.0), (60.0, 70.0)))
+    self.assertFalse(elan_process_curated.time_intervals_overlap(
+        (60.0, 70.0), (50.0, 60.0)))
+    self.assertFalse(elan_process_curated.time_intervals_overlap(
+        (50.0, 59.0), (60.0, 70.0)))
+    self.assertFalse(elan_process_curated.time_intervals_overlap(
+        (60.0, 70.0), (50.0, 59.0)))
+
+  def testWrongOrderInTimeIntervalsRaisesAssertionError(self):
+    with self.assertRaises(AssertionError):
+      elan_process_curated.time_intervals_overlap(
+          (50.0, 49.9), (50.0, 70.0))
+    with self.assertRaises(AssertionError):
+      elan_process_curated.time_intervals_overlap(
+          (50.0, 60.0), (70.0, 69.9))
 
 class RedactKeypressesTest(tf.test.TestCase):
 

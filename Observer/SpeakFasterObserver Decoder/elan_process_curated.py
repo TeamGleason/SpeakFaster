@@ -324,6 +324,15 @@ def calculate_speech_curation_stats(merged_tsv_path,
   return stats
 
 
+def time_intervals_overlap(interval1, interval2):
+  """Returns whether two input intervals have any overlap."""
+  begin1, end1 = interval1
+  begin2, end2 = interval2
+  assert end1 >= begin1
+  assert end2 >= begin2
+  return not (end1 <= begin2 or end2 <= begin1)
+
+
 def apply_speaker_map_and_redaction_masks(rows, realname_to_pseudonym):
   """Applies speaker map and redactoin masks.
 
@@ -379,6 +388,7 @@ def apply_speaker_map_and_redaction_masks(rows, realname_to_pseudonym):
       for begin, end, redaction_tag, _, tspan in reversed(
           redacted_segments):
         if tspan:
+          _check_time_interval_overlaps(keypress_redaction_time_ranges, tspan)
           keypress_redaction_time_ranges.append(tspan)
           redaction_mask = "[%s time=\"%.3f-%.3f\"]" % (
               redaction_tag, tspan[0], tspan[1])
@@ -389,6 +399,15 @@ def apply_speaker_map_and_redaction_masks(rows, realname_to_pseudonym):
             pseudonymized_content[end:])
       rows[i][3] = pseudonymized_content
   return keypress_redaction_time_ranges
+
+
+def _check_time_interval_overlaps(time_intervals, tspan):
+  for time_interval in time_intervals:
+    if time_intervals_overlap(time_interval, tspan):
+      raise ValueError(
+          "Redaction time interval %s overlaps with %s (Unit: s). "
+          "Check the time attributes in your Redaction tags." %
+          (time_interval, tspan))
 
 
 def redact_keypresses(rows, time_ranges):

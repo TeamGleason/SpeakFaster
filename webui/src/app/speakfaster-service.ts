@@ -8,7 +8,7 @@ import {trimStringAtHead} from 'src/utils/text-utils';
 
 import {AbbreviationSpec} from './types/abbreviation';
 import {ContextSignal} from './types/context';
-import {AddContextualPhraseRequest, AddContextualPhraseResponse, ContextualPhrase, DeleteContextualPhraseRequest, DeleteContextualPhraseResponse} from './types/contextual_phrase';
+import {AddContextualPhraseRequest, AddContextualPhraseResponse, ContextualPhrase, DeleteContextualPhraseRequest, DeleteContextualPhraseResponse, MarkContextualPhraseUsageRequest, MarkContextualPhraseUsageResponse} from './types/contextual_phrase';
 
 export interface PingResponse {
   ping_response: string;
@@ -129,6 +129,9 @@ export interface SpeakFasterServiceStub {
 
   deleteContextualPhrase(request: DeleteContextualPhraseRequest):
       Observable<DeleteContextualPhraseResponse>;
+
+  markContextualPhraseUsage(request: MarkContextualPhraseUsageRequest):
+      Observable<MarkContextualPhraseUsageResponse>;
 
   fillMask(request: FillMaskRequest): Observable<FillMaskResponse>;
 
@@ -331,6 +334,27 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
         .pipe(timeout(CONTEXT_PHRASES_TIMEOUT_MILLIS), catchError(error => {
                 return throwError(makeTimeoutErrorMessage(
                     'Delete context phrase', CONTEXT_PHRASES_TIMEOUT_MILLIS));
+              }));
+  }
+
+  markContextualPhraseUsage(request: MarkContextualPhraseUsageRequest):
+      Observable<MarkContextualPhraseUsageResponse> {
+    const {endpoint, headers, withCredentials} = this.getServerCallParams();
+    const params: any = {
+      mode: 'mark_contextual_phrase_usage',
+      userId: request.userId,
+      phraseId: request.phraseId,
+      lastUsedTimestamp: new Date().toISOString(),
+    };
+    return this.http
+        .get<MarkContextualPhraseUsageResponse>(endpoint, {
+          params,
+          withCredentials,
+          headers,
+        })
+        .pipe(timeout(CONTEXT_PHRASES_TIMEOUT_MILLIS), catchError(error => {
+                return throwError(makeTimeoutErrorMessage(
+                    'Mark context phrase', CONTEXT_PHRASES_TIMEOUT_MILLIS));
               }));
   }
 

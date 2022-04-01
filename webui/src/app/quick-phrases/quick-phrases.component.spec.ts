@@ -27,13 +27,24 @@ class SpeakFasterServiceForTest {
     this.contextualPhrases.push(
         ...[{
           phraseId: createUuid(),
-          text: 'Hello',
+          text: 'hello',
           tags: ['favorite'],
+          lastUsedTimestamp: '2022-04-01T00:00:00.000Z',
         },
+            {
+              phraseId: createUuid(),
+              text: 'Nice day today',
+              tags: ['favorite'],
+              lastUsedTimestamp: '2022-04-01T00:00:00.000Z',
+            },
+            // Among the phrases with the 'favorite' tag, the 'Thank you' phrase
+            // should be shown first due to the later lastUsedTimestamp, despite
+            // lexicographical order.
             {
               phraseId: createUuid(),
               text: 'Thank you',
               tags: ['favorite'],
+              lastUsedTimestamp: '2022-04-01T00:00:10.000Z',
             },
             {
               phraseId: createUuid(),
@@ -129,12 +140,14 @@ describe('QuickPhrasesComponent', () => {
         fixture.debugElement.queryAll(By.css('.scroll-button'));
     const error = fixture.debugElement.query(By.css('.error'));
 
-    expect(phraseComponents.length).toEqual(2);
-    expect(phraseComponents[0].componentInstance.phraseText).toEqual('Hello');
-    expect(phraseComponents[0].componentInstance.phraseIndex).toEqual(0);
-    expect(phraseComponents[1].componentInstance.phraseText)
+    expect(phraseComponents.length).toEqual(3);
+    expect(phraseComponents[0].componentInstance.phraseText)
         .toEqual('Thank you');
+    expect(phraseComponents[0].componentInstance.phraseIndex).toEqual(0);
+    expect(phraseComponents[1].componentInstance.phraseText).toEqual('hello');
     expect(phraseComponents[1].componentInstance.phraseIndex).toEqual(1);
+    expect(phraseComponents[2].componentInstance.phraseText).toEqual('Nice day today');
+    expect(phraseComponents[2].componentInstance.phraseIndex).toEqual(2);
     expect(noQuickPhrases).toBeNull();
     expect(scrollButtons).toEqual([]);
     expect(error).toBeNull();
@@ -202,12 +215,12 @@ describe('QuickPhrasesComponent', () => {
     const phraseComponents =
         fixture.debugElement.queryAll(By.css('app-phrase-component'));
     phraseComponents[0].componentInstance.speakButtonClicked.emit(
-        {phraseText: 'Hello', phraseIndex: 0});
+        {phraseText: 'Thank you', phraseIndex: 0});
 
     expect(beginEvents.length).toEqual(1);
     expect(beginEvents[0].timestampMillis).toBeGreaterThan(0);
     expect(endEvents.length).toEqual(1);
-    expect(endEvents[0].text).toEqual('Hello');
+    expect(endEvents[0].text).toEqual('Thank you');
     expect(endEvents[0].timestampMillis)
         .toBeGreaterThan(beginEvents[0].timestampMillis);
     expect(endEvents[0].injectedKeys).toBeUndefined();

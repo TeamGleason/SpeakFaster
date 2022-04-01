@@ -90,18 +90,40 @@ export class QuickPhrasesComponent implements AfterViewInit, OnInit, OnChanges,
                 }
                 this.phrases.sort(
                     (a: ContextualPhrase, b: ContextualPhrase) => {
-                      const dateA = new Date(a.createdTimestamp!).getTime();
-                      const dateB = new Date(b.createdTimestamp!).getTime();
-                      if (dateA === dateB) {
-                        if (a.text > b.text) {
+                      // Sorting is done by tiers:
+                      // 1. Last-usage timestamp
+                      // 2. In case of a tie in last-usage timestamp, sort by
+                      // creation timestamp.
+                      // 3. In case of a tie in creation timestamp, sort by
+                      // lexicographical order.
+                      const lastUsedDateA = a.lastUsedTimestamp ?
+                          new Date(a.lastUsedTimestamp).getTime() :
+                          0;
+                      const lastUsedDateB = b.lastUsedTimestamp ?
+                          new Date(b.lastUsedTimestamp).getTime() :
+                          0;
+                      if (lastUsedDateA > lastUsedDateB) {
+                        return -1;
+                      }
+                      if (lastUsedDateA < lastUsedDateB) {
+                        return 1;
+                      }
+                      const createdDateA =
+                          new Date(a.createdTimestamp!).getTime();
+                      const createdDateB =
+                          new Date(b.createdTimestamp!).getTime();
+                      if (createdDateA === createdDateB) {
+                        const textA = a.text.trim().toLocaleUpperCase();
+                        const textB = b.text.trim().toLocaleUpperCase();
+                        if (textA > textB) {
                           return 1;
-                        } else if (a.text < b.text) {
+                        } else if (textA < textB) {
                           return -1;
                         } else {
                           return 0;
                         }
                       } else {
-                        return dateB - dateA;
+                        return createdDateB - createdDateA;
                       }
                     });
                 if (this.maxNumPhrases !== null &&

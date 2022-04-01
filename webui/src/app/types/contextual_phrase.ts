@@ -48,6 +48,9 @@ export interface ContextualPhrase {
 
   // Last modified timestamp (if any), in ISO format. Assume UTC time zone.
   lastModifiedTimestamp?: string;
+
+  // Last used timetamp (if any).
+  lastUsedTimestamp?: string;
 }
 
 // Request to add a contextual phrase (i.e., "quick phrase").
@@ -84,4 +87,22 @@ export interface DeleteContextualPhraseResponse {
   phraseId?: string
 
   errorMessage?: string;
+}
+
+// Request to mark the usage of a contextual phrase.
+export interface MarkContextualPhraseUsageRequest {
+  // The ID of the user to which the contextual phrase belongs.
+  userId: string;
+
+  // ID of the phrase to mark usage for.
+  phraseId: string;
+
+  // Last usage timestamp, in ISO format. Assume UTC time zone.
+  lastUsedTimestamp: string;
+}
+
+// Response to a qurest to mark a contextual phrase for usage.
+export interface MarkContextualPhraseUsageResponse {
+  // Echoed phrase ID.
+  phraseId: string;
 }

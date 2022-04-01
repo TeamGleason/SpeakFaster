@@ -2,23 +2,41 @@
 import {HttpClientModule} from '@angular/common/http';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {By} from '@angular/platform-browser';
+import {Observable, of} from 'rxjs';
 
 import * as cefSharp from '../../utils/cefsharp';
 import {FavoriteButtonComponent} from '../favorite-button/favorite-button.component';
 import {SpeakFasterService} from '../speakfaster-service';
 import {TestListener} from '../test-utils/test-cefsharp-listener';
+import {MarkContextualPhraseUsageRequest, MarkContextualPhraseUsageResponse} from '../types/contextual_phrase';
 
 import {PhraseComponent} from './phrase.component';
 import {PhraseModule} from './phrase.module';
 
-class SpeakFasterServiceForTest {}
+class SpeakFasterServiceForTest {
+  private _markedPhraseIds: string[] = [];
+
+  markContextualPhraseUsage(request: MarkContextualPhraseUsageRequest):
+      Observable<MarkContextualPhraseUsageResponse> {
+    this._markedPhraseIds.push(request.phraseId);
+    return of({
+      phraseId: request.phraseId,
+    })
+  }
+
+  get markedPhraseIds(): string[] {
+    return this._markedPhraseIds.slice();
+  }
+}
 
 describe('PhraseComponent', () => {
   let fixture: ComponentFixture<PhraseComponent>;
   let testListener: TestListener;
+  let speakFasterServiceForTest: SpeakFasterServiceForTest;
 
   beforeEach(async () => {
     testListener = new TestListener();
+    speakFasterServiceForTest = new SpeakFasterServiceForTest();
     (window as any)[cefSharp.BOUND_LISTENER_NAME] = testListener;
     await TestBed
         .configureTestingModule({
@@ -26,12 +44,13 @@ describe('PhraseComponent', () => {
           declarations: [PhraseComponent, FavoriteButtonComponent],
           providers: [{
             provide: SpeakFasterService,
-            useValue: new SpeakFasterServiceForTest(),
+            useValue: speakFasterServiceForTest,
           }],
         })
         .compileComponents();
     fixture = TestBed.createComponent(PhraseComponent);
     fixture.componentInstance.phraseText = 'my phrase';
+    fixture.componentInstance.phraseId = 'dummy_phrase_id';
     fixture.componentInstance.phraseIndex = 2;
     fixture.detectChanges();
   });
@@ -71,6 +90,20 @@ describe('PhraseComponent', () => {
     expect(emittedEvents).toEqual([{phraseText: 'my phrase', phraseIndex: 2}]);
   });
 
+  it('clicking speak button calls markContextualPhraseUsage', () => {
+    const emittedEvents: Array<{phraseText: string, phraseIndex: number}> = [];
+    fixture.componentInstance.speakButtonClicked.subscribe((event) => {
+      emittedEvents.push(event);
+    });
+    fixture.detectChanges();
+    const speakButton = fixture.nativeElement.querySelector('.speak-button') as
+        HTMLButtonElement;
+    speakButton.click();
+    expect(speakFasterServiceForTest.markedPhraseIds).toEqual([
+      'dummy_phrase_id'
+    ]);
+  });
+
   it('clicking inject button fires injectButtonClicked', () => {
     const emittedEvents: Array<{phraseText: string, phraseIndex: number}> = [];
     fixture.componentInstance.injectButtonClicked.subscribe((event) => {
@@ -81,6 +114,20 @@ describe('PhraseComponent', () => {
                              '.inject-button') as HTMLButtonElement;
     injectButton.click();
     expect(emittedEvents).toEqual([{phraseText: 'my phrase', phraseIndex: 2}]);
+  });
+
+  it('clicking inject button calls markContextualPhraseUsge', () => {
+    const emittedEvents: Array<{phraseText: string, phraseIndex: number}> = [];
+    fixture.componentInstance.injectButtonClicked.subscribe((event) => {
+      emittedEvents.push(event);
+    });
+    fixture.detectChanges();
+    const injectButton = fixture.nativeElement.querySelector(
+                             '.inject-button') as HTMLButtonElement;
+    injectButton.click();
+    expect(speakFasterServiceForTest.markedPhraseIds).toEqual([
+      'dummy_phrase_id'
+    ]);
   });
 
   it('clicking expand button fires expandButtonClicked', () => {
@@ -135,5 +182,4 @@ describe('PhraseComponent', () => {
         fixture.debugElement.query(By.css('app-favorite-button-component'));
     expect(favoriteButton.componentInstance.tags).toEqual(['tag1', 'tag2']);
   });
-
 });

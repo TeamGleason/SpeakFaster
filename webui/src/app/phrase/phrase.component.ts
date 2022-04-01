@@ -3,6 +3,8 @@ import {AfterViewInit, Component, ElementRef, EventEmitter, Input, OnDestroy, Ou
 import {updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
 import {createUuid} from 'src/utils/uuid';
 
+import {SpeakFasterService} from '../speakfaster-service';
+
 export enum State {
   READY = 'READY',
   CONFIRMING_DELETION = 'CONFIRMING_DELETION',
@@ -47,6 +49,8 @@ export class PhraseComponent implements AfterViewInit, OnDestroy {
   clickableButtons!: QueryList<ElementRef<HTMLElement>>;
   @ViewChildren('clickableButton,phrase')
   clickableButtonsAndText!: QueryList<ElementRef<HTMLElement>>;
+
+  constructor(private speakFasterService: SpeakFasterService) {}
 
   public updateButtonBoxesWithContainerRect(containerRect: DOMRect) {
     const clicakbleAreas = this.isTextClickable ? this.clickableButtonsAndText :
@@ -98,20 +102,34 @@ export class PhraseComponent implements AfterViewInit, OnDestroy {
 
   onSpeakButtonClicked(event: Event) {
     (event.target as HTMLButtonElement).blur();
-    // TODO(cais): Add unit test.
     this.speakButtonClicked.emit(
         {phraseText: this.phraseText, phraseIndex: this.phraseIndex});
+    this.markContextualPhraseUsage();
   }
 
   onInjectButtonClicked(event: Event) {
     (event.target as HTMLButtonElement).blur();
     this.injectButtonClicked.emit(
         {phraseText: this.phraseText, phraseIndex: this.phraseIndex});
+    this.markContextualPhraseUsage();
   }
 
   onExpandButtonClicked(event: Event) {
     (event.target as HTMLButtonElement).blur();
     this.expandButtonClicked.emit(
         {phraseText: this.phraseText, phraseIndex: this.phraseIndex});
+  }
+
+  private markContextualPhraseUsage() {
+    if (!this.phraseId) {
+      return;
+    }
+    this.speakFasterService
+        .markContextualPhraseUsage({
+          userId: this.userId,
+          phraseId: this.phraseId,
+          lastUsedTimestamp: new Date().toISOString(),
+        })
+        .subscribe((data) => {});
   }
 }

@@ -71,21 +71,6 @@ mat-progress-spinner {
   text-align: center;
 }
 
-.scroll-button {
-}
-
-.scroll-button-disabled {
-  color: #888;
-  font-weight: normal;
-}
-
-.scroll-buttons-container {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  width: fit-content;
-}
-
 .sub-tag-name {
   font-weight: 800;
 }
@@ -166,38 +151,9 @@ mat-progress-spinner {
 
   </div>
 
-  <div
-      class="scroll-buttons-container"
-      *ngIf="checkPhraseOverflow()">
-    <button
-        #clickableButton
-        class="scroll-button"
-        (click)="onScrollButtonClicked($event, 'up')">
-      <img
-          *ngIf="!isScrollButtonDisabled('up')"
-          class="button-image"
-          src="/assets/images/arrow_up.png"
-          alt="add to favorite" />
-      <img
-          *ngIf="isScrollButtonDisabled('up')"
-          class="button-image"
-          src="/assets/images/arrow_up_disabled.png"
-          alt="add to favorite" />
-    </button>
-    <button
-        #clickableButton
-        class="scroll-button"
-        (click)="onScrollButtonClicked($event, 'down')">
-      <img
-          *ngIf="!isScrollButtonDisabled('down')"
-          class="button-image"
-          src="/assets/images/arrow_down.png"
-          alt="add to favorite" />
-      <img
-          *ngIf="isScrollButtonDisabled('down')"
-          class="button-image"
-          src="/assets/images/arrow_down_disabled.png"
-          alt="add to favorite" />
-    </button>
-  </div>
+  <app-scroll-buttons-component
+      [scrollTarget]="quickPhrasesContainer"
+      [scrollStepPx]="SCROLL_STEP_PX"
+      (scrollButtonClicked)="onScrollButtonClicked($event)">
+  </app-scroll-buttons-component>
 </div>

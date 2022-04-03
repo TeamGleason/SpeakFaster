@@ -29,7 +29,7 @@ export class QuickPhrasesComponent implements AfterViewInit, OnInit, OnChanges,
 
   private readonly instanceId =
       QuickPhrasesComponent._NAME + '_' + createUuid();
-  private readonly SCROLL_STEP = 225;
+  readonly SCROLL_STEP_PX = 225;
   state = State.RETRIEVING_PHRASES;
 
   // Tags used for filtering the quick phrases (contextual phrases) during
@@ -221,26 +221,7 @@ export class QuickPhrasesComponent implements AfterViewInit, OnInit, OnChanges,
     this.retrievePhrases();
   }
 
-  checkPhraseOverflow(): boolean {
-    if (!this.quickPhrasesContainer || this.state !== State.RETRIEVED_PHRASES) {
-      return false;
-    }
-    const phrasesContainer = this.quickPhrasesContainer.nativeElement;
-    return phrasesContainer.scrollHeight > phrasesContainer.clientHeight;
-  }
-
-  onScrollButtonClicked(event: Event, direction: 'up'|'down') {
-    const phrasesContainer = this.quickPhrasesContainer.nativeElement;
-    if (direction === 'down') {
-      const maxScrollY =
-          phrasesContainer.scrollHeight - phrasesContainer.clientHeight;
-      phrasesContainer.scrollTop =
-          Math.min(maxScrollY, phrasesContainer.scrollTop + this.SCROLL_STEP);
-    } else {
-      const minScrollY = 0;
-      phrasesContainer.scrollTop =
-          Math.max(minScrollY, phrasesContainer.scrollTop - this.SCROLL_STEP);
-    }
+  onScrollButtonClicked(event: {direction: 'up'|'down'}) {
     this.updatePhraseButtonBoxesWithContainerRect();
   }
 
@@ -282,16 +263,6 @@ export class QuickPhrasesComponent implements AfterViewInit, OnInit, OnChanges,
     this.phraseOptions.forEach(phraseOption => {
       phraseOption.updateButtonBoxesWithContainerRect(containerRect);
     });
-  }
-
-  isScrollButtonDisabled(direction: 'up'|'down'): boolean {
-    const phrasesContainer = this.quickPhrasesContainer.nativeElement;
-    if (direction === 'up') {
-      return phrasesContainer.scrollTop <= 0;
-    } else {
-      return phrasesContainer.scrollTop >=
-          phrasesContainer.scrollHeight - phrasesContainer.clientHeight;
-    }
   }
 
   private selectPhrase(

@@ -1,0 +1,74 @@
+<style>
+:host {
+  box-sizing: border-box;
+  font-family: "Google Sans", "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+}
+
+button {
+  background: #484747;
+  border: 1px #eee solid;
+  border-radius: 4px;
+  box-sizing: border-box;
+  color: white;
+  flex: 1;
+  font-weight: bold;
+  font-size: 30px;
+  min-height: 136px;
+  margin: 4px;
+  width: 60px;
+}
+
+.button-image {
+  height: 36px;
+  width: 36px;
+  vertical-align: middle;
+}
+
+.scroll-button-disabled {
+  color: #888;
+  font-weight: normal;
+}
+
+.scroll-buttons-container {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  width: fit-content;
+}
+
+</style>
+
+<div
+    *ngIf="checkPhraseOverflow()"
+    class="scroll-buttons-container">
+  <button
+      #clickableButton
+      class="scroll-button"
+      (click)="onScrollButtonClicked($event, 'up')">
+    <img
+        class="button-image"
+        *ngIf="!isScrollButtonDisabled('up')"
+        src="/assets/images/arrow_up.png"
+        alt="Scroll up" />
+    <img
+        class="button-image"
+        *ngIf="isScrollButtonDisabled('up')"
+        src="/assets/images/arrow_up_disabled.png"
+        alt="Scroll up (disabled)" />
+  </button>
+  <button
+      #clickableButton
+      class="scroll-button"
+      (click)="onScrollButtonClicked($event, 'down')">
+    <img
+        class="button-image"
+        *ngIf="!isScrollButtonDisabled('down')"
+        src="/assets/images/arrow_down.png"
+        alt="Scroll down" />
+    <img
+        class="button-image"
+        *ngIf="isScrollButtonDisabled('down')"
+        src="/assets/images/arrow_down_disabled.png"
+        alt="Scroll down (disabled)" />
+  </button>
+</div>

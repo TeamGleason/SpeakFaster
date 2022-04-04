@@ -31,8 +31,18 @@ h3 {
   margin: 0 8px;
 }
 
+.container {
+  display: flex;
+  flex-direction: row;
+}
+
 .example-list {
   font-size: 18px;
+}
+
+.help-container {
+  height: 280px;
+  overflow-y: hidden;
 }
 
 .original-phrase {
@@ -44,74 +54,83 @@ h3 {
 
 </style>
 
-<div>
-  <h3>
-    How to abbreviate a phrase
-  </h3>
+<div class="container">
+  <div
+     #scrollTarget
+     class="help-container">
+    <h3>
+      How to abbreviate a phrase
+    </h3>
 
-  <ul class="abbreviation-rules">
-    <li>
-      Maximum allowed length of abbreviation: {{maxAbbreviationLength}} characters
-    </li>
+    <ul class="abbreviation-rules">
+      <li>
+        Maximum allowed length of abbreviation: {{maxAbbreviationLength}} characters
+      </li>
 
-    <li>
-      All characters should be lowercase
-    </li>
+      <li>
+        All characters should be lowercase
+      </li>
 
-    <li>
-      Omit all sentence-final punctuation
-      <ul class="example-list">
-        <li>
-          <span class="original-phrase">How are you?</span>
-          →
-          <span class="abbreviation-example">hay</span>
-        </li>
-      </ul>
-    </li>
+      <li>
+        Omit all sentence-final punctuation
+        <ul class="example-list">
+          <li>
+            <span class="original-phrase">How are you?</span>
+            →
+            <span class="abbreviation-example">hay</span>
+          </li>
+        </ul>
+      </li>
 
-    <li>
-      Keep sentence-middle punctuation, without space
-      <ul>
-        <li>
-          <span class="original-phrase">The more you practice, the better you will get</span>
-          →
-          <span class="abbreviation-example">tmyp,tbywg</span>
-        </li>
-      </ul>
-    </li>
+      <li>
+        Keep sentence-middle punctuation, without space
+        <ul>
+          <li>
+            <span class="original-phrase">The more you practice, the better you will get</span>
+            →
+            <span class="abbreviation-example">tmyp,tbywg</span>
+          </li>
+        </ul>
+      </li>
 
-    <li>
-      Keep Arabic numerals, without space
-      <ul>
-        <li>
-          <span class="original-phrase">See you at 9</span>
-          →
-          <span class="abbreviation-example">sya9</span>
-        </li>
-      </ul>
-    </li>
+      <li>
+        Keep Arabic numerals, without space
+        <ul>
+          <li>
+            <span class="original-phrase">See you at 9</span>
+            →
+            <span class="abbreviation-example">sya9</span>
+          </li>
+        </ul>
+      </li>
 
-    <li>
-      For contractions, omit and split at the apostrophe and take the initial letters
-      <ul>
-        <li>
-          <span class="original-phrase">You won't believe this</span>
-          →
-          <span class="abbreviation-example">ywtbt</span>
-        </li>
-        <li>
-          <span class="original-phrase">I'll tell you about it later</span>
-          →
-          <span class="abbreviation-example">iltyail</span>
-        </li>
-        <li>
-          If there is <strong>no</strong> contraction, simply use the first letter of each word.
-          <span class="original-phrase">I do not know.</span>
-          →
-          <span class="abbreviation-example">idnk</span>
-        </li>
-      </ul>
-    </li>
-  </ul>
+      <li>
+        For contractions, omit and split at the apostrophe and take the initial letters
+        <ul>
+          <li>
+            <span class="original-phrase">You won't believe this</span>
+            →
+            <span class="abbreviation-example">ywtbt</span>
+          </li>
+          <li>
+            <span class="original-phrase">I'll tell you about it later</span>
+            →
+            <span class="abbreviation-example">iltyail</span>
+          </li>
+          <li>
+            If there is <strong>no</strong> contraction, simply use the first letter of each word.
+            <span class="original-phrase">I do not know.</span>
+            →
+            <span class="abbreviation-example">idnk</span>
+          </li>
+        </ul>
+      </li>
+    </ul>
 
+  </div>
+
+  <app-scroll-buttons-component
+      [scrollTarget]="scrollTarget"
+      [scrollStepPx]="100">
+  </app-scroll-buttons-component>
 </div>

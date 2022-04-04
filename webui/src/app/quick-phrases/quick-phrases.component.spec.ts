@@ -8,6 +8,7 @@ import {createUuid} from 'src/utils/uuid';
 import * as cefSharp from '../../utils/cefsharp';
 import {HttpEventLogger} from '../event-logger/event-logger-impl';
 import {InputBarControlEvent} from '../input-bar/input-bar.component';
+import {ScrollButtonsComponent} from '../scroll-buttons/scroll-button.component';
 import {SpeakFasterService, TextPredictionRequest, TextPredictionResponse} from '../speakfaster-service';
 import {TestListener} from '../test-utils/test-cefsharp-listener';
 import {ContextualPhrase} from '../types/contextual_phrase';
@@ -111,7 +112,7 @@ describe('QuickPhrasesComponent', () => {
     await TestBed
         .configureTestingModule({
           imports: [QuickPhrasesModule],
-          declarations: [QuickPhrasesComponent],
+          declarations: [QuickPhrasesComponent, ScrollButtonsComponent],
           providers: [
             {provide: SpeakFasterService, useValue: speakFasterServiceForTest},
             {provide: HttpEventLogger, useValue: new HttpEventLogger(null)},
@@ -146,7 +147,8 @@ describe('QuickPhrasesComponent', () => {
     expect(phraseComponents[0].componentInstance.phraseIndex).toEqual(0);
     expect(phraseComponents[1].componentInstance.phraseText).toEqual('hello');
     expect(phraseComponents[1].componentInstance.phraseIndex).toEqual(1);
-    expect(phraseComponents[2].componentInstance.phraseText).toEqual('Nice day today');
+    expect(phraseComponents[2].componentInstance.phraseText)
+        .toEqual('Nice day today');
     expect(phraseComponents[2].componentInstance.phraseIndex).toEqual(2);
     expect(noQuickPhrases).toBeNull();
     expect(scrollButtons).toEqual([]);
@@ -252,32 +254,26 @@ describe('QuickPhrasesComponent', () => {
   });
 
   it('when overflow happens, shows scroll buttons and registers buttonsboxes',
-     async () => {
-       // Assume that 30 phrases of 'Counting ...' is enough to cause overflow
-       // and therefore scrolling. Same below.
-       fixture.componentInstance.allowedTag = 'counting';
-       fixture.componentInstance.ngOnChanges({
-         allowedTag: new SimpleChange(undefined, 'counting', true),
-       });
-       fixture.detectChanges();
-       await fixture.whenStable();
+      async () => {
+        // Assume that 30 phrases of 'Counting ...' is enough to cause overflow
+        // and therefore scrolling. Same below.
+        fixture.componentInstance.allowedTag = 'counting';
+        fixture.componentInstance.ngOnChanges({
+          allowedTag: new SimpleChange(undefined, 'counting', true),
+        });
+        fixture.detectChanges();
+        await fixture.whenStable();
 
-       const phrasesContainer =
-           fixture.debugElement.query(By.css('.quick-phrases-container'));
-       const phrases =
-           fixture.debugElement.queryAll(By.css('app-phrase-component'));
-       expect(phrases.length).toEqual(30);
-       const scrollButtons =
-           fixture.debugElement.queryAll(By.css('.scroll-button'));
-       expect(scrollButtons.length).toEqual(2);
-       expect(phrasesContainer.nativeElement.scrollTop).toEqual(0);
-       const buttonBoxCalls = testListener.updateButtonBoxesCalls.filter(
-           (call) => {return call[0].startsWith('QuickPhrasesComponent_')});
-       const lastButtonBoxCall = buttonBoxCalls[buttonBoxCalls.length - 1];
-       expect(lastButtonBoxCall[1].length).toEqual(2);
-       expect(lastButtonBoxCall[1][0].length).toEqual(4);
-       expect(lastButtonBoxCall[1][1].length).toEqual(4);
-     });
+        const phrasesContainer =
+            fixture.debugElement.query(By.css('.quick-phrases-container'));
+        const phrases =
+            fixture.debugElement.queryAll(By.css('app-phrase-component'));
+        expect(phrases.length).toEqual(30);
+        const scrollButtons =
+            fixture.debugElement.queryAll(By.css('.scroll-button'));
+        expect(scrollButtons.length).toEqual(2);
+        expect(phrasesContainer.nativeElement.scrollTop).toEqual(0);
+      });
 
   it('clicking scroll down button updates scrollTop', async () => {
     fixture.componentInstance.allowedTag = 'counting';

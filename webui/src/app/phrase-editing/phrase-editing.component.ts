@@ -39,6 +39,8 @@ export class PhraseEditingComponent implements AfterViewInit, OnDestroy {
 
   ngAfterViewInit() {
     updateButtonBoxesForElements(this.instanceId, this.clickableButtons);
+    // Automatically focus onto the display-text textarea.
+    this.displayTextInput.nativeElement.focus();
   }
 
   ngOnDestroy() {
@@ -48,8 +50,10 @@ export class PhraseEditingComponent implements AfterViewInit, OnDestroy {
   onSaveButtonClicked(event: Event) {
     this.errorMessage = null;
     const newPhraseText = this.textInput.nativeElement.value.trim();
-    const newPhraseDisplayText =
-        this.displayTextInput.nativeElement.value.trim();
+    let newPhraseDisplayText = this.displayTextInput.nativeElement.value.trim();
+    if (newPhraseDisplayText === newPhraseText) {
+      newPhraseDisplayText = '';
+    }
     const contextualPhrase: ContextualPhrase = {
       phraseId: this.phraseId,
       text: newPhraseText,

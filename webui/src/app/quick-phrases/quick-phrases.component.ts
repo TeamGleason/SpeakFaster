@@ -99,19 +99,20 @@ export class QuickPhrasesComponent implements AfterViewInit, OnInit, OnChanges,
                 this.phrases.sort(
                     (a: ContextualPhrase, b: ContextualPhrase) => {
                       // Sorting is done by tiers:
-                      // 1. Last-usage timestamp
-                      // 2. In case of a tie in last-usage timestamp, sort by
-                      // creation timestamp.
-                      // 3. In case of a tie in creation timestamp, sort by
-                      // lexicographical order.
-                      const dateA = a.lastUsedTimestamp ?
+                      // 1. Last-usage timestamp or in the absence of it,
+                      //    creation timestamp.
+                      // 2. In case of a tie in the timestamp, sort by
+                      //    lexicographical order.
+                      const dateA: number = a.lastUsedTimestamp ?
                           new Date(a.lastUsedTimestamp).getTime() :
-                          a.createdTimestamp ? new Date(a.createdTimestamp) :
-                                               0;
-                      const dateB = b.lastUsedTimestamp ?
+                          (a.createdTimestamp ?
+                               new Date(a.createdTimestamp).getTime() :
+                               0);
+                      const dateB: number = b.lastUsedTimestamp ?
                           new Date(b.lastUsedTimestamp).getTime() :
-                          b.createdTimestamp ? new Date(b.createdTimestamp) :
-                                               0;
+                          (b.createdTimestamp ?
+                               new Date(b.createdTimestamp).getTime() :
+                               0);
                       if (dateA > dateB) {
                         return -1;
                       }
@@ -235,6 +236,9 @@ export class QuickPhrasesComponent implements AfterViewInit, OnInit, OnChanges,
 
   onEditModeButtonClicked(event: Event) {
     if (this.state === State.EDITING_PHRASE) {
+      if (this.inputBarControlSubject) {
+        this.inputBarControlSubject.next({hide: false});
+      }
       this.retrievePhrases();
     } else if (this.state === State.RETRIEVED_PHRASES) {
       this.state = State.CHOOSING_PHRASE_TO_EDIT;

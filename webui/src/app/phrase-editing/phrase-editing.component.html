@@ -26,9 +26,15 @@ textarea {
   border-radius: 4px;
   color: white;
   font-family: "Google Sans", "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
-  font-size: 20px;
+  font-size: 24px;
   height: 60px;
   width: 800px;
+}
+
+.bottom-container {
+  align-items: center;
+  display: flex;
+  flex-direction: row;
 }
 
 .container {
@@ -36,6 +42,12 @@ textarea {
   display: flex;
   flex-direction: column;
   margin: 0 12px;
+}
+
+.error-message {
+  color: red;
+  font-size: 20px;
+  margin-right: 20px;
 }
 
 .label {
@@ -52,6 +64,7 @@ textarea {
     <textarea
         #clickableButton
         #textInput
+        class="phrase-text-input"
         value="{{phraseText}}">
     </textarea>
   </div>
@@ -61,18 +74,25 @@ textarea {
     <textarea
         #clickableButton
         #displayTextInput
+        class="phrase-display-text-input"
         value="{{phraseDisplayText || phraseText}}">
     </textarea>
   </div>
 
-  <button
-      #clickableButton
-      class="close-sub-tag-button"
-      (click)="onSaveButtonClicked($event)">
-    <img
-        class="button-image"
-        src="/assets/images/save.png"
-        alt="Save phrase edits" />
-    Save
-  </button>
+  <div class="bottom-container">
+    <div class="error-message" *ngIf="errorMessage">
+      {{errorMessage}}
+    </div>
+
+    <button
+        #clickableButton
+        class="save-button"
+        (click)="onSaveButtonClicked($event)">
+      <img
+          class="button-image"
+          src="/assets/images/save.png"
+          alt="Save phrase edits" />
+      Save
+    </button>
+  </div>
 </div>

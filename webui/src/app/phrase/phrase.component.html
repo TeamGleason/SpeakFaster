@@ -23,6 +23,10 @@
   width: 36px;
 }
 
+.display-text {
+  color: rgb(228, 228, 85);
+}
+
 .phrase {
   align-self: center;
   display: inline-flex;
@@ -64,7 +68,11 @@
       #phrase
       class="phrase"
       (click)="onTextClicked($event)">
-    <span class="phrase-text">{{getDisplayedText()}}</span>
+    <span
+        class="phrase-text"
+        [ngClass]="{'display-text': isDisplayTextAvailable}">
+        {{getDisplayedText()}}
+    </span>
   </div>
 
   <button

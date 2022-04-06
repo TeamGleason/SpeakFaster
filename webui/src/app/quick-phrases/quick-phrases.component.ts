@@ -248,10 +248,17 @@ export class QuickPhrasesComponent implements AfterViewInit, OnInit, OnChanges,
     // TODO(cais): Add unit test.
     this.state = State.EDITING_PHRASE;
     this._editedPhraseId = event.phraseId;
+    if (this.inputBarControlSubject) {
+      this.inputBarControlSubject.next({hide: true});
+    }
   }
 
   onPhraseSaved(event: {phraseId: string}) {
     this.retrievePhrases();
+    // TODO(cais): Add unit test.
+    if (this.inputBarControlSubject) {
+      this.inputBarControlSubject.next({hide: false});
+    }
   }
 
   get isChoosingPhraseToEdit(): boolean {
@@ -261,7 +268,7 @@ export class QuickPhrasesComponent implements AfterViewInit, OnInit, OnChanges,
   getEditButtonImageSrc(): string {
     // TODO(cais): Add unit tests.
     if (this.state === State.CHOOSING_PHRASE_TO_EDIT) {
-      return '/assets/images/edit_off.png' ;
+      return '/assets/images/edit_off.png';
     } else if (this.state === State.EDITING_PHRASE) {
       return '/assets/images/back.png';
     } else {
@@ -274,10 +281,15 @@ export class QuickPhrasesComponent implements AfterViewInit, OnInit, OnChanges,
       return this.phrases;
     }
     return this.phrases.filter(phrase => {
-      const words = phrase.text.toLocaleLowerCase().split(' ');
-      const filter = this.filterPrefix.toLowerCase();
-      return words.some(word => word.startsWith(filter));
+      // TODO(cais): Add unit tests.
+      return this.textMatchesFilter(phrase.text) ||
+          (phrase.displayText && this.textMatchesFilter(phrase.displayText));
     });
+  }
+
+  private textMatchesFilter(text: string): boolean {
+    const filter = this.filterPrefix.toLowerCase();
+    return text.toLocaleLowerCase().indexOf(filter) !== -1;
   }
 
   get hasSubTag(): boolean {

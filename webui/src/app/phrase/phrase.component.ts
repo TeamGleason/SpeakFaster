@@ -100,7 +100,8 @@ export class PhraseComponent implements AfterViewInit, OnDestroy {
     return this.phraseDisplayText || this.phraseText;
   }
 
-  getIsDisplayTextAvailable(): boolean {
+  get isDisplayTextAvailable(): boolean {
+    // TODO(cais): Add unit test.
     return Boolean(this.phraseDisplayText);
   }
 

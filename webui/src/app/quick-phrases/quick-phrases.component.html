@@ -193,6 +193,7 @@ mat-progress-spinner {
         [phraseId]="editedPhrase!.phraseId"
         [phraseText]="editedPhrase!.text"
         [phraseDisplayText]="editedPhrase!.displayText"
+        [inputBarControlSubject]="inputBarControlSubject"
         (phraseSaved)="onPhraseSaved($event)"
     ></app-phrase-editing-component>
   </div>

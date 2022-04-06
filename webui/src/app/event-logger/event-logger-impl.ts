@@ -28,7 +28,8 @@ export type EventName =
     'AbbreviationExpansionWordRefinementResponse'|
     'AbbreviationExpansionWordRefinementSelection'|'AppStateChange'|
     'ContextualPhraseAdd'|'ContextualPhraseAddError'|'ContextualPhraseDelete'|
-    'ContextualPhraseDeleteError'|'ContextualPhraseSelection'|
+    'ContextualPhraseDeleteError'|'ContextualPhraseEdit'|
+    'ContextualPhraseEditError'|'ContextualPhraseSelection'|
     'ContextualPhraseCopying'|'IncomingContextualTurn'|
     'InputBarInjectButtonClick'|'InputBarSpeakButtonClick'|'Keypress'|
     'SessionEnd'|'SessionStart'|'SettingsChange'|'UserFeedback';
@@ -298,6 +299,36 @@ export class HttpEventLogger implements EventLogger {
           timezone: this.timezone,
           sessionId: this.sessionId,
           eventName: 'ContextualPhraseDeleteError',
+          eventData: JSON.stringify({errorMessage}),
+          appState: getAppState(),
+        })
+        .pipe(first())
+        .toPromise();
+  }
+
+  async logContextualPhraseEdit(phraseStats: PhraseStats) {
+    await this
+        .logEvent({
+          userId: this._userId!,
+          timestamp: this.getUtcEpochMillis(),
+          timezone: this.timezone,
+          sessionId: this.sessionId,
+          eventName: 'ContextualPhraseEdit',
+          eventData: JSON.stringify({contextualPhraseStats: phraseStats}),
+          appState: getAppState(),
+        })
+        .pipe(first())
+        .toPromise();
+  }
+
+  async logContextualPhraseEditError(errorMessage: string) {
+    await this
+        .logEvent({
+          userId: this._userId!,
+          timestamp: this.getUtcEpochMillis(),
+          timezone: this.timezone,
+          sessionId: this.sessionId,
+          eventName: 'ContextualPhraseEditError',
           eventData: JSON.stringify({errorMessage}),
           appState: getAppState(),
         })

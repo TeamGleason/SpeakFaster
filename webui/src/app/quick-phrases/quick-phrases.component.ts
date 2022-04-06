@@ -17,6 +17,9 @@ export enum State {
   RETRIEVING_PHRASES = 'RETRIEVING_PHRASES',
   RETRIEVED_PHRASES = 'RETRIEVED_PHRASES',
   ERROR = 'ERROR',
+  CHOOSING_PHRASE_TO_EDIT = 'CHOOSING_PHRASE_TO_EDIT',
+  // Editing an existing phrase.
+  EDITING_PHRASE = 'EDITING_PHRASE',
 }
 
 @Component({
@@ -43,6 +46,7 @@ export class QuickPhrasesComponent implements AfterViewInit, OnInit, OnChanges,
   @Input() inputBarControlSubject?: Subject<InputBarControlEvent>;
   @Input() color: string = 'gray';
   @Input() filterPrefix: string = '';
+  @Input() allowsEditing: boolean = true;  // TODO(cais): Add unit test.
   // Optional limit on the number of phrases displayed at a time.
   // TODO(cais): Add unit test.
   @Input() maxNumPhrases: number|null = null;
@@ -56,6 +60,10 @@ export class QuickPhrasesComponent implements AfterViewInit, OnInit, OnChanges,
   quickPhrasesContainer!: ElementRef<HTMLDivElement>;
 
   private _subTag: string|null = null;
+
+  // The ID of the phrase being editted. Applies only to the 'EDITING_PHRASE'
+  // state.
+  private _editedPhraseId: string|null = null;
 
   constructor(
       public speakFasterService: SpeakFasterService,
@@ -96,34 +104,28 @@ export class QuickPhrasesComponent implements AfterViewInit, OnInit, OnChanges,
                       // creation timestamp.
                       // 3. In case of a tie in creation timestamp, sort by
                       // lexicographical order.
-                      const lastUsedDateA = a.lastUsedTimestamp ?
+                      const dateA = a.lastUsedTimestamp ?
                           new Date(a.lastUsedTimestamp).getTime() :
-                          0;
-                      const lastUsedDateB = b.lastUsedTimestamp ?
+                          a.createdTimestamp ? new Date(a.createdTimestamp) :
+                                               0;
+                      const dateB = b.lastUsedTimestamp ?
                           new Date(b.lastUsedTimestamp).getTime() :
-                          0;
-                      if (lastUsedDateA > lastUsedDateB) {
+                          b.createdTimestamp ? new Date(b.createdTimestamp) :
+                                               0;
+                      if (dateA > dateB) {
                         return -1;
                       }
-                      if (lastUsedDateA < lastUsedDateB) {
+                      if (dateA < dateB) {
                         return 1;
                       }
-                      const createdDateA =
-                          new Date(a.createdTimestamp!).getTime();
-                      const createdDateB =
-                          new Date(b.createdTimestamp!).getTime();
-                      if (createdDateA === createdDateB) {
-                        const textA = a.text.trim().toLocaleUpperCase();
-                        const textB = b.text.trim().toLocaleUpperCase();
-                        if (textA > textB) {
-                          return 1;
-                        } else if (textA < textB) {
-                          return -1;
-                        } else {
-                          return 0;
-                        }
+                      const textA = a.text.trim().toLocaleLowerCase();
+                      const textB = b.text.trim().toLocaleLowerCase();
+                      if (textA > textB) {
+                        return 1;
+                      } else if (textA < textB) {
+                        return -1;
                       } else {
-                        return createdDateB - createdDateA;
+                        return 0;
                       }
                     });
                 if (this.maxNumPhrases !== null &&
@@ -173,6 +175,7 @@ export class QuickPhrasesComponent implements AfterViewInit, OnInit, OnChanges,
   }
 
   ngOnChanges(changes: SimpleChanges) {
+    console.log('*** state =', this.state);  // DEBUG
     if (!changes.allowedTag && !changes.filterPrefix) {
       return;
     }
@@ -231,6 +234,41 @@ export class QuickPhrasesComponent implements AfterViewInit, OnInit, OnChanges,
     this.retrievePhrases();
   }
 
+  onEditModeButtonClicked(event: Event) {
+    if (this.state === State.EDITING_PHRASE) {
+      this.retrievePhrases();
+    } else if (this.state === State.RETRIEVED_PHRASES) {
+      this.state = State.CHOOSING_PHRASE_TO_EDIT;
+    } else if (this.state === State.CHOOSING_PHRASE_TO_EDIT) {
+      this.state = State.RETRIEVED_PHRASES;
+    }
+  }
+
+  onPhraseEditButtonClicked(event: {phraseId: string}) {
+    // TODO(cais): Add unit test.
+    this.state = State.EDITING_PHRASE;
+    this._editedPhraseId = event.phraseId;
+  }
+
+  onPhraseSaved(event: {phraseId: string}) {
+    this.retrievePhrases();
+  }
+
+  get isChoosingPhraseToEdit(): boolean {
+    return this.state === State.CHOOSING_PHRASE_TO_EDIT;
+  }
+
+  getEditButtonImageSrc(): string {
+    // TODO(cais): Add unit tests.
+    if (this.state === State.CHOOSING_PHRASE_TO_EDIT) {
+      return '/assets/images/edit_off.png' ;
+    } else if (this.state === State.EDITING_PHRASE) {
+      return '/assets/images/back.png';
+    } else {
+      return '/assets/images/edit.png';
+    }
+  }
+
   get filteredPhrases(): ContextualPhrase[] {
     if (!this.filterPrefix) {
       return this.phrases;
@@ -248,6 +286,14 @@ export class QuickPhrasesComponent implements AfterViewInit, OnInit, OnChanges,
 
   get subTag(): string|null {
     return this._subTag;
+  }
+
+  get editedPhrase(): ContextualPhrase|null {
+    if (this._editedPhraseId === null) {
+      return null;
+    }
+    return this.phrases.filter(
+        (phrase) => phrase.phraseId === this._editedPhraseId)[0];
   }
 
   /**

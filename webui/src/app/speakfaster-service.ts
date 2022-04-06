@@ -2,13 +2,13 @@
 
 import {HttpClient} from '@angular/common/http';
 import {Injectable} from '@angular/core';
-import {Observable, throwError} from 'rxjs';
+import {Observable, ObservedValueOf, throwError} from 'rxjs';
 import {catchError, timeout} from 'rxjs/operators';
 import {trimStringAtHead} from 'src/utils/text-utils';
 
 import {AbbreviationSpec} from './types/abbreviation';
 import {ContextSignal} from './types/context';
-import {AddContextualPhraseRequest, AddContextualPhraseResponse, ContextualPhrase, DeleteContextualPhraseRequest, DeleteContextualPhraseResponse, MarkContextualPhraseUsageRequest, MarkContextualPhraseUsageResponse} from './types/contextual_phrase';
+import {AddContextualPhraseRequest, AddContextualPhraseResponse, ContextualPhrase, DeleteContextualPhraseRequest, DeleteContextualPhraseResponse, EditContextualPhraseRequest, EditContextualPhraseResponse, MarkContextualPhraseUsageRequest, MarkContextualPhraseUsageResponse} from './types/contextual_phrase';
 
 export interface PingResponse {
   ping_response: string;
@@ -129,6 +129,9 @@ export interface SpeakFasterServiceStub {
 
   deleteContextualPhrase(request: DeleteContextualPhraseRequest):
       Observable<DeleteContextualPhraseResponse>;
+
+  editContextualPhrase(request: EditContextualPhraseRequest):
+      Observable<EditContextualPhraseResponse>;
 
   markContextualPhraseUsage(request: MarkContextualPhraseUsageRequest):
       Observable<MarkContextualPhraseUsageResponse>;
@@ -334,6 +337,28 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
         .pipe(timeout(CONTEXT_PHRASES_TIMEOUT_MILLIS), catchError(error => {
                 return throwError(makeTimeoutErrorMessage(
                     'Delete context phrase', CONTEXT_PHRASES_TIMEOUT_MILLIS));
+              }));
+  }
+
+  editContextualPhrase(request: EditContextualPhraseRequest):
+      Observable<EditContextualPhraseResponse> {
+    const {endpoint, headers, withCredentials} = this.getServerCallParams();
+    const params: any = {
+      mode: 'edit_contextual_phrase',
+      userId: request.userId,
+      phraseId: request.phraseId,
+      text: request.text,
+      displayText: request.displayText,
+    };
+    return this.http
+        .get<EditContextualPhraseResponse>(endpoint, {
+          params,
+          withCredentials,
+          headers,
+        })
+        .pipe(timeout(CONTEXT_PHRASES_TIMEOUT_MILLIS), catchError(error => {
+                return throwError(makeTimeoutErrorMessage(
+                    'Edit context phrase', CONTEXT_PHRASES_TIMEOUT_MILLIS));
               }));
   }
 

@@ -30,6 +30,7 @@ export class FavoriteButtonComponent implements OnInit, OnDestroy {
   @Input() isDeletion: boolean = false;
   @Input() userId!: string;
   @Input() phrase!: string;
+  @Input() phraseDisplayText?: string;
   // Phrase ID: must be provided if isDeleteion is true.
   @Input() phraseId?: string;
   @Input() sendAsUserFeedback: boolean = false;
@@ -81,9 +82,12 @@ export class FavoriteButtonComponent implements OnInit, OnDestroy {
       } else {
         // Add contextual phrase.
         const text = this.phrase.trim();
+
         const contextualPhrase = {
           phraseId: '',  // For AddContextualPhraseRequest, this is ignored.
           text,
+          // TODO(cais): Add unit test.
+          displayText: this.phraseDisplayText,
           tags: this.tags ||
               [FavoriteButtonComponent.DEFAULT_CONTEXTUAL_PHRASE_TAG],
         };

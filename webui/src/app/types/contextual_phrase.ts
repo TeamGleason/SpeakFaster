@@ -35,6 +35,10 @@ export interface ContextualPhrase {
   // The text of the phrase.
   text: string;
 
+  // The displayed version of the phrase, which may be different from `text`.
+  // If undefined, the displayed message will be based on `text`.
+  displayText?: string;
+
   // Tags for the phrase, e.g., "care", "temporal".
   tags?: string[];
 
@@ -85,6 +89,25 @@ export interface DeleteContextualPhraseResponse {
   // Echo of the deleted contextual phrase. Populated if and only if the
   // deletion is successful.
   phraseId?: string
+
+  errorMessage?: string;
+}
+
+// Request to edit a contextual phrase (i.e., "quick phrase").
+export interface EditContextualPhraseRequest {
+  userId: string;
+
+  phraseId: string;
+
+  text: string;
+
+  displayText: string;
+}
+
+// Response to the request to edit a contextual phrase.
+export interface EditContextualPhraseResponse {
+  // Echoes the phrase ID.
+  phraseId: string;
 
   errorMessage?: string;
 }

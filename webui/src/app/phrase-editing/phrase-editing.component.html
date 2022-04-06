@@ -1,0 +1,78 @@
+<style>
+
+:host {
+  box-sizing: border-box;
+  font-family: "Google Sans", "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+}
+
+button {
+  align-items: center;
+  background: #484747;
+  border: 1px #eee solid;
+  border-radius: 4px;
+  box-sizing: border-box;
+  color: white;
+  display: flex;
+  flex-direction: row;;
+  font-weight: 400;
+  font-size: 24px;
+  height: 60px;
+  margin: 12px 0;
+  padding: 4px;
+}
+
+textarea {
+  background-color: #272626;
+  border-radius: 4px;
+  color: white;
+  font-family: "Google Sans", "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  font-size: 20px;
+  height: 60px;
+  width: 800px;
+}
+
+.container {
+  align-items: flex-end;
+  display: flex;
+  flex-direction: column;
+  margin: 0 12px;
+}
+
+.label {
+  color: #ddd;
+  font-size: 16px;
+  padding-bottom: 4px;
+}
+
+</style>
+
+<div class="container">
+  <div>
+    <div class="label">Spoken message:</div>
+    <textarea
+        #clickableButton
+        #textInput
+        value="{{phraseText}}">
+    </textarea>
+  </div>
+
+  <div>
+    <div class="label">Displayed message:</div>
+    <textarea
+        #clickableButton
+        #displayTextInput
+        value="{{phraseDisplayText || phraseText}}">
+    </textarea>
+  </div>
+
+  <button
+      #clickableButton
+      class="close-sub-tag-button"
+      (click)="onSaveButtonClicked($event)">
+    <img
+        class="button-image"
+        src="/assets/images/save.png"
+        alt="Save phrase edits" />
+    Save
+  </button>
+</div>

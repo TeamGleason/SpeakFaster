@@ -40,6 +40,11 @@ mat-progress-spinner {
   padding: 4px;
 }
 
+.edit-mode-button {
+  height: 60px;
+  padding: 4px;
+}
+
 .error {
   color: red;
   font-size: 22px;
@@ -118,7 +123,7 @@ mat-progress-spinner {
     <button
         #clickableButton
         *ngIf="allowsEditing"
-        class="close-sub-tag-button"
+        class="edit-mode-button"
         (click)="onEditModeButtonClicked($event)">
       <img
           class="button-image"

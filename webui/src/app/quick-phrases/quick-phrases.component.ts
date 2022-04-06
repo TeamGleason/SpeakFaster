@@ -46,7 +46,7 @@ export class QuickPhrasesComponent implements AfterViewInit, OnInit, OnChanges,
   @Input() inputBarControlSubject?: Subject<InputBarControlEvent>;
   @Input() color: string = 'gray';
   @Input() filterPrefix: string = '';
-  @Input() allowsEditing: boolean = true;  // TODO(cais): Add unit test.
+  @Input() allowsEditing: boolean = true;
   // Optional limit on the number of phrases displayed at a time.
   // TODO(cais): Add unit test.
   @Input() maxNumPhrases: number|null = null;
@@ -175,7 +175,6 @@ export class QuickPhrasesComponent implements AfterViewInit, OnInit, OnChanges,
   }
 
   ngOnChanges(changes: SimpleChanges) {
-    console.log('*** state =', this.state);  // DEBUG
     if (!changes.allowedTag && !changes.filterPrefix) {
       return;
     }
@@ -245,7 +244,6 @@ export class QuickPhrasesComponent implements AfterViewInit, OnInit, OnChanges,
   }
 
   onPhraseEditButtonClicked(event: {phraseId: string}) {
-    // TODO(cais): Add unit test.
     this.state = State.EDITING_PHRASE;
     this._editedPhraseId = event.phraseId;
     if (this.inputBarControlSubject) {
@@ -255,7 +253,6 @@ export class QuickPhrasesComponent implements AfterViewInit, OnInit, OnChanges,
 
   onPhraseSaved(event: {phraseId: string}) {
     this.retrievePhrases();
-    // TODO(cais): Add unit test.
     if (this.inputBarControlSubject) {
       this.inputBarControlSubject.next({hide: false});
     }
@@ -266,7 +263,6 @@ export class QuickPhrasesComponent implements AfterViewInit, OnInit, OnChanges,
   }
 
   getEditButtonImageSrc(): string {
-    // TODO(cais): Add unit tests.
     if (this.state === State.CHOOSING_PHRASE_TO_EDIT) {
       return '/assets/images/edit_off.png';
     } else if (this.state === State.EDITING_PHRASE) {
@@ -281,7 +277,6 @@ export class QuickPhrasesComponent implements AfterViewInit, OnInit, OnChanges,
       return this.phrases;
     }
     return this.phrases.filter(phrase => {
-      // TODO(cais): Add unit tests.
       return this.textMatchesFilter(phrase.text) ||
           (phrase.displayText && this.textMatchesFilter(phrase.displayText));
     });

@@ -70,9 +70,8 @@
       (click)="onTextClicked($event)">
     <span
         class="phrase-text"
-        [ngClass]="{'display-text': isDisplayTextAvailable}">
-        {{getDisplayedText()}}
-    </span>
+        [ngClass]="{'display-text': isDisplayTextAvailable}"
+    >{{getDisplayedText()}}</span>
   </div>
 
   <button
@@ -94,14 +93,14 @@
   <button
       #clickableButton
       *ngIf="isEditing"
-      class="action-button inject-button"
+      class="action-button edit-button"
       (click)="onEditButtonClicked($event)">
     <img class="button-image" src="/assets/images/edit.png" alt="inject phrase" />
   </button>
 
   <button
       #clickableButton
-      *ngIf="isEditing && showFavoriteButton"
+      *ngIf="isEditing || showFavoriteButton"
       class="action-button favorite-button">
     <app-favorite-button-component
         [isDeletion]="phraseId !== undefined && phraseId.length > 0"

@@ -8,7 +8,7 @@ import {Subject} from 'rxjs';
 import {getContextualPhraseStats, getPhraseStats, HttpEventLogger} from '../event-logger/event-logger-impl';
 import {InputBarControlEvent} from '../input-bar/input-bar.component';
 import {SpeakFasterService} from '../speakfaster-service';
-import {AddContextualPhraseResponse} from '../types/contextual_phrase';
+import {AddContextualPhraseResponse, ContextualPhrase} from '../types/contextual_phrase';
 
 export enum State {
   READY = 'READY',
@@ -83,14 +83,16 @@ export class FavoriteButtonComponent implements OnInit, OnDestroy {
         // Add contextual phrase.
         const text = this.phrase.trim();
 
-        const contextualPhrase = {
+        const contextualPhrase: ContextualPhrase = {
           phraseId: '',  // For AddContextualPhraseRequest, this is ignored.
           text,
           // TODO(cais): Add unit test.
-          displayText: this.phraseDisplayText,
           tags: this.tags ||
               [FavoriteButtonComponent.DEFAULT_CONTEXTUAL_PHRASE_TAG],
         };
+        if (this.phraseDisplayText) {
+          contextualPhrase.displayText = this.phraseDisplayText;
+        }
         this.eventLogger.logContextualPhraseAdd(
             getContextualPhraseStats(contextualPhrase));
         this.speakFasterService

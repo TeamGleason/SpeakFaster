@@ -60,6 +60,17 @@ describe('PhraseComponent', () => {
     expect(phrase.innerText).toEqual('my phrase');
   });
 
+  it('shows display phrase text when different from phrase text', () => {
+    fixture.componentInstance.phraseDisplayText = 'my phrase (display)';
+    fixture.detectChanges();
+
+    const phrase = fixture.nativeElement.querySelector('.phrase');
+    expect(phrase.innerText).toEqual('my phrase (display)');
+    const phraseDisplay = fixture.debugElement.query(By.css('.display-text'));
+    expect(phraseDisplay.nativeElement.innerText)
+        .toEqual('my phrase (display)');
+  });
+
   it('shows default background color', () => {
     const phraseContainer = fixture.nativeElement.querySelector(
                                 '.phrase-container') as HTMLDivElement;

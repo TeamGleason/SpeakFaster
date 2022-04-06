@@ -176,4 +176,52 @@ describe('PhraseEditingComponent', () => {
                .nativeElement.innerText)
         .toEqual('foo error message.');
   });
+
+  it(`calls updateButtonBoxes initially`, async () => {
+    await fixture.whenStable();
+    const calls = testListener.updateButtonBoxesCalls;
+
+    expect(calls.length).toBeGreaterThanOrEqual(1);
+    const lastCall = calls[calls.length - 1];
+    expect(lastCall[0].indexOf('PhraseEditingComponent_')).toEqual(0);
+    // There are three buttons in the component.
+    expect(lastCall[1].length).toEqual(3);
+    for (let i = 0; i < 3; ++i) {
+      expect(lastCall[1][i].length).toEqual(4);
+    }
+  });
+
+  it('initially fooucs on the display-text textarea', () => {
+    const phraseDisplayTextInput =
+        fixture.debugElement.query(By.css('.phrase-display-text-input')) as
+        ElementRef<HTMLTextAreaElement>;
+    expect(phraseDisplayTextInput.nativeElement === document.activeElement)
+        .toBeTrue();
+  });
+
+  it('clicking modify-spoken button focuses on text input', () => {
+    const modifySpokenButton =
+        fixture.debugElement.query(By.css('.modify-spoken-button'));
+    modifySpokenButton.nativeElement.click();
+
+    const phraseTextInput =
+        fixture.debugElement.query(By.css('.phrase-text-input')) as
+        ElementRef<HTMLTextAreaElement>;
+    expect(phraseTextInput.nativeElement === document.activeElement).toBeTrue();
+  });
+
+  it('clikcing modify-displayed button focus on displayed-text input', () => {
+    const modifySpokenButton =
+        fixture.debugElement.query(By.css('.modify-spoken-button'));
+    modifySpokenButton.nativeElement.click();
+    const modifyDisplayedButton =
+        fixture.debugElement.query(By.css('.modify-displayed-button'));
+    modifyDisplayedButton.nativeElement.click();
+
+    const phraseDisplayTextInput =
+        fixture.debugElement.query(By.css('.phrase-display-text-input')) as
+        ElementRef<HTMLTextAreaElement>;
+    expect(phraseDisplayTextInput.nativeElement === document.activeElement)
+        .toBeTrue();
+  });
 });

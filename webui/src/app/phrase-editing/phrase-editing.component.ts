@@ -38,6 +38,7 @@ export class PhraseEditingComponent implements AfterViewInit, OnDestroy {
       private eventLogger: HttpEventLogger) {}
 
   ngAfterViewInit() {
+    console.log('*** this.clickableButtons:', this.clickableButtons);  // DEBUG
     updateButtonBoxesForElements(this.instanceId, this.clickableButtons);
     // Automatically focus onto the display-text textarea.
     this.displayTextInput.nativeElement.focus();
@@ -70,6 +71,10 @@ export class PhraseEditingComponent implements AfterViewInit, OnDestroy {
         })
         .subscribe(
             data => {
+              if (!data) {
+                this.errorMessage = 'An error occurred. Please try again.';
+                this.eventLogger.logContextualPhraseEditError('');
+              }
               if (data.errorMessage) {
                 this.errorMessage = data.errorMessage;
                 console.error(`Error during editing of contextual phrase:
@@ -86,9 +91,16 @@ export class PhraseEditingComponent implements AfterViewInit, OnDestroy {
               }
             },
             error => {
-              // TODO(cais): Display error in UI.
               this.errorMessage = 'An error occurred. Please try again.';
               this.eventLogger.logContextualPhraseEditError('');
             });
+  }
+
+  onSpokenButtonClicked(event: Event) {
+    this.textInput.nativeElement.focus();
+  }
+
+  onDisplayedButtonClicked(event: Event) {
+    this.displayTextInput.nativeElement.focus();
   }
 }

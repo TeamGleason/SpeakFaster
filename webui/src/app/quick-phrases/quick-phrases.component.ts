@@ -222,6 +222,10 @@ export class QuickPhrasesComponent implements AfterViewInit, OnInit, OnChanges,
     this._subTag = event.phraseText.trim();
     this.filteredPhrases.splice(0);
     this.retrievePhrases();
+    setTimeout(
+        () => updateButtonBoxesForElements(
+            this.instanceId, this.clickableButtons),
+        0);
   }
 
   onScrollButtonClicked(event: {direction: 'up'|'down'}) {

@@ -38,7 +38,6 @@ export class PhraseEditingComponent implements AfterViewInit, OnDestroy {
       private eventLogger: HttpEventLogger) {}
 
   ngAfterViewInit() {
-    console.log('*** this.clickableButtons:', this.clickableButtons);  // DEBUG
     updateButtonBoxesForElements(this.instanceId, this.clickableButtons);
     // Automatically focus onto the display-text textarea.
     this.displayTextInput.nativeElement.focus();

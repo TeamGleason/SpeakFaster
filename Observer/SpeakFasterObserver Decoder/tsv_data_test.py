@@ -66,6 +66,31 @@ class MergeTsvFilesTest(tf.test.TestCase):
       tsv_data.merge_tsv_files(
           [self.tsv_path_1, self.tsv_path_2], merged_tsv_path)
 
+  def testHandlesEmptyRowsCorrectly(self):
+    self.tsv_path_1 = os.path.join(self.get_temp_dir(), "1.tsv")
+    with open(self.tsv_path_1, "w") as f:
+      f.write(tsv_data.HEADER + "\n")
+      f.write("10.100\t10.200\tKeypress\th\n")
+      # Notice the extra empty line.
+      f.write("11.100\t11.200\tKeypress\ti\n\n")
+    self.tsv_path_2 = os.path.join(self.get_temp_dir(), "2.tsv")
+    with open(self.tsv_path_2, "w") as f:
+      f.write(tsv_data.HEADER + "\n")
+      # Notice the extra empty line.
+      f.write("12.100\t12.200\tSpeechTranscript\tHello\n\n")
+    merged_tsv_path = os.path.join(self.get_temp_dir(), "merged.tsv")
+
+    tsv_data.merge_tsv_files(
+        [self.tsv_path_1, self.tsv_path_2], merged_tsv_path)
+    with open(merged_tsv_path) as f:
+      reader = csv.reader(f, delimiter=tsv_data.DELIMITER)
+      rows = list(reader)
+    self.assertLen(rows, 4)
+    self.assertEqual(rows[0], list(tsv_data.COLUMN_HEADS))
+    self.assertEqual(rows[1], ["10.100", "10.200", "Keypress", "h"])
+    self.assertEqual(rows[2], ["11.100", "11.200", "Keypress", "i"])
+    self.assertEqual(rows[3], ["12.100", "12.200", "SpeechTranscript", "Hello"])
+
 
 class TsvDataTest(tf.test.TestCase):
 

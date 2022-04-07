@@ -41,6 +41,8 @@ def merge_tsv_files(tsv_paths, merged_path):
     with open(tsv_path, "r") as f:
       reader = csv.reader(f, delimiter=DELIMITER)
       file_rows = list(reader)
+      # Discard empty rows.
+      file_rows = [row for row in file_rows if row]
       if file_rows[0] != list(COLUMN_HEADS):
         raise ValueError("In file %s, expected column heads %s, got %s" %
             (tsv_path, COLUMN_HEADS, file_rows[0]))

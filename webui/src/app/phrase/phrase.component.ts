@@ -23,6 +23,7 @@ export class PhraseComponent implements AfterViewInit, OnDestroy {
   private static readonly MIN_FONT_SIZE_PX = 16;
   @Input() userId!: string;
   @Input() phraseText!: string;
+  @Input() phraseDisplayText?: string;
   @Input() phraseIndex!: number;
   @Input() phraseId?: string;
   @Input() tags?: string[];
@@ -31,6 +32,7 @@ export class PhraseComponent implements AfterViewInit, OnDestroy {
   @Input() showExpandButton: boolean = false;
   @Input() scaleFontSize = false;
   @Input() isTextClickable: boolean = false;
+  @Input() isEditing: boolean = false;
   @Output()
   textClicked: EventEmitter<{phraseText: string, phraseIndex: number}> =
       new EventEmitter();
@@ -43,6 +45,8 @@ export class PhraseComponent implements AfterViewInit, OnDestroy {
   @Output()
   expandButtonClicked: EventEmitter<{phraseText: string, phraseIndex: number}> =
       new EventEmitter();
+  @Output()
+  editButtonClicked: EventEmitter<{phraseId: string}> = new EventEmitter();
 
   @ViewChild('phrase') phraseElement!: ElementRef<HTMLDivElement>;
   @ViewChildren('clickableButton')
@@ -61,12 +65,12 @@ export class PhraseComponent implements AfterViewInit, OnDestroy {
 
   ngAfterViewInit() {
     let fontSizePx = PhraseComponent.BASE_FONT_SIZE_PX;
+    const displayTextLength = this.getDisplayedText().length;
+    // TODO(cais): Add unit test.
     if (this.scaleFontSize &&
-        this.phraseText.length >
-            PhraseComponent.FONT_SCALING_LENGTH_THRESHOLD) {
+        displayTextLength > PhraseComponent.FONT_SCALING_LENGTH_THRESHOLD) {
       fontSizePx /= Math.pow(
-          (this.phraseText.length /
-           PhraseComponent.FONT_SCALING_LENGTH_THRESHOLD),
+          (displayTextLength / PhraseComponent.FONT_SCALING_LENGTH_THRESHOLD),
           1.1);
       if (fontSizePx < PhraseComponent.MIN_FONT_SIZE_PX) {
         fontSizePx = PhraseComponent.MIN_FONT_SIZE_PX;
@@ -88,6 +92,17 @@ export class PhraseComponent implements AfterViewInit, OnDestroy {
 
   ngOnDestroy() {
     updateButtonBoxesToEmpty(this.instanceId);
+  }
+
+  getDisplayedText(): string {
+    // TODO(cais): Show different color fonts depending on whether this is
+    // displayText or text.
+    return this.phraseDisplayText || this.phraseText;
+  }
+
+  get isDisplayTextAvailable(): boolean {
+    // TODO(cais): Add unit test.
+    return Boolean(this.phraseDisplayText);
   }
 
   onTextClicked(event: Event) {
@@ -118,6 +133,13 @@ export class PhraseComponent implements AfterViewInit, OnDestroy {
     (event.target as HTMLButtonElement).blur();
     this.expandButtonClicked.emit(
         {phraseText: this.phraseText, phraseIndex: this.phraseIndex});
+  }
+
+  onEditButtonClicked(event: Event) {
+    if (!this.phraseId) {
+      return;
+    }
+    this.editButtonClicked.emit({phraseId: this.phraseId});
   }
 
   private markContextualPhraseUsage() {

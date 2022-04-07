@@ -60,6 +60,17 @@ describe('PhraseComponent', () => {
     expect(phrase.innerText).toEqual('my phrase');
   });
 
+  it('shows display phrase text when different from phrase text', () => {
+    fixture.componentInstance.phraseDisplayText = 'my phrase (display)';
+    fixture.detectChanges();
+
+    const phrase = fixture.nativeElement.querySelector('.phrase');
+    expect(phrase.innerText).toEqual('my phrase (display)');
+    const phraseDisplay = fixture.debugElement.query(By.css('.display-text'));
+    expect(phraseDisplay.nativeElement.innerText)
+        .toEqual('my phrase (display)');
+  });
+
   it('shows default background color', () => {
     const phraseContainer = fixture.nativeElement.querySelector(
                                 '.phrase-container') as HTMLDivElement;
@@ -181,5 +192,39 @@ describe('PhraseComponent', () => {
     const favoriteButton =
         fixture.debugElement.query(By.css('app-favorite-button-component'));
     expect(favoriteButton.componentInstance.tags).toEqual(['tag1', 'tag2']);
+  });
+
+  it('does not show favorite button if isEditing and showFavoriteButton are false',
+     () => {
+       fixture.componentInstance.tags = ['tag1', 'tag2'];
+       fixture.componentInstance.phraseText = 'hi';
+       fixture.componentInstance.phraseIndex = 0;
+       fixture.componentInstance.showFavoriteButton = false;
+       fixture.componentInstance.isEditing = false;
+       fixture.detectChanges();
+
+       expect(
+           fixture.debugElement.query(By.css('app-favorite-button-component')))
+           .toBeNull();
+     });
+
+  it('shows edit button if isEditing is true', () => {
+    fixture.componentInstance.tags = ['tag1', 'tag2'];
+    fixture.componentInstance.phraseText = 'hi';
+    fixture.componentInstance.phraseIndex = 0;
+    fixture.componentInstance.isEditing = true;
+    fixture.detectChanges();
+
+    expect(fixture.debugElement.query(By.css('.edit-button'))).not.toBeNull();
+  });
+
+  it('does not show edit button if isEditing is false', () => {
+    fixture.componentInstance.tags = ['tag1', 'tag2'];
+    fixture.componentInstance.phraseText = 'hi';
+    fixture.componentInstance.phraseIndex = 0;
+    fixture.componentInstance.isEditing = false;
+    fixture.detectChanges();
+
+    expect(fixture.debugElement.query(By.css('.edit-button'))).toBeNull();
   });
 });

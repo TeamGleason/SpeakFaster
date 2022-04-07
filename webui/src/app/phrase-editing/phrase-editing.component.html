@@ -1,0 +1,141 @@
+<style>
+
+:host {
+  box-sizing: border-box;
+  font-family: "Google Sans", "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+}
+
+button {
+  align-items: center;
+  background: #484747;
+  border: 1px #eee solid;
+  border-radius: 4px;
+  box-sizing: border-box;
+  color: white;
+  display: flex;
+  flex-direction: row;;
+  font-weight: 400;
+  font-size: 24px;
+  height: 60px;
+  margin: 12px 0;
+  padding: 4px;
+}
+
+textarea {
+  background-color: #272626;
+  border-radius: 4px;
+  color: white;
+  font-family: "Google Sans", "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  font-size: 24px;
+  height: 60px;
+  width: 640px;
+}
+
+.bottom-container {
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+}
+
+.button-image {
+  height: 36px;
+  width: 36px;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+.container {
+  align-items: flex-end;
+  display: flex;
+  flex-direction: column;
+  margin: 0 12px;
+}
+
+.error-message {
+  color: red;
+  font-size: 20px;
+  margin-right: 20px;
+}
+
+.label-button {
+  align-items: center;
+  background: #333;
+  border: 1px solid #888;
+  border-radius: 4px;
+  color: #eee;
+  display: inline-flex;
+  flex-direction: row;
+  font-size: 18px;
+  height: 60px;
+  line-height: 32px;
+  margin: 10px;
+  min-width: 80px;
+  padding: 8px;
+  text-align: center;
+  vertical-align: top;
+  width: fit-content;
+}
+
+.row-contrainer {
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+  margin: 12px 0;
+}
+
+</style>
+
+<div class="container">
+  <div class="row-contrainer">
+    <button
+        #clickableButton
+        class="label-button modify-spoken-button"
+        (click)="onSpokenButtonClicked($event)">
+      <img
+          class="button-image"
+          src="/assets/images/speak.png"
+          alt="Modify spoken" />
+        Spoken:
+      </button>
+    <textarea
+        #textInput
+        class="phrase-text-input"
+        value="{{phraseText}}">
+    </textarea>
+  </div>
+
+  <div class="row-contrainer">
+    <button
+        #clickableButton
+        class="label-button modify-displayed-button"
+        (click)="onDisplayedButtonClicked($event)">
+      <img
+          class="button-image"
+          src="/assets/images/eye.png"
+          alt="Modify displayed" />
+      Displayed:
+    </button>
+    <textarea
+        #displayTextInput
+        class="phrase-display-text-input"
+        value="{{phraseDisplayText || phraseText}}">
+    </textarea>
+  </div>
+
+  <div class="bottom-container">
+    <div class="error-message" *ngIf="errorMessage">
+      {{errorMessage}}
+    </div>
+
+    <button
+        #clickableButton
+        class="save-button"
+        (click)="onSaveButtonClicked($event)">
+      <img
+          class="button-image"
+          src="/assets/images/save.png"
+          alt="Save phrase edits" />
+      Save
+    </button>
+  </div>
+</div>

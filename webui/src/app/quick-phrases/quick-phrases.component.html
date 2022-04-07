@@ -40,9 +40,9 @@ mat-progress-spinner {
   padding: 4px;
 }
 
-.container {
-  display: flex;
-  flex-direction: row;
+.edit-mode-button {
+  height: 60px;
+  padding: 4px;
 }
 
 .error {
@@ -52,11 +52,21 @@ mat-progress-spinner {
   text-align: center;
 }
 
+.main-container {
+  display: flex;
+  flex-direction: row;
+}
+
 .no-quick-phrases {
   color: #aaa;
   font-size: 22px;
   margin: 8px;
   text-align: center;
+}
+
+.phrases-and-scroller {
+  display: flex;
+  flex-direction: row;
 }
 
 .quick-phrases-container {
@@ -83,77 +93,115 @@ mat-progress-spinner {
 .sub-tag-title {
   color: #eee;
   margin: 4px;
+  width: 60px;
 }
 
 </style>
 
-<div class="container">
-  <div *ngIf="hasSubTag" class="sub-tag-section">
-    <div class="sub-tag-title">
-      Phrases for
-      <span class="sub-tag-name">{{subTag}}</span>
+<div
+    class="main-container">
+
+  <div class="left-pane">
+    <div
+        *ngIf="hasSubTag && state !== 'EDITING_PHRASE'"
+        class="sub-tag-section">
+      <div class="sub-tag-title">
+        Phrases for
+        <span class="sub-tag-name">{{subTag}}</span>
+      </div>
+
+      <button
+          #clickableButton
+          class="close-sub-tag-button"
+          (click)="onCloseSubTagButtonClicked($event)">
+        <img
+            class="button-image"
+            src="/assets/images/back.png"
+            alt="add to favorite" />
+      </button>
     </div>
 
     <button
         #clickableButton
-        class="close-sub-tag-button"
-        (click)="onCloseSubTagButtonClicked($event)">
+        *ngIf="allowsEditing"
+        class="edit-mode-button"
+        (click)="onEditModeButtonClicked($event)">
       <img
           class="button-image"
-          src="/assets/images/back.png"
+          src="{{getEditButtonImageSrc()}}"
           alt="add to favorite" />
     </button>
   </div>
 
   <div
-      #quickPhrasesContainer
-      class="quick-phrases-container">
-
-    <app-phrase-component
-        *ngFor="let phrase of filteredPhrases; let i = index"
-        #phraseOption
-        class="item{{i + 1}}"
-        [userId]="userId"
-        [phraseId]="phrase.phraseId"
-        [scaleFontSize]="true"
-        [phraseText]="phrase.text"
-        [phraseIndex]="i"
-        [showFavoriteButton]="showDeleteButtons || hasSubTag"
-        [showExpandButton]="showExpandButtons && !hasSubTag"
-        [tags]="[effectiveAllowedTag]"
-        [color]="color"
-        (speakButtonClicked)="onSpeakOptionButtonClicked($event)"
-        (injectButtonClicked)="onInjectionOptionButtonClicked($event)"
-        (expandButtonClicked)="onExpandButtonClicked($event)">
-    </app-phrase-component>
-
+      class="phrases-and-scroller"
+      *ngIf="state !== 'EDITING_PHRASE'">
     <div
-        *ngIf="state === 'RETRIEVING_PHRASES'"
-        class="retrieving-quick-phrases">
-      <mat-progress-spinner
-          [mode]="'indeterminate'"
-          [value]="50">
-      </mat-progress-spinner>
-      Retrieving phrases...
+        #quickPhrasesContainer
+        class="quick-phrases-container">
+
+      <app-phrase-component
+          *ngFor="let phrase of filteredPhrases; let i = index"
+          #phraseOption
+          class="item{{i + 1}}"
+          [userId]="userId"
+          [phraseId]="phrase.phraseId"
+          [isEditing]="isChoosingPhraseToEdit"
+          [scaleFontSize]="true"
+          [phraseText]="phrase.text"
+          [phraseDisplayText]="phrase.displayText"
+          [phraseIndex]="i"
+          [showFavoriteButton]="false"
+          [showExpandButton]="showExpandButtons && !hasSubTag"
+          [tags]="[effectiveAllowedTag]"
+          [color]="color"
+          (speakButtonClicked)="onSpeakOptionButtonClicked($event)"
+          (injectButtonClicked)="onInjectionOptionButtonClicked($event)"
+          (expandButtonClicked)="onExpandButtonClicked($event)"
+          (editButtonClicked)="onPhraseEditButtonClicked($event)">
+      </app-phrase-component>
+
+      <div
+          *ngIf="state === 'RETRIEVING_PHRASES'"
+          class="retrieving-quick-phrases">
+        <mat-progress-spinner
+            [mode]="'indeterminate'"
+            [value]="50">
+        </mat-progress-spinner>
+        Retrieving phrases...
+      </div>
+
+      <div
+          *ngIf="state === 'RETRIEVED_PHRASES' && filteredPhrases.length === 0"
+          class="no-quick-phrases">
+          No quick phrases found
+      </div>
+
+      <div
+          *ngIf="state === 'ERROR'"
+          class="error">
+        {{errorMessage}}
+      </div>
+
     </div>
 
-    <div
-        *ngIf="state === 'RETRIEVED_PHRASES' && filteredPhrases.length === 0"
-        class="no-quick-phrases">
-        No quick phrases found
-    </div>
-
-    <div
-        *ngIf="state === 'ERROR'"
-        class="error">
-      {{errorMessage}}
-    </div>
-
+    <app-scroll-buttons-component
+        [scrollTarget]="quickPhrasesContainer"
+        [scrollStepPx]="SCROLL_STEP_PX"
+        (scrollButtonClicked)="onScrollButtonClicked($event)">
+    </app-scroll-buttons-component>
   </div>
 
-  <app-scroll-buttons-component
-      [scrollTarget]="quickPhrasesContainer"
-      [scrollStepPx]="SCROLL_STEP_PX"
-      (scrollButtonClicked)="onScrollButtonClicked($event)">
-  </app-scroll-buttons-component>
+  <div
+      *ngIf="state === 'EDITING_PHRASE'">
+    <app-phrase-editing-component
+        [userId]="userId"
+        [phraseId]="editedPhrase!.phraseId"
+        [phraseText]="editedPhrase!.text"
+        [phraseDisplayText]="editedPhrase!.displayText"
+        [inputBarControlSubject]="inputBarControlSubject"
+        (phraseSaved)="onPhraseSaved($event)"
+    ></app-phrase-editing-component>
+  </div>
+
 </div>

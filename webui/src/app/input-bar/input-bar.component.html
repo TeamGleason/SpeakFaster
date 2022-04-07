@@ -74,6 +74,10 @@
   background: #473261;
 }
 
+.hidden {
+  display: none;
+}
+
 .input-box {
   background: #272626;
   border: none;
@@ -150,7 +154,7 @@
 
 </style>
 
-<div class="container">
+<div class="container" [ngClass]="{'hidden': isHidden}">
 
   <div class="input-box">
     <div class="main-area">

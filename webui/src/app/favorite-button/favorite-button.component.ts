@@ -8,7 +8,7 @@ import {Subject} from 'rxjs';
 import {getContextualPhraseStats, getPhraseStats, HttpEventLogger} from '../event-logger/event-logger-impl';
 import {InputBarControlEvent} from '../input-bar/input-bar.component';
 import {SpeakFasterService} from '../speakfaster-service';
-import {AddContextualPhraseResponse} from '../types/contextual_phrase';
+import {AddContextualPhraseResponse, ContextualPhrase} from '../types/contextual_phrase';
 
 export enum State {
   READY = 'READY',
@@ -30,6 +30,7 @@ export class FavoriteButtonComponent implements OnInit, OnDestroy {
   @Input() isDeletion: boolean = false;
   @Input() userId!: string;
   @Input() phrase!: string;
+  @Input() phraseDisplayText?: string;
   // Phrase ID: must be provided if isDeleteion is true.
   @Input() phraseId?: string;
   @Input() sendAsUserFeedback: boolean = false;
@@ -81,12 +82,17 @@ export class FavoriteButtonComponent implements OnInit, OnDestroy {
       } else {
         // Add contextual phrase.
         const text = this.phrase.trim();
-        const contextualPhrase = {
+
+        const contextualPhrase: ContextualPhrase = {
           phraseId: '',  // For AddContextualPhraseRequest, this is ignored.
           text,
+          // TODO(cais): Add unit test.
           tags: this.tags ||
               [FavoriteButtonComponent.DEFAULT_CONTEXTUAL_PHRASE_TAG],
         };
+        if (this.phraseDisplayText) {
+          contextualPhrase.displayText = this.phraseDisplayText;
+        }
         this.eventLogger.logContextualPhraseAdd(
             getContextualPhraseStats(contextualPhrase));
         this.speakFasterService

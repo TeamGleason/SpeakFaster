@@ -1,5 +1,5 @@
 /** Unit tests for QuickPhrasesComponent. */
-import {Injectable, SimpleChange} from '@angular/core';
+import {ElementRef, Injectable, SimpleChange} from '@angular/core';
 import {ComponentFixture, fakeAsync, TestBed, tick} from '@angular/core/testing';
 import {By} from '@angular/platform-browser';
 import {Observable, of, Subject, throwError} from 'rxjs';
@@ -44,6 +44,7 @@ class SpeakFasterServiceForTest {
             {
               phraseId: createUuid(),
               text: 'Thank you',
+              displayText: 'Thx',
               tags: ['favorite'],
               lastUsedTimestamp: '2022-04-01T00:00:10.000Z',
             },
@@ -120,6 +121,7 @@ describe('QuickPhrasesComponent', () => {
         })
         .compileComponents();
     fixture = TestBed.createComponent(QuickPhrasesComponent);
+    fixture.componentInstance.userId = 'foo_user';
     fixture.componentInstance.textEntryBeginSubject = textEntryBeginSubject;
     fixture.componentInstance.textEntryEndSubject = textEntryEndSubject;
     fixture.componentInstance.inputBarControlSubject = inputBarControlSubject;
@@ -153,6 +155,40 @@ describe('QuickPhrasesComponent', () => {
     expect(noQuickPhrases).toBeNull();
     expect(scrollButtons).toEqual([]);
     expect(error).toBeNull();
+  });
+
+  it('filters phrases by text correctly', async () => {
+    fixture.componentInstance.allowedTag = 'favorite';
+    fixture.componentInstance.ngOnChanges({
+      allowedTag: new SimpleChange(undefined, 'favorite', true),
+    });
+    await fixture.whenStable();
+    // Filter down to only 'Nice day today';
+    fixture.componentInstance.filterPrefix = 'ni';
+    fixture.detectChanges();
+
+    const phraseComponents =
+        fixture.debugElement.queryAll(By.css('app-phrase-component'));
+    expect(phraseComponents.length).toEqual(1);
+    expect(phraseComponents[0].componentInstance.phraseText)
+        .toEqual('Nice day today');
+  });
+
+  it('filters phrases by display text correctly', async () => {
+    fixture.componentInstance.allowedTag = 'favorite';
+    fixture.componentInstance.ngOnChanges({
+      allowedTag: new SimpleChange(undefined, 'favorite', true),
+    });
+    await fixture.whenStable();
+    // Filter down to only 'Thank you', which has the display text of 'Thx'
+    fixture.componentInstance.filterPrefix = 'thx';
+    fixture.detectChanges();
+
+    const phraseComponents =
+        fixture.debugElement.queryAll(By.css('app-phrase-component'));
+    expect(phraseComponents.length).toEqual(1);
+    expect(phraseComponents[0].componentInstance.phraseText)
+        .toEqual('Thank you');
   });
 
   it('sets the tags of PhraseComponets correctly', async () => {
@@ -254,26 +290,26 @@ describe('QuickPhrasesComponent', () => {
   });
 
   it('when overflow happens, shows scroll buttons and registers buttonsboxes',
-      async () => {
-        // Assume that 30 phrases of 'Counting ...' is enough to cause overflow
-        // and therefore scrolling. Same below.
-        fixture.componentInstance.allowedTag = 'counting';
-        fixture.componentInstance.ngOnChanges({
-          allowedTag: new SimpleChange(undefined, 'counting', true),
-        });
-        fixture.detectChanges();
-        await fixture.whenStable();
+     async () => {
+       // Assume that 30 phrases of 'Counting ...' is enough to cause overflow
+       // and therefore scrolling. Same below.
+       fixture.componentInstance.allowedTag = 'counting';
+       fixture.componentInstance.ngOnChanges({
+         allowedTag: new SimpleChange(undefined, 'counting', true),
+       });
+       fixture.detectChanges();
+       await fixture.whenStable();
 
-        const phrasesContainer =
-            fixture.debugElement.query(By.css('.quick-phrases-container'));
-        const phrases =
-            fixture.debugElement.queryAll(By.css('app-phrase-component'));
-        expect(phrases.length).toEqual(30);
-        const scrollButtons =
-            fixture.debugElement.queryAll(By.css('.scroll-button'));
-        expect(scrollButtons.length).toEqual(2);
-        expect(phrasesContainer.nativeElement.scrollTop).toEqual(0);
-      });
+       const phrasesContainer =
+           fixture.debugElement.query(By.css('.quick-phrases-container'));
+       const phrases =
+           fixture.debugElement.queryAll(By.css('app-phrase-component'));
+       expect(phrases.length).toEqual(30);
+       const scrollButtons =
+           fixture.debugElement.queryAll(By.css('.scroll-button'));
+       expect(scrollButtons.length).toEqual(2);
+       expect(phrasesContainer.nativeElement.scrollTop).toEqual(0);
+     });
 
   it('clicking scroll down button updates scrollTop', async () => {
     fixture.componentInstance.allowedTag = 'counting';
@@ -387,4 +423,106 @@ describe('QuickPhrasesComponent', () => {
     expect(fixture.componentInstance.effectiveAllowedTag)
         .toEqual('partner-name');
   });
+
+  it('shows edit-mode button by default', () => {
+    const editModeButton =
+        fixture.debugElement.query(By.css('.edit-mode-button'));
+    const buttonImage = editModeButton.query(By.css('.button-image')) as
+        ElementRef<HTMLImageElement>;
+
+    expect(buttonImage.nativeElement.src.indexOf('/edit.png')).not.toEqual(-1);
+  });
+
+  it('clicking edit button changes state and show edit-off button',
+     async () => {
+       fixture.componentInstance.allowedTag = 'counting';
+       fixture.componentInstance.ngOnChanges({
+         allowedTag: new SimpleChange(undefined, 'counting', true),
+       });
+       fixture.detectChanges();
+       await fixture.whenStable();
+       const editModeButton =
+           fixture.debugElement.query(By.css('.edit-mode-button'));
+       editModeButton.nativeElement.click();
+       fixture.detectChanges();
+
+       expect(fixture.componentInstance.state)
+           .toEqual('CHOOSING_PHRASE_TO_EDIT');
+       const buttonImage = editModeButton.query(By.css('.button-image')) as
+           ElementRef<HTMLImageElement>;
+       expect(buttonImage.nativeElement.src.indexOf('/edit_off.png'))
+           .not.toEqual(-1);
+     });
+
+  it('edit button displays back arrow when a phrase is edited', async () => {
+    const inputBarControlEvents: InputBarControlEvent[] = [];
+    inputBarControlSubject.subscribe(event => {
+      inputBarControlEvents.push(event);
+    });
+    fixture.componentInstance.allowedTag = 'counting';
+    fixture.componentInstance.ngOnChanges({
+      allowedTag: new SimpleChange(undefined, 'counting', true),
+    });
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const editModeButton =
+        fixture.debugElement.query(By.css('.edit-mode-button'));
+    editModeButton.nativeElement.click();
+    fixture.detectChanges();
+    const phraseComponents =
+        fixture.debugElement.queryAll(By.css('app-phrase-component'));
+    const firstPhraseComponent = phraseComponents[0];
+
+    expect(firstPhraseComponent.componentInstance.isEditing).toEqual(true);
+
+    const editButton = firstPhraseComponent.query(By.css('.edit-button'));
+    editButton.nativeElement.click();
+    fixture.detectChanges();
+
+    expect(inputBarControlEvents[inputBarControlEvents.length - 1]).toEqual({
+      hide: true
+    });
+    expect(fixture.componentInstance.state).toEqual('EDITING_PHRASE');
+
+    const phraseEditingComponents =
+        fixture.debugElement.queryAll(By.css('app-phrase-editing-component'));
+    expect(phraseEditingComponents.length).toEqual(1);
+    const [phraseEditingComponent] = phraseEditingComponents;
+    const buttonImage = editModeButton.query(By.css('.button-image')) as
+        ElementRef<HTMLImageElement>;
+
+    expect(buttonImage.nativeElement.src.indexOf('/back.png')).not.toEqual(-1);
+    expect(phraseEditingComponent.componentInstance.userId).toEqual('foo_user');
+    expect(phraseEditingComponent.componentInstance.phraseId)
+        .toEqual(firstPhraseComponent.componentInstance.phraseId);
+    expect(phraseEditingComponent.componentInstance.phraseText)
+        .toEqual('Count 0');
+    expect(phraseEditingComponent.componentInstance.phraseDisplayText)
+        .toBeUndefined();
+  });
+
+  it('does not show edit mode button if allowwEditing is false', () => {
+    fixture.componentInstance.allowsEditing = false;
+    fixture.detectChanges();
+
+    expect(fixture.debugElement.query(By.css('.edit-mode-button'))).toBeNull();
+  });
+
+  it('unnhides input bar and retrieves phrases when phrase is saved',
+     async () => {
+       const inputBarControlEvents: InputBarControlEvent[] = [];
+       inputBarControlSubject.subscribe(event => {
+         inputBarControlEvents.push(event);
+       });
+       fixture.componentInstance.allowedTag = 'counting';
+       fixture.componentInstance.onPhraseSaved({phraseId: '1234'});
+       await fixture.whenStable();
+
+       expect(inputBarControlEvents[inputBarControlEvents.length - 1]).toEqual({
+         hide: false
+       });
+       const phraseComponents =
+           fixture.debugElement.queryAll(By.css('app-phrase-component'));
+       expect(phraseComponents.length).toEqual(30);
+     });
 });

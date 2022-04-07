@@ -112,6 +112,13 @@ export interface EventLogger {
   /** Log an error in handling delete-quick-phrase request. */
   logContextualPhraseDeleteError(errorMessage: string): Promise<void>;
 
+  /** Log the editing of a quick phrase */
+  logContextualPhraseEdit(contextualPhraseStats: ContextualPhraseStats):
+      Promise<void>;
+
+  /** Log an error in handling an edit-quick-phrase request. */
+  logContextualPhraseEditError(errorMessage: string): Promise<void>;
+
   /** Log abbreviation expansion request. */
   logAbbreviationExpansionRequest(stats: AbbreviationExpansionRequestStats):
       Promise<void>;

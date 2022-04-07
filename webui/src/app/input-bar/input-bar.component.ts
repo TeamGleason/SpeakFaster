@@ -57,6 +57,9 @@ export interface InputBarControlEvent {
 
   // Specify the tags for the to-be-added contextual phrases.
   contextualPhraseTags?: string[];
+
+  // `true` means hide the input bar. `false` means unhide (show) the input bar.
+  hide?: boolean;
 }
 
 function removePunctuation(str: string) {
@@ -118,6 +121,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   @Input() isFocused: boolean = true;
   @Output() inputStringChanged: EventEmitter<string> = new EventEmitter();
 
+  private _isHidden: boolean = false;
   private readonly _chips: InputBarChipSpec[] = [];
   private _focusChipIndex: number|null = null;
   private _chipTypedText: Array<string|null>|null = null;
@@ -160,7 +164,9 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     ExternalEventsComponent.registerKeypressListener(this.keypressListener);
     this.inputBarChipsSubscription =
         this.inputBarControlSubject.subscribe((event: InputBarControlEvent) => {
-          if (event.clearAll) {
+          if (event.hide !== undefined) {
+            this._isHidden = event.hide;
+          } else if (event.clearAll) {
             this.baseReconstructedText = this.latestReconstructedString;
             this.resetState(/* cleanText= */ true, /* resetBase= */ false);
           } else if (event.appendText !== undefined) {
@@ -594,6 +600,10 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private refreshExternalSoftKeyboardState() {
     requestSoftKeyboardReset();
+  }
+
+  get isHidden(): boolean {
+    return this._isHidden;
   }
 
   /**

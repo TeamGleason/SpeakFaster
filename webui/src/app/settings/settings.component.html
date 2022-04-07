@@ -254,6 +254,20 @@
           (click)="setTtsSpeakingRate(1.0)">
         1.0
       </button>
+      <button
+          #clickableButton
+          [ngClass]="{'active-button': appSettings!.ttsSpeakingRate === 1.1}"
+          class="option-button tts-volume-button"
+          (click)="setTtsSpeakingRate(1.1)">
+        1.1
+      </button>
+      <button
+          #clickableButton
+          [ngClass]="{'active-button': appSettings!.ttsSpeakingRate === 1.2}"
+          class="option-button tts-volume-button"
+          (click)="setTtsSpeakingRate(1.2)">
+        1.2
+      </button>
     </div>
 
   </div>

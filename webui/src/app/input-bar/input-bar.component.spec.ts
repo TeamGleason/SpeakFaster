@@ -879,6 +879,36 @@ describe('InputBarComponent', () => {
     expect(spellButton).not.toBeNull();
   });
 
+  it('typing after word chips are injected', () => {
+    fixture.componentInstance.inputString = 'ifg';
+    inputBarControlSubject.next({
+      chips: [
+        {
+          text: 'i',
+        },
+        {
+          text: 'feel',
+        },
+        {
+          text: 'great',
+        }
+      ]
+    });
+    fixture.detectChanges();
+    fixture.componentInstance.state = State.ENTERING_BASE_TEXT;
+    const chips =
+        fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'))
+    chips[1].nativeElement.click();
+
+    expect(fixture.componentInstance.state).toEqual(State.ENTERING_BASE_TEXT);
+    const spellButton = fixture.debugElement.query(By.css('.spell-button'));
+    expect(spellButton).not.toBeNull();
+
+    enterKeysIntoComponent(['s', 'o'], 'i feel great so', /* baseLength= */ 13);
+    fixture.detectChanges();
+    expect(fixture.componentInstance.inputString).toEqual('i feel great so');
+  });
+
   it('clicking spell under word refinement enters spelling mode', () => {
     fixture.componentInstance.inputString = 'ifg';
     inputBarControlSubject.next({
@@ -974,7 +1004,7 @@ describe('InputBarComponent', () => {
       ]
     });
 
-    expect(fixture.componentInstance.state).toEqual(State.AFTER_CUT);
+    expect(fixture.componentInstance.state).toEqual(State.ENTERING_BASE_TEXT);
     expect(fixture.componentInstance.inputString).toEqual('i am feeling ');
   });
 
@@ -1014,7 +1044,7 @@ describe('InputBarComponent', () => {
          ]
        });
        (fixture.componentInstance as any).cutText = 'i am feeling';
-       fixture.componentInstance.state = State.AFTER_CUT;
+       fixture.componentInstance.state = State.ENTERING_BASE_TEXT;
        fixture.detectChanges();
 
        const abortButton = fixture.debugElement.query(By.css('.abort-button'));
@@ -1124,11 +1154,14 @@ describe('InputBarComponent', () => {
     expandButton.nativeElement.click();
     fixture.detectChanges();
 
-    expect(fixture.componentInstance.state).toEqual(State.AFTER_CUT);
+    expect(fixture.componentInstance.state).toEqual(State.ENTERING_BASE_TEXT);
     expect(fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'))
                .length)
         .toEqual(0);
     expect(fixture.componentInstance.inputString).toEqual('i feel ');
+
+    enterKeysIntoComponent(['v', 'e'], 'i feel ve', /* baseLength= */ 7);
+    expect(fixture.componentInstance.inputString).toEqual('i feel ve');
   });
 
   it('Selecting the last chip does not show cut button', () => {
@@ -1171,7 +1204,8 @@ describe('InputBarComponent', () => {
        expect(chips.length).toEqual(0);
        const text = fixture.debugElement.query(By.css('.base-text-area'));
        expect(text.nativeElement.innerText).toEqual('wow this is |');
-       expect(fixture.componentInstance.state).toEqual(State.AFTER_CUT);
+       expect(fixture.componentInstance.state)
+           .toEqual(State.ENTERING_BASE_TEXT);
        expect(fixture.debugElement.query(By.css('.spell-button'))).toBeNull();
      });
 

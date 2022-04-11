@@ -3,7 +3,7 @@ import {AfterViewInit, ChangeDetectorRef, Component, ElementRef, EventEmitter, I
 import {Subject, Subscription} from 'rxjs';
 import {debounceTime} from 'rxjs/operators';
 import {injectKeys, requestSoftKeyboardReset, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
-import {endsWithSentenceEndPunctuation, keySequenceEndsWith} from 'src/utils/text-utils';
+import {endsWithSentenceEndPunctuation, isAlphanumericChar, keySequenceEndsWith} from 'src/utils/text-utils';
 import {createUuid} from 'src/utils/uuid';
 
 import {getPhraseStats, HttpEventLogger} from '../event-logger/event-logger-impl';
@@ -20,7 +20,6 @@ export enum State {
   CHOOSING_PHRASES = 'CHOOSING_PHRASES',
   CHOOSING_WORD_CHIP = 'CHOOSING_WORD_CHIP',
   FOCUSED_ON_WORD_CHIP = 'FOCUSED_ON_WORD_CHIP',
-  AFTER_CUT = 'AFTER_CUT',
   ADD_CONTEXTUAL_PHRASE_PENDING = 'ADD_CONTEXTUAL_PHRASE_PENDING',
   ADD_CONTEXTUAL_PHRASE_SUCCESS = 'ADD_CONTEXTUAL_PHRASE_SUCCESS',
   ADD_CONTEXTUAL_PHRASE_ERROR = 'ADD_CONTEXTUAL_PHRASE_ERROR',
@@ -220,7 +219,6 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
                   getPhraseStats(this._chips.map(chip => chip.text).join(' ')));
             } else if (
                 this._chips.length === 1 && this._chips[0].isTextPrediction) {
-              this.state = State.AFTER_CUT;
               this.cutText =
                   this._chips.map(chip => chip.text.trim()).join(' ') + ' ';
               this.inputString = this.cutText;
@@ -284,15 +282,9 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     const lastKey = keySequence[keySequence.length - 1];
     this.latestReconstructedString = reconstructedText;
     if (this.state === State.ENTERING_BASE_TEXT ||
-        this.state === State.CHOOSING_PHRASES ||
-        this.state === State.AFTER_CUT) {
-      if (this.state === State.AFTER_CUT) {
-        this.updateInputString(
-            reconstructedText.slice(this.baseReconstructedText.length));
-      } else {
-        this.updateInputString(
-            reconstructedText.slice(this.baseReconstructedText.length));
-      }
+        this.state === State.CHOOSING_PHRASES) {
+      this.updateInputString(
+          reconstructedText.slice(this.baseReconstructedText.length));
       if (this.inputStringIsCompatibleWithAbbreviationExpansion &&
           ABBRVIATION_EXPANSION_TRIGGER_KEY_SEQUENCES.some(
               triggerKeySeqwuence =>
@@ -300,9 +292,10 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
         this.triggerAbbreviationExpansion();
       }
     } else if (this.state === State.CHOOSING_WORD_CHIP) {
-      this.cutText = this._chips.map(chip => chip.text).join(' ') + ' ';
-      this.inputString = this.cutText + lastKey;
-      this.state = State.AFTER_CUT;
+      this.baseReconstructedText = this.latestReconstructedString;
+      const appendLastChar =
+          isAlphanumericChar(keySequence[keySequence.length - 1]);
+      this.cutChipsAtIndex(this.chips.length - 1, appendLastChar);
     } else if (this.state === State.CHOOSING_LETTER_CHIP) {
       // If there is a uniquely matching word, then choose it.
       const typedLetter = reconstructedText.slice(reconstructedText.length - 1)
@@ -557,20 +550,33 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   onChipCutClicked(event: Event, index: number) {
-    if (this.state === State.FOCUSED_ON_WORD_CHIP) {
-      this.cutText =
-          this._chips.slice(0, index + 1).map(chip => chip.text).join(' ') +
-          ' ';
-      this.inputString = this.cutText;
-      this.state = State.AFTER_CUT;
-      this.baseReconstructedText = this.latestReconstructedString;
+    this.cutChipsAtIndex(index);
+  }
+
+  private cutChipsAtIndex(index: number, appendLastChar = false) {
+    const baseText = ExternalEventsComponent.internalText;
+    let text =
+        this._chips.slice(0, index + 1).map(chip => chip.text).join(' ').trim();
+    if (appendLastChar) {
+      const lastChar =
+          ExternalEventsComponent
+              .internalText[ExternalEventsComponent.internalText.length - 1];
+      if (lastChar !== ' ') {
+        text += ' ';
+      }
+      text += lastChar;
     }
+    ExternalEventsComponent.appendString(
+        text, /* isExternal= */ false,
+        /* ensureEndsInSpace= */ !appendLastChar);
+    this.inputString =
+        ExternalEventsComponent.internalText.slice(baseText.length);
+    this.state = State.ENTERING_BASE_TEXT;
   }
 
   onAbortButtonClicked(event: Event) {
     if (this.state === State.ENTERING_BASE_TEXT ||
-        this.state === State.CHOOSING_PHRASES ||
-        this.state === State.AFTER_CUT) {
+        this.state === State.CHOOSING_PHRASES) {
       this.textEntryEndSubject.next({
         text: '',
         timestampMillis: new Date().getTime(),
@@ -623,9 +629,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
         });
       }
       return words.join(' ');
-    } else if (
-        this.state === State.ENTERING_BASE_TEXT ||
-        this.state === State.AFTER_CUT) {
+    } else if (this.state === State.ENTERING_BASE_TEXT) {
       return this.inputString;
     }
     return text.trim();

@@ -192,8 +192,7 @@
             #clickableButton
             *ngIf="(state === 'ENTERING_BASE_TEXT' ||
                     state === 'CHOOSING_PHRASES' ||
-                    state === 'FOCUSED_ON_LETTER_CHIP' ||
-                    state === 'AFTER_CUT') &&
+                    state === 'FOCUSED_ON_LETTER_CHIP') &&
                     inputStringIsCompatibleWithAbbreviationExpansion && supportsAbbrevationExpansion"
             class="action-button expand-button"
             (click)="onExpandButtonClicked($event)">
@@ -205,8 +204,7 @@
             *ngIf="((state === 'ENTERING_BASE_TEXT') ||
                     (state === 'CHOOSING_PHRASES') ||
                     state === 'CHOOSING_WORD_CHIP' ||
-                    state === 'FOCUSED_ON_WORD_CHIP' ||
-                    state === 'AFTER_CUT') &&
+                    state === 'FOCUSED_ON_WORD_CHIP') &&
                    inputStringIsCompatibleWithAbbreviationExpansion &&
                    supportsAbbrevationExpansion &&
                    !hasOnlyOneTextPredictionChip"

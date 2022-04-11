@@ -704,6 +704,14 @@ describe('ExternalEventsComponent', () => {
     expect(ExternalEventsComponent.internalText).toEqual('a hi there ');
   });
 
+  it('appendText with ensureEndsInSpace=false does not append space', () => {
+    ExternalEventsComponent.externalKeypressHook(65, /* isExternal= */ false);
+    ExternalEventsComponent.appendString(
+        'hi there', /* isExternal= */ false, /* ensureEndsInSpace= */ false);
+
+    expect(ExternalEventsComponent.internalText).toEqual('a hi there');
+  });
+
   it('appendText followed by backspaces works', () => {
     ExternalEventsComponent.externalKeypressHook(65, /* isExternal= */ false);
     ExternalEventsComponent.appendString('hi there', /* isExternal= */ false);

@@ -646,8 +646,12 @@ export class ExternalEventsComponent implements OnInit {
    *
    * @param str
    * @param isExternal
+   * @param ensureEndsInSpace Whether a space will be appended additionally if
+   *     the
+   *   reconstructed text does not end in whitespace.
    */
-  public static appendString(str: string, isExternal: boolean) {
+  public static appendString(
+      str: string, isExternal: boolean, ensureEndsInSpace = true) {
     const reconState = isExternal ? externalReconState : internalReconState;
     for (const char of str) {
       reconState.keySequence.push(char);
@@ -656,7 +660,9 @@ export class ExternalEventsComponent implements OnInit {
       reconState.text += ' ';
     }
     reconState.text += str;
-    reconState.text += ' ';
+    if (ensureEndsInSpace) {
+      reconState.text += ' ';
+    }
     reconState.cursorPos = reconState.text.length;
   }
 

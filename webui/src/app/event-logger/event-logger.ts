@@ -15,6 +15,10 @@ export interface PhraseStats {
 
   // Number of punctuation characters.
   numPunctuation: number;
+
+  // Optional full content of the phrase. Logged only under the full-
+  // logging mode.
+  phrase?: string;
 }
 
 export interface ContextualPhraseStats extends PhraseStats {
@@ -39,6 +43,10 @@ export interface AbbreviationExpansionRequestStats {
 export interface AbbreviationExpansionResponseStats {
   // Stats of the expansion options.
   phraseStats?: PhraseStats[];
+
+  // Optional full content of the phrases. Logged only under the full-
+  // logging mode.
+  phrases?: string[];
 
   // Error message (if any);
   errorMessage?: string;

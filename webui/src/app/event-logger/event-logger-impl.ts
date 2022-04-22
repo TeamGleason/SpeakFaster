@@ -55,7 +55,11 @@ export function getPhraseStats(phrase: string): PhraseStats {
   const numWords = words.length;
   const numPunctuation =
       phrase.split('').filter(char => char.match(PUNCTUATION_REGEX)).length;
-  return {charLength, numWords, numPunctuation};
+  const output: PhraseStats = {charLength, numWords, numPunctuation};
+  if (HttpEventLogger.isFullLogging()) {
+    output.phrase = phrase;
+  }
+  return output;
 }
 
 export function getAbbreviationExpansionRequestStats(
@@ -79,9 +83,14 @@ export function getAbbreviationExpansionResponseStats(
     options?: string[],
     errorMessage?: string): AbbreviationExpansionResponseStats {
   if (options) {
-    return {
-      phraseStats: options.map(option => getPhraseStats(option)), errorMessage,
+    const output: AbbreviationExpansionResponseStats = {
+      phraseStats: options.map(option => getPhraseStats(option)),
+      errorMessage,
+    };
+    if (HttpEventLogger.isFullLogging()) {
+      output.phrases = options;
     }
+    return output;
   } else {
     return {errorMessage};
   }
@@ -89,10 +98,14 @@ export function getAbbreviationExpansionResponseStats(
 
 export function getContextualPhraseStats(phrase: ContextualPhrase):
     ContextualPhraseStats {
-  return {
+  const output: ContextualPhraseStats = {
     ...getPhraseStats(phrase.text),
     tags: phrase.tags,
   };
+  if (HttpEventLogger.isFullLogging()) {
+    output.phrase = phrase.text;
+  }
+  return output;
 }
 
 @Injectable({
@@ -102,6 +115,27 @@ export class HttpEventLogger implements EventLogger {
   private readonly _sessionId = createUuid();
   private _userId?: string;
   private readonly timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  private static _fullLogging: boolean = false;
+
+  /**
+   * Sets logging mode to full.
+   *
+   * By default, the logging mode is *not* full, which means non-function keys
+   * (a-z, 0-9) are not logged and the content of the phrases are not logged.
+   * But if this is set to `True`, then the non-function keys and the content
+   * of the phrases will be logged as well.
+   */
+  public static setFullLogging(fullLogging: boolean) {
+    if (HttpEventLogger._fullLogging === fullLogging) {
+      return;
+    }
+    HttpEventLogger._fullLogging = fullLogging;
+    console.log(`Set full logging to ${HttpEventLogger.isFullLogging()}`);
+  }
+
+  public static isFullLogging(): boolean {
+    return HttpEventLogger._fullLogging;
+  }
 
   // null value is for testing only.
   constructor(private http: HttpClient|null) {};
@@ -181,10 +215,12 @@ export class HttpEventLogger implements EventLogger {
   }
 
   async logKeypress(keyboardEvent: KeyboardEvent) {
-    // Log the content of only special keys.
-    const vkCode = isTextContentKey(keyboardEvent) ?
+    // Log the content of only special keys under the non-full-logging mode.
+    const vkCode =
+        (isTextContentKey(keyboardEvent) && !HttpEventLogger.isFullLogging()) ?
         null :
         getVirtualkeyCode(keyboardEvent.key);
+    // TODO(cais): Add unit test.
     await this
         .logEvent({
           userId: this._userId!,

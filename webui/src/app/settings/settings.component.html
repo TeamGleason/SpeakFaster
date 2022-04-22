@@ -161,6 +161,12 @@
       <img class="icon-image" src="/assets/images/close.png">
       Quit app
   </button>
+
+  <div
+      *ngIf="isFullLogging"
+      class="logging-tag">
+    Logging: full
+  </div>
 </div>
 
 <div class="two-column-container">

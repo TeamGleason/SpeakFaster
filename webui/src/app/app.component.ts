@@ -111,6 +111,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       if (params['show_metrics']) {
         this._showMetrics = this.stringValueMeansTrue(params['show_metrics']);
       }
+      if (params['full_logging']) {
+      }
       const useOauth = params['use_oauth'];
       if (typeof useOauth === 'string' &&
           (useOauth.toLocaleLowerCase() === 'false' || useOauth === '0')) {

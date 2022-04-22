@@ -102,4 +102,8 @@ export class SettingsComponent implements AfterViewInit, OnInit, OnDestroy {
   get hostAppVersionString(): string|null {
     return this.hostInfo === null ? null : this.hostInfo.hostAppVersion;
   }
+
+  get isFullLogging(): boolean {
+    return HttpEventLogger.isFullLogging();
+  }
 }

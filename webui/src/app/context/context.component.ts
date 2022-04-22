@@ -11,6 +11,7 @@ import {ConversationTurn} from '../types/conversation';
 import {TextEntryEndEvent} from '../types/text-entry';
 
 import {DEFAULT_CONTEXT_SIGNALS} from './default-context';
+import {maybeHandleRemoteControlCommands} from './remote-control';
 
 @Component({
   selector: 'app-context-component',
@@ -116,15 +117,13 @@ export class ContextComponent implements OnInit, AfterViewInit {
       return;
     }
     const addedContextSignal: ConversationTurnContextSignal =
-        getConversationTurnContextSignal(
-            this.userId,
-            {
-              speakerId: this.userId,
-              speechContent: text,
-              startTimestamp: new Date(),
-              isTts: false,
-              isHardcoded: true,
-            });
+        getConversationTurnContextSignal(this.userId, {
+          speakerId: this.userId,
+          speechContent: text,
+          startTimestamp: new Date(),
+          isTts: false,
+          isHardcoded: true,
+        });
     this.contextSignals.push(addedContextSignal);
     this.focusContextIds.splice(0);
     this.focusContextIds.push(addedContextSignal.contextId!);
@@ -219,9 +218,12 @@ export class ContextComponent implements OnInit, AfterViewInit {
                 }
                 this.contextSignals.push(
                     (contextSignal as ConversationTurnContextSignal));
-                this.eventLogger.logIncomingContextualTurn(getPhraseStats(
+                const speechContent =
                     (contextSignal as ConversationTurnContextSignal)
-                        .conversationTurn.speechContent));
+                        .conversationTurn.speechContent;
+                this.eventLogger.logIncomingContextualTurn(
+                    getPhraseStats(speechContent));
+                maybeHandleRemoteControlCommands(speechContent);
               }
               this.limitContextItemsCount();
               this.cleanUpAndSortFocusContextIds();

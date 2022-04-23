@@ -41,12 +41,22 @@ export type EventLogEntry = {
   timezone: string;
   sessionId: string;
   eventName: EventName;
-  eventData?: string;
+  eventData?: Object;
   appState?: AppState;
 }
 
 export interface EventLogResponse {
   errorMessage?: string;
+}
+
+/**
+ * Format / escape a text string for logging. Special characters such as single
+ * and double quotes are escaped to prevent a class of issues during server-side
+ * string parsing.
+ */
+export function formatTextForLogging(text: string): string {
+  // NOTE: `encodeURIComponent()` doesn't escape single quote.
+  return encodeURIComponent(text).replace(/'/g, '%27');
 }
 
 export function getPhraseStats(phrase: string): PhraseStats {
@@ -57,7 +67,7 @@ export function getPhraseStats(phrase: string): PhraseStats {
       phrase.split('').filter(char => char.match(PUNCTUATION_REGEX)).length;
   const output: PhraseStats = {charLength, numWords, numPunctuation};
   if (HttpEventLogger.isFullLogging()) {
-    output.phrase = phrase;
+    output.phrase = formatTextForLogging(phrase);
   }
   return output;
 }
@@ -88,7 +98,7 @@ export function getAbbreviationExpansionResponseStats(
       errorMessage,
     };
     if (HttpEventLogger.isFullLogging()) {
-      output.phrases = options;
+      output.phrases = options.map(option => formatTextForLogging(option))
     }
     return output;
   } else {
@@ -103,7 +113,7 @@ export function getContextualPhraseStats(phrase: ContextualPhrase):
     tags: phrase.tags,
   };
   if (HttpEventLogger.isFullLogging()) {
-    output.phrase = phrase.text;
+    output.phrase = formatTextForLogging(phrase.text);
   }
   return output;
 }
@@ -208,7 +218,7 @@ export class HttpEventLogger implements EventLogger {
           timezone: this.timezone,
           sessionId: this.sessionId,
           eventName: 'AppStateChange',
-          eventData: JSON.stringify({oldState, newState}),
+          eventData: {oldState, newState},
         })
         .pipe(first())
         .toPromise();
@@ -228,7 +238,7 @@ export class HttpEventLogger implements EventLogger {
           timezone: this.timezone,
           sessionId: this.sessionId,
           eventName: 'Keypress',
-          eventData: JSON.stringify({vkCode}),
+          eventData: {vkCode},
           appState: getAppState(),
         })
         .pipe(first())
@@ -243,7 +253,7 @@ export class HttpEventLogger implements EventLogger {
           timezone: this.timezone,
           sessionId: this.sessionId,
           eventName: 'InputBarSpeakButtonClick',
-          eventData: JSON.stringify({phraseStats}),
+          eventData: {phraseStats},
           appState: getAppState(),
         })
         .pipe(first())
@@ -258,7 +268,7 @@ export class HttpEventLogger implements EventLogger {
           timezone: this.timezone,
           sessionId: this.sessionId,
           eventName: 'InputBarInjectButtonClick',
-          eventData: JSON.stringify({phraseStats}),
+          eventData: {phraseStats},
           appState: getAppState(),
         })
         .pipe(first())
@@ -275,7 +285,7 @@ export class HttpEventLogger implements EventLogger {
           timezone: this.timezone,
           sessionId: this.sessionId,
           eventName: 'ContextualPhraseSelection',
-          eventData: JSON.stringify({contextualPhraseStats, textSelectionType}),
+          eventData: {contextualPhraseStats, textSelectionType},
           appState: getAppState(),
         })
         .pipe(first())
@@ -290,7 +300,7 @@ export class HttpEventLogger implements EventLogger {
           timezone: this.timezone,
           sessionId: this.sessionId,
           eventName: 'ContextualPhraseAdd',
-          eventData: JSON.stringify({contextualPhraseStats}),
+          eventData: {contextualPhraseStats},
           appState: getAppState(),
         })
         .pipe(first())
@@ -305,7 +315,7 @@ export class HttpEventLogger implements EventLogger {
           timezone: this.timezone,
           sessionId: this.sessionId,
           eventName: 'ContextualPhraseAddError',
-          eventData: JSON.stringify({errorMessage}),
+          eventData: {errorMessage},
           appState: getAppState(),
         })
         .pipe(first())
@@ -320,7 +330,7 @@ export class HttpEventLogger implements EventLogger {
           timezone: this.timezone,
           sessionId: this.sessionId,
           eventName: 'ContextualPhraseDelete',
-          eventData: JSON.stringify({contextualPhraseStats: phraseStats}),
+          eventData: {contextualPhraseStats: phraseStats},
           appState: getAppState(),
         })
         .pipe(first())
@@ -335,7 +345,7 @@ export class HttpEventLogger implements EventLogger {
           timezone: this.timezone,
           sessionId: this.sessionId,
           eventName: 'ContextualPhraseDeleteError',
-          eventData: JSON.stringify({errorMessage}),
+          eventData: {errorMessage},
           appState: getAppState(),
         })
         .pipe(first())
@@ -350,7 +360,7 @@ export class HttpEventLogger implements EventLogger {
           timezone: this.timezone,
           sessionId: this.sessionId,
           eventName: 'ContextualPhraseEdit',
-          eventData: JSON.stringify({contextualPhraseStats: phraseStats}),
+          eventData: {contextualPhraseStats: phraseStats},
           appState: getAppState(),
         })
         .pipe(first())
@@ -365,7 +375,7 @@ export class HttpEventLogger implements EventLogger {
           timezone: this.timezone,
           sessionId: this.sessionId,
           eventName: 'ContextualPhraseEditError',
-          eventData: JSON.stringify({errorMessage}),
+          eventData: {errorMessage},
           appState: getAppState(),
         })
         .pipe(first())
@@ -381,7 +391,7 @@ export class HttpEventLogger implements EventLogger {
           timezone: this.timezone,
           sessionId: this.sessionId,
           eventName: 'AbbreviationExpansionRequest',
-          eventData: JSON.stringify({stats}),
+          eventData: {stats},
           appState: getAppState(),
         })
         .pipe(first())
@@ -397,7 +407,7 @@ export class HttpEventLogger implements EventLogger {
           timezone: this.timezone,
           sessionId: this.sessionId,
           eventName: 'AbbreviationExpansionResponse',
-          eventData: JSON.stringify({stats}),
+          eventData: {stats},
           appState: getAppState(),
         })
         .pipe(first())
@@ -414,8 +424,7 @@ export class HttpEventLogger implements EventLogger {
           timezone: this.timezone,
           sessionId: this.sessionId,
           eventName: 'AbbreviationExpansionSelection',
-          eventData: JSON.stringify(
-              {phraseStats, index, numOptions, textSelectionType}),
+          eventData: {phraseStats, index, numOptions, textSelectionType},
           appState: getAppState(),
         })
         .pipe(first())
@@ -431,7 +440,7 @@ export class HttpEventLogger implements EventLogger {
           timezone: this.timezone,
           sessionId: this.sessionId,
           eventName: 'AbbreviationExpansionEnterStartWordRefinmentMode',
-          eventData: JSON.stringify({phraseStats}),
+          eventData: {phraseStats},
           appState: getAppState(),
         })
         .pipe(first())
@@ -446,7 +455,7 @@ export class HttpEventLogger implements EventLogger {
           timezone: this.timezone,
           sessionId: this.sessionId,
           eventName: 'ContextualPhraseCopying',
-          eventData: JSON.stringify({phraseStats}),
+          eventData: {phraseStats},
           appState: getAppState(),
         })
         .pipe(first())
@@ -462,7 +471,7 @@ export class HttpEventLogger implements EventLogger {
           timezone: this.timezone,
           sessionId: this.sessionId,
           eventName: 'AbbreviationExpansionWordRefinementRequest',
-          eventData: JSON.stringify({phraseStats, wordIndex}),
+          eventData: {phraseStats, wordIndex},
           appState: getAppState(),
         })
         .pipe(first())
@@ -478,7 +487,7 @@ export class HttpEventLogger implements EventLogger {
           timezone: this.timezone,
           sessionId: this.sessionId,
           eventName: 'AbbreviationExpansionWordRefinementResponse',
-          eventData: JSON.stringify({stats}),
+          eventData: {stats},
           appState: getAppState(),
         })
         .pipe(first())
@@ -494,7 +503,7 @@ export class HttpEventLogger implements EventLogger {
           timezone: this.timezone,
           sessionId: this.sessionId,
           eventName: 'AbbreviationExpansionWordRefinementSelection',
-          eventData: JSON.stringify({wordLength, wordIndex}),
+          eventData: {wordLength, wordIndex},
           appState: getAppState(),
         })
         .pipe(first())
@@ -509,7 +518,7 @@ export class HttpEventLogger implements EventLogger {
           timezone: this.timezone,
           sessionId: this.sessionId,
           eventName: 'AbbreviationExpansionStartSpellingMode',
-          eventData: JSON.stringify({abbreviationLength}),
+          eventData: {abbreviationLength},
           appState: getAppState(),
         })
         .pipe(first())
@@ -525,7 +534,7 @@ export class HttpEventLogger implements EventLogger {
           timezone: this.timezone,
           sessionId: this.sessionId,
           eventName: 'AbbreviationExpansionSpellingChipSelection',
-          eventData: JSON.stringify({abbreviationLength, wordIndex}),
+          eventData: {abbreviationLength, wordIndex},
           appState: getAppState(),
         })
         .pipe(first())
@@ -554,7 +563,7 @@ export class HttpEventLogger implements EventLogger {
           timezone: this.timezone,
           sessionId: this.sessionId,
           eventName: 'IncomingContextualTurn',
-          eventData: JSON.stringify({phraseStats}),
+          eventData: {phraseStats},
           appState: getAppState(),
         })
         .pipe(first())
@@ -574,7 +583,7 @@ export class HttpEventLogger implements EventLogger {
           timezone: this.timezone,
           sessionId: this.sessionId,
           eventName: 'SettingsChange',
-          eventData: JSON.stringify({settingName}),
+          eventData: {settingName},
           appState: getAppState(),
         })
         .pipe(first())
@@ -590,7 +599,7 @@ export class HttpEventLogger implements EventLogger {
           timezone: this.timezone,
           sessionId: this.sessionId,
           eventName: 'UserFeedback',
-          eventData: JSON.stringify(userFeedback),
+          eventData: {userFeedback},
           appState: getAppState(),
         })
         .pipe(first())

@@ -15,6 +15,21 @@ describe('EventLogger', () => {
     });
   });
 
+  describe('isFullLogging()', () => {
+    afterEach(() => {
+      HttpEventLogger.setFullLogging(false);
+    });
+
+    it('is false by default', () => {
+      expect(HttpEventLogger.isFullLogging()).toBeFalse();
+    });
+
+    it('getter reflects setter change', () => {
+      HttpEventLogger.setFullLogging(true);
+      expect(HttpEventLogger.isFullLogging()).toBeTrue();
+    });
+  });
+
   describe('getPhraseStats', () => {
     beforeEach(() => {
       HttpEventLogger.setFullLogging(false);

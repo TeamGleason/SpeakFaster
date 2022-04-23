@@ -30,6 +30,10 @@ describe('SettingsComponent', () => {
     fixture.detectChanges();
   });
 
+  afterEach(async () => {
+    HttpEventLogger.setFullLogging(false);
+  });
+
   it('Shows default TTS voice setting when loaded', async () => {
     await fixture.whenStable();
     const ttsVolumeSection =
@@ -164,5 +168,16 @@ describe('SettingsComponent', () => {
         .toEqual(0);
     expect(appTitle.nativeElement.innerText.indexOf('(Host: v0.0.4)'))
         .toBeGreaterThan(0);
+  });
+
+  it('does not show full logging by default', () => {
+    expect(fixture.debugElement.query(By.css('.logging-tag'))).toBeNull();
+  });
+
+  it('shows logging: full under full-logging mode', () => {
+    HttpEventLogger.setFullLogging(true);
+    fixture.detectChanges();
+    const loggingTag = fixture.debugElement.query(By.css('.logging-tag'));
+    expect(loggingTag.nativeElement.innerText).toEqual('Logging: full')
   });
 });

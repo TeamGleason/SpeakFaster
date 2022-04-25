@@ -98,6 +98,9 @@ export class TextToSpeechComponent implements OnInit {
   }
 
   ngOnInit() {
+    // NOTE: Reference getVoice() at the beginning because the voices are
+    // populated lazily in some browsers and WebViews.
+    window.speechSynthesis.getVoices();
     this.textEntryEndSubject.subscribe(async event => {
       if (!event.isFinal) {
         return;

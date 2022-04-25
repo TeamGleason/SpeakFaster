@@ -141,9 +141,9 @@ export class TtsVoiceSelectionComponent implements OnInit, AfterViewInit,
     this.saveVoiceSelection();
   }
 
-  onTestButtonClicked(event: Event) {
+  async onTestButtonClicked(event: Event) {
     const utterance = new SpeechSynthesisUtterance(TEST_UTTERANCE_TEXT);
-    setUtteranceVoice(utterance);
+    await setUtteranceVoice(utterance);
     window.speechSynthesis.speak(utterance);
   }
 

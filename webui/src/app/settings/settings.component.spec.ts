@@ -30,18 +30,24 @@ describe('SettingsComponent', () => {
     fixture.detectChanges();
   });
 
+  afterEach(async () => {
+    HttpEventLogger.setFullLogging(false);
+  });
+
   it('Shows default TTS voice setting when loaded', async () => {
     await fixture.whenStable();
     const ttsVolumeSection =
         fixture.debugElement.query(By.css('.tts-voice-section'));
     expect(ttsVolumeSection).not.toBeNull();
     const buttons = ttsVolumeSection.queryAll(By.css('.option-button'));
-    expect(buttons.length).toEqual(2);
+    expect(buttons.length).toEqual(3);
     expect(buttons[0].nativeElement.innerText).toEqual('Personalized');
     expect(buttons[1].nativeElement.innerText).toEqual('Generic');
+    expect(buttons[2].nativeElement.innerText).toEqual('Select voice...');
     const selectedButtons = ttsVolumeSection.queryAll(By.css('.active-button'));
-    expect(selectedButtons.length).toEqual(1);
+    expect(selectedButtons.length).toEqual(2);
     expect(selectedButtons[0].nativeElement.innerText).toEqual('Generic');
+    expect(selectedButtons[1].nativeElement.innerText).toEqual('Select voice...');
   });
 
   it('Shows default TTS volume setting when loaded', async () => {
@@ -70,8 +76,9 @@ describe('SettingsComponent', () => {
     await fixture.whenStable();
 
     const selectedButtons = ttsVoiceSection.queryAll(By.css('.active-button'));
-    expect(selectedButtons.length).toEqual(1);
+    expect(selectedButtons.length).toEqual(2);
     expect(selectedButtons[0].nativeElement.innerText).toEqual('Generic');
+    expect(selectedButtons[1].nativeElement.innerText).toEqual('Select voice...');
     expect((await getAppSettings()).ttsVoiceType).toEqual('GENERIC');
   });
 
@@ -164,5 +171,16 @@ describe('SettingsComponent', () => {
         .toEqual(0);
     expect(appTitle.nativeElement.innerText.indexOf('(Host: v0.0.4)'))
         .toBeGreaterThan(0);
+  });
+
+  it('does not show full logging by default', () => {
+    expect(fixture.debugElement.query(By.css('.logging-tag'))).toBeNull();
+  });
+
+  it('shows logging: full under full-logging mode', () => {
+    HttpEventLogger.setFullLogging(true);
+    fixture.detectChanges();
+    const loggingTag = fixture.debugElement.query(By.css('.logging-tag'));
+    expect(loggingTag.nativeElement.innerText).toEqual('Logging: full')
   });
 });

@@ -5,10 +5,40 @@ import {createUuid} from 'src/utils/uuid';
 import {AbbreviationSpec} from '../types/abbreviation';
 import {ContextualPhrase} from '../types/contextual_phrase';
 
-import {getAbbreviationExpansionRequestStats, getAbbreviationExpansionResponseStats, getContextualPhraseStats, getPhraseStats} from './event-logger-impl';
+import {formatTextForLogging, getAbbreviationExpansionRequestStats, getAbbreviationExpansionResponseStats, getContextualPhraseStats, getPhraseStats, HttpEventLogger} from './event-logger-impl';
 
 describe('EventLogger', () => {
+  describe('formatTextForLogging', () => {
+    it('Escapes single and double quotes', () => {
+      expect(formatTextForLogging('I\'m not saying \"you can\'t do it\"'))
+          .toEqual('I%27m%20not%20saying%20%22you%20can%27t%20do%20it%22');
+    });
+  });
+
+  describe('isFullLogging()', () => {
+    afterEach(() => {
+      HttpEventLogger.setFullLogging(false);
+    });
+
+    it('is false by default', () => {
+      expect(HttpEventLogger.isFullLogging()).toBeFalse();
+    });
+
+    it('getter reflects setter change', () => {
+      HttpEventLogger.setFullLogging(true);
+      expect(HttpEventLogger.isFullLogging()).toBeTrue();
+    });
+  });
+
   describe('getPhraseStats', () => {
+    beforeEach(() => {
+      HttpEventLogger.setFullLogging(false);
+    });
+
+    afterEach(() => {
+      HttpEventLogger.setFullLogging(false);
+    });
+
     it('returns correct value for empy string', () => {
       expect(getPhraseStats('')).toEqual({
         charLength: 0,
@@ -50,9 +80,27 @@ describe('EventLogger', () => {
         numPunctuation: 3,
       });
     });
+
+    it('includes URI-encoded phrase under full logging mode', () => {
+      HttpEventLogger.setFullLogging(true);
+      expect(getPhraseStats('hello')).toEqual({
+        charLength: 5,
+        numWords: 1,
+        numPunctuation: 0,
+        phrase: 'hello',
+      });
+    });
   });
 
   describe('getContextualPhraseStats', () => {
+    beforeEach(() => {
+      HttpEventLogger.setFullLogging(false);
+    });
+
+    afterEach(() => {
+      HttpEventLogger.setFullLogging(false);
+    });
+
     it('returns correct value with tags', () => {
       const phrase: ContextualPhrase = {
         text: 'Good morning!',
@@ -64,6 +112,22 @@ describe('EventLogger', () => {
         numWords: 2,
         numPunctuation: 1,
         tags: ['temporal'],
+      });
+    });
+
+    it('includes phrase text under full logging mode', () => {
+      HttpEventLogger.setFullLogging(true);
+      const phrase: ContextualPhrase = {
+        text: 'Good morning!',
+        phraseId: 'abcd0123',
+        tags: ['temporal'],
+      };
+      expect(getContextualPhraseStats(phrase)).toEqual({
+        charLength: 13,
+        numWords: 2,
+        numPunctuation: 1,
+        tags: ['temporal'],
+        phrase: 'Good%20morning!',
       });
     });
   });
@@ -108,27 +172,64 @@ describe('EventLogger', () => {
   });
 
   describe('getAbbreviationExpansionResponseStats', () => {
+    beforeEach(() => {
+      HttpEventLogger.setFullLogging(false);
+    });
+
+    afterEach(() => {
+      HttpEventLogger.setFullLogging(false);
+    });
+
     it('returns correct value for 2 options, no error', () => {
-      const stats = getAbbreviationExpansionResponseStats(['hi', 'how are you?'])
+      const stats =
+          getAbbreviationExpansionResponseStats(['hi', 'how are you?'])
       expect(stats).toEqual({
-        phraseStats: [{
-          charLength: 2,
-          numWords: 1,
-          numPunctuation: 0,
-        }, {
-          charLength: 12,
-          numWords: 3,
-          numPunctuation: 1,
-        }],
+        phraseStats: [
+          {
+            charLength: 2,
+            numWords: 1,
+            numPunctuation: 0,
+          },
+          {
+            charLength: 12,
+            numWords: 3,
+            numPunctuation: 1,
+          }
+        ],
         errorMessage: undefined,
-      })
+      });
     });
 
     it('returns correct value for error', () => {
-      const stats = getAbbreviationExpansionResponseStats(undefined, 'foo error')
+      const stats =
+          getAbbreviationExpansionResponseStats(undefined, 'foo error')
       expect(stats).toEqual({
         errorMessage: 'foo error',
-      })
+      });
+    });
+
+    it('includes phrases under full logging mode', () => {
+      HttpEventLogger.setFullLogging(true);
+      const stats =
+          getAbbreviationExpansionResponseStats(['hi', 'how are you?'])
+      expect(stats).toEqual({
+        phraseStats: [
+          {
+            charLength: 2,
+            numWords: 1,
+            numPunctuation: 0,
+            phrase: 'hi',
+          },
+          {
+            charLength: 12,
+            numWords: 3,
+            numPunctuation: 1,
+            phrase: 'how%20are%20you%3F',
+          }
+        ],
+        errorMessage: undefined,
+        phrases: ['hi', 'how%20are%20you%3F'],
+      });
     });
   });
 });

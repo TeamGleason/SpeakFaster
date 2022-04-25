@@ -3,11 +3,12 @@ import {HttpErrorResponse} from '@angular/common/http';
 import {ChangeDetectorRef, Component, ElementRef, Input, OnInit, QueryList, ViewChildren} from '@angular/core';
 import {Subject} from 'rxjs';
 
-import {AppSettings, getAppSettings} from '../settings/settings';
+import {AppSettings, getAppSettings, setGenericTtsVoiceName} from '../settings/settings';
 import {TextToSpeechErrorResponse, TextToSpeechService} from '../text-to-speech-service';
+import {setUtteranceVoice} from '../tts-voice-selection/tts-voice-selection.component';
 import {TextEntryEndEvent} from '../types/text-entry';
 
-const DEFAULT_LANGUAGE_CODE = 'en-US';
+export const DEFAULT_LANGUAGE_CODE = 'en-US';
 const DEFAULT_AUDIO_ENCODING = 'LINEAR16';
 
 export type TextToSpeechState = 'REQUESTING'|'PLAY'|'END'|'ERROR';
@@ -97,6 +98,9 @@ export class TextToSpeechComponent implements OnInit {
   }
 
   ngOnInit() {
+    // NOTE: Reference getVoice() at the beginning because the voices are
+    // populated lazily in some browsers and WebViews.
+    window.speechSynthesis.getVoices();
     this.textEntryEndSubject.subscribe(async event => {
       if (!event.isFinal) {
         return;
@@ -119,7 +123,7 @@ export class TextToSpeechComponent implements OnInit {
       if (ttsVoiceType === 'PERSONALIZED') {
         this.doCloudTextToSpeech(text, appSettings);
       } else {
-        this.doLocalTextToSpeech(text, appSettings);
+        await this.doLocalTextToSpeech(text, appSettings);
       }
     });
   }
@@ -189,8 +193,9 @@ export class TextToSpeechComponent implements OnInit {
   }
 
   /** Use local WebSpeech API to perform text-to-speech output. */
-  private doLocalTextToSpeech(text: string, appSettings: AppSettings) {
+  private async doLocalTextToSpeech(text: string, appSettings: AppSettings) {
     const utterance = new SpeechSynthesisUtterance(text.trim());
+    await setUtteranceVoice(utterance);
     this.setListenersState('REQUESTING');
     utterance.onstart = () => {
       this.setListenersState('PLAY');

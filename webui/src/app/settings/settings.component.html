@@ -161,6 +161,12 @@
       <img class="icon-image" src="/assets/images/close.png">
       Quit app
   </button>
+
+  <div
+      *ngIf="isFullLogging"
+      class="logging-tag">
+    Logging: full
+  </div>
 </div>
 
 <div class="two-column-container">
@@ -183,6 +189,14 @@
           [ngClass]="{'active-button': appSettings!.ttsVoiceType === 'GENERIC'}"
           (click)="setTtsVoiceType('GENERIC')">
         Generic
+      </button>
+      <button
+          #clickableButton
+          *ngIf="appSettings!.ttsVoiceType === 'GENERIC'"
+          class="option-button select-voice-button"
+          [ngClass]="{'active-button': appSettings!.ttsVoiceType === 'GENERIC'}"
+          (click)="onTtsVoiceSelectionButtonClicked($event)">
+        Select voice...
       </button>
     </div>
 

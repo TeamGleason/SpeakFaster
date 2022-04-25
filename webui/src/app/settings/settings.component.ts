@@ -23,6 +23,8 @@ export class SettingsComponent implements AfterViewInit, OnInit, OnDestroy {
   @Input() userId!: string;
   @Input() userEmail!: string|null;
   @Input() userGivenName!: string|null;
+  @Output()
+  ttsVoiceSelectionButtonClicked: EventEmitter<Event> = new EventEmitter();
   @Output() helpButtonClicked: EventEmitter<Event> = new EventEmitter();
   @Output()
   eyeGazeSettingsButtonClicked: EventEmitter<Event> = new EventEmitter();
@@ -83,8 +85,12 @@ export class SettingsComponent implements AfterViewInit, OnInit, OnDestroy {
     window.location.reload(true);
   }
 
-  onQuitAppButtonClicked(even: Event) {
+  onQuitAppButtonClicked(event: Event) {
     requestQuitApp();
+  }
+
+  onTtsVoiceSelectionButtonClicked(event: Event) {
+    this.ttsVoiceSelectionButtonClicked.emit(event);
   }
 
   onHelpButtonClicked(event: Event) {
@@ -101,5 +107,9 @@ export class SettingsComponent implements AfterViewInit, OnInit, OnDestroy {
 
   get hostAppVersionString(): string|null {
     return this.hostInfo === null ? null : this.hostInfo.hostAppVersion;
+  }
+
+  get isFullLogging(): boolean {
+    return HttpEventLogger.isFullLogging();
   }
 }

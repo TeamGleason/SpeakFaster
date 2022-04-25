@@ -1,7 +1,7 @@
 /** Unit tests for settings. */
 import {BOUND_LISTENER_NAME} from '../../utils/cefsharp';
 
-import {clearSettings, ensureAppSettingsLoaded, getAppSettings, LOCAL_STORAGE_ITEM_NAME, modifyAppSettingsForTest, setDwellDelayMillis, setGazeFuzzyRadius, setShowGazeTracker, setTtsSpeakingRate, setTtsVoiceType, setTtsVolume, tryLoadSettings, trySaveSettings} from './settings';
+import {clearSettings, ensureAppSettingsLoaded, getAppSettings, LOCAL_STORAGE_ITEM_NAME, modifyAppSettingsForTest, setDwellDelayMillis, setGazeFuzzyRadius, setShowGazeTracker, setTtsSpeakingRate, setGenericTtsVoiceName as setGenericTtsVoiceName, setTtsVoiceType, setTtsVolume, tryLoadSettings, trySaveSettings} from './settings';
 
 describe('settings', () => {
   beforeEach(async () => {
@@ -73,6 +73,22 @@ describe('settings', () => {
     await expectAsync(setTtsSpeakingRate(Infinity)).toBeRejectedWithError();
     await expectAsync(setTtsSpeakingRate(-Infinity)).toBeRejectedWithError();
     await expectAsync(setTtsSpeakingRate(NaN)).toBeRejectedWithError();
+  });
+
+  it('Generic TTS voice name is undefined by default', async () => {
+    expect((await getAppSettings()).genericTtsVoiceName).toBeUndefined();
+  });
+
+  it('Setting generic TTS voice name to non-undefined works', async () => {
+    await setGenericTtsVoiceName('Foo TTS Voice');
+    expect((await getAppSettings()).genericTtsVoiceName)
+        .toEqual('Foo TTS Voice');
+  });
+
+  it('Setting generic TTS voice name back to undefined works', async () => {
+    await setGenericTtsVoiceName('Foo TTS Voice');
+    await setGenericTtsVoiceName(undefined);
+    expect((await getAppSettings()).genericTtsVoiceName).toBeUndefined();
   });
 
   it('setting showGazeTrakcer succeeds', async () => {

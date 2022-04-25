@@ -4,8 +4,25 @@ import {updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/
 import {createUuid} from 'src/utils/uuid';
 
 import {AppComponent} from '../app.component';
+import {getAppSettings} from '../settings/settings';
 
 const SCROLL_HEIGHT_TOLERANCE_PX = 1.0;
+
+
+export async function setTtsUtteranceVoice(
+    utterance: SpeechSynthesisUtterance) {
+  const voiceName = (await getAppSettings()).genericTtsVoiceName;
+  if (voiceName === undefined) {
+    return;
+  }
+  const voices = window.speechSynthesis.getVoices().filter(voice => {
+    return voice.name === voiceName;
+  });
+  if (voices.length === 0) {
+    return;
+  }
+  utterance.voice = voices[0];
+}
 
 /** Eye-gaze-compatible scroll buttons. */
 @Component({

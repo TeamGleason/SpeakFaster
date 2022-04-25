@@ -18,4 +18,6 @@ export enum AppState {
   EYE_GAZE_SETTINGS = 'EYE_GAZE_SETTINGS',
   // The help page.
   HELP = 'HELP',
+  // Selecting TTS voice.
+  TTS_VOICE_SELECTION = 'TTS_VOICE_SELECTION',
 }

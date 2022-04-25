@@ -7,7 +7,7 @@ import {BOUND_LISTENER_NAME} from '../../utils/cefsharp';
 import {HttpEventLogger} from '../event-logger/event-logger-impl';
 import {clearSettings, getAppSettings, LOCAL_STORAGE_ITEM_NAME, setGenericTtsVoiceName, setTtsVolume} from '../settings/settings';
 
-import {setUtteranceVoice, TtsVoiceSelectionComponent} from './tts-voice-selection.component';
+import {TtsVoiceSelectionComponent} from './tts-voice-selection.component';
 import {TtsVoiceSelectionModule} from './tts-voice-selection.module';
 
 describe('TtsVoiceSelectionComponent', () => {

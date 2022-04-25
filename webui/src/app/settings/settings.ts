@@ -24,6 +24,11 @@ export interface AppSettings {
   // Between 0.25 and 4.0. 1.0 is normal speaking rate.
   ttsSpeakingRate?: number;
 
+  // Optional name of the TTS voice. Applies only to the 'GENERIC' voice type.
+  // By default, this is undefined, which defaults to the default voice in the
+  // system and voice setting.
+  genericTtsVoiceName?: string;
+
   // Whether the dot that indicates the current gaze location is shown.
   showGazeTracker?: ShowGazeTracker;
 
@@ -141,6 +146,12 @@ export async function setTtsSpeakingRate(ttsSpeakingRate: number) {
   }
   await ensureAppSettingsLoaded();
   appSettings!.ttsSpeakingRate = ttsSpeakingRate;
+  await trySaveSettings();
+}
+
+export async function setGenericTtsVoiceName(ttsVoiceName: string | undefined) {
+  await ensureAppSettingsLoaded();
+  appSettings!.genericTtsVoiceName = ttsVoiceName;
   await trySaveSettings();
 }
 

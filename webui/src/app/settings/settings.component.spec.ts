@@ -40,12 +40,14 @@ describe('SettingsComponent', () => {
         fixture.debugElement.query(By.css('.tts-voice-section'));
     expect(ttsVolumeSection).not.toBeNull();
     const buttons = ttsVolumeSection.queryAll(By.css('.option-button'));
-    expect(buttons.length).toEqual(2);
+    expect(buttons.length).toEqual(3);
     expect(buttons[0].nativeElement.innerText).toEqual('Personalized');
     expect(buttons[1].nativeElement.innerText).toEqual('Generic');
+    expect(buttons[2].nativeElement.innerText).toEqual('Select voice...');
     const selectedButtons = ttsVolumeSection.queryAll(By.css('.active-button'));
-    expect(selectedButtons.length).toEqual(1);
+    expect(selectedButtons.length).toEqual(2);
     expect(selectedButtons[0].nativeElement.innerText).toEqual('Generic');
+    expect(selectedButtons[1].nativeElement.innerText).toEqual('Select voice...');
   });
 
   it('Shows default TTS volume setting when loaded', async () => {
@@ -74,8 +76,9 @@ describe('SettingsComponent', () => {
     await fixture.whenStable();
 
     const selectedButtons = ttsVoiceSection.queryAll(By.css('.active-button'));
-    expect(selectedButtons.length).toEqual(1);
+    expect(selectedButtons.length).toEqual(2);
     expect(selectedButtons[0].nativeElement.innerText).toEqual('Generic');
+    expect(selectedButtons[1].nativeElement.innerText).toEqual('Select voice...');
     expect((await getAppSettings()).ttsVoiceType).toEqual('GENERIC');
   });
 

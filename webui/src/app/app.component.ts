@@ -349,6 +349,10 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     this.changeAppState(AppState.SETTINGS);
   }
 
+  onTtsVoiceSelectionButtonClicked(event: Event) {
+    this.changeAppState(AppState.TTS_VOICE_SELECTION);
+  }
+
   onHelpButtonClicked(event: Event) {
     this.changeAppState(AppState.HELP);
   }

@@ -190,6 +190,14 @@
           (click)="setTtsVoiceType('GENERIC')">
         Generic
       </button>
+      <button
+          #clickableButton
+          *ngIf="appSettings!.ttsVoiceType === 'GENERIC'"
+          class="option-button select-voice-button"
+          [ngClass]="{'active-button': appSettings!.ttsVoiceType === 'GENERIC'}"
+          (click)="onTtsVoiceSelectionButtonClicked($event)">
+        Select voice...
+      </button>
     </div>
 
     <div

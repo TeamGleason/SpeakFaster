@@ -18,6 +18,7 @@ import {QuickPhrasesModule} from './quick-phrases/quick-phrases.module';
 import {SettingsEyeGazeModule} from './settings-eye-gaze/settings-eye-gaze.module';
 import {SettingsModule} from './settings/settings.module';
 import {TextToSpeechModule} from './text-to-speech/text-to-speech.module';
+import {TtsVoiceSelectionModule} from './tts-voice-selection/tts-voice-selection.module';
 
 @NgModule({
   declarations: [AppComponent],
@@ -39,6 +40,7 @@ import {TextToSpeechModule} from './text-to-speech/text-to-speech.module';
     SettingsModule,
     SettingsEyeGazeModule,
     TextToSpeechModule,
+    TtsVoiceSelectionModule,
   ],
   providers: [],
   bootstrap: [AppComponent]

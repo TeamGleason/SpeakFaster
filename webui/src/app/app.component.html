@@ -217,6 +217,7 @@ app-text-to-speech-component {
           [userId]="userId"
           [userEmail]="userEmail"
           [userGivenName]="userGivenName"
+          (ttsVoiceSelectionButtonClicked)="onTtsVoiceSelectionButtonClicked($event)"
           (helpButtonClicked)="onHelpButtonClicked($event)"
           (eyeGazeSettingsButtonClicked)="onEyeGazeSettingsButtonClicked($event)">
       </app-settings-component>
@@ -228,6 +229,10 @@ app-text-to-speech-component {
       <app-help-component
           *ngIf="appState === 'HELP'">
       </app-help-component>
+
+      <app-tts-voice-selection-component
+          *ngIf="appState === 'TTS_VOICE_SELECTION'">
+      </app-tts-voice-selection-component>
 
       <div class="bottom-area">
         <app-input-bar-component

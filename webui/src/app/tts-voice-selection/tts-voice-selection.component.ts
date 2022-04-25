@@ -10,6 +10,8 @@ import {createUuid} from 'src/utils/uuid';
 import {getAppSettings, setGenericTtsVoiceName} from '../settings/settings';
 import {DEFAULT_LANGUAGE_CODE} from '../text-to-speech/text-to-speech.component';
 
+const TEST_UTTERANCE_TEXT = 'This is a test sentence.';
+
 /**
  * Set the voice of a SpeechSynthesisUtterance based on app settings.
  *
@@ -137,6 +139,12 @@ export class TtsVoiceSelectionComponent implements OnInit, AfterViewInit,
       this._selectedIndex = this.availableVoiceNames.length - 1;
     }
     this.saveVoiceSelection();
+  }
+
+  onTestButtonClicked(event: Event) {
+    const utterance = new SpeechSynthesisUtterance(TEST_UTTERANCE_TEXT);
+    setUtteranceVoice(utterance);
+    window.speechSynthesis.speak(utterance);
   }
 
   private saveVoiceSelection() {

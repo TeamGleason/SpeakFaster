@@ -10,6 +10,7 @@ import {getPhraseStats, HttpEventLogger} from '../event-logger/event-logger-impl
 import {ExternalEventsComponent, IgnoreMachineKeySequenceConfig, repeatVirtualKey, VIRTUAL_KEY} from '../external/external-events.component';
 import {LexiconComponent, LoadLexiconRequest} from '../lexicon/lexicon.component';
 import {FillMaskRequest, SpeakFasterService} from '../speakfaster-service';
+import {StudyManager} from '../study/study-manager';
 import {AbbreviationSpec, AbbreviationToken, InputAbbreviationChangedEvent} from '../types/abbreviation';
 import {TextEntryEndEvent} from '../types/text-entry';
 
@@ -120,6 +121,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   @Input() isFocused: boolean = true;
   @Output() inputStringChanged: EventEmitter<string> = new EventEmitter();
 
+  private _hintText: string|null = null;
   private _isHidden: boolean = false;
   private readonly _chips: InputBarChipSpec[] = [];
   private _focusChipIndex: number|null = null;
@@ -146,7 +148,8 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
 
   constructor(
       public speakFasterService: SpeakFasterService,
-      private cdr: ChangeDetectorRef, private eventLogger: HttpEventLogger) {}
+      private studyManager: StudyManager, private cdr: ChangeDetectorRef,
+      private eventLogger: HttpEventLogger) {}
 
   ngOnInit() {
     this.textEntryEndSubjectSubscription = this.textEntryEndSubject.subscribe(
@@ -242,6 +245,10 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
             .subscribe((event: InputAbbreviationChangedEvent) => {
               this.abbreviationExpansionTriggers.next(event);
             });
+    this.studyManager.studyUserTurns.subscribe(turn => {
+      console.log('Received study user turn:', turn.text);
+      this._hintText = turn.text;
+    });
   }
 
   private ensureChipTypedTextCreated() {
@@ -772,5 +779,9 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
 
   get contextualPhraseTags(): string[] {
     return this._contextualPhraseTags.slice();
+  }
+
+  get hintText(): string|null {
+    return this._hintText;
   }
 }

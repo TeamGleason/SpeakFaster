@@ -2,16 +2,17 @@
 
 import {AfterViewInit, ChangeDetectorRef, Component, EventEmitter, Input, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
 import {Subject, Subscription, timer} from 'rxjs';
+import {createUuid} from 'src/utils/uuid';
 
 import {ConversationTurnComponent} from '../conversation-turn/conversation-turn.component';
 import {getPhraseStats, HttpEventLogger} from '../event-logger/event-logger-impl';
 import {SpeakFasterService} from '../speakfaster-service';
+import {StudyManager} from '../study/study-manager';
 import {ConversationTurnContextSignal, getConversationTurnContextSignal} from '../types/context';
 import {ConversationTurn} from '../types/conversation';
 import {TextEntryEndEvent} from '../types/text-entry';
 
 import {DEFAULT_CONTEXT_SIGNALS} from './default-context';
-import {maybeHandleRemoteControlCommands} from './remote-control';
 
 @Component({
   selector: 'app-context-component',
@@ -46,7 +47,8 @@ export class ContextComponent implements OnInit, AfterViewInit {
 
   constructor(
       private speakFasterService: SpeakFasterService,
-      private eventLogger: HttpEventLogger, private cdr: ChangeDetectorRef) {}
+      private studyManager: StudyManager, private eventLogger: HttpEventLogger,
+      private cdr: ChangeDetectorRef) {}
 
   ngOnInit() {
     if (!this.userId) {
@@ -54,6 +56,11 @@ export class ContextComponent implements OnInit, AfterViewInit {
     }
     this.focusContextIds.splice(0);
     this.textEntryEndSubject.subscribe((textInjection: TextEntryEndEvent) => {
+      if (this.studyManager.getCurrentDialogId() !== null) {
+        this.studyManager.incrementTurn();
+        this.retrieveContext();
+        return;
+      }
       if (!textInjection.isFinal || textInjection.isAborted ||
           textInjection.text.trim() === '') {
         return;
@@ -186,9 +193,33 @@ export class ContextComponent implements OnInit, AfterViewInit {
   }
 
   private retrieveContext() {
+    if (this.studyManager.getCurrentDialogId() !== null) {
+      this.contextSignals.splice(0);
+      for (const {text, partnerId, timestamp} of this.studyManager
+               .getPreviousDialogTurnTexts()!) {
+        this.contextSignals.push({
+          contextType: 'ConversationTurn',
+          conversationTurn: {
+            speakerId: partnerId || this.userId,
+            speechContent: text,
+            startTimestamp: timestamp,
+          },
+          userId: this.userId,
+          contextId: createUuid(),
+          timestamp,
+        });
+      }
+      this.limitContextItemsCount();
+      this.focusContextIds.splice(0);
+      this.focusContextIds.push(
+          ...this.contextSignals.map(signal => signal.contextId));
+      this.contextStringsSelected.next(
+          this.contextSignals.map(signal => signal.conversationTurn));
+      return;
+    }
     this.speakFasterService.retrieveContext(this.userId)
         .subscribe(
-            data => {
+            async data => {
               if (data.errorMessage != null) {
                 if (data.result !== 'ERROR_INVALID_USER_ID') {
                   this.contextRetrievalError = 'Context retrieval error';
@@ -223,7 +254,8 @@ export class ContextComponent implements OnInit, AfterViewInit {
                         .conversationTurn.speechContent;
                 this.eventLogger.logIncomingContextualTurn(
                     getPhraseStats(speechContent));
-                maybeHandleRemoteControlCommands(speechContent);
+                await this.studyManager.maybeHandleRemoteControlCommands(
+                    speechContent);
               }
               this.limitContextItemsCount();
               this.cleanUpAndSortFocusContextIds();

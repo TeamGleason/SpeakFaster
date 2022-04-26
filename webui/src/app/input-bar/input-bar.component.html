@@ -78,6 +78,12 @@
   display: none;
 }
 
+.hint-text {
+  color: yellow;
+  font-size: 18px;
+  padding-left: 20px;
+}
+
 .input-box {
   background: #272626;
   border: none;
@@ -261,5 +267,10 @@
     </div>
 
   </div>
+</div>
 
+<div
+    *ngIf="hintText !== null"
+    class="hint-text">
+  Please enter: {{hintText}}
 </div>

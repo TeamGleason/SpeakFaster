@@ -122,6 +122,8 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   @Output() inputStringChanged: EventEmitter<string> = new EventEmitter();
 
   private _hintText: string|null = null;
+  private _studyDialogEnded: boolean = false;
+
   private _isHidden: boolean = false;
   private readonly _chips: InputBarChipSpec[] = [];
   private _focusChipIndex: number|null = null;
@@ -246,8 +248,9 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
               this.abbreviationExpansionTriggers.next(event);
             });
     this.studyManager.studyUserTurns.subscribe(turn => {
-      console.log('Received study user turn:', turn.text);
+      console.log('**** Received study user turn:', turn);  // DEBUG
       this._hintText = turn.text;
+      this._studyDialogEnded = turn.isComplete;
     });
   }
 
@@ -783,5 +786,9 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
 
   get hintText(): string|null {
     return this._hintText;
+  }
+
+  get isStudyDialogComplete(): boolean {
+    return this._studyDialogEnded;
   }
 }

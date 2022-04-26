@@ -25,7 +25,8 @@ const DIALOG_STOP = 'dialog stop'
   private currentDialogTurnMode: 'a'|'b'|null = null;
   private currentTurnIndex: number|null = null;
 
-  public studyUserTurns: Subject<{text: string | null}> = new Subject;
+  public studyUserTurns: Subject<{text: string | null, isComplete: boolean}> =
+      new Subject;
 
   constructor(readonly httpC: HttpClient) {}
 
@@ -65,13 +66,16 @@ const DIALOG_STOP = 'dialog stop'
   }
 
   private emitStudyUserTurn() {
-    const isUsersTurn =
+    const dialog = this.dialogs[this.currentDialogId!];
+    const numTurns = dialog.turns.length;
+    const isUsersTurn = this.currentTurnIndex! < numTurns &&
         ((this.currentDialogTurnMode === 'a' &&
           this.currentTurnIndex! % 2 === 0) ||
          (this.currentDialogTurnMode === 'b' &&
           this.currentTurnIndex! % 2 === 1));
     this.studyUserTurns.next({
       text: isUsersTurn ? this.getCurrentDialogTurnText() : null,
+      isComplete: this.currentTurnIndex === numTurns,
     });
   }
 
@@ -133,8 +137,8 @@ const DIALOG_STOP = 'dialog stop'
         0, this.currentTurnIndex);
     return texts.map((text, i) => {
       let partnerId = null;
-      if ((this.currentDialogTurnMode === 'a' && i % 2 === 0) ||
-          (this.currentDialogTurnMode === 'b' && i % 2 === 1)) {
+      if ((this.currentDialogTurnMode === 'a' && i % 2 === 1) ||
+          (this.currentDialogTurnMode === 'b' && i % 2 === 0)) {
         partnerId = 'Partner';
       }
       return {
@@ -164,8 +168,7 @@ const DIALOG_STOP = 'dialog stop'
     }
     this.turnTimestamps.push(new Date());
     this.currentTurnIndex!++;
-    const isComplete = this.currentTurnIndex ===
-        this.dialogs[this.currentDialogId].turns.length;
+    const isComplete = this.currentTurnIndex === numTurns;
     if (isComplete) {
       this.emitStudyUserTurn();
     } else {

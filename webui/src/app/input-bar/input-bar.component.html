@@ -84,6 +84,10 @@
   padding-left: 20px;
 }
 
+.hint-text.hint-dialog-complete {
+  color: lightgreen;
+}
+
 .input-box {
   background: #272626;
   border: none;
@@ -273,4 +277,10 @@
     *ngIf="hintText !== null"
     class="hint-text">
   Please enter: {{hintText}}
+</div>
+
+<div
+    *ngIf="isStudyDialogComplete"
+    class="hint-text hint-dialog-complete">
+  Dialog is complete.
 </div>

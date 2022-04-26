@@ -200,7 +200,7 @@ export class ContextComponent implements OnInit, AfterViewInit {
         this.contextSignals.push({
           contextType: 'ConversationTurn',
           conversationTurn: {
-            speakerId: partnerId || this.userId,
+            speakerId: partnerId,
             speechContent: text,
             startTimestamp: timestamp,
           },

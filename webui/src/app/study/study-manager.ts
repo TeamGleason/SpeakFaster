@@ -12,12 +12,24 @@ export interface Dialog {
   turns: string[];
 }
 
+const COMMAND_STUDY_ON = 'study on';
+const COMMAND_STUDY_OFF = 'study off';
 const DIALOG_START_PREFIX = 'dialog start ';
-const DIALOG_STOP = 'dialog stop'
+const DIALOG_STOP = 'dialog stop';
 
-    @Injectable({
-      providedIn: 'root',
-    }) export class StudyManager {
+const PARTNER_TURN_DELAY_MILLIS = 1000;
+const USER_TURN_DELAY_MILLIS = 3000;
+
+export function isCommand(text: string): boolean {
+  text = text.trim().toLocaleLowerCase();
+  return text === COMMAND_STUDY_ON || text === COMMAND_STUDY_OFF ||
+      text.startsWith(DIALOG_START_PREFIX) || text.startsWith(DIALOG_STOP);
+}
+
+@Injectable({
+  providedIn: 'root',
+})
+export class StudyManager {
   private dialogs: {[dialogId: string]: Dialog} = {};
   //   private actualDialogs: {[dialogId: string]: Dialog} = {};
   private turnTimestamps: Date[] = [];
@@ -38,11 +50,12 @@ const DIALOG_STOP = 'dialog stop'
   public async maybeHandleRemoteControlCommands(text: string):
       Promise<boolean> {
     text = text.trim().toLocaleLowerCase();
-    if (text === 'study on') {
+    if (text === COMMAND_STUDY_ON) {
       HttpEventLogger.setFullLogging(true);
       return true;
-    } else if (text === 'study off') {
+    } else if (text === COMMAND_STUDY_OFF) {
       HttpEventLogger.setFullLogging(false);
+      this.reset();
       return true;
     } else if (text.startsWith(DIALOG_START_PREFIX)) {
       const dialogIdAndTurn = text.slice(DIALOG_START_PREFIX.length).trim();
@@ -55,7 +68,7 @@ const DIALOG_STOP = 'dialog stop'
         this.incrementTurn();
       } else {
         this.currentDialogTurnMode = 'a';
-        this.emitStudyUserTurn();
+        setTimeout(() => this.emitStudyUserTurn(), USER_TURN_DELAY_MILLIS);
       }
       return true;
     } else if (text === DIALOG_STOP) {
@@ -68,13 +81,8 @@ const DIALOG_STOP = 'dialog stop'
   private emitStudyUserTurn() {
     const dialog = this.dialogs[this.currentDialogId!];
     const numTurns = dialog.turns.length;
-    const isUsersTurn = this.currentTurnIndex! < numTurns &&
-        ((this.currentDialogTurnMode === 'a' &&
-          this.currentTurnIndex! % 2 === 0) ||
-         (this.currentDialogTurnMode === 'b' &&
-          this.currentTurnIndex! % 2 === 1));
     this.studyUserTurns.next({
-      text: isUsersTurn ? this.getCurrentDialogTurnText() : null,
+      text: this.isUserTurn ? this.getCurrentDialogTurnText() : null,
       isComplete: this.currentTurnIndex === numTurns,
     });
   }
@@ -83,6 +91,8 @@ const DIALOG_STOP = 'dialog stop'
     this.currentDialogId = null;
     this.currentDialogTurnMode = null;
     this.currentTurnIndex = null;
+    // TODO(cais): Add unit tests.
+    this.studyUserTurns.next({text: null, isComplete: true});
   }
 
   public async loadDialog(dialogId: string) {
@@ -90,11 +100,10 @@ const DIALOG_STOP = 'dialog stop'
   }
 
   public async startDialog(dialogId: string) {
-    // DEBUG
     this.dialogs[dialogId] = {
       turns: [
         'Shall we go', 'I am not ready yet', 'When will you be ready',
-        'No idea', 'Hurry up', 'Stop rushing me'
+        'Not sure', 'Hurry up', 'Okay, will be there soon'
       ],
     };
     if (this.dialogs[dialogId] === undefined) {
@@ -147,14 +156,6 @@ const DIALOG_STOP = 'dialog stop'
     });
   }
 
-  //   public getCurrentDialogActualText(): string[]|null {
-  //     if (this.currentDialogId === null || this.currentTurnIndex === null) {
-  //       return null;
-  //     }
-  //     return this.actualDialogs[this.currentDialogId].turns.slice(
-  //         0, this.currentTurnIndex);
-  //   }
-
   public incrementTurn(): {turnIndex: number, isComplete: boolean} {
     if (this.currentDialogId === null) {
       throw new Error(
@@ -167,19 +168,40 @@ const DIALOG_STOP = 'dialog stop'
           `Cannot increment turn, already at the end: ${numTurns - 1}`);
     }
     this.turnTimestamps.push(new Date());
+    if (this.isUserTurn) {
+      console.log('*** A100: is user turn:', this.currentTurnIndex);  // DEBUG
+      this.studyUserTurns.next({
+        text: null,
+        isComplete: false,
+      });
+    }
     this.currentTurnIndex!++;
     const isComplete = this.currentTurnIndex === numTurns;
     if (isComplete) {
-      this.emitStudyUserTurn();
+      setTimeout(() => this.emitStudyUserTurn(), USER_TURN_DELAY_MILLIS);
     } else {
-      if ((this.currentDialogTurnMode === 'a' &&
-           this.currentTurnIndex! % 2 === 1) ||
-          (this.currentDialogTurnMode === 'b' &&
-           this.currentTurnIndex! % 2 === 0)) {
-        this.incrementTurn();
+      if (!this.isUserTurn) {
+        setTimeout(() => {
+          this.incrementTurn();
+          setTimeout(() => this.emitStudyUserTurn(), USER_TURN_DELAY_MILLIS);
+        }, PARTNER_TURN_DELAY_MILLIS);
+      } else {
+        setTimeout(() => this.emitStudyUserTurn(), USER_TURN_DELAY_MILLIS);
       }
-      this.emitStudyUserTurn();
     }
     return {turnIndex: this.currentTurnIndex!, isComplete};
+  }
+
+  public get isUserTurn(): boolean {
+    if (this.currentDialogId === null) {
+      return false;
+    }
+    const dialog = this.dialogs[this.currentDialogId];
+    const numTurns = dialog.turns.length;
+    return this.currentTurnIndex! < numTurns &&
+        (this.currentDialogTurnMode === 'a' &&
+         this.currentTurnIndex! % 2 === 0) ||
+        (this.currentDialogTurnMode === 'b' &&
+         this.currentTurnIndex! % 2 === 1);
   }
 }

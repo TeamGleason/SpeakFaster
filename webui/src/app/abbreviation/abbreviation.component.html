@@ -302,8 +302,9 @@ mat-progress-spinner {
 </div>
 
 <div
-    *ngIf="state === 'PRE_CHOOSING_EXPANSION' ||
-           state === 'POST_CHOOSING_EXPANSION'">
+    *ngIf="!isStudyDialogOngoing &&
+           (state === 'PRE_CHOOSING_EXPANSION' ||
+            state === 'POST_CHOOSING_EXPANSION')">
   <button
       #clickableButton
       *ngFor="let text of textPredictions; let i = index"
@@ -330,9 +331,10 @@ mat-progress-spinner {
     (refinementResult)="onRefinementResult($event)">
 </app-abbreviation-refinement-component>
 
+<!-- TODO(cais): Add unit test. -->
 <button
     #clickableButton
-    *ngIf="state === 'POST_CHOOSING_EXPANSION'"
+    *ngIf="state === 'POST_CHOOSING_EXPANSION' && !isStudyDialogOngoing"
     class="action-button repeat-button"
     (click)="onRepeatButtonClicked($event)">
   <img

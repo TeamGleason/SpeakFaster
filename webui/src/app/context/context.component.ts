@@ -7,7 +7,7 @@ import {createUuid} from 'src/utils/uuid';
 import {ConversationTurnComponent} from '../conversation-turn/conversation-turn.component';
 import {getPhraseStats, HttpEventLogger} from '../event-logger/event-logger-impl';
 import {SpeakFasterService} from '../speakfaster-service';
-import {StudyManager} from '../study/study-manager';
+import {isCommand, StudyManager} from '../study/study-manager';
 import {ConversationTurnContextSignal, getConversationTurnContextSignal} from '../types/context';
 import {ConversationTurn} from '../types/conversation';
 import {TextEntryEndEvent} from '../types/text-entry';
@@ -56,13 +56,13 @@ export class ContextComponent implements OnInit, AfterViewInit {
     }
     this.focusContextIds.splice(0);
     this.textEntryEndSubject.subscribe((textInjection: TextEntryEndEvent) => {
+      if (!textInjection.isFinal || textInjection.isAborted ||
+          textInjection.text.trim() === '') {
+        return;
+      }
       if (this.studyManager.getCurrentDialogId() !== null) {
         this.studyManager.incrementTurn();
         this.retrieveContext();
-        return;
-      }
-      if (!textInjection.isFinal || textInjection.isAborted ||
-          textInjection.text.trim() === '') {
         return;
       }
       const timestamp = new Date(textInjection.timestampMillis);
@@ -76,6 +76,9 @@ export class ContextComponent implements OnInit, AfterViewInit {
           }));
       this.emitContextStringsSelected();
       // TODO(cais): Limit length of textInjections?
+      this.studyManager.studyUserTurns.subscribe(() => {
+        this.retrieveContext();
+      });
     });
   }
 
@@ -197,6 +200,9 @@ export class ContextComponent implements OnInit, AfterViewInit {
       this.contextSignals.splice(0);
       for (const {text, partnerId, timestamp} of this.studyManager
                .getPreviousDialogTurnTexts()!) {
+        if (isCommand(text)) {
+          continue;
+        }
         this.contextSignals.push({
           contextType: 'ConversationTurn',
           conversationTurn: {
@@ -247,15 +253,19 @@ export class ContextComponent implements OnInit, AfterViewInit {
                   // Avoid adding duplicate context signals.
                   continue;
                 }
-                this.contextSignals.push(
-                    (contextSignal as ConversationTurnContextSignal));
                 const speechContent =
                     (contextSignal as ConversationTurnContextSignal)
                         .conversationTurn.speechContent;
+                const isHandledAsCommand =
+                    await this.studyManager.maybeHandleRemoteControlCommands(
+                        speechContent);
+                if (isHandledAsCommand) {
+                  continue;
+                }
+                this.contextSignals.push(
+                    (contextSignal as ConversationTurnContextSignal));
                 this.eventLogger.logIncomingContextualTurn(
                     getPhraseStats(speechContent));
-                await this.studyManager.maybeHandleRemoteControlCommands(
-                    speechContent);
               }
               this.limitContextItemsCount();
               this.cleanUpAndSortFocusContextIds();

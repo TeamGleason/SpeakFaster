@@ -248,7 +248,6 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
               this.abbreviationExpansionTriggers.next(event);
             });
     this.studyManager.studyUserTurns.subscribe(turn => {
-      console.log('**** Received study user turn:', turn);  // DEBUG
       this._hintText = turn.text;
       this._studyDialogEnded = turn.isComplete;
     });

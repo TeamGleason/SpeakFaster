@@ -31,7 +31,6 @@ export function isCommand(text: string): boolean {
 })
 export class StudyManager {
   private dialogs: {[dialogId: string]: Dialog} = {};
-  //   private actualDialogs: {[dialogId: string]: Dialog} = {};
   private turnTimestamps: Date[] = [];
   private currentDialogId: string|null = null;
   private currentDialogTurnMode: 'a'|'b'|null = null;
@@ -169,7 +168,6 @@ export class StudyManager {
     }
     this.turnTimestamps.push(new Date());
     if (this.isUserTurn) {
-      console.log('*** A100: is user turn:', this.currentTurnIndex);  // DEBUG
       this.studyUserTurns.next({
         text: null,
         isComplete: false,

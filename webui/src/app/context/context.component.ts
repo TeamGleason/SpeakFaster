@@ -60,7 +60,7 @@ export class ContextComponent implements OnInit, AfterViewInit {
           textInjection.text.trim() === '') {
         return;
       }
-      if (this.studyManager.getCurrentDialogId() !== null) {
+      if (this.studyManager.getDialogId() !== null) {
         this.studyManager.incrementTurn();
         this.retrieveContext();
         return;
@@ -196,7 +196,7 @@ export class ContextComponent implements OnInit, AfterViewInit {
   }
 
   private retrieveContext() {
-    if (this.studyManager.getCurrentDialogId() !== null) {
+    if (this.studyManager.getDialogId() !== null) {
       this.contextSignals.splice(0);
       for (const {text, partnerId, timestamp} of this.studyManager
                .getPreviousDialogTurnTexts()!) {

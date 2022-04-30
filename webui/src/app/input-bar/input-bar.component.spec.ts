@@ -11,6 +11,7 @@ import {InputBarChipComponent} from '../input-bar-chip/input-bar-chip.component'
 import {InputBarChipModule} from '../input-bar-chip/input-bar-chip.module';
 import {LoadLexiconRequest} from '../lexicon/lexicon.component';
 import {FillMaskRequest, SpeakFasterService} from '../speakfaster-service';
+import {StudyManager} from '../study/study-manager';
 import {TestListener} from '../test-utils/test-cefsharp-listener';
 import {InputAbbreviationChangedEvent} from '../types/abbreviation';
 import {AddContextualPhraseRequest, AddContextualPhraseResponse} from '../types/contextual_phrase';
@@ -77,6 +78,7 @@ describe('InputBarComponent', () => {
           providers: [
             {provide: SpeakFasterService, useValue: speakFasterServiceForTest},
             {provide: HttpEventLogger, useValue: new HttpEventLogger(null)},
+            {provide: StudyManager, useValue: new StudyManager(null)},
           ],
         })
         .compileComponents();

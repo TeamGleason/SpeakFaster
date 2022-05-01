@@ -21,7 +21,7 @@ class SpeakFasterServiceForTest {
   }
 }
 
-fdescribe('ContextComponent', () => {
+describe('ContextComponent', () => {
   let fixture: ComponentFixture<ContextComponent>;
   let textEntryEndSubject: Subject<TextEntryEndEvent>;
   let studyManager: StudyManager;

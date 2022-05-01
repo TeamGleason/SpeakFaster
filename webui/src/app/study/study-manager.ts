@@ -253,7 +253,7 @@ export class StudyManager {
     if (isComplete) {
       setTimeout(() => {
         this.emitStudyUserTurn();
-        this.reset();  // TODO(cais): Add unit tests.
+        this.reset();
       }, getUserTurnDelayMillis());
     } else {
       if (!this.isUserTurn) {

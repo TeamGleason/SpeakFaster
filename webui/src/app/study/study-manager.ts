@@ -25,6 +25,23 @@ const DIALOG_STOP = 'dialog stop';
 const PARTNER_TURN_DELAY_MILLIS = 1000;
 const USER_TURN_DELAY_MILLIS = 3000;
 
+let partnerTurnDelayMillisForTest: number|null = null;
+let userTurnDelayMillisForTest: number|null = null;
+
+export function setDelaysForTesting(
+    partnerTurnDelayMillis: number, userTurnDelayMillis: number) {
+  partnerTurnDelayMillisForTest = partnerTurnDelayMillis;
+  userTurnDelayMillisForTest = userTurnDelayMillis;
+}
+
+function getPartnerTurnDelayMillis(): number {
+  return partnerTurnDelayMillisForTest || PARTNER_TURN_DELAY_MILLIS;
+}
+
+function getUserTurnDelayMillis(): number {
+  return userTurnDelayMillisForTest || USER_TURN_DELAY_MILLIS;
+}
+
 /**
  * Determines whether a string is a study command for the SpeakFaster UI.
  * @param text
@@ -34,6 +51,12 @@ export function isCommand(text: string): boolean {
   text = text.trim().toLocaleLowerCase();
   return text === COMMAND_STUDY_ON || text === COMMAND_STUDY_OFF ||
       text.startsWith(DIALOG_START_PREFIX) || text.startsWith(DIALOG_STOP);
+}
+
+/** A turn to be entered by the user. */
+export interface StudyUserTurn {
+  text: string|null;
+  isComplete: boolean;
 }
 
 @Injectable({
@@ -53,8 +76,7 @@ export class StudyManager {
   private turnIndex: number|null = null;
 
   // A subject for the turns that the user should enter.
-  public studyUserTurns: Subject<{text: string | null, isComplete: boolean}> =
-      new Subject;
+  public studyUserTurns: Subject<StudyUserTurn> = new Subject;
 
   /** Constructor of StudyManager. */
   constructor(readonly httpClient: HttpClient|null) {
@@ -87,7 +109,7 @@ export class StudyManager {
         this.incrementTurn();
       } else {
         this.userRole = 'a';
-        setTimeout(() => this.emitStudyUserTurn(), USER_TURN_DELAY_MILLIS);
+        setTimeout(() => this.emitStudyUserTurn(), getUserTurnDelayMillis());
       }
       HttpEventLogger.setFullLogging(true);
       return true;
@@ -112,18 +134,18 @@ export class StudyManager {
     this.dialogId = null;
     this.userRole = null;
     this.turnIndex = null;
-    // TODO(cais): Add unit tests.
     this.studyUserTurns.next({text: null, isComplete: true});
   }
 
   public async loadDialog(dialogId: string) {
-    // TODO(cais): Implement.
-    // TODO(cais): Check for non-empty dialog turns.
+    // TODO(cais): Implement. Check for non-empty dialog turns.
   }
 
   /** Starts a dialog of the given dialog ID. */
   public async startDialog(dialogId: string) {
-    // TODO(cais): Remove the hard coded dialog.
+    if (!dialogId) {
+      throw new Error('Invalid dialog ID');
+    }
     if (this.dialogs[dialogId] === undefined) {
       await this.loadDialog(dialogId);
     }
@@ -211,15 +233,14 @@ export class StudyManager {
     this.turnIndex!++;
     const isComplete = this.turnIndex === numTurns;
     if (isComplete) {
-      setTimeout(() => this.emitStudyUserTurn(), USER_TURN_DELAY_MILLIS);
+      setTimeout(() => this.emitStudyUserTurn(), getUserTurnDelayMillis());
     } else {
       if (!this.isUserTurn) {
         setTimeout(() => {
           this.incrementTurn();
-          setTimeout(() => this.emitStudyUserTurn(), USER_TURN_DELAY_MILLIS);
-        }, PARTNER_TURN_DELAY_MILLIS);
+        }, getPartnerTurnDelayMillis());
       } else {
-        setTimeout(() => this.emitStudyUserTurn(), USER_TURN_DELAY_MILLIS);
+        setTimeout(() => this.emitStudyUserTurn(), getUserTurnDelayMillis());
       }
     }
     return {turnIndex: this.turnIndex!, isComplete};

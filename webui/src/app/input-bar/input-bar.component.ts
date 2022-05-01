@@ -143,6 +143,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   private inputBarChipsSubscription?: Subscription;
   private abbreviationExpansionTriggersSubscription?: Subscription;
   private inFlightAbbreviationExpansionTriggerSubscription?: Subscription;
+  private studyUserTurnsSubscription?: Subscription;
   private keypressListener = this.listenToKeypress.bind(this);
   private readonly inFlightAbbreviationExpansionTriggers:
       Subject<InputAbbreviationChangedEvent> = new Subject();
@@ -247,10 +248,11 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
             .subscribe((event: InputAbbreviationChangedEvent) => {
               this.abbreviationExpansionTriggers.next(event);
             });
-    this.studyManager.studyUserTurns.subscribe(turn => {
-      this._hintText = turn.text;
-      this._studyDialogEnded = turn.isComplete;
-    });
+    this.studyUserTurnsSubscription =
+        this.studyManager.studyUserTurns.subscribe(turn => {
+          this._hintText = turn.text;
+          this._studyDialogEnded = turn.isComplete;
+        });
   }
 
   private ensureChipTypedTextCreated() {
@@ -284,6 +286,9 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     ExternalEventsComponent.unregisterKeypressListener(this.keypressListener);
     ExternalEventsComponent.unregisterIgnoreKeySequence(
         InputBarComponent.IGNORE_MACHINE_KEY_SEQUENCE);
+    if (this.studyUserTurnsSubscription) {
+      this.studyUserTurnsSubscription.unsubscribe();
+    }
   }
 
   public listenToKeypress(keySequence: string[], reconstructedText: string):

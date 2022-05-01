@@ -1,6 +1,6 @@
 /** Component that displays the contextual signals relevant for text entry. */
 
-import {AfterViewInit, ChangeDetectorRef, Component, EventEmitter, Input, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
+import {AfterViewInit, ChangeDetectorRef, Component, EventEmitter, Input, OnDestroy, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
 import {Subject, Subscription, timer} from 'rxjs';
 import {createUuid} from 'src/utils/uuid';
 
@@ -19,7 +19,7 @@ import {DEFAULT_CONTEXT_SIGNALS} from './default-context';
   templateUrl: './context.component.html',
   providers: [],
 })
-export class ContextComponent implements OnInit, AfterViewInit {
+export class ContextComponent implements OnInit, OnDestroy, AfterViewInit {
   private static readonly _NAME = 'ContextComponent';
   // TODO(cais): Do not hardcode this user ID.
   private static readonly MAX_DISPLAYED_CONTEXT_COUNT = 3;
@@ -44,6 +44,7 @@ export class ContextComponent implements OnInit, AfterViewInit {
 
   private readonly focusContextIds: string[] = [];
   private continuousContextRetrieval = true;
+  private studyUserTurnsSubscription?: Subscription;
 
   constructor(
       private speakFasterService: SpeakFasterService,
@@ -76,11 +77,18 @@ export class ContextComponent implements OnInit, AfterViewInit {
           }));
       this.emitContextStringsSelected();
       // TODO(cais): Limit length of textInjections?
-      this.studyManager.studyUserTurns.subscribe(() => {
-        this.retrieveContext();
-      });
+      this.studyUserTurnsSubscription =
+          this.studyManager.studyUserTurns.subscribe(() => {
+            this.retrieveContext();
+          });
     });
   }
+
+  ngOnDestroy() {
+    if (this.studyUserTurnsSubscription) {
+      this.studyUserTurnsSubscription.unsubscribe();
+    }
+  };
 
   ngAfterViewInit() {
     if (!this.continuousContextRetrieval) {

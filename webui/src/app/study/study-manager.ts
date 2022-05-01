@@ -113,7 +113,7 @@ export class StudyManager {
       const dialogIdAndTurn = text.slice(prefix.length).trim();
       // Turn = 'a' means the machine starts the turn.
       const [dialogId, turn] = dialogIdAndTurn.split(' ');
-      console.log(`Starting dialog ${dialogId}: turn=${turn}`);
+      console.log(`*** Starting dialog ${dialogId}: turn=${turn}`);  // DEBUG
       await this.startDialog(dialogId, isAbbreviation);
       if (turn && turn.toLocaleLowerCase() === 'b') {
         this.userRole = 'b';
@@ -251,7 +251,10 @@ export class StudyManager {
     this.turnIndex!++;
     const isComplete = this.turnIndex === numTurns;
     if (isComplete) {
-      setTimeout(() => this.emitStudyUserTurn(), getUserTurnDelayMillis());
+      setTimeout(() => {
+        this.emitStudyUserTurn();
+        this.reset();  // TODO(cais): Add unit tests.
+      }, getUserTurnDelayMillis());
     } else {
       if (!this.isUserTurn) {
         setTimeout(() => {
@@ -286,11 +289,19 @@ export class StudyManager {
   private populateDummyDialogs() {
     this.dialogs['dummy1'] = {
       turns: [
-        'Shall we go to the movies today', 'What good movies are on right now',
+        'Shall we go to the movies today',
+        'What good movies are on right now',
         'We can check on our way there',
         'Not sure I want to see a movie right now',
-        'How about going to the mall', 'Okay, I\'ll get ready soon'
+        'How about going to the mall',
+        'Okay, I\'ll get ready soon',
       ],
     };
+    this.dialogs['dummy2_2turns'] = {
+      turns: [
+        'Bye bye',
+        'See you later',
+      ]
+    }
   }
 }

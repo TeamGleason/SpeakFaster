@@ -6,7 +6,7 @@ import {HttpEventLogger} from '../event-logger/event-logger-impl';
 
 import {isCommand, setDelaysForTesting, StudyManager, StudyUserTurn} from './study-manager';
 
-fdescribe('Study Manager', () => {
+describe('Study Manager', () => {
   describe('isCommand()', () => {
     it('returns true for actual commands', () => {
       expect(isCommand('Study on')).toBeTrue();
@@ -85,8 +85,7 @@ fdescribe('Study Manager', () => {
     });
 
     it('incrementTurn moves the state onto the partner turn', async () => {
-      await studyManager.maybeHandleRemoteControlCommand(
-          'start abbrev dummy1');
+      await studyManager.maybeHandleRemoteControlCommand('start abbrev dummy1');
       const incrementResult = studyManager.incrementTurn();
 
       expect(incrementResult.turnIndex).toEqual(1);
@@ -172,28 +171,27 @@ fdescribe('Study Manager', () => {
              ['Start abbrev dummy1 B', true], ['Start full dummy1 B', false]] as
          Array<[string, boolean]>) {
       it('start from partner turn: auto increments initially', done => {
-        studyManager.maybeHandleRemoteControlCommand(command)
-            .then(() => {
-              expect(studyManager.getDialogId()).toEqual('dummy1');
-              expect(studyManager.getDialogTurnIndex()).toEqual(1);
-              expect(studyManager.getDialogTurnText())
-                  .toEqual('What good movies are on right now');
-              const previousTurns = studyManager.getPreviousDialogTurnTexts()!;
-              expect(previousTurns.length).toEqual(1);
-              expect(previousTurns[0].text)
-                  .toEqual('Shall we go to the movies today');
-              expect(previousTurns[0].partnerId).toEqual('Partner');
-              expect(previousTurns[0].timestamp.getTime()).toBeGreaterThan(0);
+        studyManager.maybeHandleRemoteControlCommand(command).then(() => {
+          expect(studyManager.getDialogId()).toEqual('dummy1');
+          expect(studyManager.getDialogTurnIndex()).toEqual(1);
+          expect(studyManager.getDialogTurnText())
+              .toEqual('What good movies are on right now');
+          const previousTurns = studyManager.getPreviousDialogTurnTexts()!;
+          expect(previousTurns.length).toEqual(1);
+          expect(previousTurns[0].text)
+              .toEqual('Shall we go to the movies today');
+          expect(previousTurns[0].partnerId).toEqual('Partner');
+          expect(previousTurns[0].timestamp.getTime()).toBeGreaterThan(0);
 
-              setTimeout(() => {
-                expect(studyUserTurns).toEqual([{
-                  text: 'What good movies are on right now',
-                  isAbbreviation: isAbbreviation,
-                  isComplete: false,
-                }]);
-                done();
-              }, 30);
-            });
+          setTimeout(() => {
+            expect(studyUserTurns).toEqual([{
+              text: 'What good movies are on right now',
+              isAbbreviation: isAbbreviation,
+              isComplete: false,
+            }]);
+            done();
+          }, 30);
+        });
       });
     }
 
@@ -240,6 +238,37 @@ fdescribe('Study Manager', () => {
       await expectAsync(
           studyManager.startDialog('', /* isAbbreviation= */ true))
           .toBeRejected();
+    });
+
+    it('ending dialog resets state: started by user', done => {
+      studyManager.maybeHandleRemoteControlCommand('start abbrev dummy2_2turns')
+          .then(() => {
+            studyManager.incrementTurn();
+            setTimeout(() => {
+              expect(studyManager.getDialogId()).toBeNull();
+              const lastUserTurn = studyUserTurns[studyUserTurns.length - 1];
+              expect(lastUserTurn.text).toBeNull();
+              expect(lastUserTurn.isAbbreviation).toBeTrue();
+              done();
+            }, 40);
+          });
+    });
+
+    it('ending dialog resets state: started by partner', done => {
+      studyManager
+          .maybeHandleRemoteControlCommand('Start abbrev dummy2_2turns B')
+          .then(() => {
+            expect(studyManager.getDialogId()).toEqual('dummy2_2turns');
+            expect(studyManager.getDialogTurnIndex()).toEqual(1);
+            studyManager.incrementTurn();
+            setTimeout(() => {
+              expect(studyManager.getDialogId()).toBeNull();
+              const lastUserTurn = studyUserTurns[studyUserTurns.length - 1];
+              expect(lastUserTurn.text).toBeNull();
+              expect(lastUserTurn.isAbbreviation).toBeTrue();
+              done();
+            }, 30);
+          });
     });
   });
 });

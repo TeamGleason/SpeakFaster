@@ -11,9 +11,9 @@ fdescribe('Study Manager', () => {
     it('returns true for actual commands', () => {
       expect(isCommand('Study on')).toBeTrue();
       expect(isCommand('study off')).toBeTrue();
-      expect(isCommand('Dialog start dummy1 '));
-      expect(isCommand('Dialog start dummy1 a'));
-      expect(isCommand('Dialog start dummy1 b'));
+      expect(isCommand('Start abbrev dummy1 '));
+      expect(isCommand('Start abbrev dummy1 a'));
+      expect(isCommand('Start abbrev dummy1 b'));
       expect(isCommand(' Dialog stop'));
     });
 
@@ -21,7 +21,7 @@ fdescribe('Study Manager', () => {
       expect(isCommand('')).toBeFalse();
       expect(isCommand('study')).toBeFalse();
       expect(isCommand('Dialog')).toBeFalse();
-      expect(isCommand('dialog start')).toBeFalse();
+      expect(isCommand('start abbrev')).toBeFalse();
     });
   });
 
@@ -47,16 +47,16 @@ fdescribe('Study Manager', () => {
 
     it('sets logging mode to full for command study on', async () => {
       const handled =
-          await studyManager.maybeHandleRemoteControlCommands('Study on');
+          await studyManager.maybeHandleRemoteControlCommand('Study on');
 
       expect(handled).toBeTrue();
       expect(HttpEventLogger.isFullLogging()).toBeTrue();
     });
 
     it('sets logging mode to default after study off', async () => {
-      await studyManager.maybeHandleRemoteControlCommands('study on');
+      await studyManager.maybeHandleRemoteControlCommand('study on');
       const handled =
-          await studyManager.maybeHandleRemoteControlCommands('Study off ');
+          await studyManager.maybeHandleRemoteControlCommand('Study off ');
 
       expect(handled).toBeTrue();
       expect(HttpEventLogger.isFullLogging()).toBeFalse();
@@ -71,38 +71,40 @@ fdescribe('Study Manager', () => {
     });
 
     it('sets logging to full and states on start dialog command', async () => {
-      const handled = await studyManager.maybeHandleRemoteControlCommands(
-          'dialog start dummy1 a');
+      const handled = await studyManager.maybeHandleRemoteControlCommand(
+          'start abbrev dummy1 a');
 
       expect(handled).toBeTrue();
       expect(HttpEventLogger.isFullLogging()).toBeTrue();
       expect(studyManager.getDialogId()).toBe('dummy1');
       expect(studyManager.getDialogTurnIndex()).toEqual(0);
-      expect(studyManager.getDialogTurnText()).toEqual('Shall we go');
+      expect(studyManager.getDialogTurnText())
+          .toEqual('Shall we go to the movies today');
       expect(studyManager.getPreviousDialogTurnTexts()).toEqual([]);
       expect(studyManager.isUserTurn).toBeTrue();
     });
 
     it('incrementTurn moves the state onto the partner turn', async () => {
-      await studyManager.maybeHandleRemoteControlCommands(
-          'dialog start dummy1');
+      await studyManager.maybeHandleRemoteControlCommand(
+          'start abbrev dummy1');
       const incrementResult = studyManager.incrementTurn();
 
       expect(incrementResult.turnIndex).toEqual(1);
       expect(incrementResult.isComplete).toBeFalse();
       expect(studyManager.getDialogId()).toBe('dummy1');
       expect(studyManager.getDialogTurnIndex()).toEqual(1);
-      expect(studyManager.getDialogTurnText()).toEqual('I am not ready yet');
+      expect(studyManager.getDialogTurnText())
+          .toEqual('What good movies are on right now');
       const previousTurns = studyManager.getPreviousDialogTurnTexts()!;
       expect(previousTurns.length).toEqual(1);
-      expect(previousTurns[0].text).toEqual('Shall we go');
+      expect(previousTurns[0].text).toEqual('Shall we go to the movies today');
       expect(previousTurns[0].partnerId).toBeNull();
       expect(previousTurns[0].timestamp.getTime()).toBeGreaterThan(0);
       expect(studyManager.isUserTurn).toBeFalse();
     });
 
     it('delay after incrementTurn: auto-increments again', done => {
-      studyManager.maybeHandleRemoteControlCommands('dialog start dummy1')
+      studyManager.maybeHandleRemoteControlCommand('start abbrev dummy1')
           .then(() => {
             studyManager.incrementTurn();
 
@@ -110,13 +112,15 @@ fdescribe('Study Manager', () => {
               expect(studyManager.getDialogId()).toBe('dummy1');
               expect(studyManager.getDialogTurnIndex()).toEqual(2);
               expect(studyManager.getDialogTurnText())
-                  .toEqual('When will you be ready');
+                  .toEqual('We can check on our way there');
               const previousTurns = studyManager.getPreviousDialogTurnTexts()!;
               expect(previousTurns.length).toEqual(2);
-              expect(previousTurns[0].text).toEqual('Shall we go');
+              expect(previousTurns[0].text)
+                  .toEqual('Shall we go to the movies today');
               expect(previousTurns[0].partnerId).toBeNull();
               expect(previousTurns[0].timestamp.getTime()).toBeGreaterThan(0);
-              expect(previousTurns[1].text).toEqual('I am not ready yet');
+              expect(previousTurns[1].text)
+                  .toEqual('What good movies are on right now');
               expect(previousTurns[1].partnerId).toEqual('Partner');
               expect(previousTurns[1].timestamp.getTime())
                   .toBeGreaterThan(previousTurns[0].timestamp.getTime());
@@ -124,7 +128,8 @@ fdescribe('Study Manager', () => {
 
               setTimeout(() => {
                 const lastUserTurn = studyUserTurns[studyUserTurns.length - 1];
-                expect(lastUserTurn.text).toEqual('When will you be ready');
+                expect(lastUserTurn.text)
+                    .toEqual('We can check on our way there');
                 expect(lastUserTurn.isComplete).toBeFalse();
                 done();
               }, 20);
@@ -133,7 +138,7 @@ fdescribe('Study Manager', () => {
     });
 
     it('incrementTurn after auto-increment: sets correct states', done => {
-      studyManager.maybeHandleRemoteControlCommands('dialog start dummy1')
+      studyManager.maybeHandleRemoteControlCommand('start abbrev dummy1')
           .then(() => {
             studyManager.incrementTurn();
             setTimeout(() => {
@@ -142,17 +147,20 @@ fdescribe('Study Manager', () => {
               expect(incrementResult.isComplete).toBeFalse();
               expect(studyManager.getDialogId()).toBe('dummy1');
               expect(studyManager.getDialogTurnIndex()).toEqual(3);
-              expect(studyManager.getDialogTurnText()).toEqual('Not sure');
+              expect(studyManager.getDialogTurnText())
+                  .toEqual('Not sure I want to see a movie right now');
               const previousTurns = studyManager.getPreviousDialogTurnTexts()!;
               expect(previousTurns.length).toEqual(3);
-              expect(previousTurns[2].text).toEqual('When will you be ready');
+              expect(previousTurns[2].text)
+                  .toEqual('We can check on our way there');
               expect(previousTurns[2].partnerId).toBeNull();
               expect(previousTurns[2].timestamp.getTime()).toBeGreaterThan(0);
               expect(studyManager.isUserTurn).toBeFalse();
 
               setTimeout(() => {
                 const lastUserTurn = studyUserTurns[studyUserTurns.length - 1];
-                expect(lastUserTurn.text).toEqual('Hurry up');
+                expect(lastUserTurn.text)
+                    .toEqual('How about going to the mall');
                 expect(lastUserTurn.isComplete).toBeFalse();
                 done();
               }, 20);
@@ -160,31 +168,37 @@ fdescribe('Study Manager', () => {
           });
     });
 
-    it('start from partner turn: auto increments initially', done => {
-      studyManager.maybeHandleRemoteControlCommands('Dialog start dummy1 B')
-          .then(() => {
-            expect(studyManager.getDialogId()).toEqual('dummy1');
-            expect(studyManager.getDialogTurnIndex()).toEqual(1);
-            expect(studyManager.getDialogTurnText())
-                .toEqual('I am not ready yet');
-            const previousTurns = studyManager.getPreviousDialogTurnTexts()!;
-            expect(previousTurns.length).toEqual(1);
-            expect(previousTurns[0].text).toEqual('Shall we go');
-            expect(previousTurns[0].partnerId).toEqual('Partner');
-            expect(previousTurns[0].timestamp.getTime()).toBeGreaterThan(0);
+    for (const [command, isAbbreviation] of [
+             ['Start abbrev dummy1 B', true], ['Start full dummy1 B', false]] as
+         Array<[string, boolean]>) {
+      it('start from partner turn: auto increments initially', done => {
+        studyManager.maybeHandleRemoteControlCommand(command)
+            .then(() => {
+              expect(studyManager.getDialogId()).toEqual('dummy1');
+              expect(studyManager.getDialogTurnIndex()).toEqual(1);
+              expect(studyManager.getDialogTurnText())
+                  .toEqual('What good movies are on right now');
+              const previousTurns = studyManager.getPreviousDialogTurnTexts()!;
+              expect(previousTurns.length).toEqual(1);
+              expect(previousTurns[0].text)
+                  .toEqual('Shall we go to the movies today');
+              expect(previousTurns[0].partnerId).toEqual('Partner');
+              expect(previousTurns[0].timestamp.getTime()).toBeGreaterThan(0);
 
-            setTimeout(() => {
-              expect(studyUserTurns).toEqual([{
-                text: 'I am not ready yet',
-                isComplete: false,
-              }]);
-              done();
-            }, 30);
-          });
-    });
+              setTimeout(() => {
+                expect(studyUserTurns).toEqual([{
+                  text: 'What good movies are on right now',
+                  isAbbreviation: isAbbreviation,
+                  isComplete: false,
+                }]);
+                done();
+              }, 30);
+            });
+      });
+    }
 
     it('start from partner turn: incrementTurn after partner turn', done => {
-      studyManager.maybeHandleRemoteControlCommands('Dialog start dummy1 b')
+      studyManager.maybeHandleRemoteControlCommand('Start abbrev dummy1 b')
           .then(() => {
             setTimeout(() => {
               const incrementResult = studyManager.incrementTurn();
@@ -194,10 +208,11 @@ fdescribe('Study Manager', () => {
               expect(studyManager.getDialogId()).toEqual('dummy1');
               expect(studyManager.getDialogTurnIndex()).toEqual(2);
               expect(studyManager.getDialogTurnText())
-                  .toEqual('When will you be ready');
+                  .toEqual('We can check on our way there');
               const previousTurns = studyManager.getPreviousDialogTurnTexts()!;
               expect(previousTurns.length).toEqual(2);
-              expect(previousTurns[1].text).toEqual('I am not ready yet');
+              expect(previousTurns[1].text)
+                  .toEqual('What good movies are on right now');
               expect(previousTurns[1].partnerId).toBeNull();
               expect(previousTurns[1].timestamp.getTime()).toBeGreaterThan(0);
               const lastUserTurn = studyUserTurns[studyUserTurns.length - 1];
@@ -209,9 +224,9 @@ fdescribe('Study Manager', () => {
     });
 
     it('Dialog stop command reset state', async () => {
-      await studyManager.maybeHandleRemoteControlCommands(
-          'Dialog start dummy1 b');
-      await studyManager.maybeHandleRemoteControlCommands('Dialog stop');
+      await studyManager.maybeHandleRemoteControlCommand(
+          'start abbrev dummy1 b');
+      await studyManager.maybeHandleRemoteControlCommand('Dialog stop');
 
       expect(studyManager.getDialogId()).toBeNull();
       expect(studyManager.getDialogTurnIndex()).toBeNull();
@@ -222,7 +237,9 @@ fdescribe('Study Manager', () => {
     });
 
     it('Invalid dialog ID throws error', async () => {
-      await expectAsync(studyManager.startDialog('')).toBeRejected();
+      await expectAsync(
+          studyManager.startDialog('', /* isAbbreviation= */ true))
+          .toBeRejected();
     });
   });
 });

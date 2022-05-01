@@ -121,7 +121,8 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   @Input() isFocused: boolean = true;
   @Output() inputStringChanged: EventEmitter<string> = new EventEmitter();
 
-  private _hintText: string|null = null;
+  private _studyUserTurnInstr: string|null = null;
+  private _studyUserTurnText: string|null = null;
   private _studyDialogEnded: boolean = false;
 
   private _isHidden: boolean = false;
@@ -250,7 +251,9 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
             });
     this.studyUserTurnsSubscription =
         this.studyManager.studyUserTurns.subscribe(turn => {
-          this._hintText = turn.text;
+          this._studyUserTurnInstr =
+              turn.isAbbreviation ? 'Enter in abbreviation:' : 'Enter in full:';
+          this._studyUserTurnText = turn.text;
           this._studyDialogEnded = turn.isComplete;
         });
   }
@@ -788,8 +791,12 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     return this._contextualPhraseTags.slice();
   }
 
-  get hintText(): string|null {
-    return this._hintText;
+  get studyUserTurnText(): string|null {
+    return this._studyUserTurnText;
+  }
+
+  get studyUserTurnInstr(): string|null {
+    return this._studyUserTurnInstr;
   }
 
   get isStudyDialogComplete(): boolean {

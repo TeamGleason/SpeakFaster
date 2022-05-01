@@ -16,9 +16,12 @@ export interface Dialog {
 const COMMAND_STUDY_ON = 'study on';
 // Command to stop a study: Turns the logging mode to default (non-full).
 const COMMAND_STUDY_OFF = 'study off';
-// Prefix of a command to start a scripted dialog. Starting a dialog
-// automatically sets the logging mode to full.
-const DIALOG_START_PREFIX = 'dialog start ';
+// Prefix of a command to start a scripted dialog in abbreviaton mode. Starting
+// a dialog automatically sets the logging mode to full.
+const START_ABBREV_PREFIX = 'start abbrev ';
+// Same as the `start abbrev `command, but for full text entry mode (i.e., not
+// abbreviation.)
+const START_FULL_PREFIX = 'start full ';
 // Command to stop a script dialog, if one is already started.
 const DIALOG_STOP = 'dialog stop';
 
@@ -50,12 +53,14 @@ function getUserTurnDelayMillis(): number {
 export function isCommand(text: string): boolean {
   text = text.trim().toLocaleLowerCase();
   return text === COMMAND_STUDY_ON || text === COMMAND_STUDY_OFF ||
-      text.startsWith(DIALOG_START_PREFIX) || text.startsWith(DIALOG_STOP);
+      text.startsWith(START_ABBREV_PREFIX) ||
+      text.startsWith(START_FULL_PREFIX) || text.startsWith(DIALOG_STOP);
 }
 
 /** A turn to be entered by the user. */
 export interface StudyUserTurn {
   text: string|null;
+  isAbbreviation: boolean;
   isComplete: boolean;
 }
 
@@ -68,6 +73,9 @@ export class StudyManager {
   // The ID of the current ongoing dialog (if any). `null` means there is no
   // ongoing dialog.
   private dialogId: string|null = null;
+  // Whether the current ongoing dialog is for user to enter abbreviation, if
+  // any. `null` if there is no ongoing dialog.
+  private isAbbreviation: boolean|null = null;
   // Which role is played by the user in this dialog: 'a' means the user starts
   // the dialog, 'b' means the partner starts the dialog.
   private userRole: 'a'|'b'|null = null;
@@ -88,8 +96,7 @@ export class StudyManager {
    * @param text
    * @returns whether `text` is handled as a remote-control command.
    * */
-  public async maybeHandleRemoteControlCommands(text: string):
-      Promise<boolean> {
+  public async maybeHandleRemoteControlCommand(text: string): Promise<boolean> {
     text = text.trim().toLocaleLowerCase();
     if (text === COMMAND_STUDY_ON) {
       HttpEventLogger.setFullLogging(true);
@@ -98,12 +105,16 @@ export class StudyManager {
       HttpEventLogger.setFullLogging(false);
       this.reset();
       return true;
-    } else if (text.startsWith(DIALOG_START_PREFIX)) {
-      const dialogIdAndTurn = text.slice(DIALOG_START_PREFIX.length).trim();
+    } else if (
+        text.startsWith(START_ABBREV_PREFIX) ||
+        text.startsWith(START_FULL_PREFIX)) {
+      const isAbbreviation = text.startsWith(START_ABBREV_PREFIX);
+      const prefix = isAbbreviation ? START_ABBREV_PREFIX : START_FULL_PREFIX;
+      const dialogIdAndTurn = text.slice(prefix.length).trim();
       // Turn = 'a' means the machine starts the turn.
       const [dialogId, turn] = dialogIdAndTurn.split(' ');
       console.log(`Starting dialog ${dialogId}: turn=${turn}`);
-      await this.startDialog(dialogId);
+      await this.startDialog(dialogId, isAbbreviation);
       if (turn && turn.toLocaleLowerCase() === 'b') {
         this.userRole = 'b';
         this.incrementTurn();
@@ -129,6 +140,7 @@ export class StudyManager {
     const numTurns = dialog.turns.length;
     this.studyUserTurns.next({
       text: this.isUserTurn ? this.getDialogTurnText() : null,
+      isAbbreviation: this.isAbbreviation!,
       isComplete: this.turnIndex === numTurns,
     });
   }
@@ -137,7 +149,8 @@ export class StudyManager {
     this.dialogId = null;
     this.userRole = null;
     this.turnIndex = null;
-    this.studyUserTurns.next({text: null, isComplete: true});
+    this.studyUserTurns.next(
+        {text: null, isAbbreviation: true, isComplete: true});
   }
 
   public async loadDialog(dialogId: string) {
@@ -145,7 +158,7 @@ export class StudyManager {
   }
 
   /** Starts a dialog of the given dialog ID. */
-  public async startDialog(dialogId: string) {
+  public async startDialog(dialogId: string, isAbbreviation: boolean) {
     if (!dialogId) {
       throw new Error('Invalid dialog ID');
     }
@@ -153,6 +166,7 @@ export class StudyManager {
       await this.loadDialog(dialogId);
     }
     this.dialogId = dialogId;
+    this.isAbbreviation = isAbbreviation;
     this.turnIndex = 0;
     this.turnTimestamps.splice(0);
   }
@@ -230,6 +244,7 @@ export class StudyManager {
     if (this.isUserTurn) {
       this.studyUserTurns.next({
         text: null,
+        isAbbreviation: this.isAbbreviation!,
         isComplete: false,
       });
     }
@@ -271,8 +286,10 @@ export class StudyManager {
   private populateDummyDialogs() {
     this.dialogs['dummy1'] = {
       turns: [
-        'Shall we go', 'I am not ready yet', 'When will you be ready',
-        'Not sure', 'Hurry up', 'Okay, will be there soon'
+        'Shall we go to the movies today', 'What good movies are on right now',
+        'We can check on our way there',
+        'Not sure I want to see a movie right now',
+        'How about going to the mall', 'Okay, I\'ll get ready soon'
       ],
     };
   }

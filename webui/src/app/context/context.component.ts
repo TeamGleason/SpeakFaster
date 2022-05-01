@@ -265,7 +265,7 @@ export class ContextComponent implements OnInit, OnDestroy, AfterViewInit {
                     (contextSignal as ConversationTurnContextSignal)
                         .conversationTurn.speechContent;
                 const isHandledAsCommand =
-                    await this.studyManager.maybeHandleRemoteControlCommands(
+                    await this.studyManager.maybeHandleRemoteControlCommand(
                         speechContent);
                 if (isHandledAsCommand) {
                   continue;

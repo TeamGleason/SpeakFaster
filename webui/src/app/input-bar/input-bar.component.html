@@ -82,18 +82,26 @@
 }
 
 .hint-text {
+  align-items: center;
   color: white;
+  display: flex;
+  flex-direction: row;
   font-size: 30px;
   overflow: visible;
   padding-left: 20px;
   position: absolute;
   top: 72px;
-  width: 640px;
+  width: 1000px;
 }
 
 .hint-text.hint-dialog-complete {
   color: lightgreen;
   font-size: 30px;
+}
+
+.instruction {
+  font-size: 20px;
+  margin-right: 8px;
 }
 
 .input-box {
@@ -288,10 +296,10 @@
   </div>
 
   <div
-      *ngIf="hintText !== null"
+      *ngIf="studyUserTurnText !== null"
       class="hint-text">
-    Enter:
-    <span class="to-enter-text">{{hintText}}</span>
+    <span class="instruction">{{studyUserTurnInstr}}</span>
+    <span class="to-enter-text">{{studyUserTurnText}}</span>
   </div>
 
   <div

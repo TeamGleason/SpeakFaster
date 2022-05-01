@@ -241,7 +241,7 @@ describe('Study Manager', () => {
     });
 
     it('ending dialog resets state: started by user', done => {
-      studyManager.maybeHandleRemoteControlCommand('start abbrev dummy2_2turns')
+      studyManager.maybeHandleRemoteControlCommand('start abbrev dummy2')
           .then(() => {
             studyManager.incrementTurn();
             setTimeout(() => {
@@ -256,9 +256,9 @@ describe('Study Manager', () => {
 
     it('ending dialog resets state: started by partner', done => {
       studyManager
-          .maybeHandleRemoteControlCommand('Start abbrev dummy2_2turns B')
+          .maybeHandleRemoteControlCommand('Start abbrev dummy2 B')
           .then(() => {
-            expect(studyManager.getDialogId()).toEqual('dummy2_2turns');
+            expect(studyManager.getDialogId()).toEqual('dummy2');
             expect(studyManager.getDialogTurnIndex()).toEqual(1);
             studyManager.incrementTurn();
             setTimeout(() => {

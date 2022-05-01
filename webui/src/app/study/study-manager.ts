@@ -92,7 +92,7 @@ export class StudyManager {
   private turnIndex: number|null = null;
 
   // A subject for the turns that the user should enter.
-  public studyUserTurns: Subject<StudyUserTurn> = new Subject;
+  public studyUserTurns: Subject<StudyUserTurn> = new Subject();
 
   /** Constructor of StudyManager. */
   constructor(readonly httpClient: HttpClient|null) {
@@ -160,26 +160,34 @@ export class StudyManager {
         {text: null, isAbbreviation: true, isComplete: true});
   }
 
-  public async loadDialog(dialogId: string) {
-    if (!dialogId) {
-      throw new Error(`Invalid dialog ID: ${dialogId}`);
-    }
-    this.httpClient
-        ?.get<StudyDialogResponse>(STUDY_DIALOG_ENDPOINT, {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          params: {
-            dialog_id: dialogId,
-          }
-        })
-        .subscribe((response: StudyDialogResponse) => {
-          if (!response.error && response.dialog) {
-            this.dialogs[dialogId] = response.dialog;
-            console.log(
-                `Loaded dialog ${dialogId}:`, JSON.stringify(response.dialog));
-          }
-        });
+  private async loadDialog(dialogId: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (!dialogId) {
+        reject(new Error(`Invalid dialog ID: ${dialogId}`));
+      }
+      this.httpClient
+          ?.get<StudyDialogResponse>(STUDY_DIALOG_ENDPOINT, {
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            params: {
+              dialog_id: dialogId,
+            }
+          })
+          .subscribe(
+              (response: StudyDialogResponse) => {
+                if (!response.error && response.dialog) {
+                  this.dialogs[dialogId] = response.dialog;
+                  console.log(
+                      `Loaded dialog ${dialogId}:`,
+                      JSON.stringify(response.dialog));
+                }
+                resolve();
+              },
+              err => {
+                reject(err);
+              });
+    });
   }
 
   /** Starts a dialog of the given dialog ID. */
@@ -191,6 +199,7 @@ export class StudyManager {
       await this.loadDialog(dialogId);
     }
     this.dialogId = dialogId;
+    console.log('Starting dialog:', this.dialogId);
     this.isAbbreviation = isAbbreviation;
     this.turnIndex = 0;
     this.turnTimestamps.splice(0);
@@ -322,7 +331,7 @@ export class StudyManager {
         'Okay, I\'ll get ready soon',
       ],
     };
-    this.dialogs['dummy2_2turns'] = {
+    this.dialogs['dummy2'] = {
       turns: [
         'Bye bye',
         'See you later',

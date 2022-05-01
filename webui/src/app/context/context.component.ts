@@ -45,6 +45,7 @@ export class ContextComponent implements OnInit, OnDestroy, AfterViewInit {
   private readonly focusContextIds: string[] = [];
   private continuousContextRetrieval = true;
   private studyUserTurnsSubscription?: Subscription;
+  private handledCommandTimestamps: number[] = [];
 
   constructor(
       private speakFasterService: SpeakFasterService,
@@ -248,7 +249,31 @@ export class ContextComponent implements OnInit, OnDestroy, AfterViewInit {
                 return;
               }
               this.cleanUpContextSignals();
-              for (let contextSignal of data.contextSignals) {
+              let isHandledAsCommand = false;
+              for (let i = data.contextSignals.length - 1; i >= 0; --i) {
+                const contextSignal = data.contextSignals[i];
+                if ((contextSignal as ConversationTurnContextSignal)
+                            .conversationTurn == null ||
+                    contextSignal.timestamp === undefined) {
+                  continue;
+                }
+                const timestamp = new Date(contextSignal.timestamp).getTime();
+                if (this.handledCommandTimestamps.indexOf(timestamp) !== -1) {
+                  continue;
+                }
+                const speechContent =
+                    (contextSignal as ConversationTurnContextSignal)
+                        .conversationTurn.speechContent;
+                isHandledAsCommand =
+                    await this.studyManager.maybeHandleRemoteControlCommand(
+                        speechContent);
+                if (isHandledAsCommand) {
+                  this.handledCommandTimestamps.push(timestamp);
+                  break;
+                }
+              }
+              for (let contextSignal of (
+                       isHandledAsCommand ? [] : data.contextSignals)) {
                 // TOOD(cais): Fix typing.
                 if ((contextSignal as ConversationTurnContextSignal)
                             .conversationTurn == null ||
@@ -264,9 +289,6 @@ export class ContextComponent implements OnInit, OnDestroy, AfterViewInit {
                 const speechContent =
                     (contextSignal as ConversationTurnContextSignal)
                         .conversationTurn.speechContent;
-                const isHandledAsCommand =
-                    await this.studyManager.maybeHandleRemoteControlCommand(
-                        speechContent);
                 if (isHandledAsCommand) {
                   continue;
                 }

@@ -213,7 +213,6 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
   }
 
   get isStudyDialogOngoing() {
-    // TODO(cais): Add unit test.
     return this.studyManager.getDialogId() !== null;
   }
 

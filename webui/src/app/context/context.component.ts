@@ -207,7 +207,7 @@ export class ContextComponent implements OnInit, OnDestroy, AfterViewInit {
     if (this.studyManager.getDialogId() !== null) {
       this.contextSignals.splice(0);
       for (const {text, partnerId, timestamp} of this.studyManager
-               .getPreviousDialogTurnTexts()!) {
+               .getPreviousDialogTurns()!) {
         if (isCommand(text)) {
           continue;
         }

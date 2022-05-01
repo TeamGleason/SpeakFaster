@@ -113,7 +113,6 @@ export class StudyManager {
       const dialogIdAndTurn = text.slice(prefix.length).trim();
       // Turn = 'a' means the machine starts the turn.
       const [dialogId, turn] = dialogIdAndTurn.split(' ');
-      console.log(`*** Starting dialog ${dialogId}: turn=${turn}`);  // DEBUG
       await this.startDialog(dialogId, isAbbreviation);
       if (turn && turn.toLocaleLowerCase() === 'b') {
         this.userRole = 'b';
@@ -202,7 +201,7 @@ export class StudyManager {
    * Gets the text of the completed turns of the ongoing dialog (if any).
    * If there is no ongoing diaog, returns null.
    */
-  public getPreviousDialogTurnTexts():
+  public getPreviousDialogTurns():
       Array<{text: string, partnerId: string|null, timestamp: Date}>|null {
     if (this.dialogId === null || this.turnIndex === null) {
       return null;

@@ -66,7 +66,7 @@ describe('Study Manager', () => {
       expect(studyManager.getDialogId()).toBeNull();
       expect(studyManager.getDialogTurnIndex()).toBeNull();
       expect(studyManager.getDialogTurnText()).toBeNull();
-      expect(studyManager.getPreviousDialogTurnTexts()).toBeNull();
+      expect(studyManager.getPreviousDialogTurns()).toBeNull();
       expect(studyManager.isUserTurn).toBeFalse();
     });
 
@@ -80,7 +80,7 @@ describe('Study Manager', () => {
       expect(studyManager.getDialogTurnIndex()).toEqual(0);
       expect(studyManager.getDialogTurnText())
           .toEqual('Shall we go to the movies today');
-      expect(studyManager.getPreviousDialogTurnTexts()).toEqual([]);
+      expect(studyManager.getPreviousDialogTurns()).toEqual([]);
       expect(studyManager.isUserTurn).toBeTrue();
     });
 
@@ -94,7 +94,7 @@ describe('Study Manager', () => {
       expect(studyManager.getDialogTurnIndex()).toEqual(1);
       expect(studyManager.getDialogTurnText())
           .toEqual('What good movies are on right now');
-      const previousTurns = studyManager.getPreviousDialogTurnTexts()!;
+      const previousTurns = studyManager.getPreviousDialogTurns()!;
       expect(previousTurns.length).toEqual(1);
       expect(previousTurns[0].text).toEqual('Shall we go to the movies today');
       expect(previousTurns[0].partnerId).toBeNull();
@@ -112,7 +112,7 @@ describe('Study Manager', () => {
               expect(studyManager.getDialogTurnIndex()).toEqual(2);
               expect(studyManager.getDialogTurnText())
                   .toEqual('We can check on our way there');
-              const previousTurns = studyManager.getPreviousDialogTurnTexts()!;
+              const previousTurns = studyManager.getPreviousDialogTurns()!;
               expect(previousTurns.length).toEqual(2);
               expect(previousTurns[0].text)
                   .toEqual('Shall we go to the movies today');
@@ -148,7 +148,7 @@ describe('Study Manager', () => {
               expect(studyManager.getDialogTurnIndex()).toEqual(3);
               expect(studyManager.getDialogTurnText())
                   .toEqual('Not sure I want to see a movie right now');
-              const previousTurns = studyManager.getPreviousDialogTurnTexts()!;
+              const previousTurns = studyManager.getPreviousDialogTurns()!;
               expect(previousTurns.length).toEqual(3);
               expect(previousTurns[2].text)
                   .toEqual('We can check on our way there');
@@ -176,7 +176,7 @@ describe('Study Manager', () => {
           expect(studyManager.getDialogTurnIndex()).toEqual(1);
           expect(studyManager.getDialogTurnText())
               .toEqual('What good movies are on right now');
-          const previousTurns = studyManager.getPreviousDialogTurnTexts()!;
+          const previousTurns = studyManager.getPreviousDialogTurns()!;
           expect(previousTurns.length).toEqual(1);
           expect(previousTurns[0].text)
               .toEqual('Shall we go to the movies today');
@@ -207,7 +207,7 @@ describe('Study Manager', () => {
               expect(studyManager.getDialogTurnIndex()).toEqual(2);
               expect(studyManager.getDialogTurnText())
                   .toEqual('We can check on our way there');
-              const previousTurns = studyManager.getPreviousDialogTurnTexts()!;
+              const previousTurns = studyManager.getPreviousDialogTurns()!;
               expect(previousTurns.length).toEqual(2);
               expect(previousTurns[1].text)
                   .toEqual('What good movies are on right now');

@@ -5,6 +5,7 @@ import {By} from '@angular/platform-browser';
 import {Observable, of, Subject} from 'rxjs';
 
 import {RetrieveContextResponse, SpeakFasterService} from '../speakfaster-service';
+import {setDelaysForTesting, StudyManager} from '../study/study-manager';
 import {TextEntryEndEvent} from '../types/text-entry';
 
 import {ContextComponent} from './context.component';
@@ -20,19 +21,28 @@ class SpeakFasterServiceForTest {
   }
 }
 
-describe('ContextComponent', () => {
+fdescribe('ContextComponent', () => {
   let fixture: ComponentFixture<ContextComponent>;
   let textEntryEndSubject: Subject<TextEntryEndEvent>;
+  let studyManager: StudyManager;
 
   beforeEach(async () => {
+    studyManager = new StudyManager(null);
+    setDelaysForTesting(10, 30);
     await TestBed
         .configureTestingModule({
           imports: [ContextModule, HttpClientModule],
           declarations: [ContextComponent],
-          providers: [{
-            provide: SpeakFasterService,
-            useValue: new SpeakFasterServiceForTest()
-          }],
+          providers: [
+            {
+              provide: SpeakFasterService,
+              useValue: new SpeakFasterServiceForTest()
+            },
+            {
+              provide: StudyManager,
+              useValue: studyManager,
+            }
+          ],
         })
         .compileComponents();
     textEntryEndSubject = new Subject();
@@ -101,4 +111,22 @@ describe('ContextComponent', () => {
                .nativeElement.innerText)
         .toEqual('Hello, #5');
   });
+
+  it('text entry event increments study dialog turn count', async () => {
+    await studyManager.maybeHandleRemoteControlCommand('start abbrev dummy1');
+    textEntryEndSubject.next({
+      text: 'Shall we go to the movies today',
+      timestampMillis: new Date().getTime(),
+      isFinal: true,
+    });
+
+    expect(studyManager.getDialogId()).toEqual('dummy1');
+    expect(studyManager.getDialogTurnIndex()).toEqual(1);
+    const prevTurns = studyManager.getPreviousDialogTurns()!;
+    expect(prevTurns.length).toEqual(1);
+    expect(prevTurns[0].text).toEqual('Shall we go to the movies today');
+    expect(prevTurns[0].partnerId).toBeNull();
+    expect(prevTurns[0].timestamp).toBeGreaterThan(0);
+  });
+
 });

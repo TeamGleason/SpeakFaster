@@ -123,6 +123,9 @@ export class StudyManager {
   /** Emits a user's turn to the subject.  */
   private emitStudyUserTurn() {
     const dialog = this.dialogs[this.dialogId!];
+    if (dialog === undefined) {
+      return;
+    }
     const numTurns = dialog.turns.length;
     this.studyUserTurns.next({
       text: this.isUserTurn ? this.getDialogTurnText() : null,
@@ -138,7 +141,7 @@ export class StudyManager {
   }
 
   public async loadDialog(dialogId: string) {
-    // TODO(cais): Implement. Check for non-empty dialog turns.
+    // TODO(cais): Implement. Also, check for non-empty dialog turns.
   }
 
   /** Starts a dialog of the given dialog ID. */

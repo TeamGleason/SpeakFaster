@@ -101,106 +101,112 @@ fdescribe('Study Manager', () => {
       expect(studyManager.isUserTurn).toBeFalse();
     });
 
-    it('delay after incrementTurn: auto-increments again', async done => {
-      await studyManager.maybeHandleRemoteControlCommands('dialog start dummy1');
-      studyManager.incrementTurn();
+    it('delay after incrementTurn: auto-increments again', done => {
+      studyManager.maybeHandleRemoteControlCommands('dialog start dummy1')
+          .then(() => {
+            studyManager.incrementTurn();
 
-      setTimeout(() => {
-        expect(studyManager.getDialogId()).toBe('dummy1');
-        expect(studyManager.getDialogTurnIndex()).toEqual(2);
-        expect(studyManager.getDialogTurnText())
-            .toEqual('When will you be ready');
-        const previousTurns = studyManager.getPreviousDialogTurnTexts()!;
-        expect(previousTurns.length).toEqual(2);
-        expect(previousTurns[0].text).toEqual('Shall we go');
-        expect(previousTurns[0].partnerId).toBeNull();
-        expect(previousTurns[0].timestamp.getTime()).toBeGreaterThan(0);
-        expect(previousTurns[1].text).toEqual('I am not ready yet');
-        expect(previousTurns[1].partnerId).toEqual('Partner');
-        expect(previousTurns[1].timestamp.getTime())
-            .toBeGreaterThan(previousTurns[0].timestamp.getTime());
-        expect(studyManager.isUserTurn).toBeTrue();
+            setTimeout(() => {
+              expect(studyManager.getDialogId()).toBe('dummy1');
+              expect(studyManager.getDialogTurnIndex()).toEqual(2);
+              expect(studyManager.getDialogTurnText())
+                  .toEqual('When will you be ready');
+              const previousTurns = studyManager.getPreviousDialogTurnTexts()!;
+              expect(previousTurns.length).toEqual(2);
+              expect(previousTurns[0].text).toEqual('Shall we go');
+              expect(previousTurns[0].partnerId).toBeNull();
+              expect(previousTurns[0].timestamp.getTime()).toBeGreaterThan(0);
+              expect(previousTurns[1].text).toEqual('I am not ready yet');
+              expect(previousTurns[1].partnerId).toEqual('Partner');
+              expect(previousTurns[1].timestamp.getTime())
+                  .toBeGreaterThan(previousTurns[0].timestamp.getTime());
+              expect(studyManager.isUserTurn).toBeTrue();
 
-        setTimeout(() => {
-          const lastUserTurn = studyUserTurns[studyUserTurns.length - 1];
-          expect(lastUserTurn.text).toEqual('When will you be ready');
-          expect(lastUserTurn.isComplete).toBeFalse();
-          done();
-        }, 20);
-      }, 10);
+              setTimeout(() => {
+                const lastUserTurn = studyUserTurns[studyUserTurns.length - 1];
+                expect(lastUserTurn.text).toEqual('When will you be ready');
+                expect(lastUserTurn.isComplete).toBeFalse();
+                done();
+              }, 20);
+            }, 10);
+          });
     });
 
-    it('incrementTurn after auto-increment: sets correct states',
-       async done => {
-         await studyManager.maybeHandleRemoteControlCommands('dialog start dummy1');
-         studyManager.incrementTurn();
-         setTimeout(() => {
-           const incrementResult = studyManager.incrementTurn();
-           expect(incrementResult.turnIndex).toEqual(3);
-           expect(incrementResult.isComplete).toBeFalse();
-           expect(studyManager.getDialogId()).toBe('dummy1');
-           expect(studyManager.getDialogTurnIndex()).toEqual(3);
-           expect(studyManager.getDialogTurnText()).toEqual('Not sure');
-           const previousTurns = studyManager.getPreviousDialogTurnTexts()!;
-           expect(previousTurns.length).toEqual(3);
-           expect(previousTurns[2].text).toEqual('When will you be ready');
-           expect(previousTurns[2].partnerId).toBeNull();
-           expect(previousTurns[2].timestamp.getTime()).toBeGreaterThan(0);
-           expect(studyManager.isUserTurn).toBeFalse();
+    it('incrementTurn after auto-increment: sets correct states', done => {
+      studyManager.maybeHandleRemoteControlCommands('dialog start dummy1')
+          .then(() => {
+            studyManager.incrementTurn();
+            setTimeout(() => {
+              const incrementResult = studyManager.incrementTurn();
+              expect(incrementResult.turnIndex).toEqual(3);
+              expect(incrementResult.isComplete).toBeFalse();
+              expect(studyManager.getDialogId()).toBe('dummy1');
+              expect(studyManager.getDialogTurnIndex()).toEqual(3);
+              expect(studyManager.getDialogTurnText()).toEqual('Not sure');
+              const previousTurns = studyManager.getPreviousDialogTurnTexts()!;
+              expect(previousTurns.length).toEqual(3);
+              expect(previousTurns[2].text).toEqual('When will you be ready');
+              expect(previousTurns[2].partnerId).toBeNull();
+              expect(previousTurns[2].timestamp.getTime()).toBeGreaterThan(0);
+              expect(studyManager.isUserTurn).toBeFalse();
 
-           setTimeout(() => {
-             const lastUserTurn = studyUserTurns[studyUserTurns.length - 1];
-             expect(lastUserTurn.text).toEqual('Hurry up');
-             expect(lastUserTurn.isComplete).toBeFalse();
-             done();
-           }, 20);
-         }, 10);
-       });
-
-    it('start from partner turn: auto increments initially', async done => {
-      await studyManager.maybeHandleRemoteControlCommands(
-          'Dialog start dummy1 B');
-
-      expect(studyManager.getDialogId()).toEqual('dummy1');
-      expect(studyManager.getDialogTurnIndex()).toEqual(1);
-      expect(studyManager.getDialogTurnText()).toEqual('I am not ready yet');
-      const previousTurns = studyManager.getPreviousDialogTurnTexts()!;
-      expect(previousTurns.length).toEqual(1);
-      expect(previousTurns[0].text).toEqual('Shall we go');
-      expect(previousTurns[0].partnerId).toEqual('Partner');
-      expect(previousTurns[0].timestamp.getTime()).toBeGreaterThan(0);
-
-      setTimeout(() => {
-        expect(studyUserTurns).toEqual([{
-          text: 'I am not ready yet',
-          isComplete: false,
-        }]);
-        done();
-      }, 30);
+              setTimeout(() => {
+                const lastUserTurn = studyUserTurns[studyUserTurns.length - 1];
+                expect(lastUserTurn.text).toEqual('Hurry up');
+                expect(lastUserTurn.isComplete).toBeFalse();
+                done();
+              }, 20);
+            }, 10);
+          });
     });
 
-    it('start from partner turn: incrementTurn after partner turn',
-       async done => {
-         await studyManager.maybeHandleRemoteControlCommands(
-             'Dialog start dummy1 b');
+    it('start from partner turn: auto increments initially', done => {
+      studyManager.maybeHandleRemoteControlCommands('Dialog start dummy1 B')
+          .then(() => {
+            expect(studyManager.getDialogId()).toEqual('dummy1');
+            expect(studyManager.getDialogTurnIndex()).toEqual(1);
+            expect(studyManager.getDialogTurnText())
+                .toEqual('I am not ready yet');
+            const previousTurns = studyManager.getPreviousDialogTurnTexts()!;
+            expect(previousTurns.length).toEqual(1);
+            expect(previousTurns[0].text).toEqual('Shall we go');
+            expect(previousTurns[0].partnerId).toEqual('Partner');
+            expect(previousTurns[0].timestamp.getTime()).toBeGreaterThan(0);
 
-         setTimeout(() => {
-           const incrementResult = studyManager.incrementTurn();
+            setTimeout(() => {
+              expect(studyUserTurns).toEqual([{
+                text: 'I am not ready yet',
+                isComplete: false,
+              }]);
+              done();
+            }, 30);
+          });
+    });
 
-           expect(incrementResult.turnIndex).toEqual(2);
-           expect(incrementResult.isComplete).toBeFalse();
-           expect(studyManager.getDialogId()).toEqual('dummy1');
-           expect(studyManager.getDialogTurnIndex()).toEqual(2);
-           expect(studyManager.getDialogTurnText())
-               .toEqual('When will you be ready');
-           const previousTurns = studyManager.getPreviousDialogTurnTexts()!;
-           expect(previousTurns.length).toEqual(2);
-           expect(previousTurns[1].text).toEqual('I am not ready yet');
-           expect(previousTurns[1].partnerId).toBeNull();
-           expect(previousTurns[1].timestamp.getTime()).toBeGreaterThan(0);
-           done();
-         }, 30);
-       });
+    it('start from partner turn: incrementTurn after partner turn', done => {
+      studyManager.maybeHandleRemoteControlCommands('Dialog start dummy1 b')
+          .then(() => {
+            setTimeout(() => {
+              const incrementResult = studyManager.incrementTurn();
+
+              expect(incrementResult.turnIndex).toEqual(2);
+              expect(incrementResult.isComplete).toBeFalse();
+              expect(studyManager.getDialogId()).toEqual('dummy1');
+              expect(studyManager.getDialogTurnIndex()).toEqual(2);
+              expect(studyManager.getDialogTurnText())
+                  .toEqual('When will you be ready');
+              const previousTurns = studyManager.getPreviousDialogTurnTexts()!;
+              expect(previousTurns.length).toEqual(2);
+              expect(previousTurns[1].text).toEqual('I am not ready yet');
+              expect(previousTurns[1].partnerId).toBeNull();
+              expect(previousTurns[1].timestamp.getTime()).toBeGreaterThan(0);
+              const lastUserTurn = studyUserTurns[studyUserTurns.length - 1];
+              expect(lastUserTurn.text).toBeNull();
+              expect(lastUserTurn.isComplete).toBeFalse();
+              done();
+            }, 30);
+          });
+    });
 
     it('Dialog stop command reset state', async () => {
       await studyManager.maybeHandleRemoteControlCommands(

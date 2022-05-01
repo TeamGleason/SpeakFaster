@@ -12,6 +12,12 @@ export interface Dialog {
   turns: string[];
 }
 
+export interface StudyDialogResponse {
+  dialog_id: string;
+  dialog?: Dialog;
+  error?: string;
+}
+
 // Command to start a study: Turns the logging mode to full.
 const COMMAND_STUDY_ON = 'study on';
 // Command to stop a study: Turns the logging mode to default (non-full).
@@ -63,6 +69,8 @@ export interface StudyUserTurn {
   isAbbreviation: boolean;
   isComplete: boolean;
 }
+
+const STUDY_DIALOG_ENDPOINT = '/study_dialogs';
 
 @Injectable({
   providedIn: 'root',
@@ -153,7 +161,25 @@ export class StudyManager {
   }
 
   public async loadDialog(dialogId: string) {
-    // TODO(cais): Implement. Also, check for non-empty dialog turns.
+    if (!dialogId) {
+      throw new Error(`Invalid dialog ID: ${dialogId}`);
+    }
+    this.httpClient
+        ?.get<StudyDialogResponse>(STUDY_DIALOG_ENDPOINT, {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          params: {
+            dialog_id: dialogId,
+          }
+        })
+        .subscribe((response: StudyDialogResponse) => {
+          if (!response.error && response.dialog) {
+            this.dialogs[dialogId] = response.dialog;
+            console.log(
+                `Loaded dialog ${dialogId}:`, JSON.stringify(response.dialog));
+          }
+        });
   }
 
   /** Starts a dialog of the given dialog ID. */

@@ -3,6 +3,7 @@ import {Injectable} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {By} from '@angular/platform-browser';
 import {Observable, of, Subject} from 'rxjs';
+import { HttpEventLogger } from '../event-logger/event-logger-impl';
 
 import {RetrieveContextResponse, SpeakFasterService} from '../speakfaster-service';
 import {setDelaysForTesting, StudyManager} from '../study/study-manager';
@@ -51,6 +52,10 @@ describe('ContextComponent', () => {
     fixture.componentInstance.textEntryEndSubject = textEntryEndSubject;
     fixture.componentInstance.userId = 'testuser';
     fixture.detectChanges();
+  });
+
+  afterEach(async () => {
+    HttpEventLogger.setFullLogging(false);
   });
 
   it('displays empty context signals when there is none', () => {

@@ -11,6 +11,7 @@ import {HttpEventLogger} from '../event-logger/event-logger-impl';
 import {repeatVirtualKey, VIRTUAL_KEY} from '../external/external-events.component';
 import {InputBarControlEvent} from '../input-bar/input-bar.component';
 import {AbbreviationExpansionRespnose, FillMaskRequest, SpeakFasterService, TextPredictionRequest, TextPredictionResponse} from '../speakfaster-service';
+import {StudyManager} from '../study/study-manager';
 import {TestListener} from '../test-utils/test-cefsharp-listener';
 import {AbbreviationSpec, InputAbbreviationChangedEvent} from '../types/abbreviation';
 import {TextEntryEndEvent} from '../types/text-entry';
@@ -38,6 +39,7 @@ describe('AbbreviationComponent', () => {
   let fillMaskTriggers: Subject<FillMaskRequest>;
   let textEntryEndSubject: Subject<TextEntryEndEvent>;
   let inputBarControlSubject: Subject<InputBarControlEvent>;
+  let studyManager: StudyManager;
   let fixture: ComponentFixture<AbbreviationComponent>;
   let testListener: TestListener;
   let abbreviationChangeEvents: InputAbbreviationChangedEvent[];
@@ -47,6 +49,7 @@ describe('AbbreviationComponent', () => {
     speakFasterServiceForTest = new SpeakFasterServiceForTest();
     testListener = new TestListener();
     (window as any)[cefSharp.BOUND_LISTENER_NAME] = testListener;
+    studyManager = new StudyManager(null);
     await TestBed
         .configureTestingModule({
           imports: [AbbreviationModule, HttpClientModule],
@@ -54,6 +57,7 @@ describe('AbbreviationComponent', () => {
           providers: [
             {provide: SpeakFasterService, useValue: speakFasterServiceForTest},
             {provide: HttpEventLogger, useValue: new HttpEventLogger(null)},
+            {provide: StudyManager, useValue: studyManager},
           ]
         })
         .compileComponents();
@@ -299,5 +303,17 @@ describe('AbbreviationComponent', () => {
       text: 'bar',
       isTextPrediction: true,
     }]);
+  });
+
+  it('does not show text predictions during study dialog', async () => {
+    await studyManager.maybeHandleRemoteControlCommand('Start abbrev dummy1');
+    fixture.componentInstance.textPredictions.splice(0)
+    fixture.componentInstance.textPredictions.push('foo');
+    fixture.componentInstance.textPredictions.push('bar');
+    fixture.detectChanges();
+
+    const textPredictionButtons =
+        fixture.debugElement.queryAll(By.css('.text-prediction-button'));
+    expect(textPredictionButtons.length).toEqual(0);
   });
 });

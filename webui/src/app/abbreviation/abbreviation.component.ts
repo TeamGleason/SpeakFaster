@@ -10,6 +10,7 @@ import {VIRTUAL_KEY} from '../external/external-events.component';
 import {InputBarControlEvent} from '../input-bar/input-bar.component';
 import {LexiconComponent} from '../lexicon/lexicon.component';
 import {FillMaskRequest, SpeakFasterService, TextPredictionResponse} from '../speakfaster-service';
+import {StudyManager} from '../study/study-manager';
 import {AbbreviationSpec, InputAbbreviationChangedEvent} from '../types/abbreviation';
 import {ConversationTurn} from '../types/conversation';
 import {TextEntryBeginEvent, TextEntryEndEvent} from '../types/text-entry';
@@ -79,7 +80,8 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
 
   constructor(
       public speakFasterService: SpeakFasterService,
-      private eventLogger: HttpEventLogger, private cdr: ChangeDetectorRef) {}
+      private studyManager: StudyManager, private eventLogger: HttpEventLogger,
+      private cdr: ChangeDetectorRef) {}
 
   ngOnInit() {
     this.abbreviationExpansionTriggersSubscription =
@@ -208,6 +210,10 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
         isTextPrediction: true,
       }],
     });
+  }
+
+  get isStudyDialogOngoing() {
+    return this.studyManager.getDialogId() !== null;
   }
 
   get isInputAbbreviationEmpty() {

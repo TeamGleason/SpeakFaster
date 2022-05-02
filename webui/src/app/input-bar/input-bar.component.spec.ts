@@ -11,6 +11,7 @@ import {InputBarChipComponent} from '../input-bar-chip/input-bar-chip.component'
 import {InputBarChipModule} from '../input-bar-chip/input-bar-chip.module';
 import {LoadLexiconRequest} from '../lexicon/lexicon.component';
 import {FillMaskRequest, SpeakFasterService} from '../speakfaster-service';
+import {StudyManager, StudyUserTurn} from '../study/study-manager';
 import {TestListener} from '../test-utils/test-cefsharp-listener';
 import {InputAbbreviationChangedEvent} from '../types/abbreviation';
 import {AddContextualPhraseRequest, AddContextualPhraseResponse} from '../types/contextual_phrase';
@@ -34,6 +35,7 @@ describe('InputBarComponent', () => {
   let abbreviationExpansionTriggers: Subject<InputAbbreviationChangedEvent>;
   let loadPrefixedLexiconRequestSubject: Subject<LoadLexiconRequest>;
   let fillMaskTriggers: Subject<FillMaskRequest>;
+  let studyUserTurnsSubject: Subject<StudyUserTurn>;
   let fixture: ComponentFixture<InputBarComponent>;
   let speakFasterServiceForTest: SpeakFasterServiceForTest;
   let textEntryEndEvents: TextEntryEndEvent[];
@@ -50,6 +52,7 @@ describe('InputBarComponent', () => {
     abbreviationExpansionTriggers = new Subject();
     loadPrefixedLexiconRequestSubject = new Subject();
     fillMaskTriggers = new Subject();
+    studyUserTurnsSubject = new Subject();
     speakFasterServiceForTest = new SpeakFasterServiceForTest();
     textEntryEndEvents = [];
     textEntryEndSubject.subscribe(event => {
@@ -70,6 +73,8 @@ describe('InputBarComponent', () => {
       fillMaskRequests.push(request);
     });
 
+    const studyManager = new StudyManager(null);
+    studyManager.studyUserTurns = studyUserTurnsSubject;
     await TestBed
         .configureTestingModule({
           imports: [InputBarModule, InputBarChipModule],
@@ -77,6 +82,7 @@ describe('InputBarComponent', () => {
           providers: [
             {provide: SpeakFasterService, useValue: speakFasterServiceForTest},
             {provide: HttpEventLogger, useValue: new HttpEventLogger(null)},
+            {provide: StudyManager, useValue: studyManager},
           ],
         })
         .compileComponents();
@@ -95,6 +101,7 @@ describe('InputBarComponent', () => {
   });
 
   afterEach(async () => {
+    HttpEventLogger.setFullLogging(false);
     if (cefSharp.BOUND_LISTENER_NAME in (window as any)) {
       delete (window as any)[cefSharp.BOUND_LISTENER_NAME];
     }
@@ -1294,6 +1301,76 @@ describe('InputBarComponent', () => {
         {text: 'foo', success: false});
 
     expect(textEntryEndEvents.length).toEqual(0);
+  });
+
+  it('study instrucitons and text are initially not shown', () => {
+    expect(fixture.debugElement.query(By.css('.instruction'))).toBeNull();
+    expect(fixture.debugElement.query(By.css('.to-enter-text'))).toBeNull();
+  });
+
+  it('study turn causes instruction and text to be shown', () => {
+    studyUserTurnsSubject.next({
+      text: 'All frequencies open',
+      isAbbreviation: true,
+      isComplete: false,
+    });
+    fixture.detectChanges();
+
+    const instruction = fixture.debugElement.query(By.css('.instruction'));
+    expect(instruction.nativeElement.innerText)
+        .toEqual('Enter in abbreviation:');
+    const toEnterText = fixture.debugElement.query(By.css('.to-enter-text'));
+    expect(toEnterText.nativeElement.innerText).toEqual('All frequencies open');
+  });
+
+  it('null text in study turn subject resets UI state', () => {
+    studyUserTurnsSubject.next({
+      text: 'All frequencies open',
+      isAbbreviation: true,
+      isComplete: false,
+    });
+    studyUserTurnsSubject.next({
+      text: null,
+      isAbbreviation: true,
+      isComplete: true,
+    });
+    fixture.detectChanges();
+
+    expect(fixture.debugElement.query(By.css('.instruction'))).toBeNull();
+    expect(fixture.debugElement.query(By.css('.to-enter-text'))).toBeNull();
+  });
+
+  it('copmleted state in study turn subject displays end state', () => {
+    studyUserTurnsSubject.next({
+      text: null,
+      isAbbreviation: true,
+      isComplete: true,
+    });
+    fixture.detectChanges();
+
+    const dialogCompleteMessage =
+        fixture.debugElement.query(By.css('.hint-dialog-complete'));
+    expect(dialogCompleteMessage.nativeElement.innerText)
+        .toEqual('Dialog is complete.');
+    expect(fixture.debugElement.query(By.css('.dialog-error'))).toBeNull();
+  });
+
+  it('error state in study turn subject displays error message', () => {
+    studyUserTurnsSubject.next({
+      text: null,
+      isAbbreviation: true,
+      isComplete: true,
+      error: 'Failed to load dialog "foo"',
+    });
+    fixture.detectChanges();
+
+    const dialogCompleteMessage =
+        fixture.debugElement.query(By.css('.hint-dialog-complete'));
+    expect(dialogCompleteMessage.nativeElement.innerText)
+        .toEqual('Failed to load dialog "foo"');
+    expect(fixture.debugElement.query(By.css('.dialog-error'))
+               .nativeElement.innerText)
+        .toEqual('Failed to load dialog "foo"');
   });
 
   // TODO(cais): Test spelling valid word triggers AE, with debounce.

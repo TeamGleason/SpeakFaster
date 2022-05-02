@@ -5,6 +5,7 @@
   color: #EEE;
   font-family: "Google Sans", "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
   font-size: 32px;
+  position: relative;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -64,10 +65,16 @@
 
 .container {
   display: flex;
-  flex-direction: row;
-  padding: 0 0 5px;
+  flex-direction: column;
+  overflow: visible;
+  padding: 0 0 8px;
+  position: relative;
   vertical-align: middle;
   width: 1080px;
+}
+
+.dialog-error {
+  color: rgb(255, 51, 0);
 }
 
 .favorite-button {
@@ -76,6 +83,29 @@
 
 .hidden {
   display: none;
+}
+
+.hint-text {
+  align-items: center;
+  color: white;
+  display: flex;
+  flex-direction: row;
+  font-size: 30px;
+  overflow: visible;
+  padding-left: 20px;
+  position: absolute;
+  top: 72px;
+  width: 1000px;
+}
+
+.hint-text.hint-dialog-complete {
+  color: lightgreen;
+  font-size: 30px;
+}
+
+.instruction {
+  font-size: 20px;
+  margin-right: 8px;
 }
 
 .input-box {
@@ -141,6 +171,13 @@
 
 .simulated-cursor-hidden {
   display: none;
+}
+
+.to-enter-text {
+  border-radius: 4px;
+  background: #444;
+  color: white;
+  padding: 0 4px;
 }
 
 @keyframes blink {
@@ -262,4 +299,23 @@
 
   </div>
 
+  <div
+      *ngIf="studyUserTurnText !== null"
+      class="hint-text">
+    <span class="instruction">{{studyUserTurnInstr}}</span>
+    <span class="to-enter-text">{{studyUserTurnText}}</span>
+  </div>
+
+  <div
+      *ngIf="isStudyDialogComplete"
+      class="hint-text hint-dialog-complete">
+    <div
+        *ngIf="studyDialogError"
+        class="dialog-error">
+      {{studyDialogError}}
+    </div>
+    <div *ngIf="!studyDialogError">Dialog is complete.</div>
+  </div>
+
 </div>
+

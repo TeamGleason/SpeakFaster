@@ -1,24 +1,25 @@
 /** Component that displays the contextual signals relevant for text entry. */
 
-import {AfterViewInit, ChangeDetectorRef, Component, EventEmitter, Input, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
+import {AfterViewInit, ChangeDetectorRef, Component, EventEmitter, Input, OnDestroy, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
 import {Subject, Subscription, timer} from 'rxjs';
+import {createUuid} from 'src/utils/uuid';
 
 import {ConversationTurnComponent} from '../conversation-turn/conversation-turn.component';
 import {getPhraseStats, HttpEventLogger} from '../event-logger/event-logger-impl';
 import {SpeakFasterService} from '../speakfaster-service';
+import {isCommand, StudyManager} from '../study/study-manager';
 import {ConversationTurnContextSignal, getConversationTurnContextSignal} from '../types/context';
 import {ConversationTurn} from '../types/conversation';
 import {TextEntryEndEvent} from '../types/text-entry';
 
 import {DEFAULT_CONTEXT_SIGNALS} from './default-context';
-import {maybeHandleRemoteControlCommands} from './remote-control';
 
 @Component({
   selector: 'app-context-component',
   templateUrl: './context.component.html',
   providers: [],
 })
-export class ContextComponent implements OnInit, AfterViewInit {
+export class ContextComponent implements OnInit, OnDestroy, AfterViewInit {
   private static readonly _NAME = 'ContextComponent';
   // TODO(cais): Do not hardcode this user ID.
   private static readonly MAX_DISPLAYED_CONTEXT_COUNT = 3;
@@ -43,10 +44,13 @@ export class ContextComponent implements OnInit, AfterViewInit {
 
   private readonly focusContextIds: string[] = [];
   private continuousContextRetrieval = true;
+  private studyUserTurnsSubscription?: Subscription;
+  private handledCommandTimestamps: number[] = [];
 
   constructor(
       private speakFasterService: SpeakFasterService,
-      private eventLogger: HttpEventLogger, private cdr: ChangeDetectorRef) {}
+      private studyManager: StudyManager, private eventLogger: HttpEventLogger,
+      private cdr: ChangeDetectorRef) {}
 
   ngOnInit() {
     if (!this.userId) {
@@ -56,6 +60,11 @@ export class ContextComponent implements OnInit, AfterViewInit {
     this.textEntryEndSubject.subscribe((textInjection: TextEntryEndEvent) => {
       if (!textInjection.isFinal || textInjection.isAborted ||
           textInjection.text.trim() === '') {
+        return;
+      }
+      if (this.studyManager.getDialogId() !== null) {
+        this.studyManager.incrementTurn();
+        this.retrieveContext();
         return;
       }
       const timestamp = new Date(textInjection.timestampMillis);
@@ -69,8 +78,18 @@ export class ContextComponent implements OnInit, AfterViewInit {
           }));
       this.emitContextStringsSelected();
       // TODO(cais): Limit length of textInjections?
+      this.studyUserTurnsSubscription =
+          this.studyManager.studyUserTurns.subscribe(() => {
+            this.retrieveContext();
+          });
     });
   }
+
+  ngOnDestroy() {
+    if (this.studyUserTurnsSubscription) {
+      this.studyUserTurnsSubscription.unsubscribe();
+    }
+  };
 
   ngAfterViewInit() {
     if (!this.continuousContextRetrieval) {
@@ -186,9 +205,36 @@ export class ContextComponent implements OnInit, AfterViewInit {
   }
 
   private retrieveContext() {
+    if (this.studyManager.getDialogId() !== null) {
+      this.contextSignals.splice(0);
+      for (const {text, partnerId, timestamp} of this.studyManager
+               .getPreviousDialogTurns()!) {
+        if (isCommand(text)) {
+          continue;
+        }
+        this.contextSignals.push({
+          contextType: 'ConversationTurn',
+          conversationTurn: {
+            speakerId: partnerId,
+            speechContent: text,
+            startTimestamp: timestamp,
+          },
+          userId: this.userId,
+          contextId: createUuid(),
+          timestamp,
+        });
+      }
+      this.limitContextItemsCount();
+      this.focusContextIds.splice(0);
+      this.focusContextIds.push(
+          ...this.contextSignals.map(signal => signal.contextId));
+      this.contextStringsSelected.next(
+          this.contextSignals.map(signal => signal.conversationTurn));
+      return;
+    }
     this.speakFasterService.retrieveContext(this.userId)
         .subscribe(
-            data => {
+            async data => {
               if (data.errorMessage != null) {
                 if (data.result !== 'ERROR_INVALID_USER_ID') {
                   this.contextRetrievalError = 'Context retrieval error';
@@ -203,7 +249,31 @@ export class ContextComponent implements OnInit, AfterViewInit {
                 return;
               }
               this.cleanUpContextSignals();
-              for (let contextSignal of data.contextSignals) {
+              let isHandledAsCommand = false;
+              for (let i = data.contextSignals.length - 1; i >= 0; --i) {
+                const contextSignal = data.contextSignals[i];
+                if ((contextSignal as ConversationTurnContextSignal)
+                            .conversationTurn == null ||
+                    contextSignal.timestamp === undefined) {
+                  continue;
+                }
+                const timestamp = new Date(contextSignal.timestamp).getTime();
+                if (this.handledCommandTimestamps.indexOf(timestamp) !== -1) {
+                  continue;
+                }
+                const speechContent =
+                    (contextSignal as ConversationTurnContextSignal)
+                        .conversationTurn.speechContent;
+                isHandledAsCommand =
+                    await this.studyManager.maybeHandleRemoteControlCommand(
+                        speechContent);
+                if (isHandledAsCommand) {
+                  this.handledCommandTimestamps.push(timestamp);
+                  break;
+                }
+              }
+              for (let contextSignal of (
+                       isHandledAsCommand ? [] : data.contextSignals)) {
                 // TOOD(cais): Fix typing.
                 if ((contextSignal as ConversationTurnContextSignal)
                             .conversationTurn == null ||
@@ -216,14 +286,16 @@ export class ContextComponent implements OnInit, AfterViewInit {
                   // Avoid adding duplicate context signals.
                   continue;
                 }
-                this.contextSignals.push(
-                    (contextSignal as ConversationTurnContextSignal));
                 const speechContent =
                     (contextSignal as ConversationTurnContextSignal)
                         .conversationTurn.speechContent;
+                if (isHandledAsCommand) {
+                  continue;
+                }
+                this.contextSignals.push(
+                    (contextSignal as ConversationTurnContextSignal));
                 this.eventLogger.logIncomingContextualTurn(
                     getPhraseStats(speechContent));
-                maybeHandleRemoteControlCommands(speechContent);
               }
               this.limitContextItemsCount();
               this.cleanUpAndSortFocusContextIds();

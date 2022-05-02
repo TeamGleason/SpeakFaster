@@ -10,6 +10,7 @@ import {getPhraseStats, HttpEventLogger} from '../event-logger/event-logger-impl
 import {ExternalEventsComponent, IgnoreMachineKeySequenceConfig, repeatVirtualKey, VIRTUAL_KEY} from '../external/external-events.component';
 import {LexiconComponent, LoadLexiconRequest} from '../lexicon/lexicon.component';
 import {FillMaskRequest, SpeakFasterService} from '../speakfaster-service';
+import {StudyManager} from '../study/study-manager';
 import {AbbreviationSpec, AbbreviationToken, InputAbbreviationChangedEvent} from '../types/abbreviation';
 import {TextEntryEndEvent} from '../types/text-entry';
 
@@ -120,6 +121,11 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   @Input() isFocused: boolean = true;
   @Output() inputStringChanged: EventEmitter<string> = new EventEmitter();
 
+  private _studyUserTurnInstr: string|null = null;
+  private _studyUserTurnText: string|null = null;
+  private _studyDialogEnded: boolean = false;
+  private _studyDialogError?: string;
+
   private _isHidden: boolean = false;
   private readonly _chips: InputBarChipSpec[] = [];
   private _focusChipIndex: number|null = null;
@@ -139,6 +145,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   private inputBarChipsSubscription?: Subscription;
   private abbreviationExpansionTriggersSubscription?: Subscription;
   private inFlightAbbreviationExpansionTriggerSubscription?: Subscription;
+  private studyUserTurnsSubscription?: Subscription;
   private keypressListener = this.listenToKeypress.bind(this);
   private readonly inFlightAbbreviationExpansionTriggers:
       Subject<InputAbbreviationChangedEvent> = new Subject();
@@ -146,7 +153,8 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
 
   constructor(
       public speakFasterService: SpeakFasterService,
-      private cdr: ChangeDetectorRef, private eventLogger: HttpEventLogger) {}
+      private studyManager: StudyManager, private cdr: ChangeDetectorRef,
+      private eventLogger: HttpEventLogger) {}
 
   ngOnInit() {
     this.textEntryEndSubjectSubscription = this.textEntryEndSubject.subscribe(
@@ -242,6 +250,14 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
             .subscribe((event: InputAbbreviationChangedEvent) => {
               this.abbreviationExpansionTriggers.next(event);
             });
+    this.studyUserTurnsSubscription =
+        this.studyManager.studyUserTurns.subscribe(turn => {
+          this._studyUserTurnInstr =
+              turn.isAbbreviation ? 'Enter in abbreviation:' : 'Enter in full:';
+          this._studyUserTurnText = turn.text;
+          this._studyDialogEnded = turn.isComplete;
+          this._studyDialogError = turn.error;
+        });
   }
 
   private ensureChipTypedTextCreated() {
@@ -275,6 +291,9 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     ExternalEventsComponent.unregisterKeypressListener(this.keypressListener);
     ExternalEventsComponent.unregisterIgnoreKeySequence(
         InputBarComponent.IGNORE_MACHINE_KEY_SEQUENCE);
+    if (this.studyUserTurnsSubscription) {
+      this.studyUserTurnsSubscription.unsubscribe();
+    }
   }
 
   public listenToKeypress(keySequence: string[], reconstructedText: string):
@@ -772,5 +791,21 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
 
   get contextualPhraseTags(): string[] {
     return this._contextualPhraseTags.slice();
+  }
+
+  get studyUserTurnText(): string|null {
+    return this._studyUserTurnText;
+  }
+
+  get studyUserTurnInstr(): string|null {
+    return this._studyUserTurnInstr;
+  }
+
+  get isStudyDialogComplete(): boolean {
+    return this._studyDialogEnded;
+  }
+
+  get studyDialogError(): string|undefined {
+    return this._studyDialogError;
   }
 }

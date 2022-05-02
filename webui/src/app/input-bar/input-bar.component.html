@@ -73,6 +73,10 @@
   width: 1080px;
 }
 
+.dialog-error {
+  color: rgb(255, 51, 0);
+}
+
 .favorite-button {
   background: #473261;
 }
@@ -305,7 +309,12 @@
   <div
       *ngIf="isStudyDialogComplete"
       class="hint-text hint-dialog-complete">
-    Dialog is complete.
+    <div
+        *ngIf="studyDialogError"
+        class="dialog-error">
+      {{studyDialogError}}
+    </div>
+    <div *ngIf="!studyDialogError">Dialog is complete.</div>
   </div>
 
 </div>

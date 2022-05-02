@@ -124,6 +124,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   private _studyUserTurnInstr: string|null = null;
   private _studyUserTurnText: string|null = null;
   private _studyDialogEnded: boolean = false;
+  private _studyDialogError?: string;
 
   private _isHidden: boolean = false;
   private readonly _chips: InputBarChipSpec[] = [];
@@ -255,6 +256,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
               turn.isAbbreviation ? 'Enter in abbreviation:' : 'Enter in full:';
           this._studyUserTurnText = turn.text;
           this._studyDialogEnded = turn.isComplete;
+          this._studyDialogError = turn.error;
         });
   }
 
@@ -801,5 +803,9 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
 
   get isStudyDialogComplete(): boolean {
     return this._studyDialogEnded;
+  }
+
+  get studyDialogError(): string|undefined {
+    return this._studyDialogError;
   }
 }

@@ -101,6 +101,7 @@ describe('InputBarComponent', () => {
   });
 
   afterEach(async () => {
+    HttpEventLogger.setFullLogging(false);
     if (cefSharp.BOUND_LISTENER_NAME in (window as any)) {
       delete (window as any)[cefSharp.BOUND_LISTENER_NAME];
     }
@@ -1337,6 +1338,39 @@ describe('InputBarComponent', () => {
 
     expect(fixture.debugElement.query(By.css('.instruction'))).toBeNull();
     expect(fixture.debugElement.query(By.css('.to-enter-text'))).toBeNull();
+  });
+
+  it('copmleted state in study turn subject displays end state', () => {
+    studyUserTurnsSubject.next({
+      text: null,
+      isAbbreviation: true,
+      isComplete: true,
+    });
+    fixture.detectChanges();
+
+    const dialogCompleteMessage =
+        fixture.debugElement.query(By.css('.hint-dialog-complete'));
+    expect(dialogCompleteMessage.nativeElement.innerText)
+        .toEqual('Dialog is complete.');
+    expect(fixture.debugElement.query(By.css('.dialog-error'))).toBeNull();
+  });
+
+  it('error state in study turn subject displays error message', () => {
+    studyUserTurnsSubject.next({
+      text: null,
+      isAbbreviation: true,
+      isComplete: true,
+      error: 'Failed to load dialog "foo"',
+    });
+    fixture.detectChanges();
+
+    const dialogCompleteMessage =
+        fixture.debugElement.query(By.css('.hint-dialog-complete'));
+    expect(dialogCompleteMessage.nativeElement.innerText)
+        .toEqual('Failed to load dialog "foo"');
+    expect(fixture.debugElement.query(By.css('.dialog-error'))
+               .nativeElement.innerText)
+        .toEqual('Failed to load dialog "foo"');
   });
 
   // TODO(cais): Test spelling valid word triggers AE, with debounce.

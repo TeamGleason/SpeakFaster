@@ -68,6 +68,7 @@ export interface StudyUserTurn {
   text: string|null;
   isAbbreviation: boolean;
   isComplete: boolean;
+  error?: string;
 }
 
 const STUDY_DIALOG_ENDPOINT = '/study_dialogs';
@@ -152,12 +153,12 @@ export class StudyManager {
     });
   }
 
-  private reset() {
+  private reset(error?: string) {
     this.dialogId = null;
     this.userRole = null;
     this.turnIndex = null;
     this.studyUserTurns.next(
-        {text: null, isAbbreviation: true, isComplete: true});
+        {text: null, isAbbreviation: true, isComplete: true, error});
   }
 
   private async loadDialog(dialogId: string): Promise<void> {
@@ -196,7 +197,14 @@ export class StudyManager {
       throw new Error('Invalid dialog ID');
     }
     if (this.dialogs[dialogId] === undefined) {
-      await this.loadDialog(dialogId);
+      try {
+        await this.loadDialog(dialogId);
+      } catch (err) {
+        const errorMessage = `Failed to load dialog of ID "${dialogId}"`;
+        console.error(errorMessage);
+        this.reset(errorMessage);
+        return;
+      }
     }
     this.dialogId = dialogId;
     console.log('Starting dialog:', this.dialogId);

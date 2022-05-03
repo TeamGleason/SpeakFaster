@@ -137,6 +137,10 @@ mat-progress-spinner {
   min-width: 80px;
 }
 
+.container {
+  height: 220px;
+}
+
 .edit-token {
   background: #333;
   border: 2px solid #888;
@@ -243,13 +247,9 @@ mat-progress-spinner {
   width: 120px;
 }
 
-.upper-container {
-  height: 220px;
-}
-
 </style>
 
-<div class="upper-container">
+<div class="container">
 
 <div *ngIf="state == 'REQUEST_ONGOING'" class="info request-ongoing">
   <mat-progress-spinner

@@ -34,9 +34,6 @@ app-text-to-speech-component {
 }
 
 .bottom-area {
-  position: absolute;
-  top: 100%;
-  transform: translateY(-100%);
 }
 
 .button-image {
@@ -57,7 +54,9 @@ app-text-to-speech-component {
 }
 
 .main-area {
+  align-items: flex-start;
   display: flex;
+  flex-direction: row;
   height: fit-content;
   position: relative;
   width: 1200px;
@@ -76,6 +75,12 @@ app-text-to-speech-component {
   padding-top: 10px;
   padding-bottom: 6px;
   width: fit-content;
+}
+
+.main-right-pane {
+  display: flex;
+  flex-direction: column;
+  height: fit-content;
 }
 
 .mode-abbreviation-expansion {

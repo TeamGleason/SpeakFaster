@@ -177,6 +177,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       const entry = entries[0];
       const contentRect = entry.contentRect;
       const {height, width} = contentRect;
+      console.log('*** height, width=', height, width);  // DEBUG
       resizeWindow(height, width);
       for (const callback of AppComponent.appResizeCallbacks) {
         callback(height, width);

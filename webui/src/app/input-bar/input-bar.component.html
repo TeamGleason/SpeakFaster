@@ -5,7 +5,6 @@
   color: #EEE;
   font-family: "Google Sans", "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
   font-size: 32px;
-  position: relative;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -66,6 +65,7 @@
 .container {
   display: flex;
   flex-direction: column;
+  height: fit-content;
   overflow: visible;
   padding: 0 0 8px;
   position: relative;
@@ -90,17 +90,16 @@
   color: white;
   display: flex;
   flex-direction: row;
-  font-size: 30px;
+  font-size: 28px;
+  margin-top: 2px;
   overflow: visible;
   padding-left: 20px;
-  position: absolute;
-  top: 72px;
   width: 1000px;
 }
 
 .hint-text.hint-dialog-complete {
   color: lightgreen;
-  font-size: 30px;
+  font-size: 28px;
 }
 
 .instruction {

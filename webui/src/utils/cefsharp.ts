@@ -68,6 +68,30 @@ export function updateButtonBoxesForElements(
 }
 
 /**
+ * Bring main window to the foreground.
+ */
+export async function bringWindowToForeground() {
+  if ((window as any)[BOUND_LISTENER_NAME] == null) {
+    console.warn(`Cannot call bringWindowToForeground(), because object ${
+        BOUND_LISTENER_NAME} is not found`)
+    return;
+  }
+  ((window as any)[BOUND_LISTENER_NAME] as any).bringWindowToForeground();
+}
+
+/**
+ * Bring a focus app to the foreground (only if it is running).
+ */
+export async function bringFocusAppToForeground() {
+  if ((window as any)[BOUND_LISTENER_NAME] == null) {
+    console.warn(`Cannot call bringFocusAppToForeground(), because object ${
+        BOUND_LISTENER_NAME} is not found`)
+    return;
+  }
+  ((window as any)[BOUND_LISTENER_NAME] as any).bringFocusAppToForeground();
+}
+
+/**
  * Updates the host app regarding eye tracking options.
  * @param showGazeTracker Whether the dot that tracks the gaze point is
  *     shown.
@@ -161,7 +185,8 @@ export function resizeWindow(height: number, width: number): void {
   ((window as any)[BOUND_LISTENER_NAME] as any).resizeWindow(height, width);
 }
 
-export type ExternalKeypressHook = (vkCode: number) => void;
+export type ExternalKeypressHook = (vkCode: number, isExternal: boolean) =>
+    void;
 
 export function registerExternalKeypressHook(callback: ExternalKeypressHook) {
   (window as any)['externalKeypressHook'] = callback;

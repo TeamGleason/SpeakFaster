@@ -2,7 +2,7 @@ import {AfterViewInit, Component, ElementRef, OnDestroy, OnInit, QueryList, View
 import {ActivatedRoute} from '@angular/router';
 import {Subject} from 'rxjs';
 
-import {bindCefSharpListener, registerExternalAccessTokenHook, registerExternalKeypressHook, registerHostWindowFocusHook, resizeWindow, setHostEyeGazeOptions, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from '../utils/cefsharp';
+import {bindCefSharpListener, bringFocusAppToForeground, bringWindowToForeground, registerExternalAccessTokenHook, registerExternalKeypressHook, registerHostWindowFocusHook, resizeWindow, setHostEyeGazeOptions, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from '../utils/cefsharp';
 import {createUuid} from '../utils/uuid';
 
 import {registerAppState} from './app-state-registry';
@@ -164,9 +164,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     registerHostWindowFocusHook((isFocused: boolean) => {
       this._isFocused = isFocused;
     });
-    registerExternalKeypressHook((vkCode: number) => {
-      ExternalEventsComponent.externalKeypressHook(
-          vkCode, /* isExternal= */ false);
+    registerExternalKeypressHook((vkCode: number, isExternal: boolean) => {
+      ExternalEventsComponent.externalKeypressHook(vkCode, isExternal);
     });
     const resizeObserver = new ResizeObserver(entries => {
       if (entries.length > 1) {
@@ -189,6 +188,20 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
           updateButtonBoxesForElements(this.instanceId, queryList);
         });
     AppComponent.registerAppResizeCallback(this.appResizeCallback.bind(this));
+    ExternalEventsComponent.registerToggleForegroundCallback(
+        (toForeground: boolean) => {
+          if (toForeground) {  // Bring app to foreground.
+            this.changeAppState(AppState.ABBREVIATION_EXPANSION);
+            setTimeout(() => {
+              bringWindowToForeground();
+            }, 50);
+          } else {  // Bring the focus app to foreground (if it is running).
+            setTimeout(() => {
+              this.changeAppState(AppState.MINIBAR);
+              bringFocusAppToForeground();
+            }, 50);
+          }
+        });
     this.eventLogger.logSessionStart();
   }
 
@@ -291,6 +304,9 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   onMinimizeButtonClicked(event: Event) {
     this.changeAppState(AppState.MINIBAR);
+    setTimeout(() => {
+      bringFocusAppToForeground();
+    }, 50);
   }
 
   onContextStringsUpdated(conversationTurns: ConversationTurn[]) {

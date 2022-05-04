@@ -108,7 +108,7 @@ The WebUI provides a function attached to the global `window` object, namely
 `window.externalKeypressHook()`, which has the following signature:
 
 ```typescript
-function externalKeypressHook(virualKeyCode: number): void;
+function externalKeypressHook(virualKeyCode: number, isExternal: boolean): void;
 ```
 
 wherein the `virtualKeyCode` argument obeys the
@@ -138,6 +138,10 @@ interface BoundObject {
 
   function updateButtonBoxes(componentName: string,
                              boxes: Array<[number, number, number, number]>);
+
+  async function bringWindowToForeground();
+
+  async function bringFocusAppToForeground();
 
   async function setEyeGazeOptions(
       showGazeTracker: boolean, gazeFuzzyRadius: number, dwellDelayMillis: number);
@@ -232,3 +236,9 @@ information about the host app and the environment it is running in.
 
 To request the host app to close the WebUI and quit as a whole, call
 `requestAppQuit()`.
+
+### 3.9. Requesting putting the app or a focus app in foreground
+
+The two functions `bringWindowToForeground()` and `bringFocusAppToForeground()`
+can be used to request the host app to bring the app itself or a focus app
+(e.g., a text editor) to the foreground.

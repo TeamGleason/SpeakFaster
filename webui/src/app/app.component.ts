@@ -166,7 +166,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     });
     registerExternalKeypressHook((vkCode: number) => {
       ExternalEventsComponent.externalKeypressHook(
-          vkCode, /* isExternal= */ true);
+          vkCode, /* isExternal= */ false);
     });
     const resizeObserver = new ResizeObserver(entries => {
       if (entries.length > 1) {

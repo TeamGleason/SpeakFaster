@@ -241,4 +241,4 @@ To request the host app to close the WebUI and quit as a whole, call
 
 The two functions `bringWindowToForeground()` and `bringFocusAppToForeground()`
 can be used to request the host app to bring the app itself or a focus app
-(e.g., a text editor) to the foreground.
+(e.g., a text editor) to the foreground, respectively.

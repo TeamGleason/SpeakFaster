@@ -85,7 +85,7 @@
   <div class="app-title">
     <img class="icon-image" src="/assets/images/eye.png">
     <span>Eye-gaze settings</span>
-    <span *ngIf="engineVersion !== undefined">&nbsp;(Engine version: {{engineVersion}})</span>
+    <span *ngIf="engineVersion !== undefined && engineVersion.length > 0">&nbsp;(Engine version: {{engineVersion}})</span>
   </div>
 </div>
 

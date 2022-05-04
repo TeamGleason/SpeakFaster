@@ -194,12 +194,12 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
             this.changeAppState(AppState.ABBREVIATION_EXPANSION);
             setTimeout(() => {
               bringWindowToForeground();
-            }, 50);
+            }, 100);
           } else {  // Bring the focus app to foreground (if it is running).
+            this.changeAppState(AppState.MINIBAR);
             setTimeout(() => {
-              this.changeAppState(AppState.MINIBAR);
               bringFocusAppToForeground();
-            }, 50);
+            }, 100);
           }
         });
     this.eventLogger.logSessionStart();
@@ -306,7 +306,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     this.changeAppState(AppState.MINIBAR);
     setTimeout(() => {
       bringFocusAppToForeground();
-    }, 50);
+    }, 100);
   }
 
   onContextStringsUpdated(conversationTurns: ConversationTurn[]) {

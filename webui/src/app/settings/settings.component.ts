@@ -1,6 +1,6 @@
 /** Quick phrase list for direct selection. */
 import {AfterViewInit, ChangeDetectorRef, Component, ElementRef, EventEmitter, Input, OnDestroy, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
-import {getHostInfo, requestQuitApp, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
+import {getHostInfo, REMOVE_ALL_GAZE_BUTTONS_DIRECTIVE, removeAllButtonBoxes, requestQuitApp, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
 import {createUuid} from 'src/utils/uuid';
 
 import {HttpEventLogger} from '../event-logger/event-logger-impl';
@@ -81,8 +81,12 @@ export class SettingsComponent implements AfterViewInit, OnInit, OnDestroy {
   }
 
   onReloadAppButtonClicked(event: Event) {
-    // Force reload.
-    window.location.reload(true);
+    // Remove all registered gaze buttons before reloading the entire page.
+    removeAllButtonBoxes();
+    setTimeout(() => {
+      // Force reload.
+      window.location.reload(true);
+    }, 100);
   }
 
   onQuitAppButtonClicked(event: Event) {

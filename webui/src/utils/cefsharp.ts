@@ -34,6 +34,8 @@ export function registerNewAccessToken(accessToken: string) {
   console.log('Called registerNewAccessToken()');
 }
 
+export const REMOVE_ALL_GAZE_BUTTONS_DIRECTIVE = '__remove_all__';
+
 /**
  * Update the clickable buttons for a component instance.
  *
@@ -121,6 +123,14 @@ function isRectVisibleInsideContainer(rect: DOMRect, containerRect: DOMRect) {
 /** Remove the clickable buttons of a given instance to an empty array. */
 export function updateButtonBoxesToEmpty(instanceId: string) {
   updateButtonBoxes(instanceId, []);
+}
+
+/**
+ * Remove all buttons from all component instance.
+ * This is done, e.g., when the entire app page reloads.
+ */
+export function removeAllButtonBoxes() {
+  updateButtonBoxes(REMOVE_ALL_GAZE_BUTTONS_DIRECTIVE, []);
 }
 
 function updateButtonBoxes(

@@ -40,6 +40,10 @@ describe('ExternalEventsComponent', () => {
     resetReconStates();
   });
 
+  afterEach(async () => {
+    ExternalEventsComponent.clearToggleForegroundCallback();
+  });
+
   it('Virtual key codes map has no duplicate values', () => {
     const valueSet = new Set(Object.values(VKCODE_SPECIAL_KEYS));
     expect(Object.values(VKCODE_SPECIAL_KEYS).length).toEqual(valueSet.size);
@@ -731,4 +735,35 @@ describe('ExternalEventsComponent', () => {
 
     expect(ExternalEventsComponent.internalText).toEqual('a hi ');
   });
+
+  it('regstered toggle-foreground callback is called from external', () => {
+    const callFlags: boolean[] = [];
+    ExternalEventsComponent.registerToggleForegroundCallback(
+        (toForeground: boolean) => {callFlags.push(toForeground)});
+    ExternalEventsComponent.externalKeypressHook(162, /* isExternal= */ true);
+    ExternalEventsComponent.externalKeypressHook(71, /* isExternal= */ true);
+
+    expect(callFlags).toEqual([true]);
+  });
+
+  it('regstered toggle-foreground callback is called from external', () => {
+    const callFlags: boolean[] = [];
+    ExternalEventsComponent.registerToggleForegroundCallback(
+        (toForeground: boolean) => {callFlags.push(toForeground)});
+    ExternalEventsComponent.externalKeypressHook(162, /* isExternal= */ false);
+    ExternalEventsComponent.externalKeypressHook(71, /* isExternal= */ false);
+
+    expect(callFlags).toEqual([false]);
+  });
+
+  it('registered toggle-foreground callback not called by incomplete sequences',
+     () => {
+      const callFlags: boolean[] = [];
+      ExternalEventsComponent.registerToggleForegroundCallback(
+          (toForeground: boolean) => {callFlags.push(toForeground)});
+      ExternalEventsComponent.externalKeypressHook(162, /* isExternal= */ true);
+      ExternalEventsComponent.externalKeypressHook(71, /* isExternal= */ false);
+
+      expect(callFlags).toEqual([]);
+     });
 });

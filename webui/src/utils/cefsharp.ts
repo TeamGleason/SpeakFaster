@@ -34,6 +34,8 @@ export function registerNewAccessToken(accessToken: string) {
   console.log('Called registerNewAccessToken()');
 }
 
+export const REMOVE_ALL_GAZE_BUTTONS_DIRECTIVE = '__remove_all__';
+
 /**
  * Update the clickable buttons for a component instance.
  *
@@ -68,6 +70,30 @@ export function updateButtonBoxesForElements(
 }
 
 /**
+ * Bring main window to the foreground.
+ */
+export async function bringWindowToForeground() {
+  if ((window as any)[BOUND_LISTENER_NAME] == null) {
+    console.warn(`Cannot call bringWindowToForeground(), because object ${
+        BOUND_LISTENER_NAME} is not found`)
+    return;
+  }
+  ((window as any)[BOUND_LISTENER_NAME] as any).bringWindowToForeground();
+}
+
+/**
+ * Bring a focus app to the foreground (only if it is running).
+ */
+export async function bringFocusAppToForeground() {
+  if ((window as any)[BOUND_LISTENER_NAME] == null) {
+    console.warn(`Cannot call bringFocusAppToForeground(), because object ${
+        BOUND_LISTENER_NAME} is not found`)
+    return;
+  }
+  ((window as any)[BOUND_LISTENER_NAME] as any).bringFocusAppToForeground();
+}
+
+/**
  * Updates the host app regarding eye tracking options.
  * @param showGazeTracker Whether the dot that tracks the gaze point is
  *     shown.
@@ -97,6 +123,14 @@ function isRectVisibleInsideContainer(rect: DOMRect, containerRect: DOMRect) {
 /** Remove the clickable buttons of a given instance to an empty array. */
 export function updateButtonBoxesToEmpty(instanceId: string) {
   updateButtonBoxes(instanceId, []);
+}
+
+/**
+ * Remove all buttons from all component instance.
+ * This is done, e.g., when the entire app page reloads.
+ */
+export function removeAllButtonBoxes() {
+  updateButtonBoxes(REMOVE_ALL_GAZE_BUTTONS_DIRECTIVE, []);
 }
 
 function updateButtonBoxes(
@@ -161,7 +195,8 @@ export function resizeWindow(height: number, width: number): void {
   ((window as any)[BOUND_LISTENER_NAME] as any).resizeWindow(height, width);
 }
 
-export type ExternalKeypressHook = (vkCode: number) => void;
+export type ExternalKeypressHook = (vkCode: number, isExternal: boolean) =>
+    void;
 
 export function registerExternalKeypressHook(callback: ExternalKeypressHook) {
   (window as any)['externalKeypressHook'] = callback;

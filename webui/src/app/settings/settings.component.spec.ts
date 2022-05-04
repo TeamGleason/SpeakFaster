@@ -3,8 +3,10 @@
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {By} from '@angular/platform-browser';
 
+import * as cefSharp from '../../utils/cefsharp';
 import {BOUND_LISTENER_NAME} from '../../utils/cefsharp';
 import {HttpEventLogger} from '../event-logger/event-logger-impl';
+import {TestListener} from '../test-utils/test-cefsharp-listener';
 
 import {clearSettings, getAppSettings, LOCAL_STORAGE_ITEM_NAME, setTtsVolume} from './settings';
 import {SettingsComponent} from './settings.component';
@@ -31,6 +33,7 @@ describe('SettingsComponent', () => {
   });
 
   afterEach(async () => {
+    (window as any)[BOUND_LISTENER_NAME] = undefined;
     HttpEventLogger.setFullLogging(false);
   });
 
@@ -47,7 +50,8 @@ describe('SettingsComponent', () => {
     const selectedButtons = ttsVolumeSection.queryAll(By.css('.active-button'));
     expect(selectedButtons.length).toEqual(2);
     expect(selectedButtons[0].nativeElement.innerText).toEqual('Generic');
-    expect(selectedButtons[1].nativeElement.innerText).toEqual('Select voice...');
+    expect(selectedButtons[1].nativeElement.innerText)
+        .toEqual('Select voice...');
   });
 
   it('Shows default TTS volume setting when loaded', async () => {
@@ -78,7 +82,8 @@ describe('SettingsComponent', () => {
     const selectedButtons = ttsVoiceSection.queryAll(By.css('.active-button'));
     expect(selectedButtons.length).toEqual(2);
     expect(selectedButtons[0].nativeElement.innerText).toEqual('Generic');
-    expect(selectedButtons[1].nativeElement.innerText).toEqual('Select voice...');
+    expect(selectedButtons[1].nativeElement.innerText)
+        .toEqual('Select voice...');
     expect((await getAppSettings()).ttsVoiceType).toEqual('GENERIC');
   });
 
@@ -182,5 +187,25 @@ describe('SettingsComponent', () => {
     fixture.detectChanges();
     const loggingTag = fixture.debugElement.query(By.css('.logging-tag'));
     expect(loggingTag.nativeElement.innerText).toEqual('Logging: full')
+  });
+
+
+  it('clicking reload app button calls removeAll', () => {
+    const testListener = new TestListener();
+    (window as any)[cefSharp.BOUND_LISTENER_NAME] = testListener;
+    // Stop page reloading from actually happening.
+    let reloadCalls = 1;
+    fixture.componentInstance.windowReload = () => {
+      reloadCalls++;
+    };
+
+    const reloadButton = fixture.debugElement.query(By.css('.reload-button'));
+    reloadButton.nativeElement.click();
+    expect(reloadCalls).toEqual(1);
+    const lastCall =
+        testListener
+            .updateButtonBoxesCalls[testListener.updateButtonBoxesCalls.length - 1];
+    expect(lastCall[0]).toEqual('__remove_all__');
+    expect(lastCall[1]).toEqual([]);
   });
 });

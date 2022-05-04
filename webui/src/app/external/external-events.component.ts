@@ -4,15 +4,21 @@
  *
  * Test commands in DevTools console:
  * ```javascript
- * externalKeypressHook(72);  // h
- * externalKeypressHook(73);  // i
- * externalKeypressHook(32);  // space
- * externalKeypressHook(80);  // p
- * externalKeypressHook(65);  // a
- * externalKeypressHook(76);  // l
- * externalKeypressHook(190);  // .
- * externalKeypressHook(162);  // LCtrl
- * externalKeypressHook(87);  // Q
+ * externalKeypressHook(72, true);  // h
+ * externalKeypressHook(73, true);  // i
+ * externalKeypressHook(32, true);  // space
+ * externalKeypressHook(80, true);  // p
+ * externalKeypressHook(65, true);  // a
+ * externalKeypressHook(76, true);  // l
+ * externalKeypressHook(190, true);  // .
+ * externalKeypressHook(162, true);  // LCtrl
+ * externalKeypressHook(87, true);  // W
+ * ```
+ *
+ * Bring to front combo key:
+ * ```
+ * externalKeypressHook(162, true);  // LCtrl
+ * externalKeypressHook(71, true);  // G
  * ```
  */
 
@@ -127,12 +133,19 @@ export const SENTENCE_END_COMBO_KEYS: string[][] = [
   [VIRTUAL_KEY.LSHIFT, '1', VIRTUAL_KEY.SPACE],
 ];
 export const LCTRL_KEY_HEAD_FOR_TTS_TRIGGER = 'w';
-export const TTS_TRIGGER_COMBO_KEY: string[] =
-    [VIRTUAL_KEY.LCTRL, LCTRL_KEY_HEAD_FOR_TTS_TRIGGER];
+export const EXTERNAL_PHRASE_DELIMITERS: string[][] = [
+  [VIRTUAL_KEY.LCTRL, LCTRL_KEY_HEAD_FOR_TTS_TRIGGER],
+  [VIRTUAL_KEY.PERIOD, VIRTUAL_KEY.SPACE],
+];
 export const WORD_BACKSPACE_COMBO_KEY: string[] = [
   VIRTUAL_KEY.LCTRL, VIRTUAL_KEY.LSHIFT, VIRTUAL_KEY.LARROW,
   VIRTUAL_KEY.BACKSPACE
 ];
+
+// Ctrl + G brings the app to the foreground.
+export const LCTRL_KEY_HEAD_FOR_FOREGROUND_TRIGGER = 'g';
+export const BRING_TO_FOREGROUND_COMBO_KEY: string[] =
+    [VIRTUAL_KEY.LCTRL, LCTRL_KEY_HEAD_FOR_FOREGROUND_TRIGGER];
 
 function getKeyFromVirtualKeyCode(vkCode: number): string|null {
   if (vkCode >= 48 && vkCode <= 58) {
@@ -428,7 +441,7 @@ export class ExternalEventsComponent implements OnInit {
   @Input() textEntryEndSubject!: Subject<TextEntryEndEvent>;
 
   private static readonly keypressListeners: KeypressListener[] = [];
-
+  private static toggleForegroundCallback?: (toForeground: boolean) => void;
 
   ExternalEvewntsComponent() {}
 
@@ -465,6 +478,24 @@ export class ExternalEventsComponent implements OnInit {
     const index = ExternalEventsComponent.keypressListeners.indexOf(listener);
     if (index !== -1) {
       ExternalEventsComponent.keypressListeners.splice(index, 1);
+    }
+  }
+
+  /**
+   * Register a callback for when external events (e.g., a special combo key)
+   * cause the app to be put in the foreground. The caller and the callback is
+   * responsible for calling the binding method `bringWindowToForeground()`.
+   * @param callback
+   */
+
+  public static registerToggleForegroundCallback(
+      callback: (toForeground: boolean) => void) {
+    ExternalEventsComponent.toggleForegroundCallback = callback;
+  }
+
+  public static clearToggleForegroundCallback() {
+    if (ExternalEventsComponent.toggleForegroundCallback) {
+      ExternalEventsComponent.toggleForegroundCallback = undefined;
     }
   }
 
@@ -542,9 +573,18 @@ export class ExternalEventsComponent implements OnInit {
       reconState.numGazeKeypresses++;
     }
     reconState.previousKeypressTimeMillis = nowMillis;
-
-    if (isExternal &&
-        (keySequenceEndsWith(reconState.keySequence, TTS_TRIGGER_COMBO_KEY) ||
+    if (keySequenceEndsWith(
+            reconState.keySequence, BRING_TO_FOREGROUND_COMBO_KEY)) {
+      if (ExternalEventsComponent.toggleForegroundCallback) {
+        ExternalEventsComponent.toggleForegroundCallback(
+            /* toForeground= */ isExternal);
+      }
+      return;
+    } else if (
+        isExternal &&
+        (EXTERNAL_PHRASE_DELIMITERS.some(
+             delimiter =>
+                 keySequenceEndsWith(reconState.keySequence, delimiter)) ||
          SENTENCE_END_COMBO_KEYS.some(
              keys => keySequenceEndsWith(reconState.keySequence, keys)))) {
       // A TTS action has been triggered.

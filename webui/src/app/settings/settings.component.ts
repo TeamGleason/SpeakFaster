@@ -85,8 +85,12 @@ export class SettingsComponent implements AfterViewInit, OnInit, OnDestroy {
     removeAllButtonBoxes();
     setTimeout(() => {
       // Force reload.
-      window.location.reload(true);
+      this.windowReload();
     }, 100);
+  }
+
+  public windowReload = () => {
+    window.location.reload(true);
   }
 
   onQuitAppButtonClicked(event: Event) {

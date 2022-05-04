@@ -12,7 +12,7 @@
  * externalKeypressHook(76);  // l
  * externalKeypressHook(190);  // .
  * externalKeypressHook(162);  // LCtrl
- * externalKeypressHook(87);  // Q
+ * externalKeypressHook(87);  // W
  * ```
  */
 
@@ -127,8 +127,10 @@ export const SENTENCE_END_COMBO_KEYS: string[][] = [
   [VIRTUAL_KEY.LSHIFT, '1', VIRTUAL_KEY.SPACE],
 ];
 export const LCTRL_KEY_HEAD_FOR_TTS_TRIGGER = 'w';
-export const TTS_TRIGGER_COMBO_KEY: string[] =
-    [VIRTUAL_KEY.LCTRL, LCTRL_KEY_HEAD_FOR_TTS_TRIGGER];
+export const EXTERNAL_PHRASE_DELIMITERS: string[][] = [
+  [VIRTUAL_KEY.LCTRL, LCTRL_KEY_HEAD_FOR_TTS_TRIGGER],
+  [VIRTUAL_KEY.PERIOD, VIRTUAL_KEY.SPACE],
+];
 export const WORD_BACKSPACE_COMBO_KEY: string[] = [
   VIRTUAL_KEY.LCTRL, VIRTUAL_KEY.LSHIFT, VIRTUAL_KEY.LARROW,
   VIRTUAL_KEY.BACKSPACE
@@ -542,9 +544,10 @@ export class ExternalEventsComponent implements OnInit {
       reconState.numGazeKeypresses++;
     }
     reconState.previousKeypressTimeMillis = nowMillis;
-
     if (isExternal &&
-        (keySequenceEndsWith(reconState.keySequence, TTS_TRIGGER_COMBO_KEY) ||
+        (EXTERNAL_PHRASE_DELIMITERS.some(
+             delimiter =>
+                 keySequenceEndsWith(reconState.keySequence, delimiter)) ||
          SENTENCE_END_COMBO_KEYS.some(
              keys => keySequenceEndsWith(reconState.keySequence, keys)))) {
       // A TTS action has been triggered.

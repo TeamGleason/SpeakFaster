@@ -41,7 +41,7 @@ export class SettingsComponent implements AfterViewInit, OnInit, OnDestroy {
       this.hostInfo = hostInfo;
       this.cdr.detectChanges();
       updateButtonBoxesForElements(this.instanceId, this.clickableButtons);
-    })
+    });
   }
 
   private async refreshSettings() {

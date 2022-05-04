@@ -1,6 +1,6 @@
 /** Quick phrase list for direct selection. */
-import {AfterViewInit, ChangeDetectorRef, Component, ElementRef, EventEmitter, Input, OnDestroy, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
-import {requestQuitApp, setHostEyeGazeOptions, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
+import {AfterViewInit, ChangeDetectorRef, Component, ElementRef, OnDestroy, OnInit, QueryList, ViewChildren} from '@angular/core';
+import {getHostInfo, setHostEyeGazeOptions, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
 import {createUuid} from 'src/utils/uuid';
 
 import {HttpEventLogger} from '../event-logger/event-logger-impl';
@@ -16,6 +16,7 @@ export class SettingsEyeGazeComponent implements AfterViewInit, OnInit,
 
   private readonly instanceId =
       SettingsEyeGazeComponent._NAME + '_' + createUuid();
+  private _engineVersion?: string;
   appSettings: AppSettings|null = null;
 
   constructor(
@@ -26,6 +27,11 @@ export class SettingsEyeGazeComponent implements AfterViewInit, OnInit,
 
   ngOnInit() {
     this.refreshSettings();
+    getHostInfo().then(hostInfo => {
+      this._engineVersion = hostInfo?.engineVersion;
+      this.cdr.detectChanges();
+      updateButtonBoxesForElements(this.instanceId, this.clickableButtons);
+    });
   }
 
   private async refreshSettings() {
@@ -65,5 +71,9 @@ export class SettingsEyeGazeComponent implements AfterViewInit, OnInit,
     this.eventLogger.logSettingsChange('DwellDelayMillis');
     this.refreshSettings();
     setHostEyeGazeOptions();
+  }
+
+  get engineVersion(): string|undefined {
+    return this._engineVersion;
   }
 }

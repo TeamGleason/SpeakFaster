@@ -116,4 +116,23 @@ describe('SettingsEyeGazeComponent', () => {
     expect(testListener.setEyeGazeOptionsCalls.length).toEqual(1);
     expect(testListener.setEyeGazeOptionsCalls[0][2]).toEqual(600);
   });
+
+  it('title section shows no version string when engine version is missing',
+      async () => {
+        await fixture.whenStable();
+
+        const appTitle = fixture.debugElement.query(By.css('.app-title'));
+        expect(appTitle.nativeElement.innerText).toEqual('Eye-gaze settings');
+      });
+
+  it('title section shows version string when engine version is available',
+      async () => {
+        (fixture.componentInstance as any)._engineVersion = '1.2.3.4';
+        await fixture.whenStable();
+
+        const appTitle = fixture.debugElement.query(By.css('.app-title'));
+        const text = (appTitle.nativeElement.innerText as string).trim();
+        expect(text.startsWith('Eye-gaze settings')).toBeTrue();
+        expect(text.endsWith('(Engine version: 1.2.3.4)')).toBeTrue();
+      });
 });

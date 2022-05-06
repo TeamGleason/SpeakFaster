@@ -1,6 +1,6 @@
 /** Unit tests for QuickPhrasesComponent. */
 import {ElementRef, Injectable, SimpleChange} from '@angular/core';
-import {ComponentFixture, fakeAsync, TestBed, tick} from '@angular/core/testing';
+import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {By} from '@angular/platform-browser';
 import {Observable, of, Subject, throwError} from 'rxjs';
 import {createUuid} from 'src/utils/uuid';
@@ -11,6 +11,7 @@ import {InputBarControlEvent} from '../input-bar/input-bar.component';
 import {ScrollButtonsComponent} from '../scroll-buttons/scroll-button.component';
 import {SpeakFasterService, TextPredictionRequest, TextPredictionResponse} from '../speakfaster-service';
 import {TestListener} from '../test-utils/test-cefsharp-listener';
+import {resetStatesForTest, setQuickPhrasesSubTag} from '../types/app-state';
 import {ContextualPhrase} from '../types/contextual_phrase';
 import {TextEntryBeginEvent, TextEntryEndEvent} from '../types/text-entry';
 
@@ -104,6 +105,7 @@ describe('QuickPhrasesComponent', () => {
   let speakFasterServiceForTest: SpeakFasterServiceForTest;
 
   beforeEach(async () => {
+    resetStatesForTest();
     speakFasterServiceForTest = new SpeakFasterServiceForTest();
     testListener = new TestListener();
     textEntryBeginSubject = new Subject();
@@ -389,6 +391,7 @@ describe('QuickPhrasesComponent', () => {
 
   it('shows close-sub-tag button and title when subTag is not null', () => {
     fixture.componentInstance.allowedTag = 'partner-name';
+    fixture.componentInstance.showExpandButtons = true;
     fixture.componentInstance.onExpandButtonClicked({
       phraseText: 'Joe',
       phraseIndex: 0,
@@ -408,6 +411,7 @@ describe('QuickPhrasesComponent', () => {
 
   it('clicking close-sub-tag button clears subtag', () => {
     fixture.componentInstance.allowedTag = 'partner-name';
+    fixture.componentInstance.showExpandButtons = true;
     fixture.componentInstance.onExpandButtonClicked({
       phraseText: 'Joe',
       phraseIndex: 0,
@@ -420,6 +424,16 @@ describe('QuickPhrasesComponent', () => {
 
     expect(fixture.componentInstance.hasSubTag).toBeFalse();
     expect(fixture.componentInstance.subTag).toEqual(null);
+    expect(fixture.componentInstance.effectiveAllowedTag)
+        .toEqual('partner-name');
+  });
+
+  it('if showExpandButtons is false, sub tag state is not used', () => {
+    fixture.componentInstance.allowedTag = 'partner-name';
+    fixture.componentInstance.showExpandButtons = false;
+    setQuickPhrasesSubTag('Foo');
+    fixture.detectChanges();
+
     expect(fixture.componentInstance.effectiveAllowedTag)
         .toEqual('partner-name');
   });

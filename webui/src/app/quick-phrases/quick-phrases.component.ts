@@ -10,6 +10,7 @@ import {VIRTUAL_KEY} from '../external/external-events.component';
 import {InputBarControlEvent} from '../input-bar/input-bar.component';
 import {PhraseComponent} from '../phrase/phrase.component';
 import {SpeakFasterService, TextPredictionResponse} from '../speakfaster-service';
+import {getQuickPhraseSubTag, setQuickPhrasesSubTag} from '../types/app-state';
 import {ContextualPhrase} from '../types/contextual_phrase';
 import {TextEntryBeginEvent, TextEntryEndEvent} from '../types/text-entry';
 
@@ -58,8 +59,6 @@ export class QuickPhrasesComponent implements AfterViewInit, OnInit, OnChanges,
   @ViewChildren('phraseOption') phraseOptions!: QueryList<PhraseComponent>;
   @ViewChild('quickPhrasesContainer')
   quickPhrasesContainer!: ElementRef<HTMLDivElement>;
-
-  private _subTag: string|null = null;
 
   // The ID of the phrase being editted. Applies only to the 'EDITING_PHRASE'
   // state.
@@ -154,11 +153,16 @@ export class QuickPhrasesComponent implements AfterViewInit, OnInit, OnChanges,
   }
 
   get effectiveAllowedTag(): string {
-    return this._subTag === null ? this.allowedTag :
-                                   this.allowedTag + ':' + this._subTag;
+    if (this.showExpandButtons) {
+      const subTag = getQuickPhraseSubTag();
+      return subTag === null ? this.allowedTag : this.allowedTag + ':' + subTag;
+    } else {
+      return this.allowedTag;
+    }
   }
 
   ngOnInit() {
+    console.log('*** QuickPhrasesComponent.ngOnInit()');  // DEBUG
     this.inputBarControlSubject?.subscribe((event: InputBarControlEvent) => {
       if (event.refreshContextualPhrases) {
         this.retrievePhrases();
@@ -190,7 +194,6 @@ export class QuickPhrasesComponent implements AfterViewInit, OnInit, OnChanges,
               changes.allowedTag.currentValue) {
         return;
       }
-      this._subTag = null;
       this.retrievePhrases();
     }
   }
@@ -218,8 +221,7 @@ export class QuickPhrasesComponent implements AfterViewInit, OnInit, OnChanges,
   }
 
   onExpandButtonClicked(event: {phraseText: string, phraseIndex: number}) {
-    // TODO(cais): Add unit tests.
-    this._subTag = event.phraseText.trim();
+    setQuickPhrasesSubTag(event.phraseText.trim());
     this.filteredPhrases.splice(0);
     this.retrievePhrases();
     setTimeout(() => {
@@ -232,7 +234,7 @@ export class QuickPhrasesComponent implements AfterViewInit, OnInit, OnChanges,
   }
 
   onCloseSubTagButtonClicked(event: Event) {
-    this._subTag = null;
+    setQuickPhrasesSubTag(null);
     this.filteredPhrases.splice(0);
     this.retrievePhrases();
   }
@@ -295,11 +297,11 @@ export class QuickPhrasesComponent implements AfterViewInit, OnInit, OnChanges,
   }
 
   get hasSubTag(): boolean {
-    return this._subTag !== null;
+    return this.showExpandButtons && getQuickPhraseSubTag() !== null;
   }
 
   get subTag(): string|null {
-    return this._subTag;
+    return this.showExpandButtons ? getQuickPhraseSubTag() : null;
   }
 
   get editedPhrase(): ContextualPhrase|null {

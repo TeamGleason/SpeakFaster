@@ -1,4 +1,4 @@
-/** Types related to applicaton state. */
+/** Types and states related to applicaton state. */
 
 export enum AppState {
   // Minimized as a mini-bar.
@@ -20,4 +20,48 @@ export enum AppState {
   HELP = 'HELP',
   // Selecting TTS voice.
   TTS_VOICE_SELECTION = 'TTS_VOICE_SELECTION',
+}
+
+let appState: AppState = AppState.ABBREVIATION_EXPANSION;
+let previousNonMinimizedAppState: AppState = AppState.ABBREVIATION_EXPANSION;
+let quickPhrasesSubTag: string|null = null;
+
+/** Sets the current app state. */
+export function setAppState(newState: AppState) {
+  if (newState === AppState.MINIBAR && appState !== AppState.MINIBAR) {
+    previousNonMinimizedAppState = appState;
+  }
+  appState = newState;
+}
+
+/** Gets the current app state. */
+export function getAppState(): AppState {
+  return appState;
+}
+
+/**
+ * Gets the memorized, previous non-minimized app state.
+ * This can be used to restore from the minimized state.
+ */
+export function getPreviousNonMinimizedAppState(): AppState {
+  return previousNonMinimizedAppState;
+}
+
+/** Sets the sub tag for quick phrases ("people phrases"). */
+export function setQuickPhrasesSubTag(subTag: string|null) {
+  quickPhrasesSubTag = subTag;
+  console.log('*** Set sub tag:', quickPhrasesSubTag);  // DEBUG
+}
+
+/** Gets the sub tag for quick phrases. */
+export function getQuickPhraseSubTag(): string|null {
+  console.log('*** Got sub tag:', quickPhrasesSubTag);  // DEBUG
+  return quickPhrasesSubTag;
+}
+
+/** Reset all related state. For testing only. */
+export function resetStatesForTest() {
+  appState = AppState.ABBREVIATION_EXPANSION;
+  previousNonMinimizedAppState = AppState.ABBREVIATION_EXPANSION;
+  quickPhrasesSubTag = null;
 }

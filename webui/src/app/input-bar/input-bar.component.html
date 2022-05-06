@@ -257,8 +257,9 @@
           X
         </button>
 
+        <!-- TODO(cais): Add unit test. -->
         <div
-            *ngIf="inputStringExceedsAbbreviationExpansionLimit"
+            *ngIf="supportsAbbrevationExpansion && inputStringExceedsAbbreviationExpansionLimit"
             class="length-limit-exceeded">
           {{abbreviationExpansionLengthLimitExceededMessage}}
         </div>

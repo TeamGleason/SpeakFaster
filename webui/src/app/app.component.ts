@@ -5,14 +5,13 @@ import {Subject} from 'rxjs';
 import {bindCefSharpListener, bringFocusAppToForeground, bringWindowToForeground, registerExternalAccessTokenHook, registerExternalKeypressHook, registerHostWindowFocusHook, resizeWindow, setHostEyeGazeOptions, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from '../utils/cefsharp';
 import {createUuid} from '../utils/uuid';
 
-import {registerAppState} from './app-state-registry';
 import {HttpEventLogger} from './event-logger/event-logger-impl';
 import {ExternalEventsComponent} from './external/external-events.component';
 import {InputBarControlEvent} from './input-bar/input-bar.component';
 import {LoadLexiconRequest} from './lexicon/lexicon.component';
 import {configureService, FillMaskRequest, GetUserIdResponse, SpeakFasterService} from './speakfaster-service';
 import {InputAbbreviationChangedEvent} from './types/abbreviation';
-import {AppState} from './types/app-state';
+import {AppState, getAppState, getPreviousNonMinimizedAppState, setAppState} from './types/app-state';
 import {AddContextualPhraseRequest} from './types/contextual_phrase';
 import {ConversationTurn} from './types/conversation';
 import {TextEntryBeginEvent, TextEntryEndEvent} from './types/text-entry';
@@ -44,8 +43,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   @ViewChild('contentWrapper') contentWrapper!: ElementRef<HTMLDivElement>;
 
   readonly languageCode = 'en-us';
-  appState: AppState = AppState.ABBREVIATION_EXPANSION;
-  private previousNonMinimizedAppState: AppState = this.appState;
 
   private _isDev = false;
   private _isPartner = false;
@@ -94,7 +91,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   ngOnInit() {
     // Disable accidental activation of the context menu.
     document.addEventListener('contextmenu', event => event.preventDefault());
-    registerAppState(this.appState);
     bindCefSharpListener().then(() => {
       setHostEyeGazeOptions();
     });
@@ -217,20 +213,21 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   onAppStateDeminimized() {
-    if (this.appState !== AppState.MINIBAR) {
+    if (getAppState() !== AppState.MINIBAR) {
       return;
     }
-    this.changeAppState(this.previousNonMinimizedAppState);
+    this.changeAppState(getPreviousNonMinimizedAppState());
   }
 
   private changeAppState(newState: AppState) {
-    if (this.appState === newState) {
+    const prevAppState = getAppState();
+    if (prevAppState === newState) {
       return;
     }
-    this.eventLogger.logAppStageChange(this.appState, newState);
+    this.eventLogger.logAppStageChange(prevAppState, newState);
     // TODO(cais): Debug the case of finishing an AE in InputBarComponent then
     // switching to a QuickPhraseComponent to do filtering.
-    if (newState !== AppState.MINIBAR && this.appState !== AppState.MINIBAR &&
+    if (newState !== AppState.MINIBAR && prevAppState !== AppState.MINIBAR &&
         newState !== AppState.ABBREVIATION_EXPANSION) {
       // When minimizing to or restoring from the mini-bar, we don't reset the
       // text in the input bar.
@@ -238,11 +235,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
         clearAll: true,
       });
     }
-    this.appState = newState;
-    registerAppState(this.appState);
-    if (this.appState !== AppState.MINIBAR) {
-      this.previousNonMinimizedAppState = this.appState;
-    }
+    setAppState(newState);
   }
 
   getUserRole(): UserRole {
@@ -294,8 +287,9 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   get isMinimizedOrNonMinimizedAbbreviationExpansionState() {
-    return this.appState === AppState.ABBREVIATION_EXPANSION ||
-        this.appState === AppState.MINIBAR;
+    const appState = getAppState();
+    return appState === AppState.ABBREVIATION_EXPANSION ||
+        appState === AppState.MINIBAR;
   }
 
   onInputStringChanged(str: string) {
@@ -378,8 +372,9 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   isQuickPhrasesAppState() {
-    return this.appState === AppState.QUICK_PHRASES_FAVORITE ||
-        this.appState === AppState.QUICK_PHRASES_PARTNERS;
+    const appState = getAppState();
+    return appState === AppState.QUICK_PHRASES_FAVORITE ||
+        appState === AppState.QUICK_PHRASES_PARTNERS;
   }
 
   get anyContextStringsAvailable(): boolean {
@@ -392,6 +387,10 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   get inputStringIsCompatibleWithAbbreviationExpansion(): boolean {
     return this.inputString.trim().length > 0;
+  }
+
+  get appState(): AppState {
+    return getAppState();
   }
 
   get nonMinimizedStatesAppStates(): AppState[] {
@@ -412,7 +411,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       case AppState.ABBREVIATION_EXPANSION:
         return `/assets/images/abbreviation-expansion-${activeStateString}.png`;
       default:
-        throw new Error(`Invalid app state: ${this.appState}`);
+        throw new Error(`Invalid app state: ${appState}`);
     }
   }
 
@@ -422,45 +421,49 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   getQuickPhrasesAllowedTag(): string {
-    switch (this.appState) {
+    const appState = getAppState();
+    switch (appState) {
       case AppState.QUICK_PHRASES_FAVORITE:
         return 'favorite';
       case AppState.QUICK_PHRASES_PARTNERS:
         return 'partner-name';
       default:
-        throw new Error(`Invalid app state: ${this.appState}`);
+        throw new Error(`Invalid app state: ${appState}`);
     }
   }
 
   getQuickPhrasesShowDeleteButtons(): boolean {
-    switch (this.appState) {
+    const appState = getAppState();
+    switch (appState) {
       case AppState.QUICK_PHRASES_FAVORITE:
       case AppState.QUICK_PHRASES_PARTNERS:
         return true;
       default:
-        throw new Error(`Invalid app state: ${this.appState}`);
+        throw new Error(`Invalid app state: ${appState}`);
     }
   }
 
   getQuickPhrasesShowExpandButtons(): boolean {
-    switch (this.appState) {
+    const appState = getAppState();
+    switch (appState) {
       case AppState.QUICK_PHRASES_PARTNERS:
         return true;
       case AppState.QUICK_PHRASES_FAVORITE:
         return false;
       default:
-        throw new Error(`Invalid app state: ${this.appState}`);
+        throw new Error(`Invalid app state: ${appState}`);
     }
   }
 
   getQuickPhrasesColor(): string {
-    switch (this.appState) {
+    const appState = getAppState();
+    switch (appState) {
       case AppState.QUICK_PHRASES_FAVORITE:
         return '#473261';
       case AppState.QUICK_PHRASES_PARTNERS:
         return '#3F0909';
       default:
-        throw new Error(`Invalid app state: ${this.appState}`);
+        throw new Error(`Invalid app state: ${appState}`);
     }
   }
 }

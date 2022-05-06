@@ -12,7 +12,7 @@ import {MetricsModule} from './metrics/metrics.module';
 import {MiniBarModule} from './mini-bar/mini-bar.module';
 import {clearSettings} from './settings/settings';
 import {TestListener} from './test-utils/test-cefsharp-listener';
-import {AppState} from './types/app-state';
+import {AppState, resetStatesForTest, setAppState} from './types/app-state';
 
 describe('AppComponent', () => {
   let fixture: ComponentFixture<AppComponent>;
@@ -42,6 +42,10 @@ describe('AppComponent', () => {
     clearSettings();
   });
 
+  afterEach(async () => {
+    resetStatesForTest();
+  });
+
   it('should create the app', () => {
     const app = fixture.componentInstance;
     expect(app).toBeTruthy();
@@ -64,7 +68,7 @@ describe('AppComponent', () => {
 
   it('shows mini-bar component when AppState is MINIBAR', async () => {
     fixture.componentInstance.onNewAccessToken('foo-access-token');
-    fixture.componentInstance.appState = AppState.MINIBAR;
+    setAppState(AppState.MINIBAR);
     fixture.detectChanges();
     await fixture.whenStable();
 
@@ -75,7 +79,7 @@ describe('AppComponent', () => {
 
   it('hides mini-bar component when AppState is AE', async () => {
     fixture.componentInstance.onNewAccessToken('foo-access-token');
-    fixture.componentInstance.appState = AppState.ABBREVIATION_EXPANSION;
+    setAppState(AppState.ABBREVIATION_EXPANSION);
     fixture.detectChanges();
     await fixture.whenStable();
 
@@ -92,7 +96,7 @@ describe('AppComponent', () => {
 
   it('registers button boxes with AppState is AE', async () => {
     fixture.componentInstance.onNewAccessToken('foo-access-token');
-    fixture.componentInstance.appState = AppState.ABBREVIATION_EXPANSION;
+    setAppState(AppState.ABBREVIATION_EXPANSION);
     fixture.detectChanges();
     await fixture.whenStable();
 
@@ -123,7 +127,7 @@ describe('AppComponent', () => {
                AppState.QUICK_PHRASES_PARTNERS]) {
     it(`shows QuickPhrasesComponent when AppState is ${appState}`, async () => {
       fixture.componentInstance.onNewAccessToken('foo-access-token');
-      fixture.componentInstance.appState = AppState.QUICK_PHRASES_FAVORITE;
+      setAppState(AppState.QUICK_PHRASES_FAVORITE);
       fixture.detectChanges();
       await fixture.whenStable();
 
@@ -141,7 +145,7 @@ describe('AppComponent', () => {
 
   it('clicking mini-bar button goes back to non-minized state', async () => {
     fixture.componentInstance.onNewAccessToken('foo-access-token');
-    fixture.componentInstance.appState = AppState.MINIBAR;
+    setAppState(AppState.MINIBAR);
     fixture.detectChanges();
     await fixture.whenStable();
     const miniBar =
@@ -156,7 +160,7 @@ describe('AppComponent', () => {
 
   it('clicking left nav button minimizes app', async () => {
     fixture.componentInstance.onNewAccessToken('foo-access-token');
-    fixture.componentInstance.appState = AppState.ABBREVIATION_EXPANSION;
+    setAppState(AppState.ABBREVIATION_EXPANSION);
     fixture.detectChanges();
     await fixture.whenStable();
     const leftNavButtons =
@@ -173,7 +177,7 @@ describe('AppComponent', () => {
 
   it('clicking left nav button navigates to quick phrases', async () => {
     fixture.componentInstance.onNewAccessToken('foo-access-token');
-    fixture.componentInstance.appState = AppState.ABBREVIATION_EXPANSION;
+    setAppState(AppState.ABBREVIATION_EXPANSION);
     fixture.detectChanges();
     await fixture.whenStable();
     const leftNavButtons =
@@ -190,7 +194,7 @@ describe('AppComponent', () => {
 
   it('de-minimizing remembers previous non-minimized state', async () => {
     fixture.componentInstance.onNewAccessToken('foo-access-token');
-    fixture.componentInstance.appState = AppState.ABBREVIATION_EXPANSION;
+    setAppState(AppState.ABBREVIATION_EXPANSION);
     fixture.detectChanges();
     await fixture.whenStable();
     const leftNavButtons =
@@ -216,7 +220,7 @@ describe('AppComponent', () => {
 
   it('under minimized state, the main area exists but is hidden', async () => {
     fixture.componentInstance.onNewAccessToken('foo-access-token');
-    fixture.componentInstance.appState = AppState.MINIBAR;
+    setAppState(AppState.MINIBAR);
     fixture.detectChanges();
     await fixture.whenStable();
 
@@ -230,7 +234,7 @@ describe('AppComponent', () => {
 
   it('under non-minimized state, the main area is not hidden', async () => {
     fixture.componentInstance.onNewAccessToken('foo-access-token');
-    fixture.componentInstance.appState = AppState.ABBREVIATION_EXPANSION;
+    setAppState(AppState.ABBREVIATION_EXPANSION);
     fixture.detectChanges();
     await fixture.whenStable();
 
@@ -244,7 +248,7 @@ describe('AppComponent', () => {
 
   it('under quick phrase state, context component exists and is hidden', () => {
     fixture.componentInstance.onNewAccessToken('foo-access-token');
-    fixture.componentInstance.appState = AppState.QUICK_PHRASES_FAVORITE;
+    setAppState(AppState.QUICK_PHRASES_FAVORITE);
     fixture.detectChanges();
 
     const appContextComponent =
@@ -256,7 +260,7 @@ describe('AppComponent', () => {
 
   it('under abbreviaton expansion state, context component is shown', () => {
     fixture.componentInstance.onNewAccessToken('foo-access-token');
-    fixture.componentInstance.appState = AppState.ABBREVIATION_EXPANSION;
+    setAppState(AppState.ABBREVIATION_EXPANSION);
     fixture.detectChanges();
 
     const appContextComponent =

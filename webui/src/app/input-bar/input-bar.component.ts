@@ -750,8 +750,9 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
         lastTokenLength > ABBREVIATION_MAX_PROPER_LENGTH;
   }
 
-  get abbreviationExpansionLengthLimitExceededMessage():
-      string{return `AE length limit exceeded.`}
+  get abbreviationExpansionLengthLimitExceededMessage(): string {
+    return `AE length limit exceeded.`;
+  }
 
   get chips(): InputBarChipSpec[] {
     return this._chips?.slice(0);

@@ -162,7 +162,6 @@ export class QuickPhrasesComponent implements AfterViewInit, OnInit, OnChanges,
   }
 
   ngOnInit() {
-    console.log('*** QuickPhrasesComponent.ngOnInit()');  // DEBUG
     this.inputBarControlSubject?.subscribe((event: InputBarControlEvent) => {
       if (event.refreshContextualPhrases) {
         this.retrievePhrases();

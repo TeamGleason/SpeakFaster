@@ -50,12 +50,10 @@ export function getPreviousNonMinimizedAppState(): AppState {
 /** Sets the sub tag for quick phrases ("people phrases"). */
 export function setQuickPhrasesSubTag(subTag: string|null) {
   quickPhrasesSubTag = subTag;
-  console.log('*** Set sub tag:', quickPhrasesSubTag);  // DEBUG
 }
 
 /** Gets the sub tag for quick phrases. */
 export function getQuickPhraseSubTag(): string|null {
-  console.log('*** Got sub tag:', quickPhrasesSubTag);  // DEBUG
   return quickPhrasesSubTag;
 }
 

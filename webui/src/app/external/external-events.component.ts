@@ -170,6 +170,7 @@ function insertCharAsCursorPos(char: string, reconState: TextReconState) {
         casedChar + reconState.text.slice(reconState.cursorPos);
   }
   reconState.cursorPos += 1;
+  console.log('*** insertCharAtCursorPos():', reconState.cursorPos);  // DEBUG
 }
 
 function getHomeKeyDestination(reconState: TextReconState): number {
@@ -678,6 +679,18 @@ export class ExternalEventsComponent implements OnInit {
     // TODO(cais): Take care of Shift+Backspace and Shift+Delete.
   }
 
+  public static placeCursor(cursorPos: number, isExternal = false) {
+    // TODO(cais): Add unit test.
+    const reconState = isExternal ? externalReconState : internalReconState;
+    if (cursorPos > reconState.text.length) {
+      reconState.cursorPos = reconState.text.length;
+    } else if (cursorPos < 0) {
+      reconState.cursorPos = 0;
+    }
+    reconState.cursorPos = cursorPos;
+    console.log('*** Placed cusor at:', cursorPos);  // DEBUG
+  }
+
   /**
    * Append a string to the current reconstruction state.
    *
@@ -712,5 +725,9 @@ export class ExternalEventsComponent implements OnInit {
 
   static get internalText(): string {
     return internalReconState.text;
+  }
+
+  static get internalCursorPos(): number {
+    return internalReconState.cursorPos;
   }
 }

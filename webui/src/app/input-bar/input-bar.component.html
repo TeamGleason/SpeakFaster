@@ -163,9 +163,15 @@
 
 .simulated-cursor {
   animation: blink 1.1s linear infinite alternate;
-  font-weight: 900;
+  box-sizing:   content-box;
+  font-weight: 100;
   font-size: 30px;
-  margin-left: 0.1em;
+  height: 0;
+  margin: 0;
+  max-height: 0;
+  max-width: 0;
+  overflow: visible;
+  width: 0;
 }
 
 .simulated-cursor-hidden {
@@ -195,16 +201,18 @@
   <div class="input-box">
     <div class="main-area">
       <div
+          #inputText
           class="base-text-area"
           *ngIf="state !== 'CHOOSING_LETTER_CHIP' &&
                  state !== 'FOCUSED_ON_LETTER_CHIP' &&
                  state !== 'CHOOSING_WORD_CHIP' &&
                  state !== 'FOCUSED_ON_WORD_CHIP'">
         <span
-            #inputText class="input-text">{{inputString}}<span
+            class="input-text"
+            (click)="onInputBoxBeforeCursorClicked($event)">{{inputStringBeforeCursor}}<span
                 class="simulated-cursor"
                 [ngClass]="{'simulated-cursor-hidden': !isFocused}"
-            >|</span></span>
+            >|</span><span (click)="onInputBoxAfterCursorClicked($event)">{{inputStringAfterCursor}}</span></span>
       </div>
       <div
           class="chips-container"

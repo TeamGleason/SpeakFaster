@@ -12,7 +12,6 @@ describe('ExternalEventsComponent', () => {
   let textEntryBeginSubject: Subject<TextEntryBeginEvent>;
   let textEntryEndSubject: Subject<TextEntryEndEvent>;
   let fixture: ComponentFixture<ExternalEventsComponent>;
-  let component: ExternalEventsComponent;
   let beginEvents: TextEntryBeginEvent[];
   let endEvents: TextEntryEndEvent[];
 

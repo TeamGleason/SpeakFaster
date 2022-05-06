@@ -196,6 +196,7 @@ function wordBackspace(reconState: TextReconState) {
       break;
     }
   }
+  // TODO(cais): Handle non-final cursor position.
   reconState.text = reconState.text.slice(0, j + 1) +
       reconState.text.slice(reconState.cursorPos);
   reconState.cursorPos = j + 1;

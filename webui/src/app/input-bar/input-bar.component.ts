@@ -7,7 +7,7 @@ import {endsWithSentenceEndPunctuation, isAlphanumericChar, keySequenceEndsWith}
 import {createUuid} from 'src/utils/uuid';
 
 import {getPhraseStats, HttpEventLogger} from '../event-logger/event-logger-impl';
-import {ExternalEventsComponent, IgnoreMachineKeySequenceConfig, repeatVirtualKey, VIRTUAL_KEY} from '../external/external-events.component';
+import {ExternalEventsComponent, IgnoreMachineKeySequenceConfig, repeatVirtualKey, resetReconStates, VIRTUAL_KEY} from '../external/external-events.component';
 import {LexiconComponent, LoadLexiconRequest} from '../lexicon/lexicon.component';
 import {FillMaskRequest, SpeakFasterService} from '../speakfaster-service';
 import {StudyManager} from '../study/study-manager';
@@ -709,6 +709,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     }
     this.baseReconstructedText = '';
     this.cutText = '';
+    resetReconStates();
   }
 
   private updateInputString(newStringValue: string) {

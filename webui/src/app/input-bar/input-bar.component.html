@@ -130,7 +130,7 @@
   display: inline-block;
   line-height: 30px;
   overflow-wrap: break-word;
-  white-space: pre-line;
+  white-space: pre-wrap;
   word-break: break-word;
 }
 
@@ -174,7 +174,7 @@
   max-width: 0;
   overflow: visible;
   position: relative;
-  white-space: pre-line;
+  white-space: pre-wrap;
   width: 0;
 }
 
@@ -211,12 +211,12 @@
                  state !== 'FOCUSED_ON_LETTER_CHIP' &&
                  state !== 'CHOOSING_WORD_CHIP' &&
                  state !== 'FOCUSED_ON_WORD_CHIP'">
-        <span
+        <div
             class="input-text"
-            (click)="onTextBeforeCursorClicked($event)">{{inputStringBeforeCursor}}<span
+            (click)="onTextBeforeCursorClicked($event)">{{inputStringBeforeCursor}}<div
                 class="simulated-cursor"
                 [ngClass]="{'simulated-cursor-hidden': !isFocused}"
-            >|</span><span class="input-text" (click)="onTextAfterCursorClicked($event)">{{inputStringAfterCursor}}</span></span>
+            >|</div><div class="input-text" (click)="onTextAfterCursorClicked($event)">{{inputStringAfterCursor}}</div></div>
       </div>
       <div
           class="chips-container"

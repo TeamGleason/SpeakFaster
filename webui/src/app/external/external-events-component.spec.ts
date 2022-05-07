@@ -217,7 +217,6 @@ describe('ExternalEventsComponent', () => {
       ExternalEventsComponent.externalKeypressHook(66, isExternal);
       ExternalEventsComponent.externalKeypressHook(67, isExternal);
 
-      // const reconState = createReconStateForTest('foo bar');
       ExternalEventsComponent.placeCursor(posArg, isExternal);
       expect(ExternalEventsComponent.internalCursorPos).toEqual(expectedPos);
     });

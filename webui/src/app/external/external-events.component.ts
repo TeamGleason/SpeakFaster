@@ -170,7 +170,6 @@ function insertCharAsCursorPos(char: string, reconState: TextReconState) {
         casedChar + reconState.text.slice(reconState.cursorPos);
   }
   reconState.cursorPos += 1;
-  console.log('*** insertCharAtCursorPos:', reconState.cursorPos);  // DEBUG
 }
 
 function getHomeKeyDestination(reconState: TextReconState): number {
@@ -180,11 +179,7 @@ function getHomeKeyDestination(reconState: TextReconState): number {
 }
 
 function wordBackspace(reconState: TextReconState) {
-  // reconState.cursorPos = reconState.keySequence.length;
-  // Find the last non-whitespace chararcter.
-  // let j = reconState.text.length - 1;
   let j = reconState.cursorPos - 1;
-  console.log('*** wordBackspace:', JSON.stringify(reconState));  // DEBUG
   for (; j >= 0; --j) {
     const char = reconState.text[j];
     if (char !== ' ' && char !== '\n') {
@@ -434,6 +429,10 @@ const externalReconState = createInitialTextReconState();
 const ignoreMachineKeySequenceConfigs: IgnoreMachineKeySequenceConfig[] = [];
 let textEntryBeginSubject: Subject<TextEntryBeginEvent>;
 let textEntryEndSubject: Subject<TextEntryEndEvent>;
+
+export function setInternalReconStateForTest(reconState: TextReconState) {
+  Object.assign(internalReconState, reconState);
+}
 
 @Component({
   selector: 'app-external-events-component',
@@ -693,7 +692,6 @@ export class ExternalEventsComponent implements OnInit {
 
   public static placeCursor(cursorPos: number, isExternal = false) {
     const reconState = isExternal ? externalReconState : internalReconState;
-    console.log('*** text length=', reconState.text.length);  // DEBUG
     if (cursorPos > reconState.text.length) {
       reconState.cursorPos = reconState.text.length;
     } else if (cursorPos < 0) {

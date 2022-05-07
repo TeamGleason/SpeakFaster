@@ -6,7 +6,8 @@ import {Observable, Subject} from 'rxjs';
 
 import * as cefSharp from '../../utils/cefsharp';
 import {HttpEventLogger} from '../event-logger/event-logger-impl';
-import {repeatVirtualKey, resetReconStates, VIRTUAL_KEY} from '../external/external-events.component';
+import * as ExternalEvents from '../external/external-events.component';
+import {ExternalEventsComponent, repeatVirtualKey, resetReconStates, VIRTUAL_KEY} from '../external/external-events.component';
 import {InputBarChipComponent} from '../input-bar-chip/input-bar-chip.component';
 import {InputBarChipModule} from '../input-bar-chip/input-bar-chip.module';
 import {LoadLexiconRequest} from '../lexicon/lexicon.component';
@@ -137,8 +138,18 @@ describe('InputBarComponent', () => {
             currentKeySequence,
             reconstructedText[i].slice(0, baseLength + i + 1));
       }
-      fixture.detectChanges();
     }
+    ExternalEvents.setInternalReconStateForTest({
+      previousKeypressTimeMillis: null,
+      numGazeKeypresses: keySequence.length,
+      keySequence,
+      text: Array.isArray(reconstructedText) ?
+          reconstructedText[reconstructedText.length - 1] :
+          reconstructedText,
+      cursorPos: reconstructedText.length,
+      isShiftOn: false,
+    });
+    fixture.detectChanges();
   }
 
   for (const [keySequence, reconstructedText, expectedText] of [
@@ -155,6 +166,7 @@ describe('InputBarComponent', () => {
            `key sequence = ${JSON.stringify(keySequence)}`,
        () => {
          enterKeysIntoComponent(keySequence, reconstructedText);
+         fixture.detectChanges();
 
          const inputText = fixture.debugElement.query(By.css('.input-text'));
          expect(inputText.nativeElement.innerText).toEqual(expectedText + '|');

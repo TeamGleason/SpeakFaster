@@ -723,11 +723,8 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!selection) {
       return;
     }
-    console.log('*** Before cursor:', event.target, selection);  // DEBUG
     ExternalEventsComponent.placeCursor(
         selection.anchorOffset, /* isExternal= */ false);
-    // console.log('***:', selection.focusNode.data[selection.focusOffset]);
-    // alert(selection.focusOffset);
   }
 
   onTextAfterCursorClicked(event: Event) {
@@ -737,11 +734,9 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!selection) {
       return;
     }
-    console.log('*** After cursor:', event.target, selection);  // DEBUG
     ExternalEventsComponent.placeCursor(
-        selection.anchorOffset + this.inputStringBeforeCursor.length, /* isExternal= */ false);
-    // console.log('***:', selection.focusNode.data[selection.focusOffset]);
-    // alert(selection.focusOffset);
+        selection.anchorOffset + this.inputStringBeforeCursor.length,
+        /* isExternal= */ false);
   }
 
   getChipText(index: number): string {
@@ -760,11 +755,17 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   get inputStringBeforeCursor(): string {
-    return this.inputString.substring(0, ExternalEventsComponent.internalCursorPos);
+    console.log(
+        '*** ExternalEventsComponent.internalCursorPos:',
+        ExternalEventsComponent.internalCursorPos,
+        ExternalEventsComponent.internalText);  // DEBUG
+    return this.inputString.substring(
+        0, ExternalEventsComponent.internalCursorPos);
   }
 
   get inputStringAfterCursor(): string {
-    return this.inputString.substring(ExternalEventsComponent.internalCursorPos);
+    return this.inputString.substring(
+        ExternalEventsComponent.internalCursorPos);
   }
 
   /**

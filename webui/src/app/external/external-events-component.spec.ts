@@ -227,7 +227,7 @@ fdescribe('ExternalEventsComponent', () => {
 
   for (const [posArg, expectedPos] of [
            [-1, 0], [0, 0], [1, 1], [2, 2], [3, 3], [4, 3]]) {
-    it(`placeCursor moves cursor: arg=${posArg}`, () => {
+    it(`placeCursor moves cursor: pos=${posArg}`, () => {
       const isExternal = false;
       ExternalEventsComponent.externalKeypressHook(65, isExternal);
       ExternalEventsComponent.externalKeypressHook(66, isExternal);
@@ -236,6 +236,22 @@ fdescribe('ExternalEventsComponent', () => {
       // const reconState = createReconStateForTest('foo bar');
       ExternalEventsComponent.placeCursor(posArg, isExternal);
       expect(ExternalEventsComponent.internalCursorPos).toEqual(expectedPos);
+    });
+  }
+
+  for (const [posArg, expectedFinalText] of [
+           [0, 'zabc'], [1, 'azbc'], [2, 'abzc'], [3, 'abcz']] as
+       Array<[number, string]>) {
+    it(`Entering keys after placing cursor works: pos=${posArg}`, () => {
+      const isExternal = false;
+      ExternalEventsComponent.externalKeypressHook(65, isExternal);
+      ExternalEventsComponent.externalKeypressHook(66, isExternal);
+      ExternalEventsComponent.externalKeypressHook(67, isExternal);
+      ExternalEventsComponent.placeCursor(posArg, isExternal);
+      ExternalEventsComponent.externalKeypressHook(90, isExternal);
+
+      expect(ExternalEventsComponent.internalText).toEqual(expectedFinalText);
+      expect(ExternalEventsComponent.internalCursorPos).toEqual(posArg + 1);
     });
   }
 

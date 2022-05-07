@@ -1,19 +1,36 @@
 import {ComponentFixture, TestBed} from '@angular/core/testing';
-import {Subject, Subscription} from 'rxjs';
+import {Subject} from 'rxjs';
 
 import {TextEntryBeginEvent, TextEntryEndEvent} from '../types/text-entry';
 
-import {ExternalEventsComponent, getPunctuationLiteral, getVirtualkeyCode, LCTRL_KEY_HEAD_FOR_TTS_TRIGGER, resetReconStates, tryDetectoMultiKeyChar, VIRTUAL_KEY, VKCODE_SPECIAL_KEYS} from './external-events.component';
+import {ExternalEventsComponent, getPunctuationLiteral, getVirtualkeyCode, LCTRL_KEY_HEAD_FOR_TTS_TRIGGER, resetReconStates, TextReconState, tryDetectoMultiKeyChar, VIRTUAL_KEY, VKCODE_SPECIAL_KEYS} from './external-events.component';
 import {ExternalEventsModule} from './external-events.module';
 
 const END_KEY_CODE = getVirtualkeyCode(LCTRL_KEY_HEAD_FOR_TTS_TRIGGER)[0]
 
-describe('ExternalEventsComponent', () => {
+// function createReconStateForTest(text: string):
+//     TextReconState {
+//       const reconState: TextReconState = {
+//         previousKeypressTimeMillis: 1000,
+//         numGazeKeypresses: text.length,
+//         text,
+//         cursorPos: text.length,
+//         isShiftOn: false,
+//         keySequence: text.split(''),
+//       };
+//       return reconState;
+//     }
+
+
+fdescribe('ExternalEventsComponent', () => {
   let textEntryBeginSubject: Subject<TextEntryBeginEvent>;
   let textEntryEndSubject: Subject<TextEntryEndEvent>;
   let fixture: ComponentFixture<ExternalEventsComponent>;
+  let component: ExternalEventsComponent;
   let beginEvents: TextEntryBeginEvent[];
   let endEvents: TextEntryEndEvent[];
+
+
 
   beforeEach(async () => {
     await TestBed
@@ -207,6 +224,20 @@ describe('ExternalEventsComponent', () => {
     ]);
     expect(reconstructedTexts).toEqual(['9', '98', '981', '9810']);
   });
+
+  for (const [posArg, expectedPos] of [
+           [-1, 0], [0, 0], [1, 1], [2, 2], [3, 3], [4, 3]]) {
+    it(`placeCursor moves cursor: arg=${posArg}`, () => {
+      const isExternal = false;
+      ExternalEventsComponent.externalKeypressHook(65, isExternal);
+      ExternalEventsComponent.externalKeypressHook(66, isExternal);
+      ExternalEventsComponent.externalKeypressHook(67, isExternal);
+
+      // const reconState = createReconStateForTest('foo bar');
+      ExternalEventsComponent.placeCursor(posArg, isExternal);
+      expect(ExternalEventsComponent.internalCursorPos).toEqual(expectedPos);
+    });
+  }
 
   it('Reistering keypress listener updates listener count', () => {
     ExternalEventsComponent.registerKeypressListener(
@@ -757,12 +788,14 @@ describe('ExternalEventsComponent', () => {
 
   it('registered toggle-foreground callback not called by incomplete sequences',
      () => {
-      const callFlags: boolean[] = [];
-      ExternalEventsComponent.registerToggleForegroundCallback(
-          (toForeground: boolean) => {callFlags.push(toForeground)});
-      ExternalEventsComponent.externalKeypressHook(162, /* isExternal= */ true);
-      ExternalEventsComponent.externalKeypressHook(71, /* isExternal= */ false);
+       const callFlags: boolean[] = [];
+       ExternalEventsComponent.registerToggleForegroundCallback(
+           (toForeground: boolean) => {callFlags.push(toForeground)});
+       ExternalEventsComponent.externalKeypressHook(
+           162, /* isExternal= */ true);
+       ExternalEventsComponent.externalKeypressHook(
+           71, /* isExternal= */ false);
 
-      expect(callFlags).toEqual([]);
+       expect(callFlags).toEqual([]);
      });
 });

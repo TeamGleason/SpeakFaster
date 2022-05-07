@@ -716,7 +716,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     updateButtonBoxesForElements(this.instanceId, this.buttons);
   }
 
-  onInputBoxBeforeCursorClicked(event: Event) {
+  onTextBeforeCursorClicked(event: Event) {
     event.preventDefault();
     event.stopPropagation();
     const selection = window.getSelection();
@@ -730,7 +730,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     // alert(selection.focusOffset);
   }
 
-  onInputBoxAfterCursorClicked(event: Event) {
+  onTextAfterCursorClicked(event: Event) {
     event.preventDefault();
     event.stopPropagation();
     const selection = window.getSelection();

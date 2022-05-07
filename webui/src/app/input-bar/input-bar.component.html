@@ -39,7 +39,10 @@
 }
 
 .base-text-area {
-  display: inline-block;
+  align-items: center;
+  display: inline-flex;
+  flex-direction: row;
+  margin-right: 4px;
 }
 
 .buttons-container {
@@ -163,14 +166,14 @@
 
 .simulated-cursor {
   animation: blink 1.1s linear infinite alternate;
-  box-sizing:   content-box;
-  font-weight: 100;
+  display: inline-block;
   font-size: 30px;
-  height: 0;
+  font-weight: 900;
+  left: -4px;
   margin: 0;
-  max-height: 0;
   max-width: 0;
   overflow: visible;
+  position: relative;
   width: 0;
 }
 
@@ -207,12 +210,12 @@
                  state !== 'FOCUSED_ON_LETTER_CHIP' &&
                  state !== 'CHOOSING_WORD_CHIP' &&
                  state !== 'FOCUSED_ON_WORD_CHIP'">
-        <span
+        <div
             class="input-text"
-            (click)="onInputBoxBeforeCursorClicked($event)">{{inputStringBeforeCursor}}<span
+            (click)="onTextBeforeCursorClicked($event)">{{inputStringBeforeCursor}}<div
                 class="simulated-cursor"
                 [ngClass]="{'simulated-cursor-hidden': !isFocused}"
-            >|</span><span (click)="onInputBoxAfterCursorClicked($event)">{{inputStringAfterCursor}}</span></span>
+            >|</div><div class="input-text" (click)="onTextAfterCursorClicked($event)">{{inputStringAfterCursor}}</div></div>
       </div>
       <div
           class="chips-container"

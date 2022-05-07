@@ -166,7 +166,6 @@ describe('InputBarComponent', () => {
            `key sequence = ${JSON.stringify(keySequence)}`,
        () => {
          enterKeysIntoComponent(keySequence, reconstructedText);
-         fixture.detectChanges();
 
          const inputText = fixture.debugElement.query(By.css('.input-text'));
          expect(inputText.nativeElement.innerText).toEqual(expectedText + '|');
@@ -179,6 +178,91 @@ describe('InputBarComponent', () => {
          expect(fixture.debugElement.query(By.css('.simulated-cursor')))
              .not.toBeNull();
        });
+  }
+
+  it('Left arrow key updates cursor position', () => {
+    enterKeysIntoComponent(['b', 'a'], 'ba');
+    ExternalEvents.setInternalReconStateForTest({
+      previousKeypressTimeMillis: null,
+      numGazeKeypresses: 3,
+      keySequence: ['b', 'a'],
+      text: 'ba',
+      cursorPos: 2,
+      isShiftOn: false,
+    });
+    ExternalEventsComponent.externalKeypressHook(
+        ExternalEvents.getVirtualkeyCode(VIRTUAL_KEY.LARROW)[0],
+        /* isExternal= */ false);
+    fixture.detectChanges();
+
+    const inputText = fixture.debugElement.query(By.css('.input-text'));
+    expect(inputText.nativeElement.innerText).toEqual('b|a');
+  });
+
+  it('Left arrow key over the limit: cursor stays at position 0', () => {
+    enterKeysIntoComponent(['b', 'a'], 'ba');
+    ExternalEvents.setInternalReconStateForTest({
+      previousKeypressTimeMillis: null,
+      numGazeKeypresses: 3,
+      keySequence: ['b', 'a'],
+      text: 'ba',
+      cursorPos: 2,
+      isShiftOn: false,
+    });
+    for (let i = 0; i < 3; ++i) {
+      ExternalEventsComponent.externalKeypressHook(
+          ExternalEvents.getVirtualkeyCode(VIRTUAL_KEY.LARROW)[0],
+          /* isExternal= */ false);
+    }
+    fixture.detectChanges();
+
+    const inputText = fixture.debugElement.query(By.css('.input-text'));
+    expect(inputText.nativeElement.innerText).toEqual('|ba');
+  });
+
+  it('Left arrows followed by right arrow correctly places cursor', () => {
+    enterKeysIntoComponent(['b', 'a'], 'ba');
+    ExternalEvents.setInternalReconStateForTest({
+      previousKeypressTimeMillis: null,
+      numGazeKeypresses: 3,
+      keySequence: ['b', 'a'],
+      text: 'ba',
+      cursorPos: 2,
+      isShiftOn: false,
+    });
+    for (const key
+             of [VIRTUAL_KEY.LARROW, VIRTUAL_KEY.LARROW, VIRTUAL_KEY.RARROW]) {
+      ExternalEventsComponent.externalKeypressHook(
+          ExternalEvents.getVirtualkeyCode(key)[0],
+          /* isExternal= */ false);
+    }
+    fixture.detectChanges();
+
+    const inputText = fixture.debugElement.query(By.css('.input-text'));
+    expect(inputText.nativeElement.innerText).toEqual('b|a');
+  });
+
+  for (const [anchorOffset, expectedText] of [[0, '|ba'], [1, 'b|a']] as
+       Array<[number, string]>) {
+    it(`clicking in text box updates cursor position: offset=${anchorOffset}`,
+        () => {
+          enterKeysIntoComponent(['b', 'a'], 'ba');
+          ExternalEvents.setInternalReconStateForTest({
+            previousKeypressTimeMillis: null,
+            numGazeKeypresses: 3,
+            keySequence: ['b', 'a'],
+            text: 'ba',
+            cursorPos: 2,
+            isShiftOn: false,
+          });
+
+          spyOn(fixture.componentInstance, 'getWindowSelectionAnchorOffset')
+              .and.returnValue(anchorOffset);
+          const inputText = fixture.debugElement.query(By.css('.input-text'));
+          inputText.nativeElement.click();
+          fixture.detectChanges();
+          expect(inputText.nativeElement.innerText).toEqual(expectedText);
+        });
   }
 
   it('clicking abort button clears state: no head keywords', () => {

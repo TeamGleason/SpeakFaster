@@ -76,7 +76,7 @@ export const ABBRVIATION_EXPANSION_TRIGGER_KEY_SEQUENCES: Array<string[]> =
 
 const INPUT_TEXT_BASE_FONT_SIZE = 30;
 const INPUT_TEXT_FONT_SIZE_SCALING_FACTORS =
-    [1.0, 1 / 1.35, 1 / 1.6, 1 / 1.8, 1 / 1.95];
+    [1.0, 1 / 1.4, 1 / 1.65, 1 / 1.85, 1 / 2.00];
 const INPUT_TEXT_FONT_SIZE_SCALING_LENGTH_TICKS = [0, 50, 100, 150, 250];
 
 export const ABBREVIATION_MAX_PROPER_LENGTH = 12;
@@ -183,6 +183,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
             this.state = State.ENTERING_BASE_TEXT;
             this.eventLogger.logContextualPhraseCopying(
                 getPhraseStats(event.appendText));
+            this.scaleInputTextFontSize();
           } else if (event.contextualPhraseTags) {
             this._contextualPhraseTags.splice(0);
             this._contextualPhraseTags.push(...event.contextualPhraseTags);
@@ -719,12 +720,19 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   onTextBeforeCursorClicked(event: Event) {
     event.preventDefault();
     event.stopPropagation();
-    const selection = window.getSelection();
-    if (!selection) {
+    const anchorOffset = this.getWindowSelectionAnchorOffset();
+    if (anchorOffset === null) {
       return;
     }
-    ExternalEventsComponent.placeCursor(
-        selection.anchorOffset, /* isExternal= */ false);
+    ExternalEventsComponent.placeCursor(anchorOffset, /* isExternal= */ false);
+  }
+
+  getWindowSelectionAnchorOffset(): number|null {
+    const selection = window.getSelection();
+    if (!selection) {
+      return null;
+    }
+    return selection.anchorOffset;
   }
 
   onTextAfterCursorClicked(event: Event) {
@@ -755,10 +763,6 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   get inputStringBeforeCursor(): string {
-    console.log(
-        '*** ExternalEventsComponent.internalCursorPos:',
-        ExternalEventsComponent.internalCursorPos,
-        ExternalEventsComponent.internalText);  // DEBUG
     return this.inputString.substring(
         0, ExternalEventsComponent.internalCursorPos);
   }

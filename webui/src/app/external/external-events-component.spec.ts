@@ -8,29 +8,13 @@ import {ExternalEventsModule} from './external-events.module';
 
 const END_KEY_CODE = getVirtualkeyCode(LCTRL_KEY_HEAD_FOR_TTS_TRIGGER)[0]
 
-// function createReconStateForTest(text: string):
-//     TextReconState {
-//       const reconState: TextReconState = {
-//         previousKeypressTimeMillis: 1000,
-//         numGazeKeypresses: text.length,
-//         text,
-//         cursorPos: text.length,
-//         isShiftOn: false,
-//         keySequence: text.split(''),
-//       };
-//       return reconState;
-//     }
-
-
-fdescribe('ExternalEventsComponent', () => {
+describe('ExternalEventsComponent', () => {
   let textEntryBeginSubject: Subject<TextEntryBeginEvent>;
   let textEntryEndSubject: Subject<TextEntryEndEvent>;
   let fixture: ComponentFixture<ExternalEventsComponent>;
   let component: ExternalEventsComponent;
   let beginEvents: TextEntryBeginEvent[];
   let endEvents: TextEntryEndEvent[];
-
-
 
   beforeEach(async () => {
     await TestBed
@@ -401,6 +385,28 @@ fdescribe('ExternalEventsComponent', () => {
       expect(endEvents[0].timestampMillis)
           .toBeGreaterThanOrEqual(beginEvents[0].timestampMillis);
     });
+  }
+
+  for (const [cursorPos, expectedText] of [[2, ' w1'], [3, 'w1']] as
+       Array<[number, string]>) {
+    it(`Word backspace after cursor placement works: cursor pos=${cursorPos}`,
+        () => {
+          // hi w1.
+          const isExternal = false;
+          const vkCodes = [72, 73, 32, 87, 49];
+          for (const vkCode of vkCodes) {
+            ExternalEventsComponent.externalKeypressHook(vkCode, isExternal);
+          }
+          ExternalEventsComponent.placeCursor(cursorPos, isExternal);
+          // LCTRL + LSHIFT + LARROW + BACKSPACE.
+          const vkCodesWordBack = [162, 160, 37, 8];
+          for (const vkCode of vkCodesWordBack) {
+            ExternalEventsComponent.externalKeypressHook(vkCode, isExternal);
+          }
+
+          expect(ExternalEventsComponent.internalText).toEqual(expectedText);
+          expect(ExternalEventsComponent.internalCursorPos).toEqual(0);
+        });
   }
 
   it('LShift key enters upper case letter', () => {

@@ -170,6 +170,7 @@ function insertCharAsCursorPos(char: string, reconState: TextReconState) {
         casedChar + reconState.text.slice(reconState.cursorPos);
   }
   reconState.cursorPos += 1;
+  console.log('*** insertCharAtCursorPos:', reconState.cursorPos);  // DEBUG
 }
 
 function getHomeKeyDestination(reconState: TextReconState): number {
@@ -179,9 +180,11 @@ function getHomeKeyDestination(reconState: TextReconState): number {
 }
 
 function wordBackspace(reconState: TextReconState) {
-  reconState.cursorPos = reconState.keySequence.length;
+  // reconState.cursorPos = reconState.keySequence.length;
   // Find the last non-whitespace chararcter.
-  let j = reconState.text.length - 1;
+  // let j = reconState.text.length - 1;
+  let j = reconState.cursorPos - 1;
+  console.log('*** wordBackspace:', JSON.stringify(reconState));  // DEBUG
   for (; j >= 0; --j) {
     const char = reconState.text[j];
     if (char !== ' ' && char !== '\n') {
@@ -195,7 +198,6 @@ function wordBackspace(reconState: TextReconState) {
       break;
     }
   }
-  // TODO(cais): Handle non-final cursor position.
   reconState.text = reconState.text.slice(0, j + 1) +
       reconState.text.slice(reconState.cursorPos);
   reconState.cursorPos = j + 1;
@@ -625,18 +627,18 @@ export class ExternalEventsComponent implements OnInit {
           getPunctuationLiteral(
               virtualKey as VIRTUAL_KEY, reconState.isShiftOn),
           reconState);
-    } else if (virtualKey === VIRTUAL_KEY.LARROW) {
-      if (reconState.cursorPos > 0) {
-        reconState.cursorPos--;
-      }
-    } else if (virtualKey === VIRTUAL_KEY.RARROW) {
-      if (reconState.cursorPos < reconState.text.length) {
-        reconState.cursorPos++;
-      }
     }
+    const twoKeysBack =
+        reconState.keySequence[reconState.keySequence.length - 3];
+    const prevKey = reconState.keySequence[reconState.keySequence.length - 2];
+    const isTwoKeysBackCtrl =
+        twoKeysBack === VIRTUAL_KEY.LCTRL || twoKeysBack === VIRTUAL_KEY.RCTRL;
+    const isPrevKeyShift =
+        prevKey === VIRTUAL_KEY.LSHIFT || prevKey === VIRTUAL_KEY.RSHIFT;
+    const isPrevKeyCtrl =
+        prevKey === VIRTUAL_KEY.LCTRL || prevKey === VIRTUAL_KEY.RCTRL;
     if (virtualKey === VIRTUAL_KEY.BACKSPACE) {
-      const prevKey = reconState.keySequence[reconState.keySequence.length - 2];
-      if (prevKey === VIRTUAL_KEY.LCTRL || prevKey === VIRTUAL_KEY.RCTRL ||
+      if (isPrevKeyCtrl ||
           keySequenceEndsWith(
               reconState.keySequence, WORD_BACKSPACE_COMBO_KEY)) {
         // Wod delete.
@@ -657,6 +659,16 @@ export class ExternalEventsComponent implements OnInit {
         virtualKey === VIRTUAL_KEY.LSHIFT ||
         virtualKey === VIRTUAL_KEY.RSHIFT) {
       reconState.isShiftOn = true;
+    } else if (
+        virtualKey === VIRTUAL_KEY.LARROW &&
+        !(isTwoKeysBackCtrl && isPrevKeyShift)) {
+      if (reconState.cursorPos > 0) {
+        reconState.cursorPos--;
+      }
+    } else if (virtualKey === VIRTUAL_KEY.RARROW) {
+      if (reconState.cursorPos < reconState.text.length) {
+        reconState.cursorPos++;
+      }
     }
     if (virtualKey !== VIRTUAL_KEY.LSHIFT &&
         virtualKey !== VIRTUAL_KEY.RSHIFT) {

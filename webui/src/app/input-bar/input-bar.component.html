@@ -39,7 +39,10 @@
 }
 
 .base-text-area {
-  display: inline-block;
+  align-items: center;
+  display: inline-flex;
+  flex-direction: row;
+  margin-right: 4px;
 }
 
 .buttons-container {
@@ -118,7 +121,7 @@
   line-height: 66px;
   margin: 0 8px;
   min-width: 100%;
-  padding: 0 4px;
+  padding: 0 4px 0 8px;
   width: 100%;
 }
 
@@ -163,9 +166,16 @@
 
 .simulated-cursor {
   animation: blink 1.1s linear infinite alternate;
-  font-weight: 900;
+  display: inline-block;
   font-size: 30px;
-  margin-left: 0.1em;
+  font-weight: 900;
+  left: -4px;
+  margin: 0;
+  max-width: 0;
+  overflow: visible;
+  position: relative;
+  white-space: pre-wrap;
+  width: 0;
 }
 
 .simulated-cursor-hidden {
@@ -195,16 +205,18 @@
   <div class="input-box">
     <div class="main-area">
       <div
+          #inputText
           class="base-text-area"
           *ngIf="state !== 'CHOOSING_LETTER_CHIP' &&
                  state !== 'FOCUSED_ON_LETTER_CHIP' &&
                  state !== 'CHOOSING_WORD_CHIP' &&
                  state !== 'FOCUSED_ON_WORD_CHIP'">
-        <span
-            #inputText class="input-text">{{inputString}}<span
+        <div
+            class="input-text"
+            (click)="onTextBeforeCursorClicked($event)">{{inputStringBeforeCursor}}<div
                 class="simulated-cursor"
                 [ngClass]="{'simulated-cursor-hidden': !isFocused}"
-            >|</span></span>
+            >|</div><div class="input-text" (click)="onTextAfterCursorClicked($event)">{{inputStringAfterCursor}}</div></div>
       </div>
       <div
           class="chips-container"

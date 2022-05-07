@@ -7,7 +7,7 @@ import {endsWithSentenceEndPunctuation, isAlphanumericChar, keySequenceEndsWith}
 import {createUuid} from 'src/utils/uuid';
 
 import {getPhraseStats, HttpEventLogger} from '../event-logger/event-logger-impl';
-import {ExternalEventsComponent, IgnoreMachineKeySequenceConfig, repeatVirtualKey, VIRTUAL_KEY} from '../external/external-events.component';
+import {ExternalEventsComponent, IgnoreMachineKeySequenceConfig, repeatVirtualKey, resetReconStates, VIRTUAL_KEY} from '../external/external-events.component';
 import {LexiconComponent, LoadLexiconRequest} from '../lexicon/lexicon.component';
 import {FillMaskRequest, SpeakFasterService} from '../speakfaster-service';
 import {StudyManager} from '../study/study-manager';
@@ -76,7 +76,7 @@ export const ABBRVIATION_EXPANSION_TRIGGER_KEY_SEQUENCES: Array<string[]> =
 
 const INPUT_TEXT_BASE_FONT_SIZE = 30;
 const INPUT_TEXT_FONT_SIZE_SCALING_FACTORS =
-    [1.0, 1 / 1.35, 1 / 1.6, 1 / 1.8, 1 / 1.95];
+    [1.0, 1 / 1.4, 1 / 1.65, 1 / 1.85, 1 / 2.00];
 const INPUT_TEXT_FONT_SIZE_SCALING_LENGTH_TICKS = [0, 50, 100, 150, 250];
 
 export const ABBREVIATION_MAX_PROPER_LENGTH = 12;
@@ -183,6 +183,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
             this.state = State.ENTERING_BASE_TEXT;
             this.eventLogger.logContextualPhraseCopying(
                 getPhraseStats(event.appendText));
+            this.scaleInputTextFontSize();
           } else if (event.contextualPhraseTags) {
             this._contextualPhraseTags.splice(0);
             this._contextualPhraseTags.push(...event.contextualPhraseTags);
@@ -708,12 +709,43 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     }
     this.baseReconstructedText = '';
     this.cutText = '';
+    resetReconStates();
   }
 
   private updateInputString(newStringValue: string) {
     this.inputString = newStringValue;
     this.inputStringChanged.next(this.inputString);
     updateButtonBoxesForElements(this.instanceId, this.buttons);
+  }
+
+  onTextBeforeCursorClicked(event: Event) {
+    event.preventDefault();
+    event.stopPropagation();
+    const anchorOffset = this.getWindowSelectionAnchorOffset();
+    if (anchorOffset === null) {
+      return;
+    }
+    ExternalEventsComponent.placeCursor(anchorOffset, /* isExternal= */ false);
+  }
+
+  getWindowSelectionAnchorOffset(): number|null {
+    const selection = window.getSelection();
+    if (!selection) {
+      return null;
+    }
+    return selection.anchorOffset;
+  }
+
+  onTextAfterCursorClicked(event: Event) {
+    event.preventDefault();
+    event.stopPropagation();
+    const selection = window.getSelection();
+    if (!selection) {
+      return;
+    }
+    ExternalEventsComponent.placeCursor(
+        selection.anchorOffset + this.inputStringBeforeCursor.length,
+        /* isExternal= */ false);
   }
 
   getChipText(index: number): string {
@@ -729,6 +761,16 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
 
   get hasInputStringOrChips(): boolean {
     return this.inputString.trim().length > 0 || this._chips.length > 0;
+  }
+
+  get inputStringBeforeCursor(): string {
+    return this.inputString.substring(
+        0, ExternalEventsComponent.internalCursorPos);
+  }
+
+  get inputStringAfterCursor(): string {
+    return this.inputString.substring(
+        ExternalEventsComponent.internalCursorPos);
   }
 
   /**

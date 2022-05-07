@@ -1,9 +1,9 @@
 import {ComponentFixture, TestBed} from '@angular/core/testing';
-import {Subject, Subscription} from 'rxjs';
+import {Subject} from 'rxjs';
 
 import {TextEntryBeginEvent, TextEntryEndEvent} from '../types/text-entry';
 
-import {ExternalEventsComponent, getPunctuationLiteral, getVirtualkeyCode, LCTRL_KEY_HEAD_FOR_TTS_TRIGGER, resetReconStates, tryDetectoMultiKeyChar, VIRTUAL_KEY, VKCODE_SPECIAL_KEYS} from './external-events.component';
+import {ExternalEventsComponent, getPunctuationLiteral, getVirtualkeyCode, LCTRL_KEY_HEAD_FOR_TTS_TRIGGER, resetReconStates, TextReconState, tryDetectoMultiKeyChar, VIRTUAL_KEY, VKCODE_SPECIAL_KEYS} from './external-events.component';
 import {ExternalEventsModule} from './external-events.module';
 
 const END_KEY_CODE = getVirtualkeyCode(LCTRL_KEY_HEAD_FOR_TTS_TRIGGER)[0]
@@ -209,6 +209,35 @@ describe('ExternalEventsComponent', () => {
     expect(reconstructedTexts).toEqual(['9', '98', '981', '9810']);
   });
 
+  for (const [posArg, expectedPos] of [
+           [-1, 0], [0, 0], [1, 1], [2, 2], [3, 3], [4, 3]]) {
+    it(`placeCursor moves cursor: pos=${posArg}`, () => {
+      const isExternal = false;
+      ExternalEventsComponent.externalKeypressHook(65, isExternal);
+      ExternalEventsComponent.externalKeypressHook(66, isExternal);
+      ExternalEventsComponent.externalKeypressHook(67, isExternal);
+
+      ExternalEventsComponent.placeCursor(posArg, isExternal);
+      expect(ExternalEventsComponent.internalCursorPos).toEqual(expectedPos);
+    });
+  }
+
+  for (const [posArg, expectedFinalText] of [
+           [0, 'zabc'], [1, 'azbc'], [2, 'abzc'], [3, 'abcz']] as
+       Array<[number, string]>) {
+    it(`Entering keys after placing cursor works: pos=${posArg}`, () => {
+      const isExternal = false;
+      ExternalEventsComponent.externalKeypressHook(65, isExternal);
+      ExternalEventsComponent.externalKeypressHook(66, isExternal);
+      ExternalEventsComponent.externalKeypressHook(67, isExternal);
+      ExternalEventsComponent.placeCursor(posArg, isExternal);
+      ExternalEventsComponent.externalKeypressHook(90, isExternal);
+
+      expect(ExternalEventsComponent.internalText).toEqual(expectedFinalText);
+      expect(ExternalEventsComponent.internalCursorPos).toEqual(posArg + 1);
+    });
+  }
+
   it('Reistering keypress listener updates listener count', () => {
     ExternalEventsComponent.registerKeypressListener(
         (keySequence: string[], reconstructedText: string) => {});
@@ -355,6 +384,28 @@ describe('ExternalEventsComponent', () => {
       expect(endEvents[0].timestampMillis)
           .toBeGreaterThanOrEqual(beginEvents[0].timestampMillis);
     });
+  }
+
+  for (const [cursorPos, expectedText] of [[2, ' w1'], [3, 'w1']] as
+       Array<[number, string]>) {
+    it(`Word backspace after cursor placement works: cursor pos=${cursorPos}`,
+        () => {
+          // hi w1.
+          const isExternal = false;
+          const vkCodes = [72, 73, 32, 87, 49];
+          for (const vkCode of vkCodes) {
+            ExternalEventsComponent.externalKeypressHook(vkCode, isExternal);
+          }
+          ExternalEventsComponent.placeCursor(cursorPos, isExternal);
+          // LCTRL + LSHIFT + LARROW + BACKSPACE.
+          const vkCodesWordBack = [162, 160, 37, 8];
+          for (const vkCode of vkCodesWordBack) {
+            ExternalEventsComponent.externalKeypressHook(vkCode, isExternal);
+          }
+
+          expect(ExternalEventsComponent.internalText).toEqual(expectedText);
+          expect(ExternalEventsComponent.internalCursorPos).toEqual(0);
+        });
   }
 
   it('LShift key enters upper case letter', () => {
@@ -758,12 +809,14 @@ describe('ExternalEventsComponent', () => {
 
   it('registered toggle-foreground callback not called by incomplete sequences',
      () => {
-      const callFlags: boolean[] = [];
-      ExternalEventsComponent.registerToggleForegroundCallback(
-          (toForeground: boolean) => {callFlags.push(toForeground)});
-      ExternalEventsComponent.externalKeypressHook(162, /* isExternal= */ true);
-      ExternalEventsComponent.externalKeypressHook(71, /* isExternal= */ false);
+       const callFlags: boolean[] = [];
+       ExternalEventsComponent.registerToggleForegroundCallback(
+           (toForeground: boolean) => {callFlags.push(toForeground)});
+       ExternalEventsComponent.externalKeypressHook(
+           162, /* isExternal= */ true);
+       ExternalEventsComponent.externalKeypressHook(
+           71, /* isExternal= */ false);
 
-      expect(callFlags).toEqual([]);
+       expect(callFlags).toEqual([]);
      });
 });

@@ -304,6 +304,8 @@ export function getVirtualkeyCode(charOrKey: string|VIRTUAL_KEY): number[] {
 export function getPunctuationLiteral(
     vkCode: VIRTUAL_KEY, isShift: boolean): string {
   switch (vkCode) {
+    case VIRTUAL_KEY.MINUS:
+      return isShift ? '_' : '-';
     case VIRTUAL_KEY.SEMICOLON_COLON:
       return isShift ? ':' : ';';
     case VIRTUAL_KEY.PLUS:
@@ -356,6 +358,7 @@ export const MULTI_KEY_CHARS: {[char: string]: Array<VIRTUAL_KEY|string>} = {
   ':': [VIRTUAL_KEY.LSHIFT, VIRTUAL_KEY.SEMICOLON_COLON],
   '(': [VIRTUAL_KEY.LSHIFT, '9'],
   ')': [VIRTUAL_KEY.LSHIFT, '0'],
+  '_': [VIRTUAL_KEY.LSHIFT, VIRTUAL_KEY.MINUS],
 };
 
 /**

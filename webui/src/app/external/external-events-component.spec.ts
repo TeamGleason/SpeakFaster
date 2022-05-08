@@ -88,6 +88,7 @@ describe('ExternalEventsComponent', () => {
     expect(getPunctuationLiteral(VIRTUAL_KEY.PERIOD, true)).toEqual('.');
     expect(getPunctuationLiteral(VIRTUAL_KEY.COMMA, true)).toEqual(',');
     expect(getPunctuationLiteral(VIRTUAL_KEY.MINUS, false)).toEqual('-');
+    expect(getPunctuationLiteral(VIRTUAL_KEY.MINUS, true)).toEqual('_');
   });
 
   it('typing an internal key sends TextEntryBeginEvent', () => {

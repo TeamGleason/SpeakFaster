@@ -3,12 +3,13 @@
  * indicates states such as ongoing request, success and error.
  */
 import {Component, EventEmitter, Input, OnDestroy, OnInit, Output} from '@angular/core';
-import {Subject} from 'rxjs';
+import {Subject, Subscription} from 'rxjs';
 
 import {getContextualPhraseStats, getPhraseStats, HttpEventLogger} from '../event-logger/event-logger-impl';
 import {InputBarControlEvent} from '../input-bar/input-bar.component';
 import {SpeakFasterService} from '../speakfaster-service';
 import {AddContextualPhraseResponse, ContextualPhrase} from '../types/contextual_phrase';
+import {TextEntryEndEvent} from '../types/text-entry';
 
 export enum State {
   READY = 'READY',
@@ -33,6 +34,10 @@ export class FavoriteButtonComponent implements OnInit, OnDestroy {
   @Input() phraseDisplayText?: string;
   // Phrase ID: must be provided if isDeleteion is true.
   @Input() phraseId?: string;
+  // If provided, will use the events to remember the last entered non-empty
+  // text, and when the button is clicked while `phrase` is empty, the remebered
+  // non-empty text will be added to favorite.
+  @Input() textEntryEndSubject?: Subject<TextEntryEndEvent>;
   @Input() sendAsUserFeedback: boolean = false;
   @Input()
   tags: string[]|undefined =
@@ -43,17 +48,36 @@ export class FavoriteButtonComponent implements OnInit, OnDestroy {
       new EventEmitter();
 
   state: State = State.READY;
+  private textEntryEndSubjectSubscription?: Subscription;
+  private lastNonEmptyText: string|null = null;
 
   constructor(
       public speakFasterService: SpeakFasterService,
       private eventLogger: HttpEventLogger) {}
 
-  ngOnInit() {}
+  ngOnInit() {
+    if (this.textEntryEndSubject) {
+      this.textEntryEndSubjectSubscription =
+          this.textEntryEndSubject.subscribe((event: TextEntryEndEvent) => {
+            if (!event.isFinal || event.repeatLastNonEmpty || event.isAborted ||
+                !event.text.trim()) {
+              return;
+            }
+            // Remember the last-entered, non-empty phrase.
+            this.lastNonEmptyText = event.text.trim();
+          });
+    }
+  }
 
-  ngOnDestroy() {}
+  ngOnDestroy() {
+    if (this.textEntryEndSubjectSubscription) {
+      this.textEntryEndSubjectSubscription.unsubscribe();
+    }
+  }
 
   onFavoriteButtonClicked(event: Event) {
-    if (this.phrase.trim() === '') {
+    let phrase = this.phrase.trim() || this.lastNonEmptyText;
+    if (!phrase) {
       return;
     }
     if (!this.userId) {
@@ -68,7 +92,7 @@ export class FavoriteButtonComponent implements OnInit, OnDestroy {
         // Send as user feedback.
         this.eventLogger
             .logUserFeedback({
-              feedbackMessage: this.phrase.trim(),
+              feedbackMessage: phrase.trim(),
             })
             .then(
                 () => {
@@ -81,8 +105,7 @@ export class FavoriteButtonComponent implements OnInit, OnDestroy {
                 });
       } else {
         // Add contextual phrase.
-        const text = this.phrase.trim();
-
+        const text = phrase.trim();
         const contextualPhrase: ContextualPhrase = {
           phraseId: '',  // For AddContextualPhraseRequest, this is ignored.
           text,
@@ -139,7 +162,7 @@ export class FavoriteButtonComponent implements OnInit, OnDestroy {
         throw new Error('Cannot delete phrase: Empty phrase ID');
       }
       this.state = State.REQUESTING;
-      this.eventLogger.logContextualPhraseDelete(getPhraseStats(this.phrase));
+      this.eventLogger.logContextualPhraseDelete(getPhraseStats(phrase));
       this.speakFasterService
           .deleteContextualPhrase({
             userId: this.userId,

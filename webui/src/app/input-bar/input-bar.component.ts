@@ -140,6 +140,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   private latestReconstructedString = '';
   private baseReconstructedText: string = '';
   private cutText = '';
+  private lastNonEmptyPhrase: string|null = null;
 
   private textEntryEndSubjectSubscription?: Subscription;
   private inputBarChipsSubscription?: Subscription;
@@ -164,6 +165,10 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
             this.resetState();
           } else {
             this.updateInputString(textInjection.text);
+          }
+          if (textInjection.isFinal && !textInjection.repeatLastNonEmpty &&
+              !textInjection.isAborted && textInjection.text.trim()) {
+            this.lastNonEmptyPhrase = textInjection.text.trim();
           }
         });
     ExternalEventsComponent.registerIgnoreKeySequence(
@@ -676,7 +681,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   onInjectButtonClicked(event?: Event) {
-    let text = this.effectivePhrase;
+    let text = this.effectivePhrase || this.lastNonEmptyPhrase;
     if (!text) {
       return;
     }

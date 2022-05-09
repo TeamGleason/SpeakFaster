@@ -3,7 +3,7 @@ import {Subject} from 'rxjs';
 
 import {TextEntryBeginEvent, TextEntryEndEvent} from '../types/text-entry';
 
-import {ExternalEventsComponent, getPunctuationLiteral, getVirtualkeyCode, LCTRL_KEY_HEAD_FOR_TTS_TRIGGER, resetReconStates, TextReconState, tryDetectoMultiKeyChar, VIRTUAL_KEY, VKCODE_SPECIAL_KEYS} from './external-events.component';
+import {ExternalEventsComponent, getPunctuationLiteral, getVirtualkeyCode, LCTRL_KEY_HEAD_FOR_TTS_TRIGGER, resetReconStates, tryDetectoMultiKeyChar, VIRTUAL_KEY, VKCODE_SPECIAL_KEYS} from './external-events.component';
 import {ExternalEventsModule} from './external-events.module';
 
 const END_KEY_CODE = getVirtualkeyCode(LCTRL_KEY_HEAD_FOR_TTS_TRIGGER)[0]

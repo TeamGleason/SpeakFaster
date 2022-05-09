@@ -3,7 +3,7 @@ import {HttpErrorResponse} from '@angular/common/http';
 import {ChangeDetectorRef, Component, ElementRef, Input, OnInit, QueryList, ViewChildren} from '@angular/core';
 import {Subject} from 'rxjs';
 
-import {AppSettings, getAppSettings, setGenericTtsVoiceName} from '../settings/settings';
+import {AppSettings, getAppSettings} from '../settings/settings';
 import {TextToSpeechErrorResponse, TextToSpeechService} from '../text-to-speech-service';
 import {setUtteranceVoice} from '../tts-voice-selection/tts-voice-selection.component';
 import {TextEntryEndEvent} from '../types/text-entry';

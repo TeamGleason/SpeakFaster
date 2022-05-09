@@ -2,12 +2,13 @@
 
 import {ComponentFixture, fakeAsync, TestBed, tick} from '@angular/core/testing';
 import {By} from '@angular/platform-browser';
-import {Observable, of, Subject, throwError} from 'rxjs';
+import {Observable, of, Subject} from 'rxjs';
 
 import {HttpEventLogger} from '../event-logger/event-logger-impl';
 import {InputBarControlEvent} from '../input-bar/input-bar.component';
 import {SpeakFasterService} from '../speakfaster-service';
 import {AddContextualPhraseRequest, AddContextualPhraseResponse, DeleteContextualPhraseRequest, DeleteContextualPhraseResponse} from '../types/contextual_phrase';
+import {TextEntryEndEvent} from '../types/text-entry';
 
 import {FavoriteButtonComponent, State} from './favorite-button.component';
 import {FavoriteButtonModule} from './favorite-button.module';
@@ -27,6 +28,7 @@ class SpeakFasterServiceForTest {
 describe('FavoriteButton', () => {
   let fixture: ComponentFixture<FavoriteButtonComponent>;
   let speakFasterServiceForTest: SpeakFasterServiceForTest;
+  let textEntryEndSubject: Subject<TextEntryEndEvent>;
   let inputBarControlSubject: Subject<InputBarControlEvent>;
   let inputBarControlEvents: InputBarControlEvent[];
   let addedEvents: Array<{text: string, success: boolean}>;
@@ -34,6 +36,7 @@ describe('FavoriteButton', () => {
 
   beforeEach(async () => {
     speakFasterServiceForTest = new SpeakFasterServiceForTest();
+    textEntryEndSubject = new Subject();
     inputBarControlSubject = new Subject();
     inputBarControlEvents = [];
     inputBarControlSubject.subscribe((event) => {
@@ -54,6 +57,7 @@ describe('FavoriteButton', () => {
     addedEvents = [];
     fixture.componentInstance.favoritePhraseAdded.subscribe(
         event => addedEvents.push(event));
+    fixture.componentInstance.textEntryEndSubject = textEntryEndSubject;
     fixture.componentInstance.inputBarControlSubject = inputBarControlSubject;
     fixture.detectChanges();
   });
@@ -146,9 +150,9 @@ describe('FavoriteButton', () => {
          },
        });
        expect(addedEvents).toEqual([{
-        text: 'hi there!',
-        success: false,
-      }]);
+         text: 'hi there!',
+         success: false,
+       }]);
 
        tick(2000);
        expect(fixture.componentInstance.state).toEqual(State.READY);
@@ -238,4 +242,40 @@ describe('FavoriteButton', () => {
        expect(fixture.componentInstance.state).toEqual(State.READY);
        expect(spy).not.toHaveBeenCalled();
      });
+
+  it('click w/ empty phrase and remembered non-empty phrase adds to favorite',
+     () => {
+       fixture.componentInstance.userId = 'testuser1';
+       textEntryEndSubject.next({
+         text: 'This was spoken before',
+         isFinal: true,
+         timestampMillis: Date.now(),
+       });
+       const button = fixture.debugElement.query(By.css('.favorite-button'));
+       const spy = spyOn(speakFasterServiceForTest, 'addContextualPhrase');
+       fixture.componentInstance.phrase = '';
+       fixture.detectChanges();
+       button.nativeElement.click();
+
+       expect(spy).toHaveBeenCalledWith({
+         userId: 'testuser1',
+         contextualPhrase: {
+           phraseId: '',
+           text: 'This was spoken before',
+           tags: ['favorite'],
+         }
+       });
+       expect(fixture.componentInstance.state).toEqual(State.REQUESTING);
+     });
+
+  it('click w/ empty phrase and no remembered phrase has no effect', () => {
+    fixture.componentInstance.userId = 'testuser1';
+    fixture.componentInstance.phrase = '';
+    fixture.detectChanges();
+    const button = fixture.debugElement.query(By.css('.favorite-button'));
+    const spy = spyOn(speakFasterServiceForTest, 'addContextualPhrase');
+    button.nativeElement.click();
+
+    expect(spy).not.toHaveBeenCalled();
+  });
 });

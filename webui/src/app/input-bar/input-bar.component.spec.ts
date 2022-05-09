@@ -245,24 +245,24 @@ describe('InputBarComponent', () => {
   for (const [anchorOffset, expectedText] of [[0, '|ba'], [1, 'b|a']] as
        Array<[number, string]>) {
     it(`clicking in text box updates cursor position: offset=${anchorOffset}`,
-        () => {
-          enterKeysIntoComponent(['b', 'a'], 'ba');
-          ExternalEvents.setInternalReconStateForTest({
-            previousKeypressTimeMillis: null,
-            numGazeKeypresses: 3,
-            keySequence: ['b', 'a'],
-            text: 'ba',
-            cursorPos: 2,
-            isShiftOn: false,
-          });
+       () => {
+         enterKeysIntoComponent(['b', 'a'], 'ba');
+         ExternalEvents.setInternalReconStateForTest({
+           previousKeypressTimeMillis: null,
+           numGazeKeypresses: 3,
+           keySequence: ['b', 'a'],
+           text: 'ba',
+           cursorPos: 2,
+           isShiftOn: false,
+         });
 
-          spyOn(fixture.componentInstance, 'getWindowSelectionAnchorOffset')
-              .and.returnValue(anchorOffset);
-          const inputText = fixture.debugElement.query(By.css('.input-text'));
-          inputText.nativeElement.click();
-          fixture.detectChanges();
-          expect(inputText.nativeElement.innerText).toEqual(expectedText);
-        });
+         spyOn(fixture.componentInstance, 'getWindowSelectionAnchorOffset')
+             .and.returnValue(anchorOffset);
+         const inputText = fixture.debugElement.query(By.css('.input-text'));
+         inputText.nativeElement.click();
+         fixture.detectChanges();
+         expect(inputText.nativeElement.innerText).toEqual(expectedText);
+       });
   }
 
   it('clicking abort button clears state: no head keywords', () => {
@@ -1072,6 +1072,32 @@ describe('InputBarComponent', () => {
        expect(calls[0]).toEqual([65, 76, 76, 32, 71, 79, 79, 68, 190, 32]);
        expect(testListener.injectedTextCalls).toEqual(['all good. ']);
      });
+
+  it('clicking inject button with previous non-empty works', () => {
+    textEntryEndSubject.next({
+      text: 'Previous phrase',
+      isFinal: true,
+      timestampMillis: Date.now(),
+    });
+    fixture.componentInstance.inputString = '';
+    fixture.detectChanges();
+    const injectButton = fixture.debugElement.query(By.css('.inject-button'));
+    injectButton.nativeElement.click();
+
+    expect(textEntryEndEvents.length).toEqual(2);
+    const event = textEntryEndEvents[1];
+    expect(event.isFinal).toBeTrue();
+    expect(event.text).toEqual('Previous phrase. ');
+  });
+
+  it('clicking inject button without previous non-empty has no effect', () => {
+    fixture.componentInstance.inputString = '';
+    fixture.detectChanges();
+    const injectButton = fixture.debugElement.query(By.css('.inject-button'));
+    injectButton.nativeElement.click();
+
+    expect(textEntryEndEvents.length).toEqual(0);
+  });
 
   it('clicking inject text button injects keypresses without added final period',
      () => {

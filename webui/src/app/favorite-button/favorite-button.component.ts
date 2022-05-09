@@ -65,7 +65,6 @@ export class FavoriteButtonComponent implements OnInit, OnDestroy {
             }
             // Remember the last-entered, non-empty phrase.
             this.lastNonEmptyText = event.text.trim();
-            console.log('*** Non-empty text:', event.text);  // DEBUG
           });
     }
   }

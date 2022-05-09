@@ -1073,6 +1073,29 @@ describe('InputBarComponent', () => {
        expect(testListener.injectedTextCalls).toEqual(['all good. ']);
      });
 
+  it('clicking inject button removes trailing and leading whitespace.', () => {
+    const keySequence =
+        [VIRTUAL_KEY.SPACE, 'g', 'o', 'o', 'd', VIRTUAL_KEY.SPACE];
+    const reconstructedText = ' good ';
+    enterKeysIntoComponent(keySequence, reconstructedText);
+    const injectButton = fixture.debugElement.query(By.css('.inject-button'));
+    injectButton.nativeElement.click();
+
+    expect(textEntryEndEvents.length).toEqual(1);
+    const event = textEntryEndEvents[0];
+    expect(event.isFinal).toBeTrue();
+    expect(event.text).toEqual('good. ');
+    expect(event.injectedKeys).toEqual([
+      'g', 'o', 'o', 'd', VIRTUAL_KEY.PERIOD, VIRTUAL_KEY.SPACE
+    ]);
+    expect(event.inAppTextToSpeechAudioConfig).toBeUndefined();
+    expect(event.timestampMillis).toBeGreaterThan(0);
+    const calls = testListener.injectedKeysCalls;
+    expect(calls.length).toEqual(1);
+    expect(calls[0]).toEqual([71, 79, 79, 68, 190, 32]);
+    expect(testListener.injectedTextCalls).toEqual(['good. ']);
+  });
+
   it('clicking inject button with previous non-empty works', () => {
     textEntryEndSubject.next({
       text: 'Previous phrase',

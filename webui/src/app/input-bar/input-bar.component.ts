@@ -682,9 +682,10 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
 
   onInjectButtonClicked(event?: Event) {
     let text = this.effectivePhrase || this.lastNonEmptyPhrase;
-    if (!text) {
+    if (!text?.trim()) {
       return;
     }
+    text = text.trim();
     if (!endsWithSentenceEndPunctuation(text)) {
       text += '.';
     }

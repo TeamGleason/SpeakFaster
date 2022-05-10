@@ -147,6 +147,11 @@ export const LCTRL_KEY_HEAD_FOR_FOREGROUND_TRIGGER = 'g';
 export const BRING_TO_FOREGROUND_COMBO_KEY: string[] =
     [VIRTUAL_KEY.LCTRL, LCTRL_KEY_HEAD_FOR_FOREGROUND_TRIGGER];
 
+// Ctrl + P pauses/resumes the eye tracking.
+export const LCTRL_KEY_HEAD_FOR_EYE_TRACKING_TOGGLE = 'p';
+export const EYE_TRACKING_TOGGLE_COMBO_KEY: string[] =
+    [VIRTUAL_KEY.LCTRL, LCTRL_KEY_HEAD_FOR_EYE_TRACKING_TOGGLE];
+
 function getKeyFromVirtualKeyCode(vkCode: number): string|null {
   if (vkCode >= 48 && vkCode <= 58) {
     return String.fromCharCode(vkCode);
@@ -447,6 +452,7 @@ export class ExternalEventsComponent implements OnInit {
 
   private static readonly keypressListeners: KeypressListener[] = [];
   private static toggleForegroundCallback?: (toForeground: boolean) => void;
+  private static toggleEyeTrackingCallback?: () => void;
 
   ExternalEvewntsComponent() {}
 
@@ -492,7 +498,6 @@ export class ExternalEventsComponent implements OnInit {
    * responsible for calling the binding method `bringWindowToForeground()`.
    * @param callback
    */
-
   public static registerToggleForegroundCallback(
       callback: (toForeground: boolean) => void) {
     ExternalEventsComponent.toggleForegroundCallback = callback;
@@ -502,6 +507,25 @@ export class ExternalEventsComponent implements OnInit {
     if (ExternalEventsComponent.toggleForegroundCallback) {
       ExternalEventsComponent.toggleForegroundCallback = undefined;
     }
+  }
+
+  // TODO(cais): Add doc string and unit tests.
+  /**
+   * Register a callback for when the shortcut key for toggling eye gaze (gaze
+   * buttons' enabled state) is pressed.
+   * @param callback
+   */
+  public static registerToggleEyeTrackingCallback(callback: () => void) {
+    ExternalEventsComponent.toggleEyeTrackingCallback = callback;
+  }
+
+  public static clearToggleEyeTrackingCallback() {
+    ExternalEventsComponent.toggleEyeTrackingCallback = undefined;
+  }
+
+  public static getEyeTrackingPausedMessage(): string {
+    return `⏸︎ Eye tracking is paused. To re-enable it, use Ctrl+${
+        LCTRL_KEY_HEAD_FOR_EYE_TRACKING_TOGGLE}.`;
   }
 
   /**
@@ -583,6 +607,12 @@ export class ExternalEventsComponent implements OnInit {
       if (ExternalEventsComponent.toggleForegroundCallback) {
         ExternalEventsComponent.toggleForegroundCallback(
             /* toForeground= */ isExternal);
+      }
+      return;
+    } else if (keySequenceEndsWith(
+                   reconState.keySequence, EYE_TRACKING_TOGGLE_COMBO_KEY)) {
+      if (ExternalEventsComponent.toggleEyeTrackingCallback) {
+        ExternalEventsComponent.toggleEyeTrackingCallback();
       }
       return;
     } else if (

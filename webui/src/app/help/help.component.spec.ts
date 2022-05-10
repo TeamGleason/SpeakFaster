@@ -23,6 +23,6 @@ describe('HelpComponent', () => {
   it('shows correct abbreviation length limit', async () => {
     const listItems = fixture.debugElement.queryAll(By.css('li'));
 
-    expect(listItems[0].nativeElement.innerText).toEqual('Maximum allowed length of abbreviation: 12 characters')
+    expect(listItems[1].nativeElement.innerText).toEqual('Maximum allowed length of abbreviation: 12 characters')
   });
 });

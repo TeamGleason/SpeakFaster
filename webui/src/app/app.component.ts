@@ -2,7 +2,7 @@ import {AfterViewInit, Component, ElementRef, OnDestroy, OnInit, QueryList, View
 import {ActivatedRoute} from '@angular/router';
 import {Subject} from 'rxjs';
 
-import {bindCefSharpListener, bringFocusAppToForeground, bringWindowToForeground, registerExternalAccessTokenHook, registerExternalKeypressHook, registerHostWindowFocusHook, resizeWindow, setHostEyeGazeOptions, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from '../utils/cefsharp';
+import {bindCefSharpListener, bringFocusAppToForeground, bringWindowToForeground, registerExternalAccessTokenHook, registerExternalKeypressHook, registerHostWindowFocusHook, resizeWindow, setHostEyeGazeOptions, toggleGazeButtonsState, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from '../utils/cefsharp';
 import {createUuid} from '../utils/uuid';
 
 import {HttpEventLogger} from './event-logger/event-logger-impl';
@@ -76,6 +76,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   readonly conversationTurnsAvailable: ConversationTurn[] = [];
   readonly conversationTurnsSelected: ConversationTurn[] = [];
   inputString: string = '';
+
+  private _inputBarNotification?: string;
 
   @ViewChildren('clickableButton')
   clickableButtons!: QueryList<ElementRef<HTMLElement>>;
@@ -198,6 +200,12 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
             }, 100);
           }
         });
+    ExternalEventsComponent.registerToggleEyeTrackingCallback(async () => {
+      const enabled = await toggleGazeButtonsState();
+      this._inputBarNotification = enabled ?
+          undefined :
+          ExternalEventsComponent.getEyeTrackingPausedMessage();
+    });
     this.eventLogger.logSessionStart();
   }
 
@@ -290,6 +298,10 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     const appState = getAppState();
     return appState === AppState.ABBREVIATION_EXPANSION ||
         appState === AppState.MINIBAR;
+  }
+
+  get inputBarNotification(): string|undefined {
+    return this._inputBarNotification;
   }
 
   onInputStringChanged(str: string) {

@@ -42,6 +42,7 @@ describe('ExternalEventsComponent', () => {
 
   afterEach(async () => {
     ExternalEventsComponent.clearToggleForegroundCallback();
+    ExternalEventsComponent.clearToggleEyeTrackingCallback();
   });
 
   it('Virtual key codes map has no duplicate values', () => {
@@ -391,23 +392,23 @@ describe('ExternalEventsComponent', () => {
   for (const [cursorPos, expectedText] of [[2, ' w1'], [3, 'w1']] as
        Array<[number, string]>) {
     it(`Word backspace after cursor placement works: cursor pos=${cursorPos}`,
-        () => {
-          // hi w1.
-          const isExternal = false;
-          const vkCodes = [72, 73, 32, 87, 49];
-          for (const vkCode of vkCodes) {
-            ExternalEventsComponent.externalKeypressHook(vkCode, isExternal);
-          }
-          ExternalEventsComponent.placeCursor(cursorPos, isExternal);
-          // LCTRL + LSHIFT + LARROW + BACKSPACE.
-          const vkCodesWordBack = [162, 160, 37, 8];
-          for (const vkCode of vkCodesWordBack) {
-            ExternalEventsComponent.externalKeypressHook(vkCode, isExternal);
-          }
+       () => {
+         // hi w1.
+         const isExternal = false;
+         const vkCodes = [72, 73, 32, 87, 49];
+         for (const vkCode of vkCodes) {
+           ExternalEventsComponent.externalKeypressHook(vkCode, isExternal);
+         }
+         ExternalEventsComponent.placeCursor(cursorPos, isExternal);
+         // LCTRL + LSHIFT + LARROW + BACKSPACE.
+         const vkCodesWordBack = [162, 160, 37, 8];
+         for (const vkCode of vkCodesWordBack) {
+           ExternalEventsComponent.externalKeypressHook(vkCode, isExternal);
+         }
 
-          expect(ExternalEventsComponent.internalText).toEqual(expectedText);
-          expect(ExternalEventsComponent.internalCursorPos).toEqual(0);
-        });
+         expect(ExternalEventsComponent.internalText).toEqual(expectedText);
+         expect(ExternalEventsComponent.internalCursorPos).toEqual(0);
+       });
   }
 
   it('LShift key enters upper case letter', () => {
@@ -821,4 +822,21 @@ describe('ExternalEventsComponent', () => {
 
        expect(callFlags).toEqual([]);
      });
+
+  it('registered eye-gaze toggling callback is called from external', () => {
+    let callCount = 0;
+    ExternalEventsComponent.registerToggleEyeTrackingCallback(() => {
+      callCount++;
+    });
+    ExternalEventsComponent.externalKeypressHook(162, /* isExternal= */ false);
+    ExternalEventsComponent.externalKeypressHook(80, /* isExternal= */ false);
+
+    expect(callCount).toEqual(1);
+  });
+
+  it('returns correct eye-tracking paused message', () => {
+    expect(ExternalEventsComponent.getEyeTrackingPausedMessage())
+        .toEqual('⏸︎ Eye tracking is paused. To re-enable it, use Ctrl+p.');
+  });
+
 });

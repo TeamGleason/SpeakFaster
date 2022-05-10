@@ -7,6 +7,7 @@ import * as cefSharp from '../utils/cefsharp';
 import {AppComponent} from './app.component';
 import {AuthModule} from './auth/auth.module';
 import {HttpEventLogger} from './event-logger/event-logger-impl';
+import {ExternalEventsComponent} from './external/external-events.component';
 import {ExternalEventsModule} from './external/external-events.module';
 import {MetricsModule} from './metrics/metrics.module';
 import {MiniBarModule} from './mini-bar/mini-bar.module';
@@ -290,5 +291,9 @@ describe('AppComponent', () => {
     fixture.componentInstance.onHelpButtonClicked(null as any);
 
     expect(fixture.componentInstance.appState).toEqual(AppState.HELP);
+  });
+
+  it('notification for input bar is initially undefined', () => {
+    expect(fixture.componentInstance.inputBarNotification).toBeUndefined();
   });
 });

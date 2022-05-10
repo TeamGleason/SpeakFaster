@@ -838,4 +838,5 @@ describe('ExternalEventsComponent', () => {
     expect(ExternalEventsComponent.getEyeTrackingPausedMessage())
         .toEqual('⏸︎ Eye tracking is paused. To re-enable it, use Ctrl+p.');
   });
+
 });

@@ -104,7 +104,7 @@ export async function toggleGazeButtonsState(): Promise<boolean> {
         BOUND_LISTENER_NAME} is not found`)
     return true;
   }
-  return ((window as any)[BOUND_LISTENER_NAME] as any)
+  return await ((window as any)[BOUND_LISTENER_NAME] as any)
              .toggleGazeButtonsState() as boolean;
 }
 

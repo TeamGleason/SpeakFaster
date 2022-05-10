@@ -1485,7 +1485,7 @@ describe('InputBarComponent', () => {
     expect(fixture.debugElement.query(By.css('.to-enter-text'))).toBeNull();
   });
 
-  it('copmleted state in study turn subject displays end state', () => {
+  it('completed state in study turn subject displays end state', () => {
     studyUserTurnsSubject.next({
       text: null,
       isAbbreviation: true,
@@ -1516,6 +1516,25 @@ describe('InputBarComponent', () => {
     expect(fixture.debugElement.query(By.css('.dialog-error'))
                .nativeElement.innerText)
         .toEqual('Failed to load dialog "foo"');
+  });
+
+  it('displays notification when set to non-empty', () => {
+    fixture.componentInstance.notification = 'testing foo.';
+    fixture.detectChanges();
+
+    const notification = fixture.debugElement.query(By.css('.notification'));
+    expect(notification.nativeElement.innerText).toEqual('testing foo.');
+  });
+
+  it('shows no notification if text is empty', () => {
+    fixture.componentInstance.notification = '';
+    fixture.detectChanges();
+
+    expect(fixture.debugElement.query(By.css('.notification'))).toBeNull();
+  });
+
+  it('shows no notification by default', () => {
+    expect(fixture.debugElement.query(By.css('.notification'))).toBeNull();
   });
 
   // TODO(cais): Test spelling valid word triggers AE, with debounce.

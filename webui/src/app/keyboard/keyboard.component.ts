@@ -6,9 +6,6 @@ import {getVirtualkeyCode} from '../external/external-events.component';
 // The return value indicates whether the event has been handled.
 export type KeyboardCallback = (event: KeyboardEvent) => boolean;
 
-const callbackStack: Array<{callbackName: string, callback: KeyboardCallback}> =
-    [];
-
 @Component({
   selector: 'app-keyboard-component',
   templateUrl: './keyboard.component.html',
@@ -31,6 +28,7 @@ export class KeyboardComponent {
         // ensure correct reconstruction of the text from keypresses.
         const vkCode: number = vkCodes[vkCodes.length - 1];
         (window as any).externalKeypressHook(vkCode, /* isExternal= */ false);
+        event.preventDefault();  // TODO(cais): Confirm! DO NOT SUBMIT.
       } catch (error) {
       }
     }

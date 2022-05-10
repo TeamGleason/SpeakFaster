@@ -153,6 +153,18 @@
   flex: 1;
 }
 
+.notification {
+  align-items: center;
+  color: yellow;
+  display: flex;
+  flex-direction: row;
+  font-size: 24px;
+  margin-top: 2px;
+  overflow: visible;
+  padding-left: 20px;
+  width: 1000px;
+}
+
 .right-buttons-container {
   align-items: center;
   display: flex;
@@ -328,6 +340,12 @@
       {{studyDialogError}}
     </div>
     <div *ngIf="!studyDialogError">Dialog is complete.</div>
+  </div>
+
+  <div
+      *ngIf="hasNotification"
+      class="notification">
+    {{notification}}
   </div>
 
 </div>

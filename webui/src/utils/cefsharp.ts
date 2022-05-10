@@ -93,12 +93,28 @@ export async function bringFocusAppToForeground() {
   ((window as any)[BOUND_LISTENER_NAME] as any).bringFocusAppToForeground();
 }
 
+
+/**
+ * Toggle the enabled/disabled state of gaze buttons.
+ * @returns The new enabled state after toggling.
+ */
+export async function toggleGazeButtonsState(): Promise<boolean> {
+  if ((window as any)[BOUND_LISTENER_NAME] == null) {
+    console.warn(`Cannot call toggleGazeButtonsState(), because object ${
+        BOUND_LISTENER_NAME} is not found`)
+    return true;
+  }
+  return ((window as any)[BOUND_LISTENER_NAME] as any)
+             .toggleGazeButtonsState() as boolean;
+}
+
 /**
  * Updates the host app regarding eye tracking options.
  * @param showGazeTracker Whether the dot that tracks the gaze point is
  *     shown.
  * @param gazeFuzzyRadius The radius for the fuzzy gaze pointer (e.g, 20).
- * @param dwellDelayMillis The dwell delay for gaze clicking, in milliseconds.
+ * @param dwellDelayMillis The dwell delay for gaze clicking, in
+ *     milliseconds.
  */
 export function setEyeGazeOptions(
     showGazeTracker: boolean, gazeFuzzyRadius: number,

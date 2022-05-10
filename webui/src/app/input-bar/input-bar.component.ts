@@ -119,6 +119,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   @Input() inputBarControlSubject!: Subject<InputBarControlEvent>;
   @Input() loadPrefixedLexiconRequestSubject!: Subject<LoadLexiconRequest>;
   @Input() isFocused: boolean = true;
+  @Input() notification?: string;
   @Output() inputStringChanged: EventEmitter<string> = new EventEmitter();
 
   private _studyUserTurnInstr: string|null = null;
@@ -665,6 +666,11 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
         this._chips[0].isTextPrediction === true &&
         (this.latestReconstructedString.length ===
          this.baseReconstructedText.length);
+  }
+
+  get hasNotification(): boolean {
+    return this.notification !== undefined &&
+        this.notification.length > 0;
   }
 
   onSpeakAsIsButtonClicked(event?: Event) {

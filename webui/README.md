@@ -143,6 +143,8 @@ interface BoundObject {
 
   async function bringFocusAppToForeground();
 
+  async function toggleGazeButtonsState(): boolean;
+
   async function setEyeGazeOptions(
       showGazeTracker: boolean, gazeFuzzyRadius: number, dwellDelayMillis: number);
 
@@ -207,6 +209,10 @@ Calling `updateButtonBoxes()` n times with n different `componentName`s will
 cause n sets of clickable regions to be registered.
 
 ### 3.5. Setting eye-gaze tracking options in host app
+
+The `toggleGazeButtonsState()` interface method allows the WebUI to temporarily
+pause the gaze buttons and subsequently resume them. The boolean return value
+indicates the new enabled state after the function call.
 
 The `setEyeGazeOptions()` interface method allows the WebUI to request
 changes in the host app's eye tracking parameters. The settable parameters

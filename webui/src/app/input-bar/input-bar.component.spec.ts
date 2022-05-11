@@ -1548,5 +1548,19 @@ describe('InputBarComponent', () => {
     expect(fixture.componentInstance.inputString).toEqual('');
   });
 
+  it('append text twice calls updateButtonBoxes', async () => {
+    await fixture.whenStable();
+    const prevNumCalls = testListener.updateButtonBoxesCalls.length;
+    inputBarControlSubject.next({appendText: 'foo bar'});
+    fixture.detectChanges();
+    await fixture.whenStable()
+    inputBarControlSubject.next({appendText: 'foo bar'});
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(testListener.updateButtonBoxesCalls.length)
+        .toEqual(prevNumCalls + 2);
+  });
+
   // TODO(cais): Test spelling valid word triggers AE, with debounce.
 });

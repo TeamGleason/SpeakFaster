@@ -1537,7 +1537,7 @@ describe('InputBarComponent', () => {
     expect(fixture.debugElement.query(By.css('.notification'))).toBeNull();
   });
 
-  fit('clears all state on clearAll command in control subject', () => {
+  it('clears all state on clearAll command in control subject', () => {
     const keySequence = ['a', 'b', 'c'];
     const reconstructedText = keySequence.join('');
     enterKeysIntoComponent(keySequence, reconstructedText);

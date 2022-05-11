@@ -24,7 +24,7 @@
 
 import {Component, Input, OnInit} from '@angular/core';
 import {Subject} from 'rxjs';
-import {keySequenceEndsWith} from 'src/utils/text-utils';
+import {keySequenceEndsWith, removePunctuation} from 'src/utils/text-utils';
 
 import {TextEntryBeginEvent, TextEntryEndEvent} from '../types/text-entry';
 
@@ -128,9 +128,9 @@ export const PUNCTUATION: VIRTUAL_KEY[] = [
 ];
 
 export const SENTENCE_END_COMBO_KEYS: string[][] = [
-  [VIRTUAL_KEY.PERIOD, VIRTUAL_KEY.SPACE],
-  [VIRTUAL_KEY.LSHIFT, VIRTUAL_KEY.SLASH_QUESTION_MARK, VIRTUAL_KEY.SPACE],
-  [VIRTUAL_KEY.LSHIFT, '1', VIRTUAL_KEY.SPACE],
+  [VIRTUAL_KEY.PERIOD],                                   // Period.
+  [VIRTUAL_KEY.LSHIFT, VIRTUAL_KEY.SLASH_QUESTION_MARK],  // Question mark.
+  [VIRTUAL_KEY.LSHIFT, '1'],                              // Exclamation point.
 ];
 export const LCTRL_KEY_HEAD_FOR_TTS_TRIGGER = 'w';
 export const EXTERNAL_PHRASE_DELIMITERS: string[][] = [
@@ -618,20 +618,10 @@ export class ExternalEventsComponent implements OnInit {
     } else if (
         isExternal &&
         (EXTERNAL_PHRASE_DELIMITERS.some(
-             delimiter =>
-                 keySequenceEndsWith(reconState.keySequence, delimiter)) ||
-         SENTENCE_END_COMBO_KEYS.some(
-             keys => keySequenceEndsWith(reconState.keySequence, keys)))) {
+            delimiter =>
+                keySequenceEndsWith(reconState.keySequence, delimiter)))) {
       // A TTS action has been triggered.
-      const text = reconState.text.trim();
-      if (text) {
-        textEntryEndSubject.next({
-          text,
-          timestampMillis: Date.now(),
-          numHumanKeypresses: reconState.numGazeKeypresses,
-          isFinal: true,
-        });
-      }
+      ExternalEventsComponent.sendReconStateAsTextEntryEndEvent(reconState);
       return;
     }
 
@@ -706,6 +696,15 @@ export class ExternalEventsComponent implements OnInit {
         virtualKey !== VIRTUAL_KEY.RSHIFT) {
       reconState.isShiftOn = false;
     }
+
+    if (isExternal &&
+        SENTENCE_END_COMBO_KEYS.some(
+            keys => keySequenceEndsWith(reconState.keySequence, keys))) {
+      // An external sentence-end sequence has been triggered.
+      ExternalEventsComponent.sendReconStateAsTextEntryEndEvent(reconState);
+      return;
+    }
+
     if (originallyEmpty && reconState.text.length > 0) {
       textEntryBeginSubject.next({timestampMillis: Date.now()});
     }
@@ -721,6 +720,18 @@ export class ExternalEventsComponent implements OnInit {
     // TODO(cais): Track ctrl state.
     // TODO(cais): Take care of selection state, including Ctrl+A.
     // TODO(cais): Take care of Shift+Backspace and Shift+Delete.
+  }
+
+  private static sendReconStateAsTextEntryEndEvent(reconState: TextReconState) {
+    const text = reconState.text.replace(/\n/g, ' ').trim();
+    if (removePunctuation(text)) {
+      textEntryEndSubject.next({
+        text,
+        timestampMillis: Date.now(),
+        numHumanKeypresses: reconState.numGazeKeypresses,
+        isFinal: true,
+      });
+    }
   }
 
   public static placeCursor(cursorPos: number, isExternal = false) {

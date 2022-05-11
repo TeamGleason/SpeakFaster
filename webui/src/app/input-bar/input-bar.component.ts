@@ -3,7 +3,7 @@ import {AfterViewInit, ChangeDetectorRef, Component, ElementRef, EventEmitter, I
 import {Subject, Subscription} from 'rxjs';
 import {debounceTime} from 'rxjs/operators';
 import {injectKeys, requestSoftKeyboardReset, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
-import {endsWithSentenceEndPunctuation, isAlphanumericChar, keySequenceEndsWith} from 'src/utils/text-utils';
+import {endsWithSentenceEndPunctuation, isAlphanumericChar, keySequenceEndsWith, removePunctuation} from 'src/utils/text-utils';
 import {createUuid} from 'src/utils/uuid';
 
 import {getPhraseStats, HttpEventLogger} from '../event-logger/event-logger-impl';
@@ -60,10 +60,6 @@ export interface InputBarControlEvent {
 
   // `true` means hide the input bar. `false` means unhide (show) the input bar.
   hide?: boolean;
-}
-
-function removePunctuation(str: string) {
-  return str.replace(/[\.\!\?]/g, '');
 }
 
 // Abbreviation expansion can be triggered by entering any of the the
@@ -669,8 +665,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   get hasNotification(): boolean {
-    return this.notification !== undefined &&
-        this.notification.length > 0;
+    return this.notification !== undefined && this.notification.length > 0;
   }
 
   onSpeakAsIsButtonClicked(event?: Event) {

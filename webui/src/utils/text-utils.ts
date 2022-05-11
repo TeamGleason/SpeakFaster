@@ -77,3 +77,8 @@ export function trimStringAtHead(str: string, maxLength: number): string {
   }
   return trimmed.trim();
 }
+
+/** Remove punctuation characters from a string. */
+export function removePunctuation(str: string): string {
+  return str.replace(/[\.\!\?]/g, '');
+}

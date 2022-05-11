@@ -274,7 +274,7 @@ describe('ExternalEventsComponent', () => {
           'hi:/'
         ],
         ['repeating LCtrl key', [72, 73, 162, 162, END_KEY_CODE], 'hi'],
-        ['with new lines', [72, 73, 188, 13, 87, 162, END_KEY_CODE], 'hi,\nw'],
+        ['with new lines', [72, 73, 188, 13, 87, 162, END_KEY_CODE], 'hi, w'],
         ['with backspace', [72, 73, 8, 72, 162, END_KEY_CODE], 'hh'],
         [
           'with left arrow and inserted char',
@@ -297,11 +297,11 @@ describe('ExternalEventsComponent', () => {
         ],
         [
           'new line and home key',
-          [72, 73, 188, 13, 87, 36, 65, 162, END_KEY_CODE], 'hi,\naw'
+          [72, 73, 188, 13, 87, 36, 65, 162, END_KEY_CODE], 'hi, aw'
         ],
         [
           'new line, home and end key',
-          [72, 73, 188, 13, 87, 36, 35, 65, 162, END_KEY_CODE], 'hi,\nwa'
+          [72, 73, 188, 13, 87, 36, 35, 65, 162, END_KEY_CODE], 'hi, wa'
         ],
         ['with noop home key', [36, 72, 73, 162, END_KEY_CODE], 'hi'],
         ['with noop end key', [72, 73, 35, 162, END_KEY_CODE], 'hi'],
@@ -480,9 +480,10 @@ describe('ExternalEventsComponent', () => {
   });
 
   it('reconstructs text based on sentence-end period and space', () => {
-    const vkCodes = [72, 73, 190, 32];
+    const vkCodes = [72, 73, 190];  // h, i, period.
     for (const vkCode of vkCodes) {
-      ExternalEventsComponent.externalKeypressHook(vkCode);
+      ExternalEventsComponent.externalKeypressHook(
+          vkCode, /* isExternal= */ true);
     }
     expect(beginEvents.length).toEqual(1);
     expect(endEvents.length).toEqual(1);
@@ -491,9 +492,10 @@ describe('ExternalEventsComponent', () => {
   });
 
   it('reconstructs text based on sentence-end question mark and space', () => {
-    const vkCodes = [72, 73, 160, 191, 32];
+    const vkCodes = [72, 73, 160, 191];  // h, i, question mark.
     for (const vkCode of vkCodes) {
-      ExternalEventsComponent.externalKeypressHook(vkCode);
+      ExternalEventsComponent.externalKeypressHook(
+          vkCode, /* isExternal= */ true);
     }
     expect(beginEvents.length).toEqual(1);
     expect(endEvents.length).toEqual(1);
@@ -503,14 +505,27 @@ describe('ExternalEventsComponent', () => {
 
   it('reconstructs text based on sentence-end exclamation point and space',
      () => {
-       const vkCodes = [72, 73, 160, 49, 32];
+       const vkCodes = [72, 73, 160, 49];  // h, i, exclamation point.
        for (const vkCode of vkCodes) {
-         ExternalEventsComponent.externalKeypressHook(vkCode);
+         ExternalEventsComponent.externalKeypressHook(
+             vkCode, /* isExternal= */ true);
        }
        expect(beginEvents.length).toEqual(1);
        expect(endEvents.length).toEqual(1);
        expect(endEvents[0].text).toEqual('hi!');
        expect(endEvents[0].isFinal).toBeTrue();
+     });
+
+  it('whitspace followed by sentence-end sequence triggers no end event',
+     () => {
+       const vkCodes = [32, 32, 190];  // Space, space, period.
+       for (const vkCode of vkCodes) {
+         ExternalEventsComponent.externalKeypressHook(
+             vkCode, /* isExternal= */ true);
+       }
+
+       expect(beginEvents.length).toEqual(1);
+       expect(endEvents.length).toEqual(0);
      });
 
   it('whitespace-only text does not trigger end event', () => {
@@ -838,5 +853,4 @@ describe('ExternalEventsComponent', () => {
     expect(ExternalEventsComponent.getEyeTrackingPausedMessage())
         .toEqual('⏸︎ Eye tracking is paused. To re-enable it, use Ctrl+p.');
   });
-
 });

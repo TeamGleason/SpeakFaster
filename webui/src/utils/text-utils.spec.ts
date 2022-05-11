@@ -1,6 +1,6 @@
 /** Test utils for text-utils. */
 
-import {keySequenceEndsWith, limitStringLength, trimStringAtHead} from './text-utils';
+import {keySequenceEndsWith, limitStringLength, removePunctuation, trimStringAtHead} from './text-utils';
 
 describe('text-utils', () => {
   describe('limitStringLength', () => {
@@ -47,6 +47,28 @@ describe('text-utils', () => {
     it('edge case: length limit is 0', () => {
       expect(trimStringAtHead('foo bar', 0)).toEqual('');
       expect(trimStringAtHead('foo bar', 0)).toEqual('');
+    });
+  });
+
+  describe('removePunctuation', () => {
+    it('removes punctuation from punctuation-only strings', () => {
+      expect(removePunctuation('.')).toEqual('');
+      expect(removePunctuation(' !')).toEqual(' ');
+      expect(removePunctuation(' ??')).toEqual(' ');
+    });
+
+    it('removes punctuation from mixed strings', () => {
+      expect(removePunctuation('. hi there!')).toEqual(' hi there');
+    });
+
+    it('preserves comma in strings', () => {
+      expect(removePunctuation('. hi, there!')).toEqual(' hi, there');
+    });
+
+    it('preserves no-punctuation strings', () => {
+      expect(removePunctuation('')).toEqual('');
+      expect(removePunctuation(' ')).toEqual(' ');
+      expect(removePunctuation('hi there')).toEqual('hi there');
     });
   });
 });

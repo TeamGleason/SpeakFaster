@@ -1537,5 +1537,16 @@ describe('InputBarComponent', () => {
     expect(fixture.debugElement.query(By.css('.notification'))).toBeNull();
   });
 
+  it('clears all state on clearAll command in control subject', () => {
+    const keySequence = ['a', 'b', 'c'];
+    const reconstructedText = keySequence.join('');
+    enterKeysIntoComponent(keySequence, reconstructedText);
+    inputBarControlSubject.next({
+      clearAll: true,
+    });
+
+    expect(fixture.componentInstance.inputString).toEqual('');
+  });
+
   // TODO(cais): Test spelling valid word triggers AE, with debounce.
 });

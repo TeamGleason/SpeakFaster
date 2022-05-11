@@ -186,6 +186,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
             this.eventLogger.logContextualPhraseCopying(
                 getPhraseStats(event.appendText));
             this.scaleInputTextFontSize();
+            updateButtonBoxesForElements(this.instanceId, this.buttons);
           } else if (event.contextualPhraseTags) {
             this._contextualPhraseTags.splice(0);
             this._contextualPhraseTags.push(...event.contextualPhraseTags);

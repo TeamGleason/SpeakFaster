@@ -181,7 +181,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
             this._isHidden = event.hide;
           } else if (event.clearAll) {
             this.baseReconstructedText = this.latestReconstructedString;
-            this.resetState(/* cleanText= */ true, /* resetBase= */ false);
+            this.resetState(/* cleanText= */ true, /* resetBase= */ true);
           } else if (event.appendText !== undefined) {
             ExternalEventsComponent.appendString(
                 event.appendText, /* isExternal= */ false);

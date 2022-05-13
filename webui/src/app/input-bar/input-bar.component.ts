@@ -412,6 +412,11 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
       divElement.style.fontSize = `${INPUT_TEXT_BASE_FONT_SIZE}px`;
       divElement.style.lineHeight = `${INPUT_TEXT_BASE_FONT_SIZE}px`;
     }
+    if (!this.inputString) {
+      // TODO(cais): Add unit test.
+      divElement.style.removeProperty('font-size');
+      divElement.style.removeProperty('line-height');
+    }
   }
 
   private hideCaret() {

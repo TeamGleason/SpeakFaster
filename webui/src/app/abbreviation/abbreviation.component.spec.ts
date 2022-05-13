@@ -49,7 +49,7 @@ describe('AbbreviationComponent', () => {
     speakFasterServiceForTest = new SpeakFasterServiceForTest();
     testListener = new TestListener();
     (window as any)[cefSharp.BOUND_LISTENER_NAME] = testListener;
-    studyManager = new StudyManager(null);
+    studyManager = new StudyManager(null, null);
     await TestBed
         .configureTestingModule({
           imports: [AbbreviationModule, HttpClientModule],

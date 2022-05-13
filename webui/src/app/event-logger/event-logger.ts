@@ -61,6 +61,10 @@ export interface UserFeedback {
   feedbackMessage: string;
 }
 
+export interface RemoteCommandStats {
+  command: string;
+}
+
 export interface EventLogger {
   /** Log the starting of a new (non-companion) session (opening the app). */
   logSessionStart(): Promise<void>;
@@ -193,4 +197,7 @@ export interface EventLogger {
 
   /** Log user feedback. */
   logUserFeedback(userFeedback: UserFeedback): Promise<void>;
+
+  /** Log remote command. */
+  logRemoteCommand(commandStats: RemoteCommandStats): Promise<void>;
 }

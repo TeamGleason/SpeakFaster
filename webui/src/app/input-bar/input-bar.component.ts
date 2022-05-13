@@ -129,6 +129,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   private _chipTypedText: Array<string|null>|null = null;
 
   @ViewChild('inputText') inputTextDiv!: ElementRef<HTMLDivElement>;
+  // @ViewChild('dummyInputBox') dummyInputBox!: ElementRef<HTMLInputElement>;
   @ViewChildren('clickableButton')
   buttons!: QueryList<ElementRef<HTMLButtonElement>>;
 
@@ -151,7 +152,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
 
   constructor(
       public speakFasterService: SpeakFasterService,
-      private studyManager: StudyManager, private cdr: ChangeDetectorRef,
+      private studyManager: StudyManager,
       private eventLogger: HttpEventLogger) {}
 
   ngOnInit() {
@@ -276,6 +277,9 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
         (queryList: QueryList<ElementRef<HTMLButtonElement>>) => {
           updateButtonBoxesForElements(this.instanceId, queryList);
         });
+    // console.log(
+    //     '*** dummyInputBox=', this.dummyInputBox.nativeElement);  // DEBUG
+    // this.dummyInputBox.nativeElement.focus();
   }
 
   ngOnDestroy() {
@@ -379,6 +383,9 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
       updateButtonBoxesForElements(this.instanceId, this.buttons);
     }
     this.scaleInputTextFontSize();
+    console.log('*** Calling placeCaret()');  // DEBUG
+    this.placeCaret();
+    // this.dummyInputBox.nativeElement.focus();
   }
 
   private scaleInputTextFontSize(): void {
@@ -410,6 +417,34 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
       divElement.style.fontSize = `${INPUT_TEXT_BASE_FONT_SIZE}px`;
       divElement.style.lineHeight = `${INPUT_TEXT_BASE_FONT_SIZE}px`;
     }
+  }
+
+  private placeCaret() {
+    // Set the caret in the input box.
+    setTimeout(() => {
+      // const range = document.createRange();
+      // range.selectNodeContents(this.inputTextDiv.nativeElement);
+      console.log(
+          '*** C200:', ExternalEventsComponent.internalCursorPos,
+          ExternalEventsComponent.internalCursorPos);  // DEBUG
+      const node = this.inputTextDiv.nativeElement.childNodes[0];
+      // range.setStart(node, ExternalEventsComponent.internalCursorPos);
+      // range.setBaseAndExtent(node,
+      // ExternalEventsComponent.internalCursorPos); range.setEnd(node,
+      // ExternalEventsComponent.internalCursorPos); range.setEnd(
+      //     this.inputTextDiv.nativeElement,
+      //     ExternalEventsComponent.internalCursorPos);
+      // range.collapse(false);
+      console.log('*** C300');  // DEBUG
+      const selection = window.getSelection();
+      console.log('*** selection:', selection);  // DEBUG
+      if (selection) {
+        const cursorPos = ExternalEventsComponent.internalCursorPos;
+        selection.setBaseAndExtent(node, cursorPos, node, cursorPos);
+        // range:', range);  // DEBUG selection?.removeAllRanges();
+        // selection.addRange(range);
+      }
+    }, 1);
   }
 
   onExpandButtonClicked(event?: Event) {
@@ -726,35 +761,49 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     updateButtonBoxesForElements(this.instanceId, this.buttons);
   }
 
-  onTextBeforeCursorClicked(event: Event) {
-    event.preventDefault();
-    event.stopPropagation();
-    const anchorOffset = this.getWindowSelectionAnchorOffset();
-    if (anchorOffset === null) {
-      return;
-    }
-    ExternalEventsComponent.placeCursor(anchorOffset, /* isExternal= */ false);
-  }
-
   getWindowSelectionAnchorOffset(): number|null {
     const selection = window.getSelection();
+    console.log('*** Got selection:', selection);  // DEBUG
     if (!selection) {
       return null;
     }
     return selection.anchorOffset;
   }
 
-  onTextAfterCursorClicked(event: Event) {
+  onTextClicked(event: Event) {
     event.preventDefault();
     event.stopPropagation();
-    const selection = window.getSelection();
-    if (!selection) {
+    const anchorOffset = this.getWindowSelectionAnchorOffset();
+    if (anchorOffset === null) {
       return;
     }
-    ExternalEventsComponent.placeCursor(
-        selection.anchorOffset + this.inputStringBeforeCursor.length,
-        /* isExternal= */ false);
+    console.log('*** placeCursor():', anchorOffset - 1);  // DEBUG
+    ExternalEventsComponent.placeCursor(anchorOffset, /* isExternal= */ false);
   }
+
+  // onTextBeforeCursorClicked(event: Event) {
+  //   event.preventDefault();
+  //   event.stopPropagation();
+  //   const anchorOffset = this.getWindowSelectionAnchorOffset();
+  //   if (anchorOffset === null) {
+  //     return;
+  //   }
+  //   ExternalEventsComponent.placeCursor(anchorOffset, /* isExternal= */
+  //   false);
+  // }
+
+
+  // onTextAfterCursorClicked(event: Event) {
+  //   event.preventDefault();
+  //   event.stopPropagation();
+  //   const selection = window.getSelection();
+  //   if (!selection) {
+  //     return;
+  //   }
+  //   ExternalEventsComponent.placeCursor(
+  //       selection.anchorOffset + this.inputStringBeforeCursor.length,
+  //       /* isExternal= */ false);
+  // }
 
   getChipText(index: number): string {
     if (this._chipTypedText !== null) {

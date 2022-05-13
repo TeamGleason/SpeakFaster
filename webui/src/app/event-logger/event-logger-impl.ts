@@ -12,7 +12,7 @@ import {AbbreviationSpec} from '../types/abbreviation';
 import {AppState, getAppState} from '../types/app-state';
 import {ContextualPhrase} from '../types/contextual_phrase';
 
-import {AbbreviationExpansionRequestStats, AbbreviationExpansionResponseStats, ContextualPhraseStats, EventLogger, PhraseStats, SettingName, TextSelectionType, UserFeedback} from './event-logger';
+import {AbbreviationExpansionRequestStats, AbbreviationExpansionResponseStats, ContextualPhraseStats, EventLogger, PhraseStats, RemoteCommandStats, SettingName, TextSelectionType, UserFeedback} from './event-logger';
 
 const EVENT_LOGS_ENDPOINT = '/event_logs';
 const PUNCTUATION_REGEX = /^[,\.\!\?\-\;\(\)\[\]\{\}]$/;
@@ -31,7 +31,7 @@ export type EventName =
     'ContextualPhraseEditError'|'ContextualPhraseSelection'|
     'ContextualPhraseCopying'|'IncomingContextualTurn'|
     'InputBarInjectButtonClick'|'InputBarSpeakButtonClick'|'Keypress'|
-    'SessionEnd'|'SessionStart'|'SettingsChange'|'UserFeedback';
+    'SessionEnd'|'SessionStart'|'SettingsChange'|'UserFeedback'|'RemoteCommand';
 
 export type EventLogEntry = {
   userId: string;
@@ -599,6 +599,22 @@ export class HttpEventLogger implements EventLogger {
           sessionId: this.sessionId,
           eventName: 'UserFeedback',
           eventData: {userFeedback},
+          appState: getAppState(),
+        })
+        .pipe(first())
+        .toPromise();
+  }
+
+  async logRemoteCommand(commandStats: RemoteCommandStats) {
+    this.ensureUserIdSet();
+    await this
+        .logEvent({
+          userId: this._userId!,
+          timestamp: this.getUtcEpochMillis(),
+          timezone: this.timezone,
+          sessionId: this.sessionId,
+          eventName: 'RemoteCommand',
+          eventData: {commandStats},
           appState: getAppState(),
         })
         .pipe(first())

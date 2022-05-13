@@ -80,6 +80,10 @@
   color: rgb(255, 51, 0);
 }
 
+.dummy-input-box {
+  display: none;
+}
+
 .favorite-button {
   background: #473261;
 }
@@ -148,9 +152,13 @@
 }
 
 .main-area {
+  caret-color: white;
   display: flex;
   flex-direction: row;
   flex: 1;
+  /* Makes sure that trailing spaces are shown, yet line wrapping */
+  /* can occur when text is long. */
+  white-space: pre-wrap;
 }
 
 .notification {
@@ -201,6 +209,10 @@
   padding: 0 4px;
 }
 
+[contenteditable] {
+  outline: 0 solid transparent;
+}
+
 @keyframes blink {
   50% {
     opacity: 0;
@@ -215,21 +227,22 @@
 <div class="container" [ngClass]="{'hidden': isHidden}">
 
   <div class="input-box">
+    <!-- <input #dummyInputBox class="dummy-input-box"/> -->
     <div class="main-area">
       <div
           #inputText
+          contenteditable="true"
+          inputmode="text"
+          (click)="onTextClicked($event)"
           class="base-text-area"
           *ngIf="state !== 'CHOOSING_LETTER_CHIP' &&
                  state !== 'FOCUSED_ON_LETTER_CHIP' &&
                  state !== 'CHOOSING_WORD_CHIP' &&
-                 state !== 'FOCUSED_ON_WORD_CHIP'">
-        <div
+                 state !== 'FOCUSED_ON_WORD_CHIP'">{{inputString}}</div>
+        <!-- <div
             class="input-text"
-            (click)="onTextBeforeCursorClicked($event)">{{inputStringBeforeCursor}}<div
-                class="simulated-cursor"
-                [ngClass]="{'simulated-cursor-hidden': !isFocused}"
-            >|</div><div class="input-text" (click)="onTextAfterCursorClicked($event)">{{inputStringAfterCursor}}</div></div>
-      </div>
+            (click)="onTextBeforeCursorClicked($event)">{{inputStringBeforeCursor}}<div class="input-text" (click)="onTextAfterCursorClicked($event)">{{inputStringAfterCursor}}</div></div> -->
+      <!-- </div> -->
       <div
           class="chips-container"
           *ngIf="state === 'CHOOSING_LETTER_CHIP' ||

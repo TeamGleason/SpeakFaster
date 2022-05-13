@@ -735,6 +735,7 @@ export class ExternalEventsComponent implements OnInit {
   }
 
   public static placeCursor(cursorPos: number, isExternal = false) {
+    // console.log('*** A100 placeCursor()');  // DEBUG
     const reconState = isExternal ? externalReconState : internalReconState;
     if (cursorPos > reconState.text.length) {
       reconState.cursorPos = reconState.text.length;

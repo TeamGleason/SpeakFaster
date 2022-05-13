@@ -74,7 +74,7 @@ describe('InputBarComponent', () => {
       fillMaskRequests.push(request);
     });
 
-    const studyManager = new StudyManager(null);
+    const studyManager = new StudyManager(null, null);
     studyManager.studyUserTurns = studyUserTurnsSubject;
     await TestBed
         .configureTestingModule({

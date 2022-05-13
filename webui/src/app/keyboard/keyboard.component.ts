@@ -27,8 +27,8 @@ export class KeyboardComponent {
         // We take the last key code in the sequence in such cases, in order to
         // ensure correct reconstruction of the text from keypresses.
         const vkCode: number = vkCodes[vkCodes.length - 1];
+        event.preventDefault();  // TODO(cais): Add unit test.
         (window as any).externalKeypressHook(vkCode, /* isExternal= */ false);
-        event.preventDefault();  // TODO(cais): Confirm! DO NOT SUBMIT.
       } catch (error) {
       }
     }

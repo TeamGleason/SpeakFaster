@@ -3,8 +3,8 @@ import {Injectable} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {By} from '@angular/platform-browser';
 import {Observable, of, Subject} from 'rxjs';
-import { HttpEventLogger } from '../event-logger/event-logger-impl';
 
+import {HttpEventLogger} from '../event-logger/event-logger-impl';
 import {RetrieveContextResponse, SpeakFasterService} from '../speakfaster-service';
 import {setDelaysForTesting, StudyManager} from '../study/study-manager';
 import {TextEntryEndEvent} from '../types/text-entry';
@@ -28,7 +28,7 @@ describe('ContextComponent', () => {
   let studyManager: StudyManager;
 
   beforeEach(async () => {
-    studyManager = new StudyManager(null);
+    studyManager = new StudyManager(null, null);
     setDelaysForTesting(10, 30);
     await TestBed
         .configureTestingModule({
@@ -133,5 +133,4 @@ describe('ContextComponent', () => {
     expect(prevTurns[0].partnerId).toBeNull();
     expect(prevTurns[0].timestamp).toBeGreaterThan(0);
   });
-
 });

@@ -33,7 +33,8 @@ describe('Study Manager', () => {
     beforeEach(async () => {
       setDelaysForTesting(10, 20);
       HttpEventLogger.setFullLogging(false);
-      studyManager = new StudyManager(null);
+      studyManager =
+          new StudyManager(/* httpClient= */ null, /* httpEventLogger= */ null);
       studyUserTurns = [];
       studyUserTurnsSubscription =
           studyManager.studyUserTurns.subscribe((turn) => {
@@ -255,8 +256,7 @@ describe('Study Manager', () => {
     });
 
     it('ending dialog resets state: started by partner', done => {
-      studyManager
-          .maybeHandleRemoteControlCommand('Start abbrev dummy2 B')
+      studyManager.maybeHandleRemoteControlCommand('Start abbrev dummy2 B')
           .then(() => {
             expect(studyManager.getDialogId()).toEqual('dummy2');
             expect(studyManager.getDialogTurnIndex()).toEqual(1);

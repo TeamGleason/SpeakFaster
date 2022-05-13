@@ -129,7 +129,6 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   private _chipTypedText: Array<string|null>|null = null;
 
   @ViewChild('inputText') inputTextDiv!: ElementRef<HTMLDivElement>;
-  // @ViewChild('dummyInputBox') dummyInputBox!: ElementRef<HTMLInputElement>;
   @ViewChildren('clickableButton')
   buttons!: QueryList<ElementRef<HTMLButtonElement>>;
 
@@ -277,9 +276,6 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
         (queryList: QueryList<ElementRef<HTMLButtonElement>>) => {
           updateButtonBoxesForElements(this.instanceId, queryList);
         });
-    // console.log(
-    //     '*** dummyInputBox=', this.dummyInputBox.nativeElement);  // DEBUG
-    // this.dummyInputBox.nativeElement.focus();
   }
 
   ngOnDestroy() {
@@ -306,6 +302,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
 
   public listenToKeypress(keySequence: string[], reconstructedText: string):
       void {
+    this.hideCaret();
     const lastKey = keySequence[keySequence.length - 1];
     this.latestReconstructedString = reconstructedText;
     if (this.state === State.ENTERING_BASE_TEXT ||
@@ -383,9 +380,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
       updateButtonBoxesForElements(this.instanceId, this.buttons);
     }
     this.scaleInputTextFontSize();
-    console.log('*** Calling placeCaret()');  // DEBUG
     this.placeCaret();
-    // this.dummyInputBox.nativeElement.focus();
   }
 
   private scaleInputTextFontSize(): void {
@@ -419,30 +414,18 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+  private hideCaret() {
+    window.getSelection()?.removeAllRanges();
+  }
+
   private placeCaret() {
     // Set the caret in the input box.
     setTimeout(() => {
-      // const range = document.createRange();
-      // range.selectNodeContents(this.inputTextDiv.nativeElement);
-      console.log(
-          '*** C200:', ExternalEventsComponent.internalCursorPos,
-          ExternalEventsComponent.internalCursorPos);  // DEBUG
       const node = this.inputTextDiv.nativeElement.childNodes[0];
-      // range.setStart(node, ExternalEventsComponent.internalCursorPos);
-      // range.setBaseAndExtent(node,
-      // ExternalEventsComponent.internalCursorPos); range.setEnd(node,
-      // ExternalEventsComponent.internalCursorPos); range.setEnd(
-      //     this.inputTextDiv.nativeElement,
-      //     ExternalEventsComponent.internalCursorPos);
-      // range.collapse(false);
-      console.log('*** C300');  // DEBUG
       const selection = window.getSelection();
-      console.log('*** selection:', selection);  // DEBUG
       if (selection) {
         const cursorPos = ExternalEventsComponent.internalCursorPos;
         selection.setBaseAndExtent(node, cursorPos, node, cursorPos);
-        // range:', range);  // DEBUG selection?.removeAllRanges();
-        // selection.addRange(range);
       }
     }, 1);
   }

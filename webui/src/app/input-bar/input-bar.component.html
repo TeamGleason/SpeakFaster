@@ -43,6 +43,7 @@
   display: inline-flex;
   flex-direction: row;
   margin-right: 4px;
+  min-width: 40px;
 }
 
 .buttons-container {
@@ -227,22 +228,18 @@
 <div class="container" [ngClass]="{'hidden': isHidden}">
 
   <div class="input-box">
-    <!-- <input #dummyInputBox class="dummy-input-box"/> -->
     <div class="main-area">
       <div
           #inputText
           contenteditable="true"
           inputmode="text"
+          spellcheck="false"
           (click)="onTextClicked($event)"
           class="base-text-area"
           *ngIf="state !== 'CHOOSING_LETTER_CHIP' &&
                  state !== 'FOCUSED_ON_LETTER_CHIP' &&
                  state !== 'CHOOSING_WORD_CHIP' &&
                  state !== 'FOCUSED_ON_WORD_CHIP'">{{inputString}}</div>
-        <!-- <div
-            class="input-text"
-            (click)="onTextBeforeCursorClicked($event)">{{inputStringBeforeCursor}}<div class="input-text" (click)="onTextAfterCursorClicked($event)">{{inputStringAfterCursor}}</div></div> -->
-      <!-- </div> -->
       <div
           class="chips-container"
           *ngIf="state === 'CHOOSING_LETTER_CHIP' ||

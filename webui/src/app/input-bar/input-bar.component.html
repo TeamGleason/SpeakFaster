@@ -233,7 +233,9 @@
 <div class="container" [ngClass]="{'hidden': isHidden}">
 
   <div class="input-box">
-    <div class="main-area">
+    <div
+        class="main-area"
+        (click)="onMainAreaClicked($event)">
       <textarea
           #inputTextArea
           *ngIf="state !== 'CHOOSING_LETTER_CHIP' &&

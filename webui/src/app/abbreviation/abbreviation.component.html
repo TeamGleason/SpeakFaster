@@ -249,7 +249,7 @@ mat-progress-spinner {
 
 </style>
 
-<div class="container">
+<div class="container" (click)="onContainerClicked($event)">
 
 <div *ngIf="state == 'REQUEST_ONGOING'" class="info request-ongoing">
   <mat-progress-spinner

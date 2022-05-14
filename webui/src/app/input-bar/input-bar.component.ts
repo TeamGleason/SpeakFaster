@@ -3,7 +3,7 @@ import {AfterViewInit, ChangeDetectorRef, Component, ElementRef, EventEmitter, I
 import {Subject, Subscription} from 'rxjs';
 import {debounceTime} from 'rxjs/operators';
 import {injectKeys, requestSoftKeyboardReset, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
-import {endsWithSentenceEndPunctuation, isAlphanumericChar, keySequenceEndsWith, removePunctuation} from 'src/utils/text-utils';
+import {endsWithSentenceEndPunctuation, isAlphanumericChar, removePunctuation} from 'src/utils/text-utils';
 import {createUuid} from 'src/utils/uuid';
 
 import {getPhraseStats, HttpEventLogger} from '../event-logger/event-logger-impl';
@@ -12,7 +12,6 @@ import {LexiconComponent, LoadLexiconRequest} from '../lexicon/lexicon.component
 import {FillMaskRequest, SpeakFasterService} from '../speakfaster-service';
 import {StudyManager} from '../study/study-manager';
 import {AbbreviationSpec, AbbreviationToken, InputAbbreviationChangedEvent} from '../types/abbreviation';
-import {AppState} from '../types/app-state';
 import {TextEntryEndEvent} from '../types/text-entry';
 
 export enum State {
@@ -62,8 +61,8 @@ export interface InputBarControlEvent {
   // `true` means hide the input bar. `false` means unhide (show) the input bar.
   hide?: boolean;
 
-  // New app state.
-  newAppState?: AppState;
+  // Request refocus.
+  refocus?: boolean;
 }
 
 // Abbreviation expansion can be triggered by entering any of the the
@@ -165,7 +164,6 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     this.textEntryEndSubjectSubscription = this.textEntryEndSubject.subscribe(
         (textInjection: TextEntryEndEvent) => {
           if (textInjection.isFinal) {
-            console.log('*** isFinal!');  // DEBUG
             this.latestReconstructedString = '';
             this.resetState();
           } else {
@@ -181,6 +179,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     ExternalEventsComponent.registerKeypressListener(this.keypressListener);
     this.inputBarChipsSubscription =
         this.inputBarControlSubject.subscribe((event: InputBarControlEvent) => {
+          console.log('*** InputBarComponent.A50:', event); // DEBUG
           if (event.hide !== undefined) {
             this._isHidden = event.hide;
           } else if (event.clearAll) {
@@ -189,13 +188,11 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
           } else if (event.appendText !== undefined) {
             ExternalEventsComponent.appendString(
                 event.appendText, /* isExternal= */ false);
-            // this.inputString = ExternalEventsComponent.internalText;
             this.updateInputString(event.appendText);
             this.state = State.ENTERING_BASE_TEXT;
             this.eventLogger.logContextualPhraseCopying(
                 getPhraseStats(event.appendText));
             this.scaleInputTextFontSize();
-            // updateButtonBoxesForElements(this.instanceId, this.buttons);
           } else if (event.contextualPhraseTags) {
             this._contextualPhraseTags.splice(0);
             this._contextualPhraseTags.push(...event.contextualPhraseTags);
@@ -204,6 +201,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
                 this.contextualPhraseTags);
           } else if (event.chips !== undefined) {
             let {chips} = event;
+            console.log('*** InputBarComponent.A100');  // DEBUG
             if (this.state === State.ENTERING_BASE_TEXT &&
                 chips[0].isTextPrediction) {
               const originalInputString = this.inputString;
@@ -246,8 +244,8 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
               this.latestReconstructedString = '';
               this.baseReconstructedText = '';
             }
-          } else if (event.newAppState) {
-            this.inputTextArea.nativeElement.focus();
+          } else if (event.refocus) {
+            this.focusOnInputTextArea();
           }
         });
     this.abbreviationExpansionTriggersSubscription =
@@ -275,6 +273,10 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
         });
   }
 
+  private focusOnInputTextArea() {
+    this.inputTextArea.nativeElement.focus({preventScroll: true});
+  }
+
   private ensureChipTypedTextCreated() {
     if (this._chipTypedText === null) {
       this._chipTypedText = Array(this._chips.length).fill(null);
@@ -282,7 +284,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngAfterViewInit() {
-    this.inputTextArea.nativeElement.focus();
+    this.focusOnInputTextArea();
     updateButtonBoxesForElements(this.instanceId, this.buttons);
     this.buttons.changes.subscribe(
         (queryList: QueryList<ElementRef<HTMLButtonElement>>) => {
@@ -313,6 +315,8 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   onInputTextAreaKeyUp(event: Event) {
+    // TOOD(cais): this needs to be fixed for non keyboard event.
+    // this.eventLogger.logKeypress(event);
     this.inputString = this.inputTextArea.nativeElement.value;
     this.scaleInputTextFontSize();
     if (ABBRVIATION_EXPANSION_TRIGGER_SUFFIX.some(
@@ -320,6 +324,13 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
       // TOOD(cais): Add unit test.
       this.triggerAbbreviationExpansion();
     }
+  }
+
+  onMainAreaClicked(event: Event) {
+    if (!this.inputTextArea) {
+      return;
+    }
+    this.focusOnInputTextArea();
   }
 
   public listenToKeypress(keySequence: string[], reconstructedText: string):
@@ -400,7 +411,6 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     }
     const element = this.inputTextArea.nativeElement;
     const textLength = this.inputString.length;
-    const widthCh = textLength + 1;
     const widthPx = Math.min(textLength * 22, 600);
     element.style.width = `${widthPx}px`;
     let i = INPUT_TEXT_FONT_SIZE_SCALING_LENGTH_TICKS.length - 1;
@@ -424,6 +434,8 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
       element.style.fontSize = `${INPUT_TEXT_BASE_FONT_SIZE}px`;
       element.style.lineHeight = `${INPUT_TEXT_BASE_FONT_SIZE}px`;
     }
+    // TODO(cais): Add unit test.
+    updateButtonBoxesForElements(this.instanceId, this.buttons);
   }
 
   onExpandButtonClicked(event?: Event) {
@@ -741,7 +753,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     }
     this.baseReconstructedText = '';
     this.cutText = '';
-    this.inputTextArea.nativeElement.focus();
+    this.focusOnInputTextArea();
     resetReconStates();
   }
 
@@ -751,7 +763,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     this.inputTextArea.nativeElement.value = this.inputString;
     this.scaleInputTextFontSize();
     this.inputStringChanged.next(this.inputString);
-    this.inputTextArea.nativeElement.focus();
+    this.focusOnInputTextArea();
     updateButtonBoxesForElements(this.instanceId, this.buttons);
   }
 

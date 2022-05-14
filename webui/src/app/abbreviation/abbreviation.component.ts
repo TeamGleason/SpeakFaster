@@ -203,6 +203,7 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
     // NOTE: blur() call prevents future space keys from inadvertently
     // clicking the button again.
     // TODO(cais): Add unit test.
+    console.log('*** X100: onTextPredictionButtonClicked()');  // DEBUG
     (event.target as HTMLButtonElement).blur();
     this.inputBarControlSubject.next({
       chips: [{
@@ -224,6 +225,11 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
     return this._selectedAbbreviationIndex;
   }
 
+  onContainerClicked(event: Event) {
+    // TODO(cais): Add unit test.
+    this.inputBarControlSubject.next({refocus: true});
+  }
+
   onExpansionOptionButtonClicked(event: {
     phraseText: string; phraseIndex: number
   }) {
@@ -234,6 +240,7 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
   }
 
   onTextClicked(event: {phraseText: string; phraseIndex: number}) {
+    console.log('*** AbbreviationComponent.onTextClicked(): A100');  // DEBUG
     this.inputBarControlSubject.next(this.phraseToChips(event.phraseText));
   }
 

@@ -206,6 +206,10 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
           undefined :
           ExternalEventsComponent.getEyeTrackingPausedMessage();
     });
+    // document.body.addEventListener('click', () => {
+    //   // TODO(cais): Add unit test. Decide.
+    //   // this.inputBarControlSubject.next({refocus: true});
+    // }, true);
     this.eventLogger.logSessionStart();
   }
 
@@ -245,7 +249,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     }
     setAppState(newState);
     // TODO(cais): Add unit test.
-    this.inputBarControlSubject.next({newAppState: newState});
+    this.inputBarControlSubject.next({refocus: true});
   }
 
   getUserRole(): UserRole {

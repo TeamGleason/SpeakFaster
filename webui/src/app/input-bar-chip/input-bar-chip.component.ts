@@ -2,7 +2,7 @@
  * An chip for the input bar, supporting clicks and typing and other
  * interactions.
  */
-import {AfterViewInit, Component, ElementRef, EventEmitter, Input, OnChanges, OnDestroy, OnInit, Output, QueryList, SimpleChanges, ViewChildren} from '@angular/core';
+import {AfterViewInit, Component, ElementRef, EventEmitter, Input, OnDestroy, OnInit, Output, QueryList, SimpleChanges, ViewChild, ViewChildren} from '@angular/core';
 import {Subscription} from 'rxjs';
 import {updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
 import {createUuid} from 'src/utils/uuid';
@@ -27,6 +27,7 @@ export class InputBarChipComponent implements OnInit, AfterViewInit, OnDestroy {
   @Input() focused: boolean = false;
   @Output() cutClicked: EventEmitter<Event> = new EventEmitter();
 
+  @ViewChild('inputBox') inputBox!: ElementRef<HTMLInputElement>;
   @ViewChildren('clickableButton')
   buttons!: QueryList<ElementRef<HTMLButtonElement>>;
   private buttonSubscription?: Subscription;
@@ -41,12 +42,26 @@ export class InputBarChipComponent implements OnInit, AfterViewInit, OnDestroy {
         (queryList: QueryList<ElementRef<HTMLButtonElement>>) => {
           updateButtonBoxesForElements(this.instanceId, queryList);
         });
+    this.inputBox.nativeElement.value = this.text;
+    this.updateInputBoxSize();
   }
 
   ngOnDestroy() {
     this.buttonSubscription?.unsubscribe();
     updateButtonBoxesToEmpty(this.instanceId);
   }
+
+  onInputBoxKeyUp(event: Event) {
+    this.updateInputBoxSize();
+    this.text = this.inputBox.nativeElement.value;
+  }
+
+  private updateInputBoxSize(): void {
+    this.inputBox.nativeElement.style.width = `${this.text.length + 1}ch`;
+    updateButtonBoxesForElements(this.instanceId, this.buttons);
+  }
+
+  // TODO(cais): On clicked, select whole word.
 
   onCutButtonClicked(event: Event) {
     this.cutClicked.emit(event);

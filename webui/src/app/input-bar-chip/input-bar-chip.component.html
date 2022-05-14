@@ -10,10 +10,7 @@
   background: #0687BE;
   border: none;
   border-radius: 8px;
-  color: #eee;
   flex: 1;
-  font-size: 20px;
-  font-weight: 600;
   height: 48px;
   margin: 0 5px;
   min-width: 65px;
@@ -31,14 +28,25 @@
   background: #ccc;
 }
 
+.input-box {
+  background: transparent;
+  border: none;
+  color: #eee;
+  font-size: 20px;
+  font-weight: 600;
+  outline: none;
+}
+
 </style>
 
 <button
     #clickableButton
     class="chip-button"
     [ngClass]="{'chip-focused': focused}">
-  {{text}}
-  <span *ngIf="typed">|</span>
+  <input
+      #inputBox
+      class="input-box"
+      (keyup)="onInputBoxKeyUp($event)" />
 </button>
 
 <button

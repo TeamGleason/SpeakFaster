@@ -179,7 +179,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     ExternalEventsComponent.registerKeypressListener(this.keypressListener);
     this.inputBarChipsSubscription =
         this.inputBarControlSubject.subscribe((event: InputBarControlEvent) => {
-          console.log('*** InputBarComponent.A50:', event); // DEBUG
+          console.log('*** InputBarComponent.A50:', event);  // DEBUG
           if (event.hide !== undefined) {
             this._isHidden = event.hide;
           } else if (event.clearAll) {

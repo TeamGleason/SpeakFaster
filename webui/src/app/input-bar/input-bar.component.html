@@ -40,10 +40,19 @@
 
 .base-text-area {
   align-items: center;
+  background: #272626;
+  border: none;
+  color: white;
   display: inline-flex;
   flex-direction: row;
-  margin-right: 4px;
+  font-family: "Google Sans", "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  font-size: 30px;
   min-width: 60px;
+  outline: none;
+  overflow: hidden;
+  padding-top: 14px;
+  resize: none;
+  width: fit-content;
 }
 
 .buttons-container {
@@ -79,10 +88,6 @@
 
 .dialog-error {
   color: rgb(255, 51, 0);
-}
-
-.dummy-input-box {
-  display: none;
 }
 
 .favorite-button {
@@ -229,17 +234,17 @@
 
   <div class="input-box">
     <div class="main-area">
-      <div
-          #inputText
-          contenteditable="true"
-          inputmode="text"
-          spellcheck="false"
-          (click)="onTextClicked($event)"
-          class="base-text-area"
+      <textarea
+          #inputTextArea
           *ngIf="state !== 'CHOOSING_LETTER_CHIP' &&
                  state !== 'FOCUSED_ON_LETTER_CHIP' &&
                  state !== 'CHOOSING_WORD_CHIP' &&
-                 state !== 'FOCUSED_ON_WORD_CHIP'">{{inputString}}</div>
+                 state !== 'FOCUSED_ON_WORD_CHIP'"
+          inputmode="text"
+          spellcheck="false"
+          class="base-text-area"
+          (keyup)="onInputTextAreaKeyUp($event)"
+      ></textarea>
       <div
           class="chips-container"
           *ngIf="state === 'CHOOSING_LETTER_CHIP' ||

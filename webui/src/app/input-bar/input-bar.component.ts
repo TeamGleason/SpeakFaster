@@ -12,6 +12,7 @@ import {LexiconComponent, LoadLexiconRequest} from '../lexicon/lexicon.component
 import {FillMaskRequest, SpeakFasterService} from '../speakfaster-service';
 import {StudyManager} from '../study/study-manager';
 import {AbbreviationSpec, AbbreviationToken, InputAbbreviationChangedEvent} from '../types/abbreviation';
+import {AppState} from '../types/app-state';
 import {TextEntryEndEvent} from '../types/text-entry';
 
 export enum State {
@@ -60,6 +61,9 @@ export interface InputBarControlEvent {
 
   // `true` means hide the input bar. `false` means unhide (show) the input bar.
   hide?: boolean;
+
+  // New app state.
+  newAppState?: AppState;
 }
 
 // Abbreviation expansion can be triggered by entering any of the the
@@ -67,8 +71,10 @@ export interface InputBarControlEvent {
 // TODO(#49): This can be generalized and made configurable.
 // TODO(#49): Explore continuous AE without explicit trigger, perhaps
 // added by heuristics for detecting abbreviations vs. words.
-export const ABBRVIATION_EXPANSION_TRIGGER_KEY_SEQUENCES: Array<string[]> =
-    [[VIRTUAL_KEY.SPACE, VIRTUAL_KEY.SPACE], [VIRTUAL_KEY.ENTER]];
+export const ABBRVIATION_EXPANSION_TRIGGER_SUFFIX: string[] = [
+  '  ',  // Two spaces.
+  '\n'
+];
 
 const INPUT_TEXT_BASE_FONT_SIZE = 30;
 const INPUT_TEXT_FONT_SIZE_SCALING_FACTORS =
@@ -128,12 +134,13 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   private _focusChipIndex: number|null = null;
   private _chipTypedText: Array<string|null>|null = null;
 
-  @ViewChild('inputText') inputTextDiv!: ElementRef<HTMLDivElement>;
+  @ViewChild('inputTextArea') inputTextArea!: ElementRef<HTMLTextAreaElement>;
   @ViewChildren('clickableButton')
   buttons!: QueryList<ElementRef<HTMLButtonElement>>;
 
   state = State.ENTERING_BASE_TEXT;
   inputString: string = '';
+  private static savedInputString: string = '';
   private latestReconstructedString = '';
   private baseReconstructedText: string = '';
   private cutText = '';
@@ -151,13 +158,14 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
 
   constructor(
       public speakFasterService: SpeakFasterService,
-      private studyManager: StudyManager,
-      private eventLogger: HttpEventLogger) {}
+      private studyManager: StudyManager, private eventLogger: HttpEventLogger,
+      private cdr: ChangeDetectorRef) {}
 
   ngOnInit() {
     this.textEntryEndSubjectSubscription = this.textEntryEndSubject.subscribe(
         (textInjection: TextEntryEndEvent) => {
           if (textInjection.isFinal) {
+            console.log('*** isFinal!');  // DEBUG
             this.latestReconstructedString = '';
             this.resetState();
           } else {
@@ -181,12 +189,13 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
           } else if (event.appendText !== undefined) {
             ExternalEventsComponent.appendString(
                 event.appendText, /* isExternal= */ false);
-            this.inputString = ExternalEventsComponent.internalText;
+            // this.inputString = ExternalEventsComponent.internalText;
+            this.updateInputString(event.appendText);
             this.state = State.ENTERING_BASE_TEXT;
             this.eventLogger.logContextualPhraseCopying(
                 getPhraseStats(event.appendText));
             this.scaleInputTextFontSize();
-            updateButtonBoxesForElements(this.instanceId, this.buttons);
+            // updateButtonBoxesForElements(this.instanceId, this.buttons);
           } else if (event.contextualPhraseTags) {
             this._contextualPhraseTags.splice(0);
             this._contextualPhraseTags.push(...event.contextualPhraseTags);
@@ -237,6 +246,8 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
               this.latestReconstructedString = '';
               this.baseReconstructedText = '';
             }
+          } else if (event.newAppState) {
+            this.inputTextArea.nativeElement.focus();
           }
         });
     this.abbreviationExpansionTriggersSubscription =
@@ -271,6 +282,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngAfterViewInit() {
+    this.inputTextArea.nativeElement.focus();
     updateButtonBoxesForElements(this.instanceId, this.buttons);
     this.buttons.changes.subscribe(
         (queryList: QueryList<ElementRef<HTMLButtonElement>>) => {
@@ -300,22 +312,21 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+  onInputTextAreaKeyUp(event: Event) {
+    this.inputString = this.inputTextArea.nativeElement.value;
+    this.scaleInputTextFontSize();
+    if (ABBRVIATION_EXPANSION_TRIGGER_SUFFIX.some(
+            suffix => this.inputString.endsWith(suffix))) {
+      // TOOD(cais): Add unit test.
+      this.triggerAbbreviationExpansion();
+    }
+  }
+
   public listenToKeypress(keySequence: string[], reconstructedText: string):
       void {
-    this.hideCaret();
     const lastKey = keySequence[keySequence.length - 1];
     this.latestReconstructedString = reconstructedText;
-    if (this.state === State.ENTERING_BASE_TEXT ||
-        this.state === State.CHOOSING_PHRASES) {
-      this.updateInputString(
-          reconstructedText.slice(this.baseReconstructedText.length));
-      if (this.inputStringIsCompatibleWithAbbreviationExpansion &&
-          ABBRVIATION_EXPANSION_TRIGGER_KEY_SEQUENCES.some(
-              triggerKeySeqwuence =>
-                  keySequenceEndsWith(keySequence, triggerKeySeqwuence))) {
-        this.triggerAbbreviationExpansion();
-      }
-    } else if (this.state === State.CHOOSING_WORD_CHIP) {
+    if (this.state === State.CHOOSING_WORD_CHIP) {
       this.baseReconstructedText = this.latestReconstructedString;
       const appendLastChar =
           isAlphanumericChar(keySequence[keySequence.length - 1]);
@@ -379,18 +390,19 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
           reconstructedText.slice(this.baseReconstructedText.length);
       updateButtonBoxesForElements(this.instanceId, this.buttons);
     }
-    this.scaleInputTextFontSize();
-    this.placeCaret();
   }
 
   private scaleInputTextFontSize(): void {
     // TODO(cais): Limit on over all text length.
     // TODO(cais): Add unit tests.
-    if (!this.inputTextDiv) {
+    if (!this.inputTextArea) {
       return;
     }
-    const divElement = this.inputTextDiv.nativeElement;
+    const element = this.inputTextArea.nativeElement;
     const textLength = this.inputString.length;
+    const widthCh = textLength + 1;
+    const widthPx = Math.min(textLength * 22, 600);
+    element.style.width = `${widthPx}px`;
     let i = INPUT_TEXT_FONT_SIZE_SCALING_LENGTH_TICKS.length - 1;
     for (; i >= 0; --i) {
       if (textLength >= INPUT_TEXT_FONT_SIZE_SCALING_LENGTH_TICKS[i]) {
@@ -406,33 +418,12 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     if (numSteps > 0) {
       const fontSize = INPUT_TEXT_BASE_FONT_SIZE * fontSizeScalingFactor;
       const lineHeight = fontSize * 1.1;
-      divElement.style.fontSize = `${fontSize.toFixed(1)}px`;
-      divElement.style.lineHeight = `${lineHeight.toFixed(1)}px`;
+      element.style.fontSize = `${fontSize.toFixed(1)}px`;
+      element.style.lineHeight = `${lineHeight.toFixed(1)}px`;
     } else {
-      divElement.style.fontSize = `${INPUT_TEXT_BASE_FONT_SIZE}px`;
-      divElement.style.lineHeight = `${INPUT_TEXT_BASE_FONT_SIZE}px`;
+      element.style.fontSize = `${INPUT_TEXT_BASE_FONT_SIZE}px`;
+      element.style.lineHeight = `${INPUT_TEXT_BASE_FONT_SIZE}px`;
     }
-    if (!this.inputString) {
-      // TODO(cais): Add unit test.
-      divElement.style.removeProperty('font-size');
-      divElement.style.removeProperty('line-height');
-    }
-  }
-
-  private hideCaret() {
-    window.getSelection()?.removeAllRanges();
-  }
-
-  private placeCaret() {
-    // Set the caret in the input box.
-    setTimeout(() => {
-      const node = this.inputTextDiv.nativeElement.childNodes[0];
-      const selection = window.getSelection();
-      if (selection) {
-        const cursorPos = ExternalEventsComponent.internalCursorPos;
-        selection.setBaseAndExtent(node, cursorPos, node, cursorPos);
-      }
-    }, 1);
   }
 
   onExpandButtonClicked(event?: Event) {
@@ -554,6 +545,15 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     this.refreshExternalSoftKeyboardState();
     this.eventLogger.logAbbreviationExpansionStartSpellingMode(
         abbreviation.length);
+    this.saveInputTextAreaState();
+  }
+
+  private saveInputTextAreaState() {
+    InputBarComponent.savedInputString = this.inputTextArea.nativeElement.value;
+  }
+
+  private restoreInputTextAreaState() {
+    this.updateInputString(InputBarComponent.savedInputString);
   }
 
   onChipClicked(index: number) {
@@ -636,6 +636,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
         this.state === State.CHOOSING_LETTER_CHIP ||
         this.state === State.FOCUSED_ON_LETTER_CHIP) {
       this.state = State.ENTERING_BASE_TEXT;
+      this.restoreInputTextAreaState();  // TODO(cais): Add unit test.
       updateButtonBoxesForElements(this.instanceId, this.buttons);
     }
   }
@@ -740,58 +741,19 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     }
     this.baseReconstructedText = '';
     this.cutText = '';
+    this.inputTextArea.nativeElement.focus();
     resetReconStates();
   }
 
   private updateInputString(newStringValue: string) {
     this.inputString = newStringValue;
+    this.cdr.detectChanges();
+    this.inputTextArea.nativeElement.value = this.inputString;
+    this.scaleInputTextFontSize();
     this.inputStringChanged.next(this.inputString);
+    this.inputTextArea.nativeElement.focus();
     updateButtonBoxesForElements(this.instanceId, this.buttons);
   }
-
-  getWindowSelectionAnchorOffset(): number|null {
-    const selection = window.getSelection();
-    console.log('*** Got selection:', selection);  // DEBUG
-    if (!selection) {
-      return null;
-    }
-    return selection.anchorOffset;
-  }
-
-  onTextClicked(event: Event) {
-    event.preventDefault();
-    event.stopPropagation();
-    const anchorOffset = this.getWindowSelectionAnchorOffset();
-    if (anchorOffset === null) {
-      return;
-    }
-    console.log('*** placeCursor():', anchorOffset - 1);  // DEBUG
-    ExternalEventsComponent.placeCursor(anchorOffset, /* isExternal= */ false);
-  }
-
-  // onTextBeforeCursorClicked(event: Event) {
-  //   event.preventDefault();
-  //   event.stopPropagation();
-  //   const anchorOffset = this.getWindowSelectionAnchorOffset();
-  //   if (anchorOffset === null) {
-  //     return;
-  //   }
-  //   ExternalEventsComponent.placeCursor(anchorOffset, /* isExternal= */
-  //   false);
-  // }
-
-
-  // onTextAfterCursorClicked(event: Event) {
-  //   event.preventDefault();
-  //   event.stopPropagation();
-  //   const selection = window.getSelection();
-  //   if (!selection) {
-  //     return;
-  //   }
-  //   ExternalEventsComponent.placeCursor(
-  //       selection.anchorOffset + this.inputStringBeforeCursor.length,
-  //       /* isExternal= */ false);
-  // }
 
   getChipText(index: number): string {
     if (this._chipTypedText !== null) {

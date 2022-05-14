@@ -260,7 +260,8 @@
             [supportsCut]="state === 'FOCUSED_ON_WORD_CHIP' && i !== chips.length - 1"
             [focused]="i === focusChipIndex"
             (click)="onChipClicked(i)"
-            (cutClicked)="onChipCutClicked($event, i)">
+            (cutClicked)="onChipCutClicked($event, i)"
+            (textChanged)="onChipTextChanged($event, i)">
         </app-input-bar-chip-component>
       </div>
 

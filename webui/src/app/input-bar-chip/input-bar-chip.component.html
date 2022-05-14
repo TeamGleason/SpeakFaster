@@ -42,7 +42,8 @@
 <button
     #clickableButton
     class="chip-button"
-    [ngClass]="{'chip-focused': focused}">
+    [ngClass]="{'chip-focused': focused}"
+    (click)="onMainButtonClicked($event)">
   <input
       #inputBox
       class="input-box"

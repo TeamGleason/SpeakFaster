@@ -71,8 +71,8 @@ export interface InputBarControlEvent {
 // TODO(#49): Explore continuous AE without explicit trigger, perhaps
 // added by heuristics for detecting abbreviations vs. words.
 export const ABBRVIATION_EXPANSION_TRIGGER_SUFFIX: string[] = [
-  '  ',  // Two spaces.
-  '\n'
+  '  ',  // Two Spaces.
+  '\n',  // A single Enter.
 ];
 
 const INPUT_TEXT_BASE_FONT_SIZE = 30;
@@ -245,7 +245,9 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
               this.baseReconstructedText = '';
             }
           } else if (event.refocus) {
-            this.focusOnInputTextArea();
+            if (this.inputTextArea) {
+              this.focusOnInputTextArea();
+            }
           }
         });
     this.abbreviationExpansionTriggersSubscription =
@@ -335,72 +337,54 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
 
   public listenToKeypress(keySequence: string[], reconstructedText: string):
       void {
-    const lastKey = keySequence[keySequence.length - 1];
-    this.latestReconstructedString = reconstructedText;
-    if (this.state === State.CHOOSING_WORD_CHIP) {
-      this.baseReconstructedText = this.latestReconstructedString;
-      const appendLastChar =
-          isAlphanumericChar(keySequence[keySequence.length - 1]);
-      this.cutChipsAtIndex(this.chips.length - 1, appendLastChar);
-    } else if (this.state === State.CHOOSING_LETTER_CHIP) {
-      // If there is a uniquely matching word, then choose it.
-      const typedLetter = reconstructedText.slice(reconstructedText.length - 1)
-                              .toLocaleLowerCase();
-      let matchingChipIndices: number[] = [];
-      for (let i = 0; i < this._chips.length; ++i) {
-        if (this._chips[i].text.toLocaleLowerCase() === typedLetter) {
-          matchingChipIndices.push(i);
-        }
-      }
-      if (matchingChipIndices.length === 1) {
-        this.eventLogger.logAbbreviationExpansionSpellingChipSelection(
-            this._chips.length, matchingChipIndices[0]);
-        this.state = State.FOCUSED_ON_LETTER_CHIP;
-        // Signal to soft keyboard a word boundary. TODO(cais): Decide.
-        injectKeys([VIRTUAL_KEY.SPACE], null);
-        this.baseReconstructedText = this.latestReconstructedString.slice(
-            0, this.latestReconstructedString.length - 1);
-        this._focusChipIndex = matchingChipIndices[0];
-        this.ensureChipTypedTextCreated();
-        this._chipTypedText![this._focusChipIndex] = typedLetter;
-        this.loadPrefixedLexiconRequestSubject.next({
-          prefix: typedLetter,
-        });
-      }
-      updateButtonBoxesForElements(this.instanceId, this.buttons);
-    } else if (this.state === State.FOCUSED_ON_LETTER_CHIP) {
-      const spelledString =
-          reconstructedText.slice(this.baseReconstructedText.length);
-      if ((lastKey === VIRTUAL_KEY.ENTER || lastKey === VIRTUAL_KEY.SPACE) &&
-          spelledString.trim() !== '') {
-        this.triggerAbbreviationExpansion();
-      }
-      if (this._chipTypedText === null) {
-        this._chipTypedText = Array(this._chips.length).fill(null);
-      }
-      // Word is already being spelled out.
-      if (spelledString.length === 0) {
-        this.baseReconstructedText = this.latestReconstructedString;
-      } else {
-        this._chipTypedText[this._focusChipIndex!] = spelledString;
-        updateButtonBoxesForElements(this.instanceId, this.buttons);
-        if (LexiconComponent.isValidWord(spelledString.trim())) {
-          console.log(
-              `Spelled string is valid word '${spelledString}': trigger AE`);
-          this.triggerAbbreviationExpansion(/* isInFlight= */ true);
-        }
-      }
-    } else if (this.state === State.FOCUSED_ON_WORD_CHIP) {
-      if (lastKey === VIRTUAL_KEY.ENTER || lastKey === VIRTUAL_KEY.SPACE) {
-        this.onSpeakAsIsButtonClicked();
-      }
-      if (this._chipTypedText === null) {
-        this._chipTypedText = Array(this._chips.length).fill(null);
-      }
-      this._chipTypedText[this._focusChipIndex!] =
-          reconstructedText.slice(this.baseReconstructedText.length);
-      updateButtonBoxesForElements(this.instanceId, this.buttons);
-    }
+    // const lastKey = keySequence[keySequence.length - 1];
+    // this.latestReconstructedString = reconstructedText;
+    // if (this.state === State.CHOOSING_WORD_CHIP) {
+    //   // TODO(cais): Clean up.
+    //   // this.baseReconstructedText = this.latestReconstructedString;
+    //   // const appendLastChar =
+    //   //     isAlphanumericChar(keySequence[keySequence.length - 1]);
+    //   // this.cutChipsAtIndex(this.chips.length - 1, appendLastChar);
+    // } else if (this.state === State.CHOOSING_LETTER_CHIP) {
+    //   // TODO(cais): Clean up.
+    //   // If there is a uniquely matching word, then choose it.
+    //   // const typedLetter = reconstructedText.slice(reconstructedText.length - 1)
+    //   //                         .toLocaleLowerCase();
+    //   // let matchingChipIndices: number[] = [];
+    //   // for (let i = 0; i < this._chips.length; ++i) {
+    //   //   if (this._chips[i].text.toLocaleLowerCase() === typedLetter) {
+    //   //     matchingChipIndices.push(i);
+    //   //   }
+    //   // }
+    //   // if (matchingChipIndices.length === 1) {
+    //   //   this.eventLogger.logAbbreviationExpansionSpellingChipSelection(
+    //   //       this._chips.length, matchingChipIndices[0]);
+    //   //   this.state = State.FOCUSED_ON_LETTER_CHIP;
+    //   //   // Signal to soft keyboard a word boundary. TODO(cais): Decide.
+    //   //   injectKeys([VIRTUAL_KEY.SPACE], null);
+    //   //   this.baseReconstructedText = this.latestReconstructedString.slice(
+    //   //       0, this.latestReconstructedString.length - 1);
+    //   //   this._focusChipIndex = matchingChipIndices[0];
+    //   //   this.ensureChipTypedTextCreated();
+    //   //   this._chipTypedText![this._focusChipIndex] = typedLetter;
+    //   //   this.loadPrefixedLexiconRequestSubject.next({
+    //   //     prefix: typedLetter,
+    //   //   });
+    //   // }
+    //   // updateButtonBoxesForElements(this.instanceId, this.buttons);
+    // } else if (this.state === State.FOCUSED_ON_LETTER_CHIP) {
+    // } else if (this.state === State.FOCUSED_ON_WORD_CHIP) {
+    //   // TODO(cais): Clean up.
+    //   // if (lastKey === VIRTUAL_KEY.ENTER || lastKey === VIRTUAL_KEY.SPACE) {
+    //   //   this.onSpeakAsIsButtonClicked();
+    //   // }
+    //   // if (this._chipTypedText === null) {
+    //   //   this._chipTypedText = Array(this._chips.length).fill(null);
+    //   // }
+    //   // this._chipTypedText[this._focusChipIndex!] =
+    //   //     reconstructedText.slice(this.baseReconstructedText.length);
+    //   // updateButtonBoxesForElements(this.instanceId, this.buttons);
+    // }
   }
 
   private scaleInputTextFontSize(): void {
@@ -566,6 +550,17 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private restoreInputTextAreaState() {
     this.updateInputString(InputBarComponent.savedInputString);
+  }
+
+  onChipTextChanged(event: {text: string}, i: number) {
+    this.ensureChipTypedTextCreated();
+    const spelledString = event.text.trim();
+    this._chipTypedText![i] = spelledString;
+    if (LexiconComponent.isValidWord(spelledString.trim())) {
+      console.log(
+          `Spelled string is valid word '${spelledString}': trigger AE`);
+      this.triggerAbbreviationExpansion(/* isInFlight= */ true);
+    }
   }
 
   onChipClicked(index: number) {

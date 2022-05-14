@@ -26,6 +26,7 @@ export class InputBarChipComponent implements OnInit, AfterViewInit, OnDestroy {
   @Input() supportsCut: boolean = false;
   @Input() focused: boolean = false;
   @Output() cutClicked: EventEmitter<Event> = new EventEmitter();
+  @Output() textChanged: EventEmitter<{text: string}> = new EventEmitter();
 
   @ViewChild('inputBox') inputBox!: ElementRef<HTMLInputElement>;
   @ViewChildren('clickableButton')
@@ -54,6 +55,8 @@ export class InputBarChipComponent implements OnInit, AfterViewInit, OnDestroy {
   onInputBoxKeyUp(event: Event) {
     this.updateInputBoxSize();
     this.text = this.inputBox.nativeElement.value;
+    // TODO(cais): add unit test.
+    this.textChanged.emit({text: this.text});
   }
 
   private updateInputBoxSize(): void {
@@ -61,7 +64,12 @@ export class InputBarChipComponent implements OnInit, AfterViewInit, OnDestroy {
     updateButtonBoxesForElements(this.instanceId, this.buttons);
   }
 
-  // TODO(cais): On clicked, select whole word.
+  onMainButtonClicked(event: Event) {
+    // TODO(cais): Add unit test.
+    this.inputBox.nativeElement.select();
+    this.inputBox.nativeElement.focus({preventScroll: true});
+    // this.inputBox.nativeElement.textContent
+  }
 
   onCutButtonClicked(event: Event) {
     this.cutClicked.emit(event);

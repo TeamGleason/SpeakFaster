@@ -156,7 +156,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
 
   constructor(
       public speakFasterService: SpeakFasterService,
-      private studyManager: StudyManager, private eventLogger: HttpEventLogger,
+      private studyManager: StudyManager, public eventLogger: HttpEventLogger,
       private cdr: ChangeDetectorRef) {}
 
   ngOnInit() {
@@ -304,7 +304,6 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
       this.inFlightAbbreviationExpansionTriggerSubscription.unsubscribe();
     }
     updateButtonBoxesToEmpty(this.instanceId);
-    // ExternalEventsComponent.unregisterKeypressListener(this.keypressListener);
     ExternalEventsComponent.unregisterIgnoreKeySequence(
         InputBarComponent.IGNORE_MACHINE_KEY_SEQUENCE);
     if (this.studyUserTurnsSubscription) {
@@ -313,16 +312,13 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   onInputTextAreaKeyUp(event: KeyboardEvent) {
-    // TOOD(cais): this needs to be fixed for non keyboard event.
-    console.log('A100');  // DEBUG
     this.inputString = this.inputTextArea.nativeElement.value;
+    // TODO(cais): Add unit test for logging.
     this.eventLogger.logKeypress(event as KeyboardEvent, this.inputString);
     this.scaleInputTextFontSize();
-    console.log('A200:', this.inputString);  // DEBUG
     if (ABBRVIATION_EXPANSION_TRIGGER_SUFFIX.some(
-            suffix => this.inputString.endsWith(suffix))) {
-      // TOOD(cais): Add unit test.
-      console.log('Triggering!');  // DEBUG
+            suffix => this.inputString.endsWith(suffix)) &&
+        this.inputStringIsCompatibleWithAbbreviationExpansion) {
       this.triggerAbbreviationExpansion();
     }
   }

@@ -153,6 +153,14 @@ fdescribe('InputBarComponent', () => {
        });
   }
 
+  it('entering keys into input box logs keypresses', () => {
+    const keypressLogSpy =
+        spyOn(fixture.componentInstance.eventLogger, 'logKeypress');
+    enterKeysIntoComponent('a');
+
+    expect(keypressLogSpy).toHaveBeenCalledTimes(1);
+  });
+
   for (const [originalText, newKey] of [
            ['abc', '\n'],
            [' abc', '\n'],
@@ -182,30 +190,36 @@ fdescribe('InputBarComponent', () => {
        });
   }
 
-  it('Keys trigger abbreviation multi-token abbreviation expansion', () => {
-    const originalText = ' i am vg';
-    const newKey = '\n';
-    const inputText = fixture.debugElement.query(By.css('.base-text-area'));
-    inputText.nativeElement.value = originalText;
-    fixture.detectChanges();
-    inputText.nativeElement.value = originalText + newKey;
-    const event = new KeyboardEvent('keypress', {key: newKey});
-    fixture.componentInstance.onInputTextAreaKeyUp(event);
-    fixture.detectChanges();
+  for (const [originalText, triggerKey] of [
+           [' i am vg', '\n'],
+           [' i am. vg', '\n'],
+  ] as Array<[string, string]>) {
+    it('Keys trigger abbreviation multi-token abbreviation expansion:' +
+           `original text=${originalText}, trigger=${triggerKey}`,
+       () => {
+         const inputText =
+             fixture.debugElement.query(By.css('.base-text-area'));
+         inputText.nativeElement.value = originalText;
+         fixture.detectChanges();
+         inputText.nativeElement.value = originalText + triggerKey;
+         const event = new KeyboardEvent('keypress', {key: triggerKey});
+         fixture.componentInstance.onInputTextAreaKeyUp(event);
+         fixture.detectChanges();
 
-    expect(inputAbbreviationChangeEvents.length).toEqual(1);
-    const [aeEvent] = inputAbbreviationChangeEvents;
-    const {abbreviationSpec} = aeEvent;
-    expect(abbreviationSpec.readableString).toEqual('i am vg');
-    expect(abbreviationSpec.tokens.length).toEqual(3);
-    expect(abbreviationSpec.tokens[0].isKeyword).toBeTrue();
-    expect(abbreviationSpec.tokens[0].value).toEqual('i');
-    expect(abbreviationSpec.tokens[1].isKeyword).toBeTrue();
-    expect(abbreviationSpec.tokens[1].value).toEqual('am');
-    expect(abbreviationSpec.tokens[2].isKeyword).toBeFalse();
-    expect(abbreviationSpec.tokens[2].value).toEqual('vg');
-    expect(abbreviationSpec.lineageId).not.toBeNull();
-  });
+         expect(inputAbbreviationChangeEvents.length).toEqual(1);
+         const [aeEvent] = inputAbbreviationChangeEvents;
+         const {abbreviationSpec} = aeEvent;
+         expect(abbreviationSpec.readableString).toEqual('i am vg');
+         expect(abbreviationSpec.tokens.length).toEqual(3);
+         expect(abbreviationSpec.tokens[0].isKeyword).toBeTrue();
+         expect(abbreviationSpec.tokens[0].value).toEqual('i');
+         expect(abbreviationSpec.tokens[1].isKeyword).toBeTrue();
+         expect(abbreviationSpec.tokens[1].value).toEqual('am');
+         expect(abbreviationSpec.tokens[2].isKeyword).toBeFalse();
+         expect(abbreviationSpec.tokens[2].value).toEqual('vg');
+         expect(abbreviationSpec.lineageId).not.toBeNull();
+       });
+  }
 
   it('clicking abort button clears state: no head keywords', () => {
     enterKeysIntoComponent('ab');
@@ -241,206 +255,90 @@ fdescribe('InputBarComponent', () => {
         .not.toBeNull();
   });
 
-  it('long input abbreviation followed by trigger sequence does not trigger AE', () => {
-    // Length 13, excluding the two space keys.
-    const originalText = 'abcdefghijklmo';
-    const newKey = '\n';
+  it('long input abbreviation followed by trigger sequence does not trigger AE',
+     () => {
+       // Length 13, excluding the two space keys.
+       const originalText = 'abcdefghijklmo';
+       const newKey = '\n';
+       const inputText = fixture.debugElement.query(By.css('.base-text-area'));
+       inputText.nativeElement.value = originalText;
+       fixture.detectChanges();
+       inputText.nativeElement.value = originalText + newKey;
+       const event = new KeyboardEvent('keypress', {key: newKey});
+       fixture.componentInstance.onInputTextAreaKeyUp(event);
+       fixture.detectChanges();
+
+       expect(inputAbbreviationChangeEvents.length).toEqual(0);
+     });
+
+  it('too many head keywords disable expand and spell buttons', () => {
     const inputText = fixture.debugElement.query(By.css('.base-text-area'));
-    inputText.nativeElement.value = originalText;
-    fixture.detectChanges();
-    inputText.nativeElement.value = originalText + newKey;
-    const event = new KeyboardEvent('keypress', {key: newKey});
+    inputText.nativeElement.value = 'a big and red and d';  // # of keywords: 5.
+    const event = new KeyboardEvent('keypress', {key: 'd'});
     fixture.componentInstance.onInputTextAreaKeyUp(event);
     fixture.detectChanges();
 
-    expect(inputAbbreviationChangeEvents.length).toEqual(1);
+    expect(fixture.componentInstance
+               .inputStringIsCompatibleWithAbbreviationExpansion)
+        .toBeFalse();
+    expect(fixture.debugElement.query(By.css('.expand-button'))).toBeNull();
+    expect(fixture.debugElement.query(By.css('.spell-button'))).toBeNull();
+    expect(fixture.debugElement.query(By.css('.abort-button'))).not.toBeNull();
+    expect(fixture.debugElement.query(By.css('.length-limit-exceeded')))
+        .not.toBeNull();
   });
 
-  //   it('input abbreviation with head keywords triggers AE', () => {
-  //     const keySequence = [
-  //       'a', VIRTUAL_KEY.SPACE, 'g', 'o', 'o', 'd', VIRTUAL_KEY.SPACE, 't',
-  //       'i', 'a', 't', 'h', 's', VIRTUAL_KEY.SPACE, VIRTUAL_KEY.SPACE
-  //     ];
-  //     const reconstructedText = keySequence.join('');
-  //     enterKeysIntoComponent(keySequence, reconstructedText);
+  it('clicking abort button clears state: no head keywords', () => {
+    const inputText = fixture.debugElement.query(By.css('.base-text-area'));
+    inputText.nativeElement.value = 'a big and red and d';  // # of keywords: 5.
+    const event = new KeyboardEvent('keypress', {key: 'd'});
+    fixture.componentInstance.onInputTextAreaKeyUp(event);
+    fixture.detectChanges();
+    const abortButton = fixture.debugElement.query(By.css('.abort-button'));
+    abortButton.nativeElement.click();
+    fixture.detectChanges();
 
-  //     expect(inputAbbreviationChangeEvents.length).toEqual(1);
-  //     expect(inputAbbreviationChangeEvents[0].requestExpansion).toBeTrue();
-  //     const {abbreviationSpec} = inputAbbreviationChangeEvents[0];
-  //     expect(abbreviationSpec.readableString).toEqual('a good tiaths');
-  //     const {tokens} = abbreviationSpec;
-  //     expect(tokens.length).toEqual(3);
-  //     expect(tokens[0]).toEqual({value: 'a', isKeyword: true});
-  //     expect(tokens[1]).toEqual({value: 'good', isKeyword: true});
-  //     expect(tokens[2]).toEqual({value: 'tiaths', isKeyword: false});
-  //     expect(abbreviationSpec.lineageId.length).toBeGreaterThan(0);
-  //     expect(abbreviationSpec.eraserSequence)
-  //         .toEqual(repeatVirtualKey(VIRTUAL_KEY.BACKSPACE,
-  //         keySequence.length));
-  //   });
+    expect(inputText.nativeElement.value).toEqual('');
+    expect(fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'))
+               .length)
+        .toEqual(0);
+    expect(fixture.debugElement.query(By.css('.expand-button'))).toBeNull();
+    expect(fixture.debugElement.query(By.css('.spell-button'))).toBeNull();
+    expect(fixture.debugElement.query(By.css('.abort-button'))).toBeNull();
+    expect(fixture.debugElement.query(By.css('.length-limit-exceeded')))
+        .toBeNull();
+  });
 
-  //   it('input abbreviation with head keywords with period triggers AE without
-  //   period',
-  //      () => {
-  //        const keySequence = [
-  //          'g', 'o', 'o', 'd', VIRTUAL_KEY.PERIOD, VIRTUAL_KEY.SPACE, 't',
-  //          'i', 'a', 't', 'h', 's', VIRTUAL_KEY.SPACE, VIRTUAL_KEY.SPACE
-  //        ];
-  //        const reconstructedText = keySequence.join('');
-  //        enterKeysIntoComponent(keySequence, reconstructedText);
+  it('clicking spell button injects chips', () => {
+    enterKeysIntoComponent('ace');
+    const spellButton = fixture.debugElement.query(By.css('.spell-button'));
+    spellButton.nativeElement.click();
+    fixture.detectChanges();
 
-  //        expect(inputAbbreviationChangeEvents.length).toEqual(1);
-  //        expect(inputAbbreviationChangeEvents[0].requestExpansion).toBeTrue();
-  //        const {abbreviationSpec} = inputAbbreviationChangeEvents[0];
-  //        expect(abbreviationSpec.readableString).toEqual('good tiaths');
-  //        const {tokens} = abbreviationSpec;
-  //        expect(tokens.length).toEqual(2);
-  //        expect(tokens[0]).toEqual({value: 'good', isKeyword: true});
-  //        expect(tokens[1]).toEqual({value: 'tiaths', isKeyword: false});
-  //        expect(abbreviationSpec.lineageId.length).toBeGreaterThan(0);
-  //        expect(abbreviationSpec.eraserSequence)
-  //            .toEqual(
-  //                repeatVirtualKey(VIRTUAL_KEY.BACKSPACE,
-  //                keySequence.length));
-  //      });
+    const chips =
+        fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'));
+    expect(chips.length).toEqual(3);
+    expect((chips[0].componentInstance as InputBarChipComponent).text)
+        .toEqual('a');
+    expect((chips[1].componentInstance as InputBarChipComponent).text)
+        .toEqual('c');
+    expect((chips[2].componentInstance as InputBarChipComponent).text)
+        .toEqual('e');
+    expect(fixture.componentInstance.state).toEqual(State.CHOOSING_LETTER_CHIP);
+    expect(fixture.debugElement.query(By.css('.expand-button'))).toBeNull();
+    expect(fixture.debugElement.query(By.css('.spell-button'))).toBeNull();
+    expect(fixture.debugElement.query(By.css('.length-limit-exceeded')))
+    expect(fixture.debugElement.query(By.css('.abort-button'))).not.toBeNull();
+    expect(LoadLexiconRequests.length).toEqual(0);
+  });
 
+  it('clicking spell button injects space key to self app', () => {
+    enterKeysIntoComponent('ace');
+    const spellButton = fixture.debugElement.query(By.css('.spell-button'));
+    spellButton.nativeElement.click();
 
-  //   it('too many head keywords disable expand and spell buttons', () => {
-  //     const keySequence = [
-  //       'a', VIRTUAL_KEY.SPACE, 'b', 'i', 'g', VIRTUAL_KEY.SPACE, 'a', 'n',
-  //       'd', VIRTUAL_KEY.SPACE, 'r', 'e', 'd', VIRTUAL_KEY.SPACE, 'a', 'n',
-  //       'd',  // Five keywords up to this point.
-  //       VIRTUAL_KEY.SPACE, 'd'
-  //     ];
-  //     const reconstructedText = keySequence.join('');
-  //     enterKeysIntoComponent(keySequence, reconstructedText);
-
-  //     expect(fixture.debugElement.query(By.css('.expand-button'))).toBeNull();
-  //     expect(fixture.debugElement.query(By.css('.spell-button'))).toBeNull();
-  //     expect(fixture.debugElement.query(By.css('.abort-button'))).not.toBeNull();
-  //     expect(fixture.debugElement.query(By.css('.length-limit-exceeded')))
-  //         .not.toBeNull();
-  //   });
-
-  //   it('clicking abort button clears state: no head keywords', () => {
-  //     const keySequence = [
-  //       'a', VIRTUAL_KEY.SPACE, 'b', 'i', 'g', VIRTUAL_KEY.SPACE, 'a', 'n',
-  //       'd', VIRTUAL_KEY.SPACE, 'r', 'e', 'd', VIRTUAL_KEY.SPACE, 'a'
-  //     ];
-  //     const reconstructedText = keySequence.join('');
-  //     enterKeysIntoComponent(keySequence, reconstructedText);
-  //     const abortButton =
-  //     fixture.debugElement.query(By.css('.abort-button'));
-  //     abortButton.nativeElement.click();
-  //     fixture.detectChanges();
-
-  //     const inputText = fixture.debugElement.query(By.css('.input-text'));
-  //     expect(inputText.nativeElement.innerText).toEqual('|');
-  //     expect(fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'))
-  //                .length)
-  //         .toEqual(0);
-  //     expect(fixture.debugElement.query(By.css('.expand-button'))).toBeNull();
-  //     expect(fixture.debugElement.query(By.css('.spell-button'))).toBeNull();
-  //     expect(fixture.debugElement.query(By.css('.abort-button'))).toBeNull();
-  //     expect(fixture.debugElement.query(By.css('.length-limit-exceeded')))
-  //         .toBeNull();
-  //   });
-
-  //   it('clicking spell button injects chips', () => {
-  //     const keySequence = ['a', 'c', 'e'];
-  //     const reconstructedText = keySequence.join('');
-  //     enterKeysIntoComponent(keySequence, reconstructedText);
-  //     const spellButton =
-  //     fixture.debugElement.query(By.css('.spell-button'));
-  //     spellButton.nativeElement.click();
-  //     fixture.detectChanges();
-
-  //     const chips =
-  //         fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'));
-  //     expect(chips.length).toEqual(3);
-  //     expect((chips[0].componentInstance as InputBarChipComponent).text)
-  //         .toEqual('a');
-  //     expect((chips[1].componentInstance as InputBarChipComponent).text)
-  //         .toEqual('c');
-  //     expect((chips[2].componentInstance as InputBarChipComponent).text)
-  //         .toEqual('e');
-  //     expect(fixture.debugElement.query(By.css('.expand-button'))).toBeNull();
-  //     expect(fixture.debugElement.query(By.css('.spell-button'))).toBeNull();
-  //     expect(fixture.debugElement.query(By.css('.length-limit-exceeded')))
-  //     expect(fixture.debugElement.query(By.css('.abort-button'))).not.toBeNull();
-  //     expect(LoadLexiconRequests.length).toEqual(0);
-  //   });
-
-  //   it('clicking spell button injects space key to self app', () => {
-  //     const keySequence = ['a', 'c', 'e'];
-  //     const reconstructedText = keySequence.join('');
-  //     enterKeysIntoComponent(keySequence, reconstructedText);
-  //     const spellButton =
-  //     fixture.debugElement.query(By.css('.spell-button'));
-  //     spellButton.nativeElement.click();
-
-  //     expect(testListener.numRequestSoftkeyboardResetCalls).toEqual(1);
-  //   });
-
-  //   it('spelling word updates chips', () => {
-  //     const keySequence = ['a', 'b', 'c'];
-  //     const reconstructedText = keySequence.join('');
-  //     enterKeysIntoComponent(keySequence, reconstructedText);
-  //     const spellButton =
-  //     fixture.debugElement.query(By.css('.spell-button'));
-  //     spellButton.nativeElement.click();
-  //     fixture.detectChanges();
-  //     const spellSequence = ['b', 'i', 't'];
-  //     const spellReconstructedText = reconstructedText +
-  //     spellSequence.join(''); enterKeysIntoComponent(spellSequence,
-  //     spellReconstructedText, 3);
-
-  //     const chips =
-  //         fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'));
-  //     expect(chips.length).toEqual(3);
-  //     expect((chips[0].componentInstance as InputBarChipComponent).text)
-  //         .toEqual('a');
-  //     expect((chips[1].componentInstance as InputBarChipComponent).text)
-  //         .toEqual('bit');
-  //     expect((chips[2].componentInstance as InputBarChipComponent).text)
-  //         .toEqual('c');
-  //     expect(fixture.debugElement.query(By.css('.expand-button'))).not.toBeNull();
-  //     expect(fixture.debugElement.query(By.css('.spell-button'))).toBeNull();
-  //     expect(fixture.debugElement.query(By.css('.length-limit-exceeded')))
-  //     expect(fixture.debugElement.query(By.css('.abort-button'))).not.toBeNull();
-  //     expect(inputAbbreviationChangeEvents.length).toEqual(0);
-  //     expect(LoadLexiconRequests.length).toEqual(1);
-  //     expect(LoadLexiconRequests[0]).toEqual({prefix: 'b'});
-  //   });
-
-  //   it('backspace during spelling: reconstructs correct word', () => {
-  //     const keySequence = ['a', 'b', 'c'];
-  //     const reconstructedText = keySequence.join('');
-  //     enterKeysIntoComponent(keySequence, reconstructedText);
-  //     const spellButton =
-  //     fixture.debugElement.query(By.css('.spell-button'));
-  //     spellButton.nativeElement.click();
-  //     fixture.detectChanges();
-  //     const spellSequence = ['a', 'l', VIRTUAL_KEY.BACKSPACE, 'n', 'y'];
-  //     const spellReconstructedText = [
-  //       reconstructedText + 'a',
-  //       reconstructedText + 'al',
-  //       reconstructedText + 'a',
-  //       reconstructedText + 'an',
-  //       reconstructedText + 'any',
-  //     ];
-  //     enterKeysIntoComponent(spellSequence, spellReconstructedText, 3);
-
-  //     const chips =
-  //         fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'));
-  //     expect(chips.length).toEqual(3);
-  //     expect((chips[0].componentInstance as InputBarChipComponent).text)
-  //         .toEqual('any');
-  //     expect((chips[1].componentInstance as InputBarChipComponent).text)
-  //         .toEqual('b');
-  //     expect((chips[2].componentInstance as InputBarChipComponent).text)
-  //         .toEqual('c');
-  //   });
+    expect(testListener.numRequestSoftkeyboardResetCalls).toEqual(1);
+  });
 
   //   for (const triggerKey of [VIRTUAL_KEY.SPACE, VIRTUAL_KEY.ENTER]) {
   //     for (const endPunctuation of ['.', '?', '!']) {
@@ -1306,176 +1204,151 @@ fdescribe('InputBarComponent', () => {
   //     expect(chips[3].nativeElement.innerText).toEqual('v');
   //   });
 
-  //   it('clicking favorite button calls ', () => {
-  //     enterKeysIntoComponent(
-  //         ['s', 'o', VIRTUAL_KEY.SPACE, 'l', 'o', 'n', 'g',
-  //         VIRTUAL_KEY.SPACE], 'so long ');
-  //     const addContextualPhraseSpy =
-  //         spyOn(speakFasterServiceForTest, 'addContextualPhrase');
-  //     fixture.detectChanges();
-  //     const favoriteButton =
-  //         fixture.debugElement.query(By.css('app-favorite-button-component'))
-  //             .query(By.css('.favorite-button'));
-  //     favoriteButton.nativeElement.click();
-  //     fixture.detectChanges();
+  it('clicking favorite button calls ', () => {
+    enterKeysIntoComponent('so long');
+    const addContextualPhraseSpy =
+        spyOn(speakFasterServiceForTest, 'addContextualPhrase');
+    fixture.detectChanges();
+    const favoriteButton =
+        fixture.debugElement.query(By.css('app-favorite-button-component'))
+            .query(By.css('.favorite-button'));
+    favoriteButton.nativeElement.click();
+    fixture.detectChanges();
 
-  //     expect(addContextualPhraseSpy).toHaveBeenCalledOnceWith({
-  //       userId: 'testuser',
-  //       contextualPhrase: {
-  //         phraseId: '',
-  //         text: 'so long',
-  //         tags: ['favorite'],
-  //       },
-  //     });
-  //   });
+    expect(addContextualPhraseSpy).toHaveBeenCalledOnceWith({
+      userId: 'testuser',
+      contextualPhrase: {
+        phraseId: '',
+        text: 'so long',
+        tags: ['favorite'],
+      },
+    });
+  });
 
-  //   it('setting isFocus to false hides cursor', () => {
-  //     fixture.componentInstance.isFocused = false;
-  //     fixture.detectChanges();
+  it('append text signal in input bar control subject works', () => {
+    inputBarControlSubject.next({appendText: 'foo bar'});
+    fixture.detectChanges();
 
-  //     const cursor = fixture.debugElement.query(By.css('.simulated-cursor'));
-  //     expect(cursor.classes['simulated-cursor-hidden']).toBeTrue();
-  //   });
+    const inputText = fixture.debugElement.query(By.css('.base-text-area'));
+    expect(inputText.nativeElement.value).toEqual('foo bar');
+    expect(fixture.componentInstance.inputString).toEqual('foo bar');
+    expect(fixture.componentInstance.state).toEqual(State.ENTERING_BASE_TEXT);
+  });
 
-  //   it('setting isFocus back to true shows cursor', () => {
-  //     fixture.componentInstance.isFocused = false;
-  //     fixture.detectChanges();
-  //     fixture.componentInstance.isFocused = true;
-  //     fixture.detectChanges();
+  it('onFavoritePhraseAdded with success issues text-entry end event', () => {
+    fixture.componentInstance.onFavoritePhraseAdded(
+        {text: 'foo', success: true});
 
-  //     const cursor = fixture.debugElement.query(By.css('.simulated-cursor'));
-  //     expect(cursor.classes['simulated-cursor-hidden']).toBeUndefined();
-  //   });
+    expect(textEntryEndEvents.length).toEqual(1);
+    expect(textEntryEndEvents[0].isFinal).toBeTrue();
+    expect(textEntryEndEvents[0].text).toEqual('foo');
+    expect(textEntryEndEvents[0].timestampMillis).toBeGreaterThan(0);
+  });
 
-  //   it('append text signal in input bar control subject works', () => {
-  //     inputBarControlSubject.next({appendText: 'foo bar'});
-  //     fixture.detectChanges();
+  it('onFavoritePhraseAdded with failure issues text-entry end event', () => {
+    fixture.componentInstance.onFavoritePhraseAdded(
+        {text: 'foo', success: false});
 
-  //     expect(fixture.componentInstance.inputString).toEqual('foo bar ');
-  //     expect(fixture.componentInstance.state).toEqual(State.ENTERING_BASE_TEXT);
-  //   });
+    expect(textEntryEndEvents.length).toEqual(0);
+  });
 
-  //   it('onFavoritePhraseAdded with success issues text-entry end event', ()
-  //   => {
-  //     fixture.componentInstance.onFavoritePhraseAdded(
-  //         {text: 'foo', success: true});
+  it('study instrucitons and text are initially not shown', () => {
+    expect(fixture.debugElement.query(By.css('.instruction'))).toBeNull();
+    expect(fixture.debugElement.query(By.css('.to-enter-text'))).toBeNull();
+  });
 
-  //     expect(textEntryEndEvents.length).toEqual(1);
-  //     expect(textEntryEndEvents[0].isFinal).toBeTrue();
-  //     expect(textEntryEndEvents[0].text).toEqual('foo');
-  //     expect(textEntryEndEvents[0].timestampMillis).toBeGreaterThan(0);
-  //   });
+  it('study turn causes instruction and text to be shown', () => {
+    studyUserTurnsSubject.next({
+      text: 'All frequencies open',
+      isAbbreviation: true,
+      isComplete: false,
+    });
+    fixture.detectChanges();
 
-  //   it('onFavoritePhraseAdded with failure issues text-entry end event', ()
-  //   => {
-  //     fixture.componentInstance.onFavoritePhraseAdded(
-  //         {text: 'foo', success: false});
+    const instruction = fixture.debugElement.query(By.css('.instruction'));
+    expect(instruction.nativeElement.innerText)
+        .toEqual('Enter in abbreviation:');
+    const toEnterText = fixture.debugElement.query(By.css('.to-enter-text'));
+    expect(toEnterText.nativeElement.innerText).toEqual('All frequencies open');
+  });
 
-  //     expect(textEntryEndEvents.length).toEqual(0);
-  //   });
+  it('null text in study turn subject resets UI state', () => {
+    studyUserTurnsSubject.next({
+      text: 'All frequencies open',
+      isAbbreviation: true,
+      isComplete: false,
+    });
+    studyUserTurnsSubject.next({
+      text: null,
+      isAbbreviation: true,
+      isComplete: true,
+    });
+    fixture.detectChanges();
 
-  //   it('study instrucitons and text are initially not shown', () => {
-  //     expect(fixture.debugElement.query(By.css('.instruction'))).toBeNull();
-  //     expect(fixture.debugElement.query(By.css('.to-enter-text'))).toBeNull();
-  //   });
+    expect(fixture.debugElement.query(By.css('.instruction'))).toBeNull();
+    expect(fixture.debugElement.query(By.css('.to-enter-text'))).toBeNull();
+  });
 
-  //   it('study turn causes instruction and text to be shown', () => {
-  //     studyUserTurnsSubject.next({
-  //       text: 'All frequencies open',
-  //       isAbbreviation: true,
-  //       isComplete: false,
-  //     });
-  //     fixture.detectChanges();
+  it('completed state in study turn subject displays end state', () => {
+    studyUserTurnsSubject.next({
+      text: null,
+      isAbbreviation: true,
+      isComplete: true,
+    });
+    fixture.detectChanges();
 
-  //     const instruction = fixture.debugElement.query(By.css('.instruction'));
-  //     expect(instruction.nativeElement.innerText)
-  //         .toEqual('Enter in abbreviation:');
-  //     const toEnterText =
-  //     fixture.debugElement.query(By.css('.to-enter-text'));
-  //     expect(toEnterText.nativeElement.innerText).toEqual('All frequencies
-  //     open');
-  //   });
+    const dialogCompleteMessage =
+        fixture.debugElement.query(By.css('.hint-dialog-complete'));
+    expect(dialogCompleteMessage.nativeElement.innerText)
+        .toEqual('Dialog is complete.');
+    expect(fixture.debugElement.query(By.css('.dialog-error'))).toBeNull();
+  });
 
-  //   it('null text in study turn subject resets UI state', () => {
-  //     studyUserTurnsSubject.next({
-  //       text: 'All frequencies open',
-  //       isAbbreviation: true,
-  //       isComplete: false,
-  //     });
-  //     studyUserTurnsSubject.next({
-  //       text: null,
-  //       isAbbreviation: true,
-  //       isComplete: true,
-  //     });
-  //     fixture.detectChanges();
+  it('error state in study turn subject displays error message', () => {
+    studyUserTurnsSubject.next({
+      text: null,
+      isAbbreviation: true,
+      isComplete: true,
+      error: 'Failed to load dialog "foo"',
+    });
+    fixture.detectChanges();
 
-  //     expect(fixture.debugElement.query(By.css('.instruction'))).toBeNull();
-  //     expect(fixture.debugElement.query(By.css('.to-enter-text'))).toBeNull();
-  //   });
+    const dialogCompleteMessage =
+        fixture.debugElement.query(By.css('.hint-dialog-complete'));
+    expect(dialogCompleteMessage.nativeElement.innerText)
+        .toEqual('Failed to load dialog "foo"');
+    expect(fixture.debugElement.query(By.css('.dialog-error'))
+               .nativeElement.innerText)
+        .toEqual('Failed to load dialog "foo"');
+  });
 
-  //   it('completed state in study turn subject displays end state', () => {
-  //     studyUserTurnsSubject.next({
-  //       text: null,
-  //       isAbbreviation: true,
-  //       isComplete: true,
-  //     });
-  //     fixture.detectChanges();
+  it('displays notification when set to non-empty', () => {
+    fixture.componentInstance.notification = 'testing foo.';
+    fixture.detectChanges();
 
-  //     const dialogCompleteMessage =
-  //         fixture.debugElement.query(By.css('.hint-dialog-complete'));
-  //     expect(dialogCompleteMessage.nativeElement.innerText)
-  //         .toEqual('Dialog is complete.');
-  //     expect(fixture.debugElement.query(By.css('.dialog-error'))).toBeNull();
-  //   });
+    const notification = fixture.debugElement.query(By.css('.notification'));
+    expect(notification.nativeElement.innerText).toEqual('testing foo.');
+  });
 
-  //   it('error state in study turn subject displays error message', () => {
-  //     studyUserTurnsSubject.next({
-  //       text: null,
-  //       isAbbreviation: true,
-  //       isComplete: true,
-  //       error: 'Failed to load dialog "foo"',
-  //     });
-  //     fixture.detectChanges();
+  it('shows no notification if text is empty', () => {
+    fixture.componentInstance.notification = '';
+    fixture.detectChanges();
 
-  //     const dialogCompleteMessage =
-  //         fixture.debugElement.query(By.css('.hint-dialog-complete'));
-  //     expect(dialogCompleteMessage.nativeElement.innerText)
-  //         .toEqual('Failed to load dialog "foo"');
-  //     expect(fixture.debugElement.query(By.css('.dialog-error'))
-  //                .nativeElement.innerText)
-  //         .toEqual('Failed to load dialog "foo"');
-  //   });
+    expect(fixture.debugElement.query(By.css('.notification'))).toBeNull();
+  });
 
-  //   it('displays notification when set to non-empty', () => {
-  //     fixture.componentInstance.notification = 'testing foo.';
-  //     fixture.detectChanges();
+  it('shows no notification by default', () => {
+    expect(fixture.debugElement.query(By.css('.notification'))).toBeNull();
+  });
 
-  //     const notification =
-  //     fixture.debugElement.query(By.css('.notification'));
-  //     expect(notification.nativeElement.innerText).toEqual('testing foo.');
-  //   });
+  it('clears all state on clearAll command in control subject', () => {
+    enterKeysIntoComponent('abc');
+    inputBarControlSubject.next({
+      clearAll: true,
+    });
 
-  //   it('shows no notification if text is empty', () => {
-  //     fixture.componentInstance.notification = '';
-  //     fixture.detectChanges();
-
-  //     expect(fixture.debugElement.query(By.css('.notification'))).toBeNull();
-  //   });
-
-  //   it('shows no notification by default', () => {
-  //     expect(fixture.debugElement.query(By.css('.notification'))).toBeNull();
-  //   });
-
-  //   it('clears all state on clearAll command in control subject', () => {
-  //     const keySequence = ['a', 'b', 'c'];
-  //     const reconstructedText = keySequence.join('');
-  //     enterKeysIntoComponent(keySequence, reconstructedText);
-  //     inputBarControlSubject.next({
-  //       clearAll: true,
-  //     });
-
-  //     expect(fixture.componentInstance.inputString).toEqual('');
-  //   });
+    expect(fixture.componentInstance.inputString).toEqual('');
+  });
 
   //   it('append text twice calls updateButtonBoxes', async () => {
   //     await fixture.whenStable();

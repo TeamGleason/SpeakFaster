@@ -7,10 +7,7 @@ import {Subscription} from 'rxjs';
 import {updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
 import {createUuid} from 'src/utils/uuid';
 
-export enum State {
-  SHOWING_TEXT = 'SHOWING_TEXT',
-  TYPING_TEXT = 'TYPING_TEXT',
-}
+import {HttpEventLogger} from '../event-logger/event-logger-impl';
 
 @Component({
   selector: 'app-input-bar-chip-component',
@@ -33,7 +30,7 @@ export class InputBarChipComponent implements OnInit, AfterViewInit, OnDestroy {
   buttons!: QueryList<ElementRef<HTMLButtonElement>>;
   private buttonSubscription?: Subscription;
 
-  state = State.SHOWING_TEXT;
+  constructor(private eventLogger: HttpEventLogger) {}
 
   ngOnInit() {}
 
@@ -52,11 +49,12 @@ export class InputBarChipComponent implements OnInit, AfterViewInit, OnDestroy {
     updateButtonBoxesToEmpty(this.instanceId);
   }
 
-  onInputBoxKeyUp(event: Event) {
+  onInputBoxKeyUp(event: KeyboardEvent) {;
     this.updateInputBoxSize();
     this.text = this.inputBox.nativeElement.value;
     // TODO(cais): add unit test.
     this.textChanged.emit({text: this.text});
+    this.eventLogger.logKeypress(event as KeyboardEvent, this.text);
   }
 
   private updateInputBoxSize(): void {

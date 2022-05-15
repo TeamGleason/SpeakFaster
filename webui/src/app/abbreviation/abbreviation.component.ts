@@ -3,7 +3,7 @@ import {Subject, Subscription} from 'rxjs';
 import {allItemsEqual, endsWithSentenceEndPunctuation, limitStringLength} from 'src/utils/text-utils';
 import {createUuid} from 'src/utils/uuid';
 
-import {injectKeys, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from '../../utils/cefsharp';
+import {injectKeys, injectTextAsKeys, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from '../../utils/cefsharp';
 import {RefinementResult, RefinementType} from '../abbreviation-refinement/abbreviation-refinement.component';
 import {getAbbreviationExpansionRequestStats, getAbbreviationExpansionResponseStats, getPhraseStats, HttpEventLogger} from '../event-logger/event-logger-impl';
 import {VIRTUAL_KEY} from '../external/external-events.component';
@@ -203,7 +203,6 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
     // NOTE: blur() call prevents future space keys from inadvertently
     // clicking the button again.
     // TODO(cais): Add unit test.
-    console.log('*** X100: onTextPredictionButtonClicked()');  // DEBUG
     (event.target as HTMLButtonElement).blur();
     this.inputBarControlSubject.next({
       chips: [{
@@ -240,7 +239,6 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
   }
 
   onTextClicked(event: {phraseText: string; phraseIndex: number}) {
-    console.log('*** AbbreviationComponent.onTextClicked(): A100');  // DEBUG
     this.inputBarControlSubject.next(this.phraseToChips(event.phraseText));
   }
 
@@ -301,17 +299,11 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
     if (this.abbreviation.triggerKeys != null) {
       numKeypresses += this.abbreviation.triggerKeys.length;
     }
-    const text = this.abbreviationOptions[this._selectedAbbreviationIndex];
+    let text = this.abbreviationOptions[this._selectedAbbreviationIndex];
     if (toInjectKeys) {
       // TODO(cais): Injecting eraser sequence is diabled for now. If it is to
       // be reinstated later, use this.abbreviation!.eraserSequence.
-      const injectedKeys: Array<string|VIRTUAL_KEY> = [];
-      injectedKeys.push(...text.split(''));
-      if (!endsWithSentenceEndPunctuation(text)) {
-        injectedKeys.push(VIRTUAL_KEY.PERIOD);
-      }
-      injectedKeys.push(VIRTUAL_KEY.SPACE);  // Append a space at the end.
-      injectKeys(injectedKeys, text);
+      injectTextAsKeys(text);
     }
     this.textEntryEndSubject.next({
       text,

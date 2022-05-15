@@ -1,7 +1,7 @@
 /** Quick phrase list for direct selection. */
 import {AfterViewInit, ChangeDetectorRef, Component, ElementRef, Input, OnChanges, OnDestroy, OnInit, QueryList, SimpleChanges, ViewChild, ViewChildren} from '@angular/core';
 import {Subject} from 'rxjs';
-import {injectKeys, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
+import {injectKeys, injectTextAsKeys, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
 import {createUuid} from 'src/utils/uuid';
 
 import {AppComponent} from '../app.component';
@@ -347,7 +347,7 @@ export class QuickPhrasesComponent implements AfterViewInit, OnInit, OnChanges,
       // TODO(cais): Properly handle punctuation (if any).
       injectedKeys.push(...phrase.split(''));
       injectedKeys.push(VIRTUAL_KEY.SPACE);  // Append a space at the end.
-      injectKeys(injectedKeys, phrase);
+      injectTextAsKeys(phrase);
     }
     this.eventLogger.logContextualPhraseSelection(
         getContextualPhraseStats(this.phrases[index]),

@@ -139,7 +139,6 @@ export class StudyManager {
     } else {
       isHandledAsCommand = false;
     }
-    console.log('*** eventLogger:', this.eventLogger);  // DEBUG
     if (isHandledAsCommand && this.eventLogger !== null) {
       this.eventLogger.logRemoteCommand({
         command: text,

@@ -192,6 +192,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
             this.changeAppState(AppState.ABBREVIATION_EXPANSION);
             setTimeout(() => {
               bringWindowToForeground();
+              // TODO(cais): Add unit test.
+              this.inputBarControlSubject.next({refocus: true});
             }, 100);
           } else {  // Bring the focus app to foreground (if it is running).
             this.changeAppState(AppState.MINIBAR);
@@ -206,10 +208,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
           undefined :
           ExternalEventsComponent.getEyeTrackingPausedMessage();
     });
-    // document.body.addEventListener('click', () => {
-    //   // TODO(cais): Add unit test. Decide.
-    //   // this.inputBarControlSubject.next({refocus: true});
-    // }, true);
     this.eventLogger.logSessionStart();
   }
 

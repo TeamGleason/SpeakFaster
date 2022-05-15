@@ -85,8 +85,10 @@ export interface EventLogger {
    * Log a keypress. The text content keys will not be logged for their content
    * (e.g, alphanumeric keys and puncutation keys). Only special keys such as
    * Enter, Space, Backspace, Ctrl and Shift will be logged for their content.
+   * The argument `text` is for the mobile use cases, where the key code is not
+   * available from a `KeyboardEvent`.
    */
-  logKeypress(keyboardEvent: KeyboardEvent): Promise<void>;
+  logKeypress(keyboardEvent: KeyboardEvent, text: string): Promise<void>;
 
   /** Log the clicking of the speak button in the input bar. */
   logInputBarSpeakButtonClick(phraseStats: PhraseStats): Promise<void>;

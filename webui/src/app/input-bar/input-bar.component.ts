@@ -2,7 +2,7 @@
 import {AfterViewInit, ChangeDetectorRef, Component, ElementRef, EventEmitter, Input, OnDestroy, OnInit, Output, QueryList, ViewChild, ViewChildren} from '@angular/core';
 import {Subject, Subscription} from 'rxjs';
 import {debounceTime} from 'rxjs/operators';
-import {injectKeys, requestSoftKeyboardReset, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
+import {injectKeys, injectTextAsKeys, requestSoftKeyboardReset, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
 import {endsWithSentenceEndPunctuation, isAlphanumericChar, removePunctuation} from 'src/utils/text-utils';
 import {createUuid} from 'src/utils/uuid';
 
@@ -150,7 +150,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   private abbreviationExpansionTriggersSubscription?: Subscription;
   private inFlightAbbreviationExpansionTriggerSubscription?: Subscription;
   private studyUserTurnsSubscription?: Subscription;
-  private keypressListener = this.listenToKeypress.bind(this);
+  // private keypressListener = this.listenToKeypress.bind(this);
   private readonly inFlightAbbreviationExpansionTriggers:
       Subject<InputAbbreviationChangedEvent> = new Subject();
   private _contextualPhraseTags: string[] = ['favorite'];
@@ -176,10 +176,9 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
         });
     ExternalEventsComponent.registerIgnoreKeySequence(
         InputBarComponent.IGNORE_MACHINE_KEY_SEQUENCE);
-    ExternalEventsComponent.registerKeypressListener(this.keypressListener);
+    // ExternalEventsComponent.registerKeypressListener(this.keypressListener);
     this.inputBarChipsSubscription =
         this.inputBarControlSubject.subscribe((event: InputBarControlEvent) => {
-          console.log('*** InputBarComponent.A50:', event);  // DEBUG
           if (event.hide !== undefined) {
             this._isHidden = event.hide;
           } else if (event.clearAll) {
@@ -201,7 +200,6 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
                 this.contextualPhraseTags);
           } else if (event.chips !== undefined) {
             let {chips} = event;
-            console.log('*** InputBarComponent.A100');  // DEBUG
             if (this.state === State.ENTERING_BASE_TEXT &&
                 chips[0].isTextPrediction) {
               const originalInputString = this.inputString;
@@ -308,7 +306,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
       this.inFlightAbbreviationExpansionTriggerSubscription.unsubscribe();
     }
     updateButtonBoxesToEmpty(this.instanceId);
-    ExternalEventsComponent.unregisterKeypressListener(this.keypressListener);
+    // ExternalEventsComponent.unregisterKeypressListener(this.keypressListener);
     ExternalEventsComponent.unregisterIgnoreKeySequence(
         InputBarComponent.IGNORE_MACHINE_KEY_SEQUENCE);
     if (this.studyUserTurnsSubscription) {
@@ -316,10 +314,10 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  onInputTextAreaKeyUp(event: Event) {
+  onInputTextAreaKeyUp(event: KeyboardEvent) {
     // TOOD(cais): this needs to be fixed for non keyboard event.
-    // this.eventLogger.logKeypress(event);
     this.inputString = this.inputTextArea.nativeElement.value;
+    this.eventLogger.logKeypress(event as KeyboardEvent, this.inputString);
     this.scaleInputTextFontSize();
     if (ABBRVIATION_EXPANSION_TRIGGER_SUFFIX.some(
             suffix => this.inputString.endsWith(suffix))) {
@@ -333,58 +331,6 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
     this.focusOnInputTextArea();
-  }
-
-  public listenToKeypress(keySequence: string[], reconstructedText: string):
-      void {
-    // const lastKey = keySequence[keySequence.length - 1];
-    // this.latestReconstructedString = reconstructedText;
-    // if (this.state === State.CHOOSING_WORD_CHIP) {
-    //   // TODO(cais): Clean up.
-    //   // this.baseReconstructedText = this.latestReconstructedString;
-    //   // const appendLastChar =
-    //   //     isAlphanumericChar(keySequence[keySequence.length - 1]);
-    //   // this.cutChipsAtIndex(this.chips.length - 1, appendLastChar);
-    // } else if (this.state === State.CHOOSING_LETTER_CHIP) {
-    //   // TODO(cais): Clean up.
-    //   // If there is a uniquely matching word, then choose it.
-    //   // const typedLetter = reconstructedText.slice(reconstructedText.length - 1)
-    //   //                         .toLocaleLowerCase();
-    //   // let matchingChipIndices: number[] = [];
-    //   // for (let i = 0; i < this._chips.length; ++i) {
-    //   //   if (this._chips[i].text.toLocaleLowerCase() === typedLetter) {
-    //   //     matchingChipIndices.push(i);
-    //   //   }
-    //   // }
-    //   // if (matchingChipIndices.length === 1) {
-    //   //   this.eventLogger.logAbbreviationExpansionSpellingChipSelection(
-    //   //       this._chips.length, matchingChipIndices[0]);
-    //   //   this.state = State.FOCUSED_ON_LETTER_CHIP;
-    //   //   // Signal to soft keyboard a word boundary. TODO(cais): Decide.
-    //   //   injectKeys([VIRTUAL_KEY.SPACE], null);
-    //   //   this.baseReconstructedText = this.latestReconstructedString.slice(
-    //   //       0, this.latestReconstructedString.length - 1);
-    //   //   this._focusChipIndex = matchingChipIndices[0];
-    //   //   this.ensureChipTypedTextCreated();
-    //   //   this._chipTypedText![this._focusChipIndex] = typedLetter;
-    //   //   this.loadPrefixedLexiconRequestSubject.next({
-    //   //     prefix: typedLetter,
-    //   //   });
-    //   // }
-    //   // updateButtonBoxesForElements(this.instanceId, this.buttons);
-    // } else if (this.state === State.FOCUSED_ON_LETTER_CHIP) {
-    // } else if (this.state === State.FOCUSED_ON_WORD_CHIP) {
-    //   // TODO(cais): Clean up.
-    //   // if (lastKey === VIRTUAL_KEY.ENTER || lastKey === VIRTUAL_KEY.SPACE) {
-    //   //   this.onSpeakAsIsButtonClicked();
-    //   // }
-    //   // if (this._chipTypedText === null) {
-    //   //   this._chipTypedText = Array(this._chips.length).fill(null);
-    //   // }
-    //   // this._chipTypedText[this._focusChipIndex!] =
-    //   //     reconstructedText.slice(this.baseReconstructedText.length);
-    //   // updateButtonBoxesForElements(this.instanceId, this.buttons);
-    // }
   }
 
   private scaleInputTextFontSize(): void {
@@ -556,7 +502,8 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     this.ensureChipTypedTextCreated();
     const spelledString = event.text.trim();
     this._chipTypedText![i] = spelledString;
-    if (LexiconComponent.isValidWord(spelledString.trim())) {
+    if (this.state === State.FOCUSED_ON_LETTER_CHIP &&
+        LexiconComponent.isValidWord(spelledString.trim())) {
       console.log(
           `Spelled string is valid word '${spelledString}': trigger AE`);
       this.triggerAbbreviationExpansion(/* isInFlight= */ true);
@@ -718,15 +665,8 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!text?.trim()) {
       return;
     }
-    text = text.trim();
-    if (!endsWithSentenceEndPunctuation(text)) {
-      text += '.';
-    }
-    text += ' ';
     this.eventLogger.logInputBarInjectButtonClick(getPhraseStats(text));
-    const injectedKeys: Array<string|VIRTUAL_KEY> = [];
-    injectedKeys.push(...text.split(''));
-    injectKeys(injectedKeys, text);
+    const injectedKeys = injectTextAsKeys(text);
     this.textEntryEndSubject.next({
       text,
       timestampMillis: Date.now(),

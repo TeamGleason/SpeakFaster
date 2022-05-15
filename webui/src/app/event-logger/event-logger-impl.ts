@@ -223,12 +223,15 @@ export class HttpEventLogger implements EventLogger {
         .toPromise();
   }
 
-  async logKeypress(keyboardEvent: KeyboardEvent) {
+  async logKeypress(keyboardEvent: KeyboardEvent, text: string|null) {
     // Log the content of only special keys under the non-full-logging mode.
     const vkCode =
         (isTextContentKey(keyboardEvent) && !HttpEventLogger.isFullLogging()) ?
         null :
         getVirtualkeyCode(keyboardEvent.key);
+    if (!HttpEventLogger.isFullLogging()) {
+      text = null;
+    }
     // TODO(cais): Add unit test.
     await this
         .logEvent({
@@ -237,7 +240,7 @@ export class HttpEventLogger implements EventLogger {
           timezone: this.timezone,
           sessionId: this.sessionId,
           eventName: 'Keypress',
-          eventData: {vkCode},
+          eventData: {vkCode, text},
           appState: getAppState(),
         })
         .pipe(first())

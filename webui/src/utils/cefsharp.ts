@@ -5,6 +5,8 @@ import {getVirtualkeyCode, VIRTUAL_KEY} from 'src/app/external/external-events.c
 import {HostInfo} from 'src/app/settings/hostinfo';
 import {AppSettings, DEFAULT_DWELL_DELAY_MILLIS, DEFAULT_GAZE_FUZZY_RADIUS, getAppSettings, setShowGazeTracker} from 'src/app/settings/settings';
 
+import {endsWithSentenceEndPunctuation} from './text-utils';
+
 const CEFSHARP_OBJECT_NAME = 'CefSharp';
 export const BOUND_LISTENER_NAME = 'boundListener';
 
@@ -185,6 +187,25 @@ export function injectKeys(
   }
   return ((window as any)[BOUND_LISTENER_NAME] as any)
              .injectKeys(virtualKeyCodes, text) as number;
+}
+
+/** Inject text as keys. Append final punctuation and space if there is none. */
+export function injectTextAsKeys(text: string): Array<string|VIRTUAL_KEY> {
+  // TODO(cais): Add unit test.
+  const injectedKeys: Array<string|VIRTUAL_KEY> = [];
+  injectedKeys.push(...text.split(''));
+  if (!text?.trim()) {
+    return [];
+  }
+  text = text.trim();
+  if (!endsWithSentenceEndPunctuation(text)) {
+    text += '.';  // TODO(cais): Deduplicate logic.
+    injectedKeys.push(VIRTUAL_KEY.PERIOD);
+  }
+  text += ' ';
+  injectedKeys.push(VIRTUAL_KEY.SPACE);
+  injectKeys(injectedKeys, text);
+  return injectedKeys;
 }
 
 /** Request host app to reset the state of the attached soft keyboard. */

@@ -332,6 +332,36 @@ fdescribe('InputBarComponent', () => {
     expect(LoadLexiconRequests.length).toEqual(0);
   });
 
+  it('clicking letter chip sets correct state', () => {
+    enterKeysIntoComponent('ace');
+    const spellButton = fixture.debugElement.query(By.css('.spell-button'));
+    spellButton.nativeElement.click();
+    fixture.detectChanges();
+    fixture.componentInstance.onChipClicked(2);
+
+    expect(fixture.componentInstance.state)
+        .toEqual(State.FOCUSED_ON_LETTER_CHIP);
+  });
+
+  it('multi-token abbreviation then hit spell: chips are correct', () => {
+    enterKeysIntoComponent('so much bv');
+    const spellButton = fixture.debugElement.query(By.css('.spell-button'));
+    spellButton.nativeElement.click();
+    fixture.detectChanges();
+
+    const chips =
+        fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'));
+    expect(chips.length).toEqual(4);
+    expect((chips[0].componentInstance as InputBarChipComponent).text)
+        .toEqual('so');
+    expect((chips[1].componentInstance as InputBarChipComponent).text)
+        .toEqual('much');
+    expect((chips[2].componentInstance as InputBarChipComponent).text)
+        .toEqual('b');
+    expect((chips[3].componentInstance as InputBarChipComponent).text)
+        .toEqual('v');
+  });
+
   it('clicking spell button injects space key to self app', () => {
     enterKeysIntoComponent('ace');
     const spellButton = fixture.debugElement.query(By.css('.spell-button'));
@@ -434,6 +464,26 @@ fdescribe('InputBarComponent', () => {
     expect((chips[2].componentInstance as InputBarChipComponent).text)
         .toEqual('great');
     expect(fillMaskRequests.length).toEqual(0);
+  });
+
+  it('clicking word chip during refinement sets correct state', () => {
+    inputBarControlSubject.next({
+      chips: [
+        {
+          text: 'i',
+        },
+        {
+          text: 'feel',
+        },
+        {
+          text: 'great',
+        }
+      ]
+    });
+    fixture.detectChanges();
+    fixture.componentInstance.onChipClicked(2);
+
+    expect(fixture.componentInstance.state).toEqual(State.FOCUSED_ON_WORD_CHIP);
   });
 
   it('clicking chip during refinement triggers fillMask and calls ' +
@@ -907,72 +957,29 @@ fdescribe('InputBarComponent', () => {
   //     expect(fixture.componentInstance.inputString).toEqual('i feel ve');
   //   });
 
-  //   it('Selecting the last chip does not show cut button', () => {
-  //     inputBarControlSubject.next({
-  //       chips: [
-  //         {
-  //           text: 'i',
-  //         },
-  //         {
-  //           text: 'feel',
-  //         },
-  //         {
-  //           text: 'great',
-  //         }
-  //       ]
-  //     });
-  //     fixture.componentInstance.state = State.CHOOSING_WORD_CHIP;
-  //     fixture.detectChanges();
-  //     const chips =
-  //         fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'));
-  //     chips[2].nativeElement.click();
-  //     fixture.detectChanges();
+  it('Selecting the last chip does not show cut button', () => {
+    inputBarControlSubject.next({
+      chips: [
+        {
+          text: 'i',
+        },
+        {
+          text: 'feel',
+        },
+        {
+          text: 'great',
+        }
+      ]
+    });
+    fixture.componentInstance.state = State.CHOOSING_WORD_CHIP;
+    fixture.detectChanges();
+    const chips =
+        fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'));
+    chips[2].nativeElement.click();
+    fixture.detectChanges();
 
-  //     expect(fixture.debugElement.query(By.css('.cut-button'))).toBeNull();
-  //   });
-
-  //   it('typing then injecting text prediction combines text with prediction',
-  //      () => {
-  //        enterKeysIntoComponent(['w', 'o', 'w'], 'wow');
-  //        inputBarControlSubject.next({
-  //          chips: [{
-  //            text: 'this is',
-  //            isTextPrediction: true,
-  //          }]
-  //        });
-  //        fixture.detectChanges();
-  //        const chips = fixture.debugElement.queryAll(
-  //            By.css('app-input-bar-chip-component'));
-
-  //        expect(chips.length).toEqual(0);
-  //        const text = fixture.debugElement.query(By.css('.base-text-area'));
-  //        expect(text.nativeElement.innerText).toEqual('wow this is |');
-  //        expect(fixture.componentInstance.state)
-  //            .toEqual(State.ENTERING_BASE_TEXT);
-  //        expect(fixture.debugElement.query(By.css('.spell-button'))).toBeNull();
-  //      });
-
-  //   it('multi-token abbreviation then hit spell: chips are correct', () => {
-  //     enterKeysIntoComponent(
-  //         [
-  //           's', 'o', VIRTUAL_KEY.SPACE, 'm', 'u', 'c', 'h',
-  //           VIRTUAL_KEY.SPACE, 'b', 'v'
-  //         ],
-  //         'so much bv');
-  //     fixture.detectChanges();
-  //     const spellButton =
-  //     fixture.debugElement.query(By.css('.spell-button'));
-  //     spellButton.nativeElement.click();
-  //     fixture.detectChanges();
-
-  //     const chips =
-  //         fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'));
-  //     expect(chips.length).toEqual(4);
-  //     expect(chips[0].nativeElement.innerText).toEqual('so');
-  //     expect(chips[1].nativeElement.innerText).toEqual('much');
-  //     expect(chips[2].nativeElement.innerText).toEqual('b');
-  //     expect(chips[3].nativeElement.innerText).toEqual('v');
-  //   });
+    expect(fixture.debugElement.query(By.css('.cut-button'))).toBeNull();
+  });
 
   it('clicking favorite button calls ', () => {
     enterKeysIntoComponent('so long');
@@ -1120,19 +1127,19 @@ fdescribe('InputBarComponent', () => {
     expect(fixture.componentInstance.inputString).toEqual('');
   });
 
-  //   it('append text twice calls updateButtonBoxes', async () => {
-  //     await fixture.whenStable();
-  //     const prevNumCalls = testListener.updateButtonBoxesCalls.length;
-  //     inputBarControlSubject.next({appendText: 'foo bar'});
-  //     fixture.detectChanges();
-  //     await fixture.whenStable()
-  //     inputBarControlSubject.next({appendText: 'foo bar'});
-  //     fixture.detectChanges();
-  //     await fixture.whenStable();
+  // it('append text twice calls updateButtonBoxes', async () => {
+  //   await fixture.whenStable();
+  //   const prevNumCalls = testListener.updateButtonBoxesCalls.length;
+  //   inputBarControlSubject.next({appendText: 'foo bar'});
+  //   fixture.detectChanges();
+  //   await fixture.whenStable()
+  //   inputBarControlSubject.next({appendText: 'foo bar'});
+  //   fixture.detectChanges();
+  //   await fixture.whenStable();
 
-  //     expect(testListener.updateButtonBoxesCalls.length)
-  //         .toEqual(prevNumCalls + 2);
-  //   });
+  //   expect(testListener.updateButtonBoxesCalls.length)
+  //       .toEqual(prevNumCalls + 2);
+  // });
 
   //   // TODO(cais): Test spelling valid word triggers AE, with debounce.
 });

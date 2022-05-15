@@ -150,7 +150,6 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   private abbreviationExpansionTriggersSubscription?: Subscription;
   private inFlightAbbreviationExpansionTriggerSubscription?: Subscription;
   private studyUserTurnsSubscription?: Subscription;
-  // private keypressListener = this.listenToKeypress.bind(this);
   private readonly inFlightAbbreviationExpansionTriggers:
       Subject<InputAbbreviationChangedEvent> = new Subject();
   private _contextualPhraseTags: string[] = ['favorite'];
@@ -176,7 +175,6 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
         });
     ExternalEventsComponent.registerIgnoreKeySequence(
         InputBarComponent.IGNORE_MACHINE_KEY_SEQUENCE);
-    // ExternalEventsComponent.registerKeypressListener(this.keypressListener);
     this.inputBarChipsSubscription =
         this.inputBarControlSubject.subscribe((event: InputBarControlEvent) => {
           if (event.hide !== undefined) {
@@ -316,12 +314,15 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
 
   onInputTextAreaKeyUp(event: KeyboardEvent) {
     // TOOD(cais): this needs to be fixed for non keyboard event.
+    console.log('A100');  // DEBUG
     this.inputString = this.inputTextArea.nativeElement.value;
     this.eventLogger.logKeypress(event as KeyboardEvent, this.inputString);
     this.scaleInputTextFontSize();
+    console.log('A200:', this.inputString);  // DEBUG
     if (ABBRVIATION_EXPANSION_TRIGGER_SUFFIX.some(
             suffix => this.inputString.endsWith(suffix))) {
       // TOOD(cais): Add unit test.
+      console.log('Triggering!');  // DEBUG
       this.triggerAbbreviationExpansion();
     }
   }

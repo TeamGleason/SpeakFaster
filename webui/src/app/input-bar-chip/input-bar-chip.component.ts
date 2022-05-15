@@ -49,24 +49,24 @@ export class InputBarChipComponent implements OnInit, AfterViewInit, OnDestroy {
     updateButtonBoxesToEmpty(this.instanceId);
   }
 
-  onInputBoxKeyUp(event: KeyboardEvent) {;
+  onInputBoxKeyUp(event: KeyboardEvent) {
     this.updateInputBoxSize();
     this.text = this.inputBox.nativeElement.value;
-    // TODO(cais): add unit test.
     this.textChanged.emit({text: this.text});
     this.eventLogger.logKeypress(event as KeyboardEvent, this.text);
   }
 
   private updateInputBoxSize(): void {
+    if (!this.text) {
+      return;
+    }
     this.inputBox.nativeElement.style.width = `${this.text.length + 1}ch`;
     updateButtonBoxesForElements(this.instanceId, this.buttons);
   }
 
   onMainButtonClicked(event: Event) {
-    // TODO(cais): Add unit test.
     this.inputBox.nativeElement.select();
     this.inputBox.nativeElement.focus({preventScroll: true});
-    // this.inputBox.nativeElement.textContent
   }
 
   onCutButtonClicked(event: Event) {

@@ -340,451 +340,221 @@ fdescribe('InputBarComponent', () => {
     expect(testListener.numRequestSoftkeyboardResetCalls).toEqual(1);
   });
 
-  //   for (const triggerKey of [VIRTUAL_KEY.SPACE, VIRTUAL_KEY.ENTER]) {
-  //     for (const endPunctuation of ['.', '?', '!']) {
-  //       it('spelling word then enter trigger key triggers AE: ' +
-  //              `trigger key = ${triggerKey}; ` +
-  //              `ending punctuation = ${endPunctuation}`,
-  //          () => {
-  //            const keySequence = ['a', 'b', 'c'];
-  //            const reconstructedText = keySequence.join('');
-  //            enterKeysIntoComponent(keySequence, reconstructedText);
-  //            const spellButton =
-  //                fixture.debugElement.query(By.css('.spell-button'));
-  //            spellButton.nativeElement.click();
-  //            fixture.detectChanges();
-  //            // The ending punctuation should be ignored by keyword AE.
-  //            const spellSequence = ['b', 'i', 't', endPunctuation,
-  //            triggerKey]; const spellReconstructedText =
-  //                spellSequence.join('') + reconstructedText;
-  //            enterKeysIntoComponent(spellSequence, spellReconstructedText);
+  for (const triggerKey of [VIRTUAL_KEY.SPACE, VIRTUAL_KEY.ENTER]) {
+    for (const endPunctuation of ['.', '?', '!']) {
+      it('spelling word then enter trigger key triggers AE: ' +
+             `trigger key = ${triggerKey}; ` +
+             `ending punctuation = ${endPunctuation}`,
+         () => {
+           enterKeysIntoComponent('abc');
+           const spellButton =
+               fixture.debugElement.query(By.css('.spell-button'));
+           spellButton.nativeElement.click();
+           fixture.detectChanges();
+           // The ending punctuation should be ignored by keyword AE.
+           fixture.componentInstance.state = State.FOCUSED_ON_LETTER_CHIP;
+           fixture.componentInstance.onChipTextChanged({text: 'bit'}, 1);
+           fixture.detectChanges();
+           const expandButton =
+               fixture.debugElement.query(By.css('.expand-button'));
+           expandButton.nativeElement.click();
+           fixture.detectChanges();
 
-  //            expect(inputAbbreviationChangeEvents.length).toEqual(1);
-  //            expect(inputAbbreviationChangeEvents[0].requestExpansion).toBeTrue();
-  //            const {abbreviationSpec} = inputAbbreviationChangeEvents[0];
-  //            expect(abbreviationSpec.tokens.length).toEqual(3);
-  //            expect(abbreviationSpec.readableString).toEqual('a bit c');
-  //            // TODO(cais): Make assertion about eraseSequence with spelling.
-  //            const {tokens} = abbreviationSpec;
-  //            expect(tokens[0]).toEqual({value: 'a', isKeyword: false});
-  //            expect(tokens[1]).toEqual({value: 'bit', isKeyword: true});
-  //            expect(tokens[2]).toEqual({value: 'c', isKeyword: false});
-  //          });
-  //     }
-  //   }
+           expect(fixture.componentInstance
+                      .inputStringIsCompatibleWithAbbreviationExpansion)
+               .toBeTrue();
+           expect(inputAbbreviationChangeEvents.length).toEqual(1);
+           expect(inputAbbreviationChangeEvents[0].requestExpansion).toBeTrue();
+           const {abbreviationSpec} = inputAbbreviationChangeEvents[0];
+           expect(abbreviationSpec.tokens.length).toEqual(3);
+           expect(abbreviationSpec.readableString).toEqual('a bit c');
+           // TODO(cais): Make assertion about eraseSequence with spelling.
+           const {tokens} = abbreviationSpec;
+           expect(tokens[0]).toEqual({value: 'a', isKeyword: false});
+           expect(tokens[1]).toEqual({value: 'bit', isKeyword: true});
+           expect(tokens[2]).toEqual({value: 'c', isKeyword: false});
+         });
+    }
+  }
 
-  //   it('spelling word with extraneous period then enter trigger key triggers
-  //   AE: ',
-  //      () => {
-  //        const keySequence = ['a', 'b', 'c'];
-  //        const reconstructedText = keySequence.join('');
-  //        enterKeysIntoComponent(keySequence, reconstructedText);
-  //        const spellButton =
-  //        fixture.debugElement.query(By.css('.spell-button'));
-  //        spellButton.nativeElement.click();
-  //        fixture.detectChanges();
-  //        const spellSequence =
-  //            ['b', 'i', 't', VIRTUAL_KEY.PERIOD, VIRTUAL_KEY.SPACE];
-  //        const spellReconstructedText =
-  //            spellSequence.join('') + reconstructedText;
-  //        enterKeysIntoComponent(spellSequence, spellReconstructedText);
+  it('clicking abort after clicking spell resets state', () => {
+    enterKeysIntoComponent('abc');
+    const spellButton = fixture.debugElement.query(By.css('.spell-button'));
+    spellButton.nativeElement.click();
+    fixture.detectChanges();
+    // The ending punctuation should be ignored by keyword AE.
+    fixture.componentInstance.state = State.FOCUSED_ON_LETTER_CHIP;
+    fixture.componentInstance.onChipTextChanged({text: 'bit'}, 1);
+    const abortButton = fixture.debugElement.query(By.css('.abort-button'));
+    abortButton.nativeElement.click();
+    fixture.detectChanges();
 
-  //        expect(inputAbbreviationChangeEvents.length).toEqual(1);
-  //        expect(inputAbbreviationChangeEvents[0].requestExpansion).toBeTrue();
-  //        const {abbreviationSpec} = inputAbbreviationChangeEvents[0];
-  //        expect(abbreviationSpec.tokens.length).toEqual(3);
-  //        expect(abbreviationSpec.readableString).toEqual('a bit c');
-  //        // TODO(cais): Make assertion about eraseSequence with spelling.
-  //        const {tokens} = abbreviationSpec;
-  //        expect(tokens[0]).toEqual({value: 'a', isKeyword: false});
-  //        expect(tokens[1]).toEqual({value: 'bit', isKeyword: true});
-  //        expect(tokens[2]).toEqual({value: 'c', isKeyword: false});
-  //      });
+    expect(fixture.componentInstance.state).toEqual(State.ENTERING_BASE_TEXT);
+    const chips =
+        fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'));
+    expect(chips.length).toEqual(0);
+    expect(fixture.debugElement.query(By.css('.expand-button'))).not.toBeNull();
+    expect(fixture.debugElement.query(By.css('.spell-button'))).not.toBeNull();
 
-  //   it('clicking expand button after spelling triggers AE', () => {
-  //     const keySequence = ['a', 'b', 'c'];
-  //     const reconstructedText = keySequence.join('');
-  //     enterKeysIntoComponent(keySequence, reconstructedText);
-  //     const spellButton =
-  //     fixture.debugElement.query(By.css('.spell-button'));
-  //     spellButton.nativeElement.click();
-  //     fixture.detectChanges();
-  //     // Letter casing should be ignored.
-  //     const spellSequence = [VIRTUAL_KEY.LSHIFT, 'b', 'i', 't'];
-  //     const spellReconstructedText = 'Bit';
-  //     enterKeysIntoComponent(spellSequence, spellReconstructedText);
-  //     const expandButton =
-  //     fixture.debugElement.query(By.css('.expand-button'));
-  //     expandButton.nativeElement.click();
+    const expandButton = fixture.debugElement.query(By.css('.expand-button'));
+    expandButton.nativeElement.click();
 
-  //     expect(inputAbbreviationChangeEvents.length).toEqual(1);
-  //     expect(inputAbbreviationChangeEvents[0].requestExpansion).toBeTrue();
-  //     const {abbreviationSpec} = inputAbbreviationChangeEvents[0];
-  //     expect(abbreviationSpec.tokens.length).toEqual(3);
-  //     expect(abbreviationSpec.readableString).toEqual('a bit c');
-  //     // TODO(cais): Make assertion about eraseSequence with spelling.
-  //     const {tokens} = abbreviationSpec;
-  //     expect(tokens[0]).toEqual({value: 'a', isKeyword: false});
-  //     expect(tokens[1]).toEqual({value: 'bit', isKeyword: true});
-  //     expect(tokens[2]).toEqual({value: 'c', isKeyword: false});
-  //   });
+    expect(inputAbbreviationChangeEvents.length).toEqual(1);
+    expect(inputAbbreviationChangeEvents[0].requestExpansion).toBeTrue();
+    const {abbreviationSpec} = inputAbbreviationChangeEvents[0];
+    expect(abbreviationSpec.tokens.length).toEqual(1);
+    expect(abbreviationSpec.tokens[0].value).toEqual('abc');
+    expect(abbreviationSpec.tokens[0].isKeyword).toBeFalse();
+    expect(abbreviationSpec.readableString).toEqual('abc');
+  });
 
-  //   it('clicking chip then spell and trigger AE works', () => {
-  //     const keySequence = ['a', 'b', 'a'];
-  //     const reconstructedText = keySequence.join('');
-  //     enterKeysIntoComponent(keySequence, reconstructedText);
-  //     const spellButton =
-  //     fixture.debugElement.query(By.css('.spell-button'));
-  //     spellButton.nativeElement.click();
-  //     fixture.detectChanges();
-  //     const chips =
-  //         fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'));
-  //     chips[2].nativeElement.click();
-  //     fixture.detectChanges();
-  //     const spellSequence = ['a', 'c', 'k', VIRTUAL_KEY.SPACE];
-  //     const spellReconstructedText = reconstructedText +
-  //     spellSequence.join(''); enterKeysIntoComponent(spellSequence,
-  //     spellReconstructedText, 3);
+  it('chips are shown during refinement', () => {
+    inputBarControlSubject.next({
+      chips: [
+        {
+          text: 'i',
+        },
+        {
+          text: 'feel',
+        },
+        {
+          text: 'great',
+        }
+      ]
+    });
+    fixture.detectChanges();
 
-  //     expect(inputAbbreviationChangeEvents.length).toEqual(1);
-  //     expect(inputAbbreviationChangeEvents[0].requestExpansion).toBeTrue();
-  //     const {abbreviationSpec} = inputAbbreviationChangeEvents[0];
-  //     expect(abbreviationSpec.tokens.length).toEqual(2);
-  //     expect(abbreviationSpec.readableString).toEqual('ab ack');
-  //     // TODO(cais): Make assertion about eraseSequence with spelling, after
-  //     // fixing the logic.
-  //     const {tokens} = abbreviationSpec;
-  //     expect(tokens[0]).toEqual({value: 'ab', isKeyword: false});
-  //     expect(tokens[1]).toEqual({value: 'ack', isKeyword: true});
-  //     expect(LoadLexiconRequests.length).toEqual(1);
-  //     expect(LoadLexiconRequests[0]).toEqual({prefix: 'a'});
-  //   });
+    const chips =
+        fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'));
+    expect(chips.length).toEqual(3);
+    expect((chips[0].componentInstance as InputBarChipComponent).text)
+        .toEqual('i');
+    expect((chips[1].componentInstance as InputBarChipComponent).text)
+        .toEqual('feel');
+    expect((chips[2].componentInstance as InputBarChipComponent).text)
+        .toEqual('great');
+    expect(fillMaskRequests.length).toEqual(0);
+  });
 
-  //   it('irrelevant keypresses during spelling are ignored', () => {
-  //     const keySequence = ['a', 'b', 'c'];
-  //     const reconstructedText = keySequence.join('');
-  //     enterKeysIntoComponent(keySequence, reconstructedText);
-  //     const spellButton =
-  //     fixture.debugElement.query(By.css('.spell-button'));
-  //     spellButton.nativeElement.click();
-  //     fixture.detectChanges();
-  //     // The first three keys ('x', 'y' and 'z') are irrelevant and hence
-  //     must
-  //     // be ignored.
-  //     const spellSequence = ['x', 'y', 'z', 'b', 'i', 't'];
-  //     const spellReconstructedText = reconstructedText +
-  //     spellSequence.join(''); enterKeysIntoComponent(spellSequence,
-  //     spellReconstructedText, 3);
+  it('clicking chip during refinement triggers fillMask and calls ' +
+         'self-app key inject',
+     () => {
+       inputBarControlSubject.next({
+         chips: [
+           {
+             text: 'i',
+           },
+           {
+             text: 'feel',
+           },
+           {
+             text: 'great',
+           }
+         ]
+       });
+       fixture.detectChanges();
+       const chips =
+           fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'))
+       chips[2].nativeElement.click();
 
-  //     const chips =
-  //         fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'));
-  //     expect(chips.length).toEqual(3);
-  //     expect((chips[0].componentInstance as InputBarChipComponent).text)
-  //         .toEqual('a');
-  //     expect((chips[1].componentInstance as InputBarChipComponent).text)
-  //         .toEqual('bit');
-  //     expect((chips[2].componentInstance as InputBarChipComponent).text)
-  //         .toEqual('c');
+       expect(fillMaskRequests.length).toEqual(1);
+       expect(fillMaskRequests[0]).toEqual({
+         speechContent: 'How are you',
+         phraseWithMask: 'i feel _',
+         maskInitial: 'g',
+       });
+       expect(testListener.numRequestSoftkeyboardResetCalls).toEqual(1);
+     });
 
-  //     const expandButton =
-  //     fixture.debugElement.query(By.css('.expand-button'));
-  //     expandButton.nativeElement.click();
-  //     expect(inputAbbreviationChangeEvents.length).toEqual(1);
-  //     expect(inputAbbreviationChangeEvents[0].requestExpansion).toBeTrue();
-  //     const {abbreviationSpec} = inputAbbreviationChangeEvents[0];
-  //     expect(abbreviationSpec.readableString).toEqual('a bit c');
-  //     expect(abbreviationSpec.tokens.length).toEqual(3);
-  //     // TODO(cais): Sort out the eraser sequence when there are irrelevant
-  //     // keys. expect(abbreviationSpec.eraserSequence)
-  //     //     .toEqual(repeatVirtualKey(VIRTUAL_KEY.BACKSPACE, 9));
-  //   });
+  it('types keys during refinement registers manual revision', () => {
+    inputBarControlSubject.next({
+      chips: [
+        {
+          text: 'i',
+        },
+        {
+          text: 'feel',
+        },
+        {
+          text: 'great',
+        },
+      ]
+    });
+    fixture.detectChanges();
+    fixture.componentInstance.onChipClicked(1),
+        fixture.componentInstance.onChipTextChanged({text: 'felt'}, 1);
+    fixture.componentInstance.onSpeakAsIsButtonClicked(new MouseEvent('click'));
 
-  //   it('ambiguous keypress during spelling are ignored', () => {
-  //     const keySequence = ['c', 'b', 'c'];  // Noticie the duplicate letters
-  //     c. const reconstructedText = keySequence.join('');
-  //     enterKeysIntoComponent(keySequence, reconstructedText);
-  //     const spellButton =
-  //     fixture.debugElement.query(By.css('.spell-button'));
-  //     spellButton.nativeElement.click();
-  //     fixture.detectChanges();
-  //     const spellSequence = ['c', 'c', 'c'];
-  //     const spellReconstructedText = reconstructedText +
-  //     spellSequence.join(''); enterKeysIntoComponent(spellSequence,
-  //     spellReconstructedText, 3);
+    expect(textEntryEndEvents.length).toEqual(1);
+    expect(textEntryEndEvents[0].text).toEqual('i felt great');
+    expect(textEntryEndEvents[0].repeatLastNonEmpty).toBeFalse();
+    expect(textEntryEndEvents[0].inAppTextToSpeechAudioConfig)
+        .not.toBeUndefined();
+  });
 
-  //     const chips =
-  //         fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'));
-  //     expect(chips.length).toEqual(3);
-  //     expect(chips.length).toEqual(3);
-  //     expect((chips[0].componentInstance as InputBarChipComponent).text)
-  //         .toEqual('c');
-  //     expect((chips[1].componentInstance as InputBarChipComponent).text)
-  //         .toEqual('b');
-  //     expect((chips[2].componentInstance as InputBarChipComponent).text)
-  //         .toEqual('c');
-  //   });
+  it('clicking speak button clears text & clicking again triggers repeat',
+     () => {
+       enterKeysIntoComponent('it');
+       const speakButton = fixture.debugElement.query(By.css('.speak-button'))
+                               .query(By.css('.speak-button'));
+       speakButton.nativeElement.click();
 
-  //   it('clicking abort after clicking spell resets state', () => {
-  //     const keySequence = ['a', 'b', 'a'];
-  //     const reconstructedText = keySequence.join('');
-  //     enterKeysIntoComponent(keySequence, reconstructedText);
-  //     const spellButton =
-  //     fixture.debugElement.query(By.css('.spell-button'));
-  //     spellButton.nativeElement.click();
-  //     fixture.detectChanges();
-  //     const abortButton =
-  //     fixture.debugElement.query(By.css('.abort-button'));
-  //     abortButton.nativeElement.click();
-  //     fixture.detectChanges();
+       expect(textEntryEndEvents.length).toEqual(1);
+       expect(textEntryEndEvents[0].text).toEqual('it');
+       expect(textEntryEndEvents[0].repeatLastNonEmpty).toBeFalse();
 
-  //     const chips =
-  //         fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'));
-  //     expect(chips.length).toEqual(0);
+       speakButton.nativeElement.click();
+       expect(textEntryEndEvents.length).toEqual(2);
+       expect(textEntryEndEvents[1].text).toEqual('');
+       expect(textEntryEndEvents[1].repeatLastNonEmpty).toBeTrue();
+     });
 
-  //     expect(fixture.debugElement.query(By.css('.expand-button'))).not.toBeNull();
-  //     expect(fixture.debugElement.query(By.css('.spell-button'))).not.toBeNull();
-  //     const expandButton =
-  //     fixture.debugElement.query(By.css('.expand-button'));
-  //     expandButton.nativeElement.click();
+  it('spell button is shown during word refinement', () => {
+    fixture.componentInstance.inputString = 'ifg';
+    inputBarControlSubject.next({
+      chips: [
+        {
+          text: 'i',
+        },
+        {
+          text: 'feel',
+        },
+        {
+          text: 'great',
+        }
+      ]
+    });
+    fixture.detectChanges();
 
-  //     expect(inputAbbreviationChangeEvents.length).toEqual(1);
-  //     expect(inputAbbreviationChangeEvents[0].requestExpansion).toBeTrue();
-  //     const {abbreviationSpec} = inputAbbreviationChangeEvents[0];
-  //     expect(abbreviationSpec.tokens.length).toEqual(1);
-  //     expect(abbreviationSpec.tokens[0].value).toEqual('aba');
-  //     expect(abbreviationSpec.tokens[0].isKeyword).toBeFalse();
-  //     expect(abbreviationSpec.readableString).toEqual('aba');
-  //   });
+    expect(fixture.componentInstance.state).toEqual(State.CHOOSING_WORD_CHIP);
+    const spellButton = fixture.debugElement.query(By.css('.spell-button'));
+    expect(spellButton).not.toBeNull();
+  });
 
-  //   it('clicking abort during spelling resets state', () => {
-  //     const keySequence = ['a', 'b', 'a'];
-  //     const reconstructedText = keySequence.join('');
-  //     enterKeysIntoComponent(keySequence, reconstructedText);
-  //     const spellButton =
-  //     fixture.debugElement.query(By.css('.spell-button'));
-  //     spellButton.nativeElement.click();
-  //     fixture.detectChanges();
-  //     const chips =
-  //         fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'));
-  //     chips[2].nativeElement.click();
-  //     fixture.detectChanges();
-  //     const spellSequence = ['a', 'c', 'k'];
-  //     const spellReconstructedText = reconstructedText +
-  //     spellSequence.join(''); enterKeysIntoComponent(spellSequence,
-  //     spellReconstructedText, 3); const abortButton =
-  //     fixture.debugElement.query(By.css('.abort-button'));
-  //     abortButton.nativeElement.click();
-  //     fixture.detectChanges();
+  it('spell button is shown when word chip is chosen', () => {
+    fixture.componentInstance.inputString = 'ifg';
+    inputBarControlSubject.next({
+      chips: [
+        {
+          text: 'i',
+        },
+        {
+          text: 'feel',
+        },
+        {
+          text: 'great',
+        }
+      ]
+    });
+    fixture.detectChanges();
+    const chips =
+        fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'))
+    chips[1].nativeElement.click();
 
-  //     expect(fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'))
-  //                .length)
-  //         .toEqual(0);
-
-  //     expect(fixture.debugElement.query(By.css('.expand-button'))).not.toBeNull();
-  //     expect(fixture.debugElement.query(By.css('.spell-button'))).not.toBeNull();
-  //     const expandButton =
-  //     fixture.debugElement.query(By.css('.expand-button'));
-  //     expandButton.nativeElement.click();
-
-  //     expect(inputAbbreviationChangeEvents.length).toEqual(1);
-  //     expect(inputAbbreviationChangeEvents[0].requestExpansion).toBeTrue();
-  //     const {abbreviationSpec} = inputAbbreviationChangeEvents[0];
-  //     expect(abbreviationSpec.tokens.length).toEqual(1);
-  //     expect(abbreviationSpec.tokens[0].value).toEqual('aba');
-  //     expect(abbreviationSpec.tokens[0].isKeyword).toBeFalse();
-  //     expect(abbreviationSpec.readableString).toEqual('aba');
-  //   });
-
-  //   it('chips are shown during refinement', () => {
-  //     inputBarControlSubject.next({
-  //       chips: [
-  //         {
-  //           text: 'i',
-  //         },
-  //         {
-  //           text: 'feel',
-  //         },
-  //         {
-  //           text: 'great',
-  //         }
-  //       ]
-  //     });
-  //     fixture.detectChanges();
-
-  //     const chips =
-  //         fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'));
-  //     expect(chips.length).toEqual(3);
-  //     expect((chips[0].componentInstance as InputBarChipComponent).text)
-  //         .toEqual('i');
-  //     expect((chips[1].componentInstance as InputBarChipComponent).text)
-  //         .toEqual('feel');
-  //     expect((chips[2].componentInstance as InputBarChipComponent).text)
-  //         .toEqual('great');
-  //     expect(fillMaskRequests.length).toEqual(0);
-  //   });
-
-  //   it('clicking chip during refinement triggers fillMask and calls ' +
-  //          'self-app key inject',
-  //      () => {
-  //        inputBarControlSubject.next({
-  //          chips: [
-  //            {
-  //              text: 'i',
-  //            },
-  //            {
-  //              text: 'feel',
-  //            },
-  //            {
-  //              text: 'great',
-  //            }
-  //          ]
-  //        });
-  //        fixture.detectChanges();
-  //        const chips =
-  //            fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'))
-  //        chips[2].nativeElement.click();
-
-  //        expect(fillMaskRequests.length).toEqual(1);
-  //        expect(fillMaskRequests[0]).toEqual({
-  //          speechContent: 'How are you',
-  //          phraseWithMask: 'i feel _',
-  //          maskInitial: 'g',
-  //        });
-  //        expect(testListener.numRequestSoftkeyboardResetCalls).toEqual(1);
-  //      });
-
-  //   it('types keys during refinement registers manual revision', () => {
-  //     inputBarControlSubject.next({
-  //       chips: [
-  //         {
-  //           text: 'i',
-  //         },
-  //         {
-  //           text: 'feel',
-  //         },
-  //         {
-  //           text: 'great',
-  //         }
-  //       ]
-  //     });
-  //     fixture.detectChanges();
-  //     const keySequence = ['f', 'e', 'l', 't', VIRTUAL_KEY.SPACE];
-  //     const reconstructedText = keySequence.join('');
-  //     const chips =
-  //         fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'))
-  //     chips[1].nativeElement.click();
-  //     enterKeysIntoComponent(keySequence, reconstructedText);
-  //     const speakButton =
-  //     fixture.debugElement.query(By.css('.speak-button'));
-  //     speakButton.nativeElement.click();
-
-  //     expect(textEntryEndEvents.length).toEqual(1);
-  //     expect(textEntryEndEvents[0].text).toEqual('i felt great');
-  //     expect(textEntryEndEvents[0].repeatLastNonEmpty).toBeFalse();
-  //     expect(textEntryEndEvents[0].inAppTextToSpeechAudioConfig)
-  //         .not.toBeUndefined();
-  //   });
-
-  //   it('types keys during refinement registers manual revision: first chip',
-  //      () => {
-  //        inputBarControlSubject.next({
-  //          chips: [
-  //            {
-  //              text: 'i',
-  //            },
-  //            {
-  //              text: 'feel',
-  //            },
-  //            {
-  //              text: 'great',
-  //            }
-  //          ]
-  //        });
-  //        fixture.detectChanges();
-  //        const keySequence = ['i', 't', VIRTUAL_KEY.SPACE];
-  //        const reconstructedText = keySequence.join('');
-  //        const chips =
-  //            fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'))
-  //        chips[0].nativeElement.click();
-  //        enterKeysIntoComponent(keySequence, reconstructedText);
-  //        const speakButton =
-  //        fixture.debugElement.query(By.css('.speak-button'));
-  //        speakButton.nativeElement.click();
-
-  //        expect(textEntryEndEvents.length).toEqual(1);
-  //        expect(textEntryEndEvents[0].text).toEqual('it feel great');
-  //        expect(textEntryEndEvents[0].repeatLastNonEmpty).toBeFalse();
-  //        expect(textEntryEndEvents[0].inAppTextToSpeechAudioConfig)
-  //            .not.toBeUndefined();
-  //      });
-
-  //   it('clicking speak button clears text & clicking again triggers repeat',
-  //      () => {
-  //        enterKeysIntoComponent(['i', 't'], 'it');
-  //        fixture.detectChanges();
-  //        const speakButton =
-  //        fixture.debugElement.query(By.css('.speak-button'))
-  //                                .query(By.css('.speak-button'));
-  //        speakButton.nativeElement.click();
-
-  //        expect(textEntryEndEvents.length).toEqual(1);
-  //        expect(textEntryEndEvents[0].text).toEqual('it');
-  //        expect(textEntryEndEvents[0].repeatLastNonEmpty).toBeFalse();
-
-  //        speakButton.nativeElement.click();
-  //        expect(textEntryEndEvents.length).toEqual(2);
-  //        expect(textEntryEndEvents[1].text).toEqual('');
-  //        expect(textEntryEndEvents[1].repeatLastNonEmpty).toBeTrue();
-  //      });
-
-  //   it('spell button is shown during word refinement', () => {
-  //     fixture.componentInstance.inputString = 'ifg';
-  //     inputBarControlSubject.next({
-  //       chips: [
-  //         {
-  //           text: 'i',
-  //         },
-  //         {
-  //           text: 'feel',
-  //         },
-  //         {
-  //           text: 'great',
-  //         }
-  //       ]
-  //     });
-  //     fixture.detectChanges();
-
-  //     expect(fixture.componentInstance.state).toEqual(State.CHOOSING_WORD_CHIP);
-  //     const spellButton =
-  //     fixture.debugElement.query(By.css('.spell-button'));
-  //     expect(spellButton).not.toBeNull();
-  //   });
-
-  //   it('spell button is shown when word chip is chosen', () => {
-  //     fixture.componentInstance.inputString = 'ifg';
-  //     inputBarControlSubject.next({
-  //       chips: [
-  //         {
-  //           text: 'i',
-  //         },
-  //         {
-  //           text: 'feel',
-  //         },
-  //         {
-  //           text: 'great',
-  //         }
-  //       ]
-  //     });
-  //     fixture.detectChanges();
-  //     const chips =
-  //         fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'))
-  //     chips[1].nativeElement.click();
-
-  //     expect(fixture.componentInstance.state).toEqual(State.FOCUSED_ON_WORD_CHIP);
-  //     const spellButton =
-  //     fixture.debugElement.query(By.css('.spell-button'));
-  //     expect(spellButton).not.toBeNull();
-  //   });
+    expect(fixture.componentInstance.state).toEqual(State.FOCUSED_ON_WORD_CHIP);
+    const spellButton = fixture.debugElement.query(By.css('.spell-button'));
+    expect(spellButton).not.toBeNull();
+  });
 
   //   it('typing after word chips are injected', () => {
   //     fixture.componentInstance.inputString = 'ifg';

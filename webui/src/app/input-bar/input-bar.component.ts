@@ -313,7 +313,6 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
 
   onInputTextAreaKeyUp(event: KeyboardEvent) {
     this.inputString = this.inputTextArea.nativeElement.value;
-    // TODO(cais): Add unit test for logging.
     this.eventLogger.logKeypress(event as KeyboardEvent, this.inputString);
     this.scaleInputTextFontSize();
     if (ABBRVIATION_EXPANSION_TRIGGER_SUFFIX.some(
@@ -645,6 +644,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   onSpeakAsIsButtonClicked(event?: Event) {
+    console.log('*** onSpeakAsIs');  // DEBUG
     const text = this.effectivePhrase;
     const repeatLastNonEmpty = text === '';
     this.eventLogger.logInputBarSpeakButtonClick(getPhraseStats(text));

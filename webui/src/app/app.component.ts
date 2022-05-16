@@ -246,7 +246,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       });
     }
     setAppState(newState);
-    // TODO(cais): Add unit test.
     this.inputBarControlSubject.next({refocus: true});
   }
 

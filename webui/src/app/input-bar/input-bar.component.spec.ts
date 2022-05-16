@@ -1,5 +1,5 @@
 /** Unit tests for InputBarComponent. */
-import {Injectable} from '@angular/core';
+import {DebugElement, Injectable} from '@angular/core';
 import {ComponentFixture, fakeAsync, TestBed, tick} from '@angular/core/testing';
 import {By} from '@angular/platform-browser';
 import {Observable, Subject} from 'rxjs';
@@ -1077,9 +1077,16 @@ describe('InputBarComponent', () => {
        fixture.detectChanges();
        tick();
 
-       const focused = fixture.debugElement.query(By.css(':focus'));
-       const inputText = fixture.debugElement.query(By.css('.base-text-area'));
-       expect(focused.nativeElement).toEqual(inputText.nativeElement);
+       let focused: DebugElement|null = null;
+       for (let i = 0; i < 4; ++i) {
+         focused = fixture.debugElement.query(By.css(':focus'));
+         if (focused) {
+           break;
+         }
+       }
+       const inputText =
+           fixture.debugElement.query(By.css('.base-text-area'));
+       expect(focused!.nativeElement).toEqual(inputText.nativeElement);
      }));
 
   // TODO(cais): Test spelling valid word triggers AE, with debounce.

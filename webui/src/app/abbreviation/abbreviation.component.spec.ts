@@ -316,4 +316,11 @@ describe('AbbreviationComponent', () => {
         fixture.debugElement.queryAll(By.css('.text-prediction-button'));
     expect(textPredictionButtons.length).toEqual(0);
   });
+
+  it('clicking the container issues refocus signal', () => {
+    const container = fixture.debugElement.query(By.css('.container'));
+    container.nativeElement.click();
+
+    expect(inputBarControlEvents.length).toEqual(1);
+  });
 });

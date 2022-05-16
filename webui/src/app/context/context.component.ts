@@ -63,8 +63,6 @@ export class ContextComponent implements OnInit, OnDestroy, AfterViewInit {
         return;
       }
       if (this.studyManager.getDialogId() !== null) {
-        console.log(
-            '*** Calling incrementTurn() with ', textInjection.text);  // DEBUG
         this.studyManager.incrementTurn(textInjection.text);
         this.retrieveContext();
         return;
@@ -237,9 +235,6 @@ export class ContextComponent implements OnInit, OnDestroy, AfterViewInit {
                     resolve(speechContent);
                     return;
                   }
-                  console.log(
-                      '*** timestamp:', timestamp, speechContent);  // DEBUG
-                  console.log('*** minTimestamp:', minTimestamp);   // DEBUG
                 }
                 resolve(null);
               },
@@ -296,7 +291,6 @@ export class ContextComponent implements OnInit, OnDestroy, AfterViewInit {
                 return;
               }
               if (this.studyManager.waitingForPartnerTurnAfter !== null) {
-                console.log('*** B100');  // DEBUG
                 if (data.contextSignals == null ||
                     data.contextSignals.length === 0) {
                   return;
@@ -315,9 +309,9 @@ export class ContextComponent implements OnInit, OnDestroy, AfterViewInit {
                   if (timestamp >
                       this.studyManager.waitingForPartnerTurnAfter) {
                     console.log(
-                        '*** Got manual partner turn:', speechContent,
+                        '*** Received manual partner turn:', speechContent,
                         timestamp,
-                        this.studyManager.waitingForPartnerTurnAfter);  // DEBUG
+                        this.studyManager.waitingForPartnerTurnAfter);
                     this.studyManager.incrementTurn(speechContent);
                     // TODO(cais): Add unit test.
                     return;

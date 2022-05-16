@@ -1083,7 +1083,7 @@ describe('InputBarComponent', () => {
        tick();
 
        let focused: DebugElement|null = null;
-       for (let i = 0; i < 4; ++i) {
+       for (let i = 0; i < 10; ++i) {
          focused = fixture.debugElement.query(By.css(':focus'));
          if (focused) {
            break;

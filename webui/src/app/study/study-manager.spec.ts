@@ -14,6 +14,10 @@ describe('Study Manager', () => {
       expect(isCommand('Start abbrev dummy1 '));
       expect(isCommand('Start abbrev dummy1 a'));
       expect(isCommand('Start abbrev dummy1 b'));
+      expect(isCommand('Start abbrev u1'));
+      expect(isCommand('Start abbrev u2 '));
+      expect(isCommand('Start abbrev u3 a'));
+      expect(isCommand('Start abbrev u3 b '));
       expect(isCommand(' Dialog stop'));
     });
 
@@ -215,6 +219,13 @@ describe('Study Manager', () => {
       studyManager.maybeHandleRemoteControlCommand('start abbrev u1')
           .then(() => {
             setTimeout(() => {
+              expect(studyUserTurns.length).toEqual(1);
+              expect(studyUserTurns[0].instruction)
+                  .toEqual('Enter your reply in abbreviation.');
+              expect(studyUserTurns[0].text).toEqual('');
+              expect(studyUserTurns[0].isComplete).toBeFalse();
+
+              expect(HttpEventLogger.isFullLogging()).toBeTrue();
               expect(studyManager.getDialogTurnIndex()).toEqual(1);
               expect(studyManager.waitingForPartnerTurnAfter).toBeNull();
 
@@ -230,7 +241,7 @@ describe('Study Manager', () => {
               expect(prevTurns![1].text).toEqual('I like the weather today');
               expect(prevTurns![1].partnerId).toBeNull();
               done();
-            }, 10);
+            }, 20);
           });
     });
 

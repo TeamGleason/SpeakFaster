@@ -205,7 +205,7 @@ export class ContextComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private retrieveContext() {
-    if (this.studyManager.getDialogId() !== null) {
+    if (this.studyManager.isScriptedDialogOngoing()) {
       this.contextSignals.splice(0);
       for (const {text, partnerId, timestamp} of this.studyManager
                .getPreviousDialogTurns()!) {

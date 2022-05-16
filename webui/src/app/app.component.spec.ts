@@ -1,4 +1,4 @@
-import {ComponentFixture, fakeAsync, TestBed, tick} from '@angular/core/testing';
+import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {By} from '@angular/platform-browser';
 import {RouterTestingModule} from '@angular/router/testing';
 
@@ -7,8 +7,8 @@ import * as cefSharp from '../utils/cefsharp';
 import {AppComponent} from './app.component';
 import {AuthModule} from './auth/auth.module';
 import {HttpEventLogger} from './event-logger/event-logger-impl';
-import {ExternalEventsComponent} from './external/external-events.component';
 import {ExternalEventsModule} from './external/external-events.module';
+import {InputBarControlEvent} from './input-bar/input-bar.component';
 import {MetricsModule} from './metrics/metrics.module';
 import {MiniBarModule} from './mini-bar/mini-bar.module';
 import {clearSettings} from './settings/settings';
@@ -18,10 +18,12 @@ import {AppState, resetStatesForTest, setAppState} from './types/app-state';
 describe('AppComponent', () => {
   let fixture: ComponentFixture<AppComponent>;
   let testListener: TestListener;
+  let inputBarControlEvents: InputBarControlEvent[];
 
   beforeEach(async () => {
     testListener = new TestListener();
     (window as any)[cefSharp.BOUND_LISTENER_NAME] = testListener;
+    inputBarControlEvents = [];
     await TestBed
         .configureTestingModule({
           imports: [
@@ -38,6 +40,9 @@ describe('AppComponent', () => {
         })
         .compileComponents();
     fixture = TestBed.createComponent(AppComponent);
+    fixture.componentInstance.inputBarControlSubject.subscribe(event => {
+      inputBarControlEvents.push(event);
+    });
     fixture.detectChanges();
     AppComponent.clearAppResizeCallback();
     clearSettings();
@@ -295,5 +300,12 @@ describe('AppComponent', () => {
 
   it('notification for input bar is initially undefined', () => {
     expect(fixture.componentInstance.inputBarNotification).toBeUndefined();
+  });
+
+  it('changing app state issues refocus input-bar event', () => {
+    setAppState(AppState.MINIBAR);
+    fixture.componentInstance.onAppStateDeminimized();
+
+    expect(inputBarControlEvents.length).toEqual(1);
   });
 });

@@ -61,6 +61,10 @@ export interface UserFeedback {
   feedbackMessage: string;
 }
 
+export interface RemoteCommandStats {
+  command: string;
+}
+
 export interface EventLogger {
   /** Log the starting of a new (non-companion) session (opening the app). */
   logSessionStart(): Promise<void>;
@@ -81,8 +85,10 @@ export interface EventLogger {
    * Log a keypress. The text content keys will not be logged for their content
    * (e.g, alphanumeric keys and puncutation keys). Only special keys such as
    * Enter, Space, Backspace, Ctrl and Shift will be logged for their content.
+   * The argument `text` is for the mobile use cases, where the key code is not
+   * available from a `KeyboardEvent`.
    */
-  logKeypress(keyboardEvent: KeyboardEvent): Promise<void>;
+  logKeypress(keyboardEvent: KeyboardEvent, text: string): Promise<void>;
 
   /** Log the clicking of the speak button in the input bar. */
   logInputBarSpeakButtonClick(phraseStats: PhraseStats): Promise<void>;
@@ -193,4 +199,7 @@ export interface EventLogger {
 
   /** Log user feedback. */
   logUserFeedback(userFeedback: UserFeedback): Promise<void>;
+
+  /** Log remote command. */
+  logRemoteCommand(commandStats: RemoteCommandStats): Promise<void>;
 }

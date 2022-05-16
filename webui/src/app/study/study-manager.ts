@@ -30,6 +30,8 @@ const START_ABBREV_PREFIX = 'start abbrev ';
 const START_FULL_PREFIX = 'start full ';
 // Command to stop a script dialog, if one is already started.
 const DIALOG_STOP = 'dialog stop';
+// The dialog ID for free form conversation.
+const FREEFORM_DIALOG_ID = 'freeform';
 
 const PARTNER_TURN_DELAY_MILLIS = 1000;
 const USER_TURN_DELAY_MILLIS = 3000;
@@ -96,7 +98,9 @@ export class StudyManager {
   public studyUserTurns: Subject<StudyUserTurn> = new Subject();
 
   /** Constructor of StudyManager. */
-  constructor(readonly httpClient: HttpClient|null) {
+  constructor(
+      readonly httpClient: HttpClient|null,
+      private eventLogger: HttpEventLogger|null) {
     this.populateDummyDialogs();
   }
 
@@ -107,13 +111,12 @@ export class StudyManager {
    * */
   public async maybeHandleRemoteControlCommand(text: string): Promise<boolean> {
     text = text.trim().toLocaleLowerCase();
+    let isHandledAsCommand = true;
     if (text === COMMAND_STUDY_ON) {
       HttpEventLogger.setFullLogging(true);
-      return true;
     } else if (text === COMMAND_STUDY_OFF) {
       HttpEventLogger.setFullLogging(false);
       this.reset();
-      return true;
     } else if (
         text.startsWith(START_ABBREV_PREFIX) ||
         text.startsWith(START_FULL_PREFIX)) {
@@ -131,12 +134,17 @@ export class StudyManager {
         setTimeout(() => this.emitStudyUserTurn(), getUserTurnDelayMillis());
       }
       HttpEventLogger.setFullLogging(true);
-      return true;
     } else if (text === DIALOG_STOP) {
       this.reset();
-      return true;
+    } else {
+      isHandledAsCommand = false;
     }
-    return false;
+    if (isHandledAsCommand && this.eventLogger !== null) {
+      this.eventLogger.logRemoteCommand({
+        command: text,
+      });  // TODO(cais): Add unit test.
+    }
+    return isHandledAsCommand;
   }
 
   /** Emits a user's turn to the subject.  */
@@ -196,7 +204,9 @@ export class StudyManager {
     if (!dialogId) {
       throw new Error('Invalid dialog ID');
     }
-    if (this.dialogs[dialogId] === undefined) {
+    if (dialogId.toLocaleLowerCase() !==
+            FREEFORM_DIALOG_ID.toLocaleLowerCase() &&
+        this.dialogs[dialogId] === undefined) {
       try {
         await this.loadDialog(dialogId);
       } catch (err) {
@@ -206,7 +216,7 @@ export class StudyManager {
         return;
       }
     }
-    this.dialogId = dialogId;
+    this.dialogId = dialogId.toLocaleLowerCase();
     console.log('Starting dialog:', this.dialogId);
     this.isAbbreviation = isAbbreviation;
     this.turnIndex = 0;
@@ -219,6 +229,10 @@ export class StudyManager {
    */
   public getDialogId(): string|null {
     return this.dialogId;
+  }
+
+  public isScriptedDialogOngoing(): boolean {
+    return this.dialogId !== null && this.dialogId !== FREEFORM_DIALOG_ID;
   }
 
   /**

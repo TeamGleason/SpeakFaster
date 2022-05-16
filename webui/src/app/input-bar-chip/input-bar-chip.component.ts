@@ -2,15 +2,12 @@
  * An chip for the input bar, supporting clicks and typing and other
  * interactions.
  */
-import {AfterViewInit, Component, ElementRef, EventEmitter, Input, OnChanges, OnDestroy, OnInit, Output, QueryList, SimpleChanges, ViewChildren} from '@angular/core';
+import {AfterViewInit, Component, ElementRef, EventEmitter, Input, OnDestroy, OnInit, Output, QueryList, SimpleChanges, ViewChild, ViewChildren} from '@angular/core';
 import {Subscription} from 'rxjs';
 import {updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
 import {createUuid} from 'src/utils/uuid';
 
-export enum State {
-  SHOWING_TEXT = 'SHOWING_TEXT',
-  TYPING_TEXT = 'TYPING_TEXT',
-}
+import {HttpEventLogger} from '../event-logger/event-logger-impl';
 
 @Component({
   selector: 'app-input-bar-chip-component',
@@ -26,12 +23,14 @@ export class InputBarChipComponent implements OnInit, AfterViewInit, OnDestroy {
   @Input() supportsCut: boolean = false;
   @Input() focused: boolean = false;
   @Output() cutClicked: EventEmitter<Event> = new EventEmitter();
+  @Output() textChanged: EventEmitter<{text: string}> = new EventEmitter();
 
+  @ViewChild('inputBox') inputBox!: ElementRef<HTMLInputElement>;
   @ViewChildren('clickableButton')
   buttons!: QueryList<ElementRef<HTMLButtonElement>>;
   private buttonSubscription?: Subscription;
 
-  state = State.SHOWING_TEXT;
+  constructor(private eventLogger: HttpEventLogger) {}
 
   ngOnInit() {}
 
@@ -41,11 +40,33 @@ export class InputBarChipComponent implements OnInit, AfterViewInit, OnDestroy {
         (queryList: QueryList<ElementRef<HTMLButtonElement>>) => {
           updateButtonBoxesForElements(this.instanceId, queryList);
         });
+    this.inputBox.nativeElement.value = this.text;
+    this.updateInputBoxSize();
   }
 
   ngOnDestroy() {
     this.buttonSubscription?.unsubscribe();
     updateButtonBoxesToEmpty(this.instanceId);
+  }
+
+  onInputBoxKeyUp(event: KeyboardEvent) {
+    this.updateInputBoxSize();
+    this.text = this.inputBox.nativeElement.value;
+    this.textChanged.emit({text: this.text});
+    this.eventLogger.logKeypress(event as KeyboardEvent, this.text);
+  }
+
+  private updateInputBoxSize(): void {
+    if (!this.text) {
+      return;
+    }
+    this.inputBox.nativeElement.style.width = `${this.text.length + 1}ch`;
+    updateButtonBoxesForElements(this.instanceId, this.buttons);
+  }
+
+  onMainButtonClicked(event: Event) {
+    this.inputBox.nativeElement.select();
+    this.inputBox.nativeElement.focus({preventScroll: true});
   }
 
   onCutButtonClicked(event: Event) {

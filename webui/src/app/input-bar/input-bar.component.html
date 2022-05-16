@@ -40,9 +40,19 @@
 
 .base-text-area {
   align-items: center;
+  background: #272626;
+  border: none;
+  color: white;
   display: inline-flex;
   flex-direction: row;
-  margin-right: 4px;
+  font-family: "Google Sans", "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  font-size: 30px;
+  min-width: 60px;
+  outline: none;
+  overflow: hidden;
+  padding-top: 14px;
+  resize: none;
+  width: fit-content;
 }
 
 .buttons-container {
@@ -148,9 +158,13 @@
 }
 
 .main-area {
+  caret-color: white;
   display: flex;
   flex-direction: row;
   flex: 1;
+  /* Makes sure that trailing spaces are shown, yet line wrapping */
+  /* can occur when text is long. */
+  white-space: pre-wrap;
 }
 
 .notification {
@@ -176,29 +190,15 @@
   font-size: 16px;
 }
 
-.simulated-cursor {
-  animation: blink 1.1s linear infinite alternate;
-  display: inline-block;
-  font-size: 30px;
-  font-weight: 900;
-  left: -4px;
-  margin: 0;
-  max-width: 0;
-  overflow: visible;
-  position: relative;
-  white-space: pre-wrap;
-  width: 0;
-}
-
-.simulated-cursor-hidden {
-  display: none;
-}
-
 .to-enter-text {
   border-radius: 4px;
   background: #444;
   color: white;
   padding: 0 4px;
+}
+
+[contenteditable] {
+  outline: 0 solid transparent;
 }
 
 @keyframes blink {
@@ -215,21 +215,20 @@
 <div class="container" [ngClass]="{'hidden': isHidden}">
 
   <div class="input-box">
-    <div class="main-area">
-      <div
-          #inputText
-          class="base-text-area"
+    <div
+        class="main-area"
+        (click)="onMainAreaClicked($event)">
+      <textarea
+          #inputTextArea
           *ngIf="state !== 'CHOOSING_LETTER_CHIP' &&
                  state !== 'FOCUSED_ON_LETTER_CHIP' &&
                  state !== 'CHOOSING_WORD_CHIP' &&
-                 state !== 'FOCUSED_ON_WORD_CHIP'">
-        <div
-            class="input-text"
-            (click)="onTextBeforeCursorClicked($event)">{{inputStringBeforeCursor}}<div
-                class="simulated-cursor"
-                [ngClass]="{'simulated-cursor-hidden': !isFocused}"
-            >|</div><div class="input-text" (click)="onTextAfterCursorClicked($event)">{{inputStringAfterCursor}}</div></div>
-      </div>
+                 state !== 'FOCUSED_ON_WORD_CHIP'"
+          inputmode="text"
+          spellcheck="false"
+          class="base-text-area"
+          (keyup)="onInputTextAreaKeyUp($event)"
+      ></textarea>
       <div
           class="chips-container"
           *ngIf="state === 'CHOOSING_LETTER_CHIP' ||
@@ -243,7 +242,8 @@
             [supportsCut]="state === 'FOCUSED_ON_WORD_CHIP' && i !== chips.length - 1"
             [focused]="i === focusChipIndex"
             (click)="onChipClicked(i)"
-            (cutClicked)="onChipCutClicked($event, i)">
+            (cutClicked)="onChipCutClicked($event, i)"
+            (textChanged)="onChipTextChanged($event, i)">
         </app-input-bar-chip-component>
       </div>
 
@@ -349,4 +349,3 @@
   </div>
 
 </div>
-

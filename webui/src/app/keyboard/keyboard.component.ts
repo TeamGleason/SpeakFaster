@@ -17,7 +17,6 @@ export class KeyboardComponent {
 
   @HostListener('document:keydown', ['$event'])
   onKeydown(event: KeyboardEvent) {
-    this.eventLogger.logKeypress(event);
     if ((window as any).externalKeypressHook !== undefined) {
       try {
         const vkCodes = getVirtualkeyCode(event.key);
@@ -27,10 +26,11 @@ export class KeyboardComponent {
         // We take the last key code in the sequence in such cases, in order to
         // ensure correct reconstruction of the text from keypresses.
         const vkCode: number = vkCodes[vkCodes.length - 1];
+        // TODO(cais): Simplify.
         (window as any).externalKeypressHook(vkCode, /* isExternal= */ false);
-        event.preventDefault();  // TODO(cais): Confirm! DO NOT SUBMIT.
       } catch (error) {
       }
     }
   }
+
 }

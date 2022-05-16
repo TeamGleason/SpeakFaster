@@ -192,6 +192,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
             this.changeAppState(AppState.ABBREVIATION_EXPANSION);
             setTimeout(() => {
               bringWindowToForeground();
+              // TODO(cais): Add unit test.
+              this.inputBarControlSubject.next({refocus: true});
             }, 100);
           } else {  // Bring the focus app to foreground (if it is running).
             this.changeAppState(AppState.MINIBAR);
@@ -244,6 +246,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       });
     }
     setAppState(newState);
+    this.inputBarControlSubject.next({refocus: true});
   }
 
   getUserRole(): UserRole {

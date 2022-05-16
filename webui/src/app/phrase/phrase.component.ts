@@ -109,6 +109,7 @@ export class PhraseComponent implements AfterViewInit, OnDestroy {
     if (!this.isTextClickable) {
       return;
     }
+    event.stopPropagation();  // TODO(cais): Add unit test.
     this.textClicked.emit({
       phraseText: this.phraseText,
       phraseIndex: this.phraseIndex,

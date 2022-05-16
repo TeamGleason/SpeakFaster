@@ -249,11 +249,15 @@ export function resetReconStates() {
  * @param charOrKey Character or special key name from the VIRTUAL_KEY enum.
  * @returns The virtual key codes for the chararacter or special-key name. For
  *   letters, they are converted to uppercase before conversion to key code.
+ *   For the "Unidentified" keycode (e.g., from Mobile browsers), returns
+ *   an empty array.
  * @throws Error if `charOrKey` is not in the VIRTUAL_KEY enum and has a length
  *   that is not 1.
  */
 export function getVirtualkeyCode(charOrKey: string|VIRTUAL_KEY): number[] {
-  if (SPECIAL_VIRTUAL_KEY_TO_CODE.has(charOrKey as VIRTUAL_KEY)) {
+  if (charOrKey === 'Unidentified') {
+    return [];
+  } else if (SPECIAL_VIRTUAL_KEY_TO_CODE.has(charOrKey as VIRTUAL_KEY)) {
     return [
       SPECIAL_VIRTUAL_KEY_TO_CODE.get(charOrKey as VIRTUAL_KEY) as number
     ];

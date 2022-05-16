@@ -1069,5 +1069,18 @@ describe('InputBarComponent', () => {
            .toBeGreaterThan(prevNumCalls1);
      }));
 
+  it('refocus control event focuses on input box', fakeAsync(() => {
+       tick();
+       inputBarControlSubject.next({
+         refocus: true,
+       });
+       fixture.detectChanges();
+       tick();
+
+       const focused = fixture.debugElement.query(By.css(':focus'));
+       const inputText = fixture.debugElement.query(By.css('.base-text-area'));
+       expect(focused.nativeElement).toEqual(inputText.nativeElement);
+     }));
+
   // TODO(cais): Test spelling valid word triggers AE, with debounce.
 });

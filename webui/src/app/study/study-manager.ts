@@ -33,6 +33,9 @@ const DIALOG_STOP = 'dialog stop';
 // The dialog ID for free form conversation.
 const FREEFORM_DIALOG_ID = 'freeform';
 
+// The prefix of the ID of any dialog that is unscripted.
+const UNSCRIPTED_ID_PREFIX = 'u';
+
 const PARTNER_TURN_DELAY_MILLIS = 1000;
 const USER_TURN_DELAY_MILLIS = 3000;
 
@@ -68,6 +71,7 @@ export function isCommand(text: string): boolean {
 /** A turn to be entered by the user. */
 export interface StudyUserTurn {
   text: string|null;
+  instruction: string;
   isAbbreviation: boolean;
   isComplete: boolean;
   error?: string;
@@ -93,6 +97,10 @@ export class StudyManager {
   // The current turn (i.e., the turn that is ongoing and hasn't been completed
   // yet), 0-based. So 0 means the 1st turn of the dialog.
   private turnIndex: number|null = null;
+  private actualTurnTexts: {[turnIndex: number]: string} = {};
+  private isFullyScripted: boolean = true;
+  // Waitingfor partner turns after the epoch millis timestamp.
+  private _waitingForPartnerTurnAfter: number|null = null;
 
   // A subject for the turns that the user should enter.
   public studyUserTurns: Subject<StudyUserTurn> = new Subject();
@@ -126,7 +134,9 @@ export class StudyManager {
       // Turn = 'a' means the machine starts the turn.
       const [dialogId, turn] = dialogIdAndTurn.split(' ');
       await this.startDialog(dialogId, isAbbreviation);
-      if (turn && turn.toLocaleLowerCase() === 'b') {
+      this.isFullyScripted = !dialogId.startsWith(UNSCRIPTED_ID_PREFIX);
+      if ((turn && turn.toLocaleLowerCase() === 'b') || !this.isFullyScripted) {
+        // For now, unscripted dialogs starts with a turn from the partner.
         this.userRole = 'b';
         this.incrementTurn();
       } else {
@@ -142,7 +152,7 @@ export class StudyManager {
     if (isHandledAsCommand && this.eventLogger !== null) {
       this.eventLogger.logRemoteCommand({
         command: text,
-      });  // TODO(cais): Add unit test.
+      });
     }
     return isHandledAsCommand;
   }
@@ -154,8 +164,16 @@ export class StudyManager {
       return;
     }
     const numTurns = dialog.turns.length;
+    const turnText = this.getDialogTurnText();
+    let instruction =
+        this.isAbbreviation ? 'Enter in abbreviation:' : 'Enter in full:';
+    if (turnText === '') {  // Unscripted.
+      instruction = this.isAbbreviation ? 'Enter your reply in abbreviation.' :
+                                          'Enter your reply in full';
+    }
     this.studyUserTurns.next({
-      text: this.isUserTurn ? this.getDialogTurnText() : null,
+      instruction,
+      text: this.isUserTurn ? turnText : null,
       isAbbreviation: this.isAbbreviation!,
       isComplete: this.turnIndex === numTurns,
     });
@@ -165,8 +183,16 @@ export class StudyManager {
     this.dialogId = null;
     this.userRole = null;
     this.turnIndex = null;
-    this.studyUserTurns.next(
-        {text: null, isAbbreviation: true, isComplete: true, error});
+    this.actualTurnTexts = {};
+    this.isFullyScripted = true;
+    this._waitingForPartnerTurnAfter = null;
+    this.studyUserTurns.next({
+      instruction: '',
+      text: null,
+      isAbbreviation: true,
+      isComplete: true,
+      error,
+    });
   }
 
   private async loadDialog(dialogId: string): Promise<void> {
@@ -231,7 +257,17 @@ export class StudyManager {
     return this.dialogId;
   }
 
-  public isScriptedDialogOngoing(): boolean {
+  /**
+   * Gets whether the study manager is currently waiting for a turn from the
+   * partner (during unscripted dialogs). If not waiting, returns `null`. If
+   * waiting, returns the timestamp in milliseconds since the epoch of when the
+   * waiting started.
+   */
+  public get waitingForPartnerTurnAfter(): number|null {
+    return this._waitingForPartnerTurnAfter;
+  }
+
+  public isDialogOngoing(): boolean {
     return this.dialogId !== null && this.dialogId !== FREEFORM_DIALOG_ID;
   }
 
@@ -270,6 +306,9 @@ export class StudyManager {
           (this.userRole === 'b' && i % 2 === 0)) {
         partnerId = 'Partner';
       }
+      if (this.actualTurnTexts[i]) {
+        text = this.actualTurnTexts[i];
+      }
       return {
         text, partnerId, timestamp: this.turnTimestamps[i],
       }
@@ -278,6 +317,8 @@ export class StudyManager {
 
   /**
    * Increments the turn index in the ongoing dialog (if any).
+   * @param turnText: The actual entered turn text. Optional. If not provided,
+   *   will use the turns from the script.
    * @returns A object with the following fields:
    *   - turnIndex: The 0-based turn index after the turn increment.
    *   - isComplete: A boolean flag for whether the dialog is complete after the
@@ -285,10 +326,15 @@ export class StudyManager {
    * @throw Error if there is no ongoing dialog, or if the ongoing dialog has
    *   already ended.
    */
-  public incrementTurn(): {turnIndex: number, isComplete: boolean} {
+  public incrementTurn(turnText?: string):
+      {turnIndex: number, isComplete: boolean} {
     if (this.dialogId === null) {
       throw new Error(
           'Cannot increment dialog turn because there is not ongoing study dialog.');
+    }
+    this._waitingForPartnerTurnAfter = null;
+    if (turnText) {
+      this.actualTurnTexts[this.turnIndex!] = turnText;
     }
     const dialog = this.dialogs[this.dialogId];
     const numTurns = dialog.turns.length;
@@ -299,6 +345,7 @@ export class StudyManager {
     this.turnTimestamps.push(new Date());
     if (this.isUserTurn) {
       this.studyUserTurns.next({
+        instruction: '',
         text: null,
         isAbbreviation: this.isAbbreviation!,
         isComplete: false,
@@ -313,9 +360,14 @@ export class StudyManager {
       }, getUserTurnDelayMillis());
     } else {
       if (!this.isUserTurn) {
-        setTimeout(() => {
-          this.incrementTurn();
-        }, getPartnerTurnDelayMillis());
+        if (this.isFullyScripted) {
+          setTimeout(() => {
+            this.incrementTurn();
+          }, getPartnerTurnDelayMillis());
+        } else {
+          // Start waiting for a manually entered turn from the partner.
+          this._waitingForPartnerTurnAfter = new Date().getTime();
+        }
       } else {
         setTimeout(() => this.emitStudyUserTurn(), getUserTurnDelayMillis());
       }
@@ -357,7 +409,39 @@ export class StudyManager {
       turns: [
         'Bye bye',
         'See you later',
-      ]
-    }
+      ],
+    };
+    this.dialogs['u1'] = createUnscriptedDialogWithInitialQuestion(
+        'How do you like the weather today?');
+    this.dialogs['u2'] =
+        createUnscriptedDialogWithInitialQuestion('What did you do yesterday?');
+    this.dialogs['u3'] =
+        createUnscriptedDialogWithInitialQuestion('What pets have you had?');
+    this.dialogs['u4'] = createUnscriptedDialogWithInitialQuestion(
+        'What kind of books do you read?');
+    this.dialogs['u5'] = createUnscriptedDialogWithInitialQuestion(
+        'What kind of music do you listen to?');
+    this.dialogs['u6'] = createUnscriptedDialogWithInitialQuestion(
+        'What sports do you like to watch?');
+    this.dialogs['u7'] = createUnscriptedDialogWithInitialQuestion(
+        'Where would you like to go for vacation?');
+    this.dialogs['u8'] = createUnscriptedDialogWithInitialQuestion(
+        'Do you like the city you live in?');
   }
+}
+
+function createUnscriptedDialogWithInitialQuestion(
+    initialQuestion: string, numTurns = 6): Dialog {
+  if (initialQuestion === '') {
+    throw new Error('Initial question cannot be empty.');
+  }
+  if (numTurns < 2) {
+    throw new Error(
+        `Number of turns is expected to be >= 2, but got ${numTurns}`)
+  }
+  const turns: string[] = [];
+  for (let i = 0; i < numTurns; ++i) {
+    turns.push(i === 0 ? initialQuestion : '');
+  }
+  return {turns};
 }

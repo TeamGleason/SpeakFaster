@@ -926,6 +926,7 @@ describe('InputBarComponent', () => {
 
   it('study turn causes instruction and text to be shown', () => {
     studyUserTurnsSubject.next({
+      instruction: 'Enter in abbreviation:',
       text: 'All frequencies open',
       isAbbreviation: true,
       isComplete: false,
@@ -941,11 +942,13 @@ describe('InputBarComponent', () => {
 
   it('null text in study turn subject resets UI state', () => {
     studyUserTurnsSubject.next({
+      instruction: 'Enter in abbreviation:',
       text: 'All frequencies open',
       isAbbreviation: true,
       isComplete: false,
     });
     studyUserTurnsSubject.next({
+      instruction: '',
       text: null,
       isAbbreviation: true,
       isComplete: true,
@@ -958,6 +961,7 @@ describe('InputBarComponent', () => {
 
   it('completed state in study turn subject displays end state', () => {
     studyUserTurnsSubject.next({
+      instruction: '',
       text: null,
       isAbbreviation: true,
       isComplete: true,
@@ -973,6 +977,7 @@ describe('InputBarComponent', () => {
 
   it('error state in study turn subject displays error message', () => {
     studyUserTurnsSubject.next({
+      instruction: '',
       text: null,
       isAbbreviation: true,
       isComplete: true,

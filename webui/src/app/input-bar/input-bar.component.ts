@@ -248,8 +248,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
             });
     this.studyUserTurnsSubscription =
         this.studyManager.studyUserTurns.subscribe(turn => {
-          this._studyUserTurnInstr =
-              turn.isAbbreviation ? 'Enter in abbreviation:' : 'Enter in full:';
+          this._studyUserTurnInstr = turn.instruction;
           this._studyUserTurnText = turn.text;
           this._studyDialogEnded = turn.isComplete;
           this._studyDialogError = turn.error;

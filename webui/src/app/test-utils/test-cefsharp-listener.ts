@@ -28,6 +28,8 @@ export class TestListener {
     this._numRequestSoftKeyboardResetCalls++;
   }
 
+  public bringWindowToForeground() {}
+
   get injectedKeysCalls(): Array<number[]> {
     return this.injectedKeys.slice();
   }

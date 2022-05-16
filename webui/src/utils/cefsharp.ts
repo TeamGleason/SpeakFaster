@@ -191,7 +191,6 @@ export function injectKeys(
 
 /** Inject text as keys. Append final punctuation and space if there is none. */
 export function injectTextAsKeys(text: string): Array<string|VIRTUAL_KEY> {
-  // TODO(cais): Add unit test.
   const injectedKeys: Array<string|VIRTUAL_KEY> = [];
   injectedKeys.push(...text.split(''));
   if (!text?.trim()) {
@@ -199,7 +198,7 @@ export function injectTextAsKeys(text: string): Array<string|VIRTUAL_KEY> {
   }
   text = text.trim();
   if (!endsWithSentenceEndPunctuation(text)) {
-    text += '.';  // TODO(cais): Deduplicate logic.
+    text += '.';
     injectedKeys.push(VIRTUAL_KEY.PERIOD);
   }
   text += ' ';

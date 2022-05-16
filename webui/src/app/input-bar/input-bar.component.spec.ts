@@ -6,8 +6,7 @@ import {Observable, Subject} from 'rxjs';
 
 import * as cefSharp from '../../utils/cefsharp';
 import {HttpEventLogger} from '../event-logger/event-logger-impl';
-import * as ExternalEvents from '../external/external-events.component';
-import {ExternalEventsComponent, repeatVirtualKey, resetReconStates, VIRTUAL_KEY} from '../external/external-events.component';
+import {VIRTUAL_KEY} from '../external/external-events.component';
 import {InputBarChipComponent} from '../input-bar-chip/input-bar-chip.component';
 import {InputBarChipModule} from '../input-bar-chip/input-bar-chip.module';
 import {LoadLexiconRequest} from '../lexicon/lexicon.component';
@@ -29,8 +28,7 @@ class SpeakFasterServiceForTest {
   }
 }
 
-// TODO(cais): Fix these tests. DO NOT SUBMIT.
-fdescribe('InputBarComponent', () => {
+describe('InputBarComponent', () => {
   let testListener: TestListener;
   let textEntryEndSubject: Subject<TextEntryEndEvent>;
   let inputBarControlSubject: Subject<InputBarControlEvent>;
@@ -46,7 +44,6 @@ fdescribe('InputBarComponent', () => {
   let fillMaskRequests: FillMaskRequest[];
 
   beforeEach(async () => {
-    resetReconStates();
     testListener = new TestListener();
     (window as any)[cefSharp.BOUND_LISTENER_NAME] = testListener;
     textEntryEndSubject = new Subject();
@@ -360,6 +357,10 @@ fdescribe('InputBarComponent', () => {
         .toEqual('b');
     expect((chips[3].componentInstance as InputBarChipComponent).text)
         .toEqual('v');
+    expect(fixture.componentInstance.getChipText(0)).toEqual('so');
+    expect(fixture.componentInstance.getChipText(1)).toEqual('much');
+    expect(fixture.componentInstance.getChipText(2)).toEqual('b');
+    expect(fixture.componentInstance.getChipText(3)).toEqual('v');
   });
 
   it('clicking spell button injects space key to self app', () => {
@@ -398,7 +399,6 @@ fdescribe('InputBarComponent', () => {
            const {abbreviationSpec} = inputAbbreviationChangeEvents[0];
            expect(abbreviationSpec.tokens.length).toEqual(3);
            expect(abbreviationSpec.readableString).toEqual('a bit c');
-           // TODO(cais): Make assertion about eraseSequence with spelling.
            const {tokens} = abbreviationSpec;
            expect(tokens[0]).toEqual({value: 'a', isKeyword: false});
            expect(tokens[1]).toEqual({value: 'bit', isKeyword: true});
@@ -606,356 +606,228 @@ fdescribe('InputBarComponent', () => {
     expect(spellButton).not.toBeNull();
   });
 
-  //   it('typing after word chips are injected', () => {
-  //     fixture.componentInstance.inputString = 'ifg';
-  //     inputBarControlSubject.next({
-  //       chips: [
-  //         {
-  //           text: 'i',
-  //         },
-  //         {
-  //           text: 'feel',
-  //         },
-  //         {
-  //           text: 'great',
-  //         }
-  //       ]
-  //     });
-  //     fixture.detectChanges();
-  //     fixture.componentInstance.state = State.ENTERING_BASE_TEXT;
-  //     const chips =
-  //         fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'))
-  //     chips[1].nativeElement.click();
+  it('typing after word chips are injected', () => {
+    fixture.componentInstance.inputString = 'ifg';
+    inputBarControlSubject.next({
+      chips: [
+        {
+          text: 'i',
+        },
+        {
+          text: 'feel',
+        },
+        {
+          text: 'great',
+        }
+      ]
+    });
+    fixture.detectChanges();
+    fixture.componentInstance.state = State.ENTERING_BASE_TEXT;
+    const chips =
+        fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'))
+    chips[1].nativeElement.click();
 
-  //     expect(fixture.componentInstance.state).toEqual(State.ENTERING_BASE_TEXT);
-  //     const spellButton =
-  //     fixture.debugElement.query(By.css('.spell-button'));
-  //     expect(spellButton).not.toBeNull();
+    expect(fixture.componentInstance.state).toEqual(State.ENTERING_BASE_TEXT);
+    const spellButton = fixture.debugElement.query(By.css('.spell-button'));
+    expect(spellButton).not.toBeNull();
+  });
 
-  //     enterKeysIntoComponent(['s', 'o'], 'i feel great so', /* baseLength= */
-  //     13); fixture.detectChanges();
-  //     expect(fixture.componentInstance.inputString).toEqual('i feel great
-  //     so');
-  //   });
+  it('clicking spell under word refinement enters spelling mode', () => {
+    fixture.componentInstance.inputString = 'ifg';
+    inputBarControlSubject.next({
+      chips: [
+        {
+          text: 'i',
+        },
+        {
+          text: 'feel',
+        },
+        {
+          text: 'great',
+        }
+      ]
+    });
+    fixture.detectChanges();
+    const wordChips =
+        fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'))
+    wordChips[1].nativeElement.click();
+    const spellButton = fixture.debugElement.query(By.css('.spell-button'));
+    spellButton.nativeElement.click();
+    fixture.detectChanges();
 
-  //   it('clicking spell under word refinement enters spelling mode', () => {
-  //     fixture.componentInstance.inputString = 'ifg';
-  //     inputBarControlSubject.next({
-  //       chips: [
-  //         {
-  //           text: 'i',
-  //         },
-  //         {
-  //           text: 'feel',
-  //         },
-  //         {
-  //           text: 'great',
-  //         }
-  //       ]
-  //     });
-  //     fixture.detectChanges();
-  //     const wordChips =
-  //         fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'))
-  //     wordChips[1].nativeElement.click();
-  //     const spellButton =
-  //     fixture.debugElement.query(By.css('.spell-button'));
-  //     spellButton.nativeElement.click();
-  //     fixture.detectChanges();
+    expect(fixture.componentInstance.state).toEqual(State.CHOOSING_LETTER_CHIP);
+    const letterChips =
+        fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'))
+    expect(letterChips.length).toEqual(3);
+    expect((letterChips[0].componentInstance as InputBarChipComponent).text)
+        .toEqual('i');
+    expect((letterChips[1].componentInstance as InputBarChipComponent).text)
+        .toEqual('f');
+    expect((letterChips[2].componentInstance as InputBarChipComponent).text)
+        .toEqual('g');
+  });
 
-  //     expect(fixture.componentInstance.state).toEqual(State.CHOOSING_LETTER_CHIP);
-  //     const letterChips =
-  //         fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'))
-  //     expect(letterChips.length).toEqual(3);
-  //     expect((letterChips[0].componentInstance as
-  //     InputBarChipComponent).text)
-  //         .toEqual('i');
-  //     expect((letterChips[1].componentInstance as
-  //     InputBarChipComponent).text)
-  //         .toEqual('f');
-  //     expect((letterChips[2].componentInstance as
-  //     InputBarChipComponent).text)
-  //         .toEqual('g');
-  //   });
+  it('inject text button injects keypresses added final period & space', () => {
+    enterKeysIntoComponent('all good');
+    const injectButton = fixture.debugElement.query(By.css('.inject-button'));
+    injectButton.nativeElement.click();
 
-  //   it('clicking inject text button injects keypresses with added final
-  //   period',
-  //      () => {
-  //        const keySequence =
-  //            ['a', 'l', 'l', VIRTUAL_KEY.SPACE, 'g', 'o', 'o', 'd'];
-  //        const reconstructedText = 'all good';
-  //        enterKeysIntoComponent(keySequence, reconstructedText);
-  //        const injectButton =
-  //            fixture.debugElement.query(By.css('.inject-button'));
-  //        injectButton.nativeElement.click();
+    expect(textEntryEndEvents.length).toEqual(1);
+    const event = textEntryEndEvents[0];
+    expect(event.isFinal).toBeTrue();
+    expect(event.text).toEqual('all good');
+    expect(event.injectedKeys).toEqual([
+      'a', 'l', 'l', VIRTUAL_KEY.SPACE, 'g', 'o', 'o', 'd', VIRTUAL_KEY.PERIOD,
+      VIRTUAL_KEY.SPACE
+    ]);
+    expect(event.inAppTextToSpeechAudioConfig).toBeUndefined();
+    expect(event.timestampMillis).toBeGreaterThan(0);
+    const calls = testListener.injectedKeysCalls;
+    expect(calls.length).toEqual(1);
+    expect(calls[0]).toEqual([65, 76, 76, 32, 71, 79, 79, 68, 190, 32]);
+    expect(testListener.injectedTextCalls).toEqual(['all good. ']);
+  });
 
-  //        expect(textEntryEndEvents.length).toEqual(1);
-  //        const event = textEntryEndEvents[0];
-  //        expect(event.isFinal).toBeTrue();
-  //        expect(event.text).toEqual('all good. ');
-  //        expect(event.injectedKeys).toEqual([
-  //          'a', 'l', 'l', VIRTUAL_KEY.SPACE, 'g', 'o', 'o', 'd',
-  //          VIRTUAL_KEY.PERIOD, VIRTUAL_KEY.SPACE
-  //        ]);
-  //        expect(event.inAppTextToSpeechAudioConfig).toBeUndefined();
-  //        expect(event.timestampMillis).toBeGreaterThan(0);
-  //        const calls = testListener.injectedKeysCalls;
-  //        expect(calls.length).toEqual(1);
-  //        expect(calls[0]).toEqual([65, 76, 76, 32, 71, 79, 79, 68, 190, 32]);
-  //        expect(testListener.injectedTextCalls).toEqual(['all good. ']);
-  //      });
+  it('clicking inject button removes trailing and leading whitespace.', () => {
+    enterKeysIntoComponent(' good ');
+    const injectButton = fixture.debugElement.query(By.css('.inject-button'));
+    injectButton.nativeElement.click();
 
-  //   it('clicking inject button removes trailing and leading whitespace.', ()
-  //   => {
-  //     const keySequence =
-  //         [VIRTUAL_KEY.SPACE, 'g', 'o', 'o', 'd', VIRTUAL_KEY.SPACE];
-  //     const reconstructedText = ' good ';
-  //     enterKeysIntoComponent(keySequence, reconstructedText);
-  //     const injectButton =
-  //     fixture.debugElement.query(By.css('.inject-button'));
-  //     injectButton.nativeElement.click();
+    expect(textEntryEndEvents.length).toEqual(1);
+    const event = textEntryEndEvents[0];
+    expect(event.isFinal).toBeTrue();
+    expect(event.text).toEqual(' good ');
+    expect(event.injectedKeys).toEqual([
+      'g', 'o', 'o', 'd', VIRTUAL_KEY.PERIOD, VIRTUAL_KEY.SPACE
+    ]);
+    expect(event.inAppTextToSpeechAudioConfig).toBeUndefined();
+    expect(event.timestampMillis).toBeGreaterThan(0);
+    const calls = testListener.injectedKeysCalls;
+    expect(calls.length).toEqual(1);
+    expect(calls[0]).toEqual([71, 79, 79, 68, 190, 32]);
+    expect(testListener.injectedTextCalls).toEqual(['good. ']);
+  });
 
-  //     expect(textEntryEndEvents.length).toEqual(1);
-  //     const event = textEntryEndEvents[0];
-  //     expect(event.isFinal).toBeTrue();
-  //     expect(event.text).toEqual('good. ');
-  //     expect(event.injectedKeys).toEqual([
-  //       'g', 'o', 'o', 'd', VIRTUAL_KEY.PERIOD, VIRTUAL_KEY.SPACE
-  //     ]);
-  //     expect(event.inAppTextToSpeechAudioConfig).toBeUndefined();
-  //     expect(event.timestampMillis).toBeGreaterThan(0);
-  //     const calls = testListener.injectedKeysCalls;
-  //     expect(calls.length).toEqual(1);
-  //     expect(calls[0]).toEqual([71, 79, 79, 68, 190, 32]);
-  //     expect(testListener.injectedTextCalls).toEqual(['good. ']);
-  //   });
+  it('clicking inject button with previous non-empty works', () => {
+    textEntryEndSubject.next({
+      text: 'Previous phrase',
+      isFinal: true,
+      timestampMillis: Date.now(),
+    });
+    fixture.componentInstance.inputString = '';
+    fixture.detectChanges();
+    const injectButton = fixture.debugElement.query(By.css('.inject-button'));
+    injectButton.nativeElement.click();
 
-  //   it('clicking inject button with previous non-empty works', () => {
-  //     textEntryEndSubject.next({
-  //       text: 'Previous phrase',
-  //       isFinal: true,
-  //       timestampMillis: Date.now(),
-  //     });
-  //     fixture.componentInstance.inputString = '';
-  //     fixture.detectChanges();
-  //     const injectButton =
-  //     fixture.debugElement.query(By.css('.inject-button'));
-  //     injectButton.nativeElement.click();
+    expect(textEntryEndEvents.length).toEqual(2);
+    const event = textEntryEndEvents[1];
+    expect(event.isFinal).toBeTrue();
+    expect(event.text).toEqual('Previous phrase');
+  });
 
-  //     expect(textEntryEndEvents.length).toEqual(2);
-  //     const event = textEntryEndEvents[1];
-  //     expect(event.isFinal).toBeTrue();
-  //     expect(event.text).toEqual('Previous phrase. ');
-  //   });
+  it('clicking inject button without previous non-empty has no effect', () => {
+    fixture.componentInstance.inputString = '';
+    fixture.detectChanges();
+    const injectButton = fixture.debugElement.query(By.css('.inject-button'));
+    injectButton.nativeElement.click();
 
-  //   it('clicking inject button without previous non-empty has no effect', ()
-  //   => {
-  //     fixture.componentInstance.inputString = '';
-  //     fixture.detectChanges();
-  //     const injectButton =
-  //     fixture.debugElement.query(By.css('.inject-button'));
-  //     injectButton.nativeElement.click();
+    expect(textEntryEndEvents.length).toEqual(0);
+  });
 
-  //     expect(textEntryEndEvents.length).toEqual(0);
-  //   });
+  it('clicking inject text button injects keypresses without added final period',
+     () => {
+       enterKeysIntoComponent('all good.');
+       const injectButton =
+           fixture.debugElement.query(By.css('.inject-button'));
+       injectButton.nativeElement.click();
 
-  //   it('clicking inject text button injects keypresses without added final
-  //   period',
-  //      () => {
-  //        const keySequence = [
-  //          'a', 'l', 'l', VIRTUAL_KEY.SPACE, 'g', 'o', 'o', 'd',
-  //          VIRTUAL_KEY.PERIOD
-  //        ];
-  //        const reconstructedText = 'all good';
-  //        enterKeysIntoComponent(keySequence, reconstructedText);
-  //        const injectButton =
-  //            fixture.debugElement.query(By.css('.inject-button'));
-  //        injectButton.nativeElement.click();
+       expect(textEntryEndEvents.length).toEqual(1);
+       const event = textEntryEndEvents[0];
+       expect(event.isFinal).toBeTrue();
+       expect(event.text).toEqual('all good.');
+       expect(event.injectedKeys).toEqual([
+         'a', 'l', 'l', VIRTUAL_KEY.SPACE, 'g', 'o', 'o', 'd',
+         VIRTUAL_KEY.PERIOD, VIRTUAL_KEY.SPACE
+       ]);
+       expect(event.inAppTextToSpeechAudioConfig).toBeUndefined();
+       expect(event.timestampMillis).toBeGreaterThan(0);
+     });
 
-  //        expect(textEntryEndEvents.length).toEqual(1);
-  //        const event = textEntryEndEvents[0];
-  //        expect(event.isFinal).toBeTrue();
-  //        expect(event.text).toEqual('all good. ');
-  //        expect(event.injectedKeys).toEqual([
-  //          'a', 'l', 'l', VIRTUAL_KEY.SPACE, 'g', 'o', 'o', 'd',
-  //          VIRTUAL_KEY.PERIOD, VIRTUAL_KEY.SPACE
-  //        ]);
-  //        expect(event.inAppTextToSpeechAudioConfig).toBeUndefined();
-  //        expect(event.timestampMillis).toBeGreaterThan(0);
-  //      });
+  it('Text predicton word chip injection sets correct state', () => {
+    inputBarControlSubject.next({
+      chips: [
+        {
+          text: 'i am feeling',
+          isTextPrediction: true,
+        },
+      ]
+    });
 
-  //   it('Text predicton word chip injection sets correct state', () => {
-  //     inputBarControlSubject.next({
-  //       chips: [
-  //         {
-  //           text: 'i am feeling',
-  //           isTextPrediction: true,
-  //         },
-  //       ]
-  //     });
+    expect(fixture.componentInstance.state).toEqual(State.ENTERING_BASE_TEXT);
+    expect(fixture.componentInstance.inputString).toEqual('i am feeling ');
+  });
 
-  //     expect(fixture.componentInstance.state).toEqual(State.ENTERING_BASE_TEXT);
-  //     expect(fixture.componentInstance.inputString).toEqual('i am feeling ');
-  //   });
+  for (const [existingText, predictedText, expectedText] of [
+           ['', 'i am feeling', 'i am feeling '],
+           ['so', 'i am feeling', 'so i am feeling '],
+           ['so ', 'i am feeling', 'so i am feeling '],
+           ['so.', 'i am feeling', 'so. i am feeling '],
+           ['so. ', 'i am feeling', 'so. i am feeling '],
+  ] as Array<[string, string, string]>) {
+    it(`clicking text prediction injects appends to input text: ` +
+           `"${expectedText}"`,
+       () => {
+         enterKeysIntoComponent(existingText);
+         fixture.detectChanges();
+         inputBarControlSubject.next({
+           chips: [
+             {
+               text: predictedText,
+               isTextPrediction: true,
+             },
+           ]
+         });
+         fixture.detectChanges();
 
-  //   it('type after multi-word text prediction chip and then spell', () => {
-  //     inputBarControlSubject.next({
-  //       chips: [
-  //         {
-  //           text: 'i am feeling',
-  //           isTextPrediction: true,
-  //         },
-  //       ]
-  //     });
-  //     enterKeysIntoComponent(['s', 's', 'g'], 'i am feeling ssg', 13);
-  //     const spellButton =
-  //     fixture.debugElement.query(By.css('.spell-button'));
-  //     spellButton.nativeElement.click();
-  //     fixture.detectChanges();
+         const inputText =
+             fixture.debugElement.query(By.css('.base-text-area'));
+         expect(inputText.nativeElement.value).toEqual(expectedText);
+         expect(fixture.componentInstance.state)
+             .toEqual(State.ENTERING_BASE_TEXT);
+       });
+  }
 
-  //     const chips =
-  //         fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'));
-  //     expect(chips.length).toEqual(6);
-  //     expect(chips[0].nativeElement.innerText).toEqual('i');
-  //     expect(chips[1].nativeElement.innerText).toEqual('am');
-  //     expect(chips[2].nativeElement.innerText).toEqual('feeling');
-  //     expect(chips[3].nativeElement.innerText).toEqual('s');
-  //     expect(chips[4].nativeElement.innerText).toEqual('s');
-  //     expect(chips[5].nativeElement.innerText).toEqual('g');
-  //     expect(fixture.componentInstance.state).toEqual(State.CHOOSING_LETTER_CHIP);
-  //   });
+  it('Cut and then type after AE option selection', () => {
+    inputBarControlSubject.next({
+      chips: [
+        {
+          text: 'i',
+        },
+        {
+          text: 'feel',
+        },
+        {
+          text: 'great',
+        }
+      ]
+    });
+    fixture.componentInstance.state = State.CHOOSING_WORD_CHIP;
+    fixture.detectChanges();
+    const chips =
+        fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'));
+    chips[1].nativeElement.click();
+    fixture.detectChanges();
 
-  //   it('abort button is shown when text prediction chip is present',
-  //      fakeAsync(() => {
-  //        inputBarControlSubject.next({
-  //          chips: [
-  //            {
-  //              text: 'i am feeling',
-  //            },
-  //          ]
-  //        });
-  //        (fixture.componentInstance as any).cutText = 'i am feeling';
-  //        fixture.componentInstance.state = State.ENTERING_BASE_TEXT;
-  //        fixture.detectChanges();
+    const expandButton = fixture.debugElement.query(By.css('.cut-button'));
+    expandButton.nativeElement.click();
+    fixture.detectChanges();
 
-  //        const abortButton =
-  //        fixture.debugElement.query(By.css('.abort-button'));
-  //        expect(abortButton).not.toBeNull();
-
-  //        const prevNumCalls = testListener.updateButtonBoxesCalls.length;
-  //        abortButton.nativeElement.click();
-  //        expect(fixture.componentInstance.state)
-  //            .toEqual(State.ENTERING_BASE_TEXT);
-  //        expect(fixture.componentInstance.chips.length).toEqual(0);
-  //        expect(fixture.componentInstance.inputString).toEqual('');
-  //        tick();
-  //        expect(testListener.updateButtonBoxesCalls.length)
-  //            .toEqual(prevNumCalls + 3);
-  //        const lastCall =
-  //            testListener
-  //                .updateButtonBoxesCalls[testListener.updateButtonBoxesCalls.length
-  //                - 1];
-  //        expect(lastCall[0].indexOf('InputBarComponent_')).toEqual(0);
-  //      }));
-
-  //   it('launchin AE with pre-spelled words', () => {
-  //     inputBarControlSubject.next({
-  //       chips: [
-  //         {
-  //           text: 'i',
-  //           preSpelled: true,
-  //         },
-  //         {
-  //           text: 'am',
-  //           preSpelled: true,
-  //         },
-  //         {
-  //           text: 'feeling',
-  //           preSpelled: true,
-  //         },
-  //         {
-  //           text: 's',
-  //         },
-  //         {
-  //           text: 'g',
-  //         },
-  //       ]
-  //     });
-  //     fixture.componentInstance.inputString = 'sg';
-  //     fixture.componentInstance.state = State.CHOOSING_LETTER_CHIP;
-  //     fixture.detectChanges();
-  //     enterKeysIntoComponent(['g', 'o', 'o', 'd'], 'good');
-  //     fixture.detectChanges();
-
-  //     expect(fixture.componentInstance.state)
-  //         .toEqual(State.FOCUSED_ON_LETTER_CHIP);
-  //     expect(fixture.debugElement.query(By.css('.spell-button'))).toBeNull();
-  //     const chips =
-  //         fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'));
-  //     expect(chips.length).toEqual(5);
-  //     expect(chips[0].nativeElement.innerText).toEqual('i');
-  //     expect(chips[1].nativeElement.innerText).toEqual('am');
-  //     expect(chips[2].nativeElement.innerText).toEqual('feeling');
-  //     expect(chips[3].nativeElement.innerText).toEqual('s');
-  //     expect(chips[4].nativeElement.innerText).toEqual('good |');
-  //     expect(fixture.componentInstance
-  //                .inputStringIsCompatibleWithAbbreviationExpansion)
-  //         .toBeTrue();
-
-  //     const expandButton =
-  //     fixture.debugElement.query(By.css('.expand-button'));
-  //     expandButton.nativeElement.click();
-  //     fixture.detectChanges();
-
-  //     expect(inputAbbreviationChangeEvents.length).toEqual(1);
-  //     const event = inputAbbreviationChangeEvents[0];
-  //     expect(event.requestExpansion).toBeTrue();
-  //     const {abbreviationSpec} = event;
-  //     expect(abbreviationSpec.readableString).toEqual('i am feeling s good');
-  //     expect(abbreviationSpec.lineageId.length).toBeGreaterThan(0);
-  //     expect(abbreviationSpec.tokens.length).toEqual(5);
-  //     expect(abbreviationSpec.tokens[0]).toEqual({value: 'i', isKeyword:
-  //     true}); expect(abbreviationSpec.tokens[1]).toEqual({value: 'am',
-  //     isKeyword: true}); expect(abbreviationSpec.tokens[2])
-  //         .toEqual({value: 'feeling', isKeyword: true});
-  //     expect(abbreviationSpec.tokens[3]).toEqual({value: 's', isKeyword:
-  //     false}); expect(abbreviationSpec.tokens[4])
-  //         .toEqual({value: 'good', isKeyword: true});
-  //   });
-
-  //   it('Cut and then type after AE option selection', () => {
-  //     inputBarControlSubject.next({
-  //       chips: [
-  //         {
-  //           text: 'i',
-  //         },
-  //         {
-  //           text: 'feel',
-  //         },
-  //         {
-  //           text: 'great',
-  //         }
-  //       ]
-  //     });
-  //     fixture.componentInstance.state = State.CHOOSING_WORD_CHIP;
-  //     fixture.detectChanges();
-  //     const chips =
-  //         fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'));
-  //     chips[1].nativeElement.click();
-  //     fixture.detectChanges();
-
-  //     const expandButton = fixture.debugElement.query(By.css('.cut-button'));
-  //     expandButton.nativeElement.click();
-  //     fixture.detectChanges();
-
-  //     expect(fixture.componentInstance.state).toEqual(State.ENTERING_BASE_TEXT);
-  //     expect(fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'))
-  //                .length)
-  //         .toEqual(0);
-  //     expect(fixture.componentInstance.inputString).toEqual('i feel ');
-
-  //     enterKeysIntoComponent(['v', 'e'], 'i feel ve', /* baseLength= */ 7);
-  //     expect(fixture.componentInstance.inputString).toEqual('i feel ve');
-  //   });
+    expect(fixture.componentInstance.state).toEqual(State.ENTERING_BASE_TEXT);
+    expect(fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'))
+               .length)
+        .toEqual(0);
+    expect(fixture.componentInstance.inputString).toEqual('i feel ');
+  });
 
   it('Selecting the last chip does not show cut button', () => {
     inputBarControlSubject.next({
@@ -1127,19 +999,57 @@ fdescribe('InputBarComponent', () => {
     expect(fixture.componentInstance.inputString).toEqual('');
   });
 
-  // it('append text twice calls updateButtonBoxes', async () => {
-  //   await fixture.whenStable();
-  //   const prevNumCalls = testListener.updateButtonBoxesCalls.length;
-  //   inputBarControlSubject.next({appendText: 'foo bar'});
-  //   fixture.detectChanges();
-  //   await fixture.whenStable()
-  //   inputBarControlSubject.next({appendText: 'foo bar'});
-  //   fixture.detectChanges();
-  //   await fixture.whenStable();
+  // NOTE(#322)
+  it('injecting new chips overrides old chips', () => {
+    enterKeysIntoComponent('dtg');
+    const spellButton = fixture.debugElement.query(By.css('.spell-button'));
+    spellButton.nativeElement.click();
+    fixture.detectChanges();
+    inputBarControlSubject.next({
+      chips: [
+        {
+          text: 'don\'t',
+          preSpelled: true,
+        },
+        {
+          text: 'go',
+          preSpelled: true,
+        },
+      ]
+    });
+    fixture.detectChanges();
 
-  //   expect(testListener.updateButtonBoxesCalls.length)
-  //       .toEqual(prevNumCalls + 2);
-  // });
+    const chips =
+        fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'));
+    expect(chips.length).toEqual(2);
+    expect((chips[0].componentInstance as InputBarChipComponent).text)
+        .toEqual('don\'t');
+    expect((chips[1].componentInstance as InputBarChipComponent).text)
+        .toEqual('go');
+    expect(fixture.componentInstance.state).toEqual(State.CHOOSING_WORD_CHIP);
+    expect(fixture.debugElement.query(By.css('.expand-button'))).toBeNull();
+    expect(fixture.debugElement.query(By.css('.spell-button'))).not.toBeNull();
+    expect(fixture.debugElement.query(By.css('.length-limit-exceeded')))
+        .toBeNull();
+    expect(fixture.debugElement.query(By.css('.abort-button'))).not.toBeNull();
+    expect(LoadLexiconRequests.length).toEqual(0);
+  });
 
-  //   // TODO(cais): Test spelling valid word triggers AE, with debounce.
+  it('append text twice calls updateButtonBoxes', fakeAsync(() => {
+       tick();
+       const prevNumCalls0 = testListener.updateButtonBoxesCalls.length;
+       inputBarControlSubject.next({appendText: 'foo bar'});
+       fixture.detectChanges();
+       tick();
+       const prevNumCalls1 = testListener.updateButtonBoxesCalls.length;
+       inputBarControlSubject.next({appendText: 'foo bar'});
+       fixture.detectChanges();
+       tick();
+
+       expect(prevNumCalls1).toBeGreaterThan(prevNumCalls0);
+       expect(testListener.updateButtonBoxesCalls.length)
+           .toBeGreaterThan(prevNumCalls1);
+     }));
+
+  // TODO(cais): Test spelling valid word triggers AE, with debounce.
 });

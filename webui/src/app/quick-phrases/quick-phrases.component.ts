@@ -347,7 +347,7 @@ export class QuickPhrasesComponent implements AfterViewInit, OnInit, OnChanges,
       // TODO(cais): Properly handle punctuation (if any).
       injectedKeys.push(...phrase.split(''));
       injectedKeys.push(VIRTUAL_KEY.SPACE);  // Append a space at the end.
-      injectTextAsKeys(phrase);
+      injectTextAsKeys(phrase.trim());
     }
     this.eventLogger.logContextualPhraseSelection(
         getContextualPhraseStats(this.phrases[index]),

@@ -140,9 +140,9 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   state = State.ENTERING_BASE_TEXT;
   inputString: string = '';
   private static savedInputString: string = '';
-  private latestReconstructedString = '';
-  private baseReconstructedText: string = '';
-  private cutText = '';
+  private latestReconstructedString = '';      // TODO(cais): Remove?
+  private baseReconstructedText: string = '';  // TODO(cais): Remove?
+  private cutText = '';                        // TODO(cais): Remove?
   private lastNonEmptyPhrase: string|null = null;
 
   private textEntryEndSubjectSubscription?: Subscription;
@@ -198,36 +198,27 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
                 this.contextualPhraseTags);
           } else if (event.chips !== undefined) {
             let {chips} = event;
-            if (this.state === State.ENTERING_BASE_TEXT &&
-                chips[0].isTextPrediction) {
-              const originalInputString = this.inputString;
-              chips[0] = {
-                text: this.inputString.trim() + ' ' + chips[0].text,
-                isTextPrediction: chips[0].isTextPrediction,
-              };
-              const appendedString =
-                  chips[0].text.substring(originalInputString.length).trim();
-              ExternalEventsComponent.appendString(
-                  appendedString, /* isExternal= */ false);
-              this.baseReconstructedText = this.latestReconstructedString;
+            if (chips[0].isTextPrediction) {
+              if (this.state === State.ENTERING_BASE_TEXT) {
+                let newString = this.inputString.trim();
+                if (newString && !newString.match(/.*\s/)) {
+                  newString += ' ';
+                }
+                newString += chips[0].text + ' ';
+                this.updateInputString(newString);
+              }
+              return;
             }
             this._focusChipIndex = null;
             this._chips.splice(0);
             this._chips.push(...chips);
-            if (this._chipTypedText !== null) {
-              for (let i = 0; i < this._chipTypedText.length; ++i) {
-                if (this._chipTypedText[i] !== null &&
-                    !this._chips[i].preSpelled) {
-                  this._chips[i].text = this._chipTypedText[i]!;
-                }
-              }
-            }
+            this._chipTypedText = null;
             this._chips.forEach((chip, i) => {
               if (chip.preSpelled) {
                 this.ensureChipTypedTextCreated();
                 this._chipTypedText![i] = chip.text;
               }
-            });
+            });  // TODO(cais): Add unit test.
             if (this._chips.length > 1) {
               this.state = State.CHOOSING_WORD_CHIP;
               this.eventLogger.logAbbreviationExpansionStartWordRefinementMode(
@@ -550,24 +541,11 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private cutChipsAtIndex(index: number, appendLastChar = false) {
-    const baseText = ExternalEventsComponent.internalText;
-    let text =
-        this._chips.slice(0, index + 1).map(chip => chip.text).join(' ').trim();
-    if (appendLastChar) {
-      const lastChar =
-          ExternalEventsComponent
-              .internalText[ExternalEventsComponent.internalText.length - 1];
-      if (lastChar !== ' ') {
-        text += ' ';
-      }
-      text += lastChar;
-    }
-    ExternalEventsComponent.appendString(
-        text, /* isExternal= */ false,
-        /* ensureEndsInSpace= */ !appendLastChar);
-    this.inputString =
-        ExternalEventsComponent.internalText.slice(baseText.length);
     this.state = State.ENTERING_BASE_TEXT;
+    this.cdr.detectChanges();
+    const newString =
+        this._chips.slice(0, index + 1).map(chip => chip.text).join(' ') + ' ';
+    this.updateInputString(newString);
   }
 
   onAbortButtonClicked(event: Event) {
@@ -644,7 +622,6 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   onSpeakAsIsButtonClicked(event?: Event) {
-    console.log('*** onSpeakAsIs');  // DEBUG
     const text = this.effectivePhrase;
     const repeatLastNonEmpty = text === '';
     this.eventLogger.logInputBarSpeakButtonClick(getPhraseStats(text));
@@ -663,7 +640,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
     this.eventLogger.logInputBarInjectButtonClick(getPhraseStats(text));
-    const injectedKeys = injectTextAsKeys(text);
+    const injectedKeys = injectTextAsKeys(text.trim());
     this.textEntryEndSubject.next({
       text,
       timestampMillis: Date.now(),

@@ -8,7 +8,7 @@ import {ConversationTurnComponent} from '../conversation-turn/conversation-turn.
 import {getPhraseStats, HttpEventLogger} from '../event-logger/event-logger-impl';
 import {SpeakFasterService} from '../speakfaster-service';
 import {isCommand, StudyManager} from '../study/study-manager';
-import {ConversationTurnContextSignal, getConversationTurnContextSignal} from '../types/context';
+import {ContextSignal, ConversationTurnContextSignal, getConversationTurnContextSignal} from '../types/context';
 import {ConversationTurn} from '../types/conversation';
 import {TextEntryEndEvent} from '../types/text-entry';
 
@@ -63,7 +63,7 @@ export class ContextComponent implements OnInit, OnDestroy, AfterViewInit {
         return;
       }
       if (this.studyManager.getDialogId() !== null) {
-        this.studyManager.incrementTurn();
+        this.studyManager.incrementTurn(textInjection.text);
         this.retrieveContext();
         return;
       }
@@ -205,7 +205,7 @@ export class ContextComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private retrieveContext() {
-    if (this.studyManager.isScriptedDialogOngoing()) {
+    if (this.studyManager.isDialogOngoing()) {
       this.contextSignals.splice(0);
       for (const {text, partnerId, timestamp} of this.studyManager
                .getPreviousDialogTurns()!) {
@@ -230,7 +230,9 @@ export class ContextComponent implements OnInit, OnDestroy, AfterViewInit {
           ...this.contextSignals.map(signal => signal.contextId));
       this.contextStringsSelected.next(
           this.contextSignals.map(signal => signal.conversationTurn));
-      return;
+      if (this.studyManager.waitingForPartnerTurnAfter === null) {
+        return;
+      }
     }
     this.speakFasterService.retrieveContext(this.userId)
         .subscribe(
@@ -242,80 +244,120 @@ export class ContextComponent implements OnInit, OnDestroy, AfterViewInit {
                 this.populateConversationTurnWithDefault();
                 return;
               }
-              if (data.contextSignals == null ||
-                  data.contextSignals.length === 0) {
-                this.populateConversationTurnWithDefault();
-                this.contextStringsUpdated.next([]);
-                return;
+              if (this.studyManager.waitingForPartnerTurnAfter !== null) {
+                if (data.contextSignals == null ||
+                    data.contextSignals.length === 0) {
+                  return;
+                }
+                if (this.checkForIncomingPartnerTurns(
+                        data.contextSignals,
+                        this.studyManager.waitingForPartnerTurnAfter)) {
+                  return;
+                }
+              } else {
+                if (data.contextSignals == null ||
+                    data.contextSignals.length === 0) {
+                  this.populateConversationTurnWithDefault();
+                  this.contextStringsUpdated.next([]);
+                  return;
+                }
+                await this.processContextSignals(data.contextSignals);
               }
-              this.cleanUpContextSignals();
-              let isHandledAsCommand = false;
-              for (let i = data.contextSignals.length - 1; i >= 0; --i) {
-                const contextSignal = data.contextSignals[i];
-                if ((contextSignal as ConversationTurnContextSignal)
-                            .conversationTurn == null ||
-                    contextSignal.timestamp === undefined) {
-                  continue;
-                }
-                const timestamp = new Date(contextSignal.timestamp).getTime();
-                if (this.handledCommandTimestamps.indexOf(timestamp) !== -1) {
-                  continue;
-                }
-                const speechContent =
-                    (contextSignal as ConversationTurnContextSignal)
-                        .conversationTurn.speechContent;
-                isHandledAsCommand =
-                    await this.studyManager.maybeHandleRemoteControlCommand(
-                        speechContent);
-                if (isHandledAsCommand) {
-                  this.handledCommandTimestamps.push(timestamp);
-                  break;
-                }
-              }
-              for (let contextSignal of (
-                       isHandledAsCommand ? [] : data.contextSignals)) {
-                // TOOD(cais): Fix typing.
-                if ((contextSignal as ConversationTurnContextSignal)
-                            .conversationTurn == null ||
-                    contextSignal.timestamp === undefined) {
-                  continue;
-                }
-                if (this.contextSignals.find(
-                        signal =>
-                            contextSignal.contextId === signal.contextId)) {
-                  // Avoid adding duplicate context signals.
-                  continue;
-                }
-                const speechContent =
-                    (contextSignal as ConversationTurnContextSignal)
-                        .conversationTurn.speechContent;
-                if (isHandledAsCommand) {
-                  continue;
-                }
-                this.contextSignals.push(
-                    (contextSignal as ConversationTurnContextSignal));
-                this.eventLogger.logIncomingContextualTurn(
-                    getPhraseStats(speechContent));
-              }
-              this.limitContextItemsCount();
-              this.cleanUpAndSortFocusContextIds();
-              if (this.focusContextIds.length === 0 &&
-                  this.contextSignals.length > 0) {
-                this.focusContextIds.push(
-                    this.contextSignals[this.contextSignals.length - 1]
-                        .contextId!);
-                this.cleanUpAndSortFocusContextIds();
-              }
-              this.emitContextStringsSelected();
-              this.contextRetrievalError = null;
-              this.contextStringsUpdated.next(
-                  this.contextSignals.map(signal => signal.conversationTurn));
             },
             error => {
               this.cleanUpContextSignals();
               this.contextRetrievalError = 'Context retrieval error';
               // this.populateConversationTurnWithDefault();
             });
+  }
+
+  /**
+   * Check for context turns after the given timestamp.
+   * @returns `true` if a context turn with a timestamp later than
+   *     `afterEpochMillis` is found. Else, returns `false`.
+   */
+  private checkForIncomingPartnerTurns(
+      contextSignals: ContextSignal[], afterEpochMillis: number): boolean {
+    for (let i = contextSignals.length - 1; i >= 0; --i) {
+      const contextSignal = contextSignals[i];
+      if ((contextSignal as ConversationTurnContextSignal).conversationTurn ==
+              null ||
+          contextSignal.timestamp === undefined) {
+        continue;
+      }
+      const timestamp = new Date(contextSignal.timestamp).getTime();
+      const speechContent = (contextSignal as ConversationTurnContextSignal)
+                                .conversationTurn.speechContent;
+      if (timestamp > afterEpochMillis) {
+        console.log(
+            '*** Received manual partner turn:', speechContent, timestamp,
+            this.studyManager.waitingForPartnerTurnAfter);
+        this.studyManager.incrementTurn(speechContent);
+        // TODO(cais): Add unit test.
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private async processContextSignals(contextSignals: ContextSignal[]) {
+    this.cleanUpContextSignals();
+    let isHandledAsCommand = false;
+    for (let i = contextSignals.length - 1; i >= 0; --i) {
+      const contextSignal = contextSignals[i];
+      if ((contextSignal as ConversationTurnContextSignal).conversationTurn ==
+              null ||
+          contextSignal.timestamp === undefined) {
+        continue;
+      }
+      const timestamp = new Date(contextSignal.timestamp).getTime();
+      const handledPreviously = this.handledCommandTimestamps.some(
+          handledTimestamp => handledTimestamp >= timestamp);
+      if (handledPreviously) {
+        continue;
+      }
+      const speechContent = (contextSignal as ConversationTurnContextSignal)
+                                .conversationTurn.speechContent;
+      isHandledAsCommand =
+          await this.studyManager.maybeHandleRemoteControlCommand(
+              speechContent);
+      if (isHandledAsCommand) {
+        this.handledCommandTimestamps.push(timestamp);
+        break;
+      }
+    }
+    for (let contextSignal of (isHandledAsCommand ? [] : contextSignals)) {
+      // TOOD(cais): Fix typing.
+      if ((contextSignal as ConversationTurnContextSignal).conversationTurn ==
+              null ||
+          contextSignal.timestamp === undefined) {
+        continue;
+      }
+      if (this.contextSignals.find(
+              signal => contextSignal.contextId === signal.contextId)) {
+        // Avoid adding duplicate context signals.
+        continue;
+      }
+      const speechContent = (contextSignal as ConversationTurnContextSignal)
+                                .conversationTurn.speechContent;
+      if (isHandledAsCommand) {
+        continue;
+      }
+      this.contextSignals.push(
+          (contextSignal as ConversationTurnContextSignal));
+      this.eventLogger.logIncomingContextualTurn(getPhraseStats(speechContent));
+    }
+    this.limitContextItemsCount();
+    this.cleanUpAndSortFocusContextIds();
+    if (this.focusContextIds.length === 0 && this.contextSignals.length > 0) {
+      this.focusContextIds.push(
+          this.contextSignals[this.contextSignals.length - 1].contextId!);
+      this.cleanUpAndSortFocusContextIds();
+    }
+    this.emitContextStringsSelected();
+    this.contextRetrievalError = null;
+    this.contextStringsUpdated.next(
+        this.contextSignals.map(signal => signal.conversationTurn));
   }
 
   private appendTextInjectionToContext(turnSignal:

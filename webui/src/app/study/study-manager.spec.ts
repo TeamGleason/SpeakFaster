@@ -14,6 +14,10 @@ describe('Study Manager', () => {
       expect(isCommand('Start abbrev dummy1 '));
       expect(isCommand('Start abbrev dummy1 a'));
       expect(isCommand('Start abbrev dummy1 b'));
+      expect(isCommand('Start abbrev u1'));
+      expect(isCommand('Start abbrev u2 '));
+      expect(isCommand('Start abbrev u3 a'));
+      expect(isCommand('Start abbrev u3 b '));
       expect(isCommand(' Dialog stop'));
     });
 
@@ -77,6 +81,7 @@ describe('Study Manager', () => {
 
       expect(handled).toBeTrue();
       expect(HttpEventLogger.isFullLogging()).toBeTrue();
+      expect(studyManager.waitingForPartnerTurnAfter).toBeNull();
       expect(studyManager.getDialogId()).toBe('dummy1');
       expect(studyManager.getDialogTurnIndex()).toEqual(0);
       expect(studyManager.getDialogTurnText())
@@ -92,6 +97,7 @@ describe('Study Manager', () => {
       expect(incrementResult.turnIndex).toEqual(1);
       expect(incrementResult.isComplete).toBeFalse();
       expect(studyManager.getDialogId()).toBe('dummy1');
+      expect(studyManager.waitingForPartnerTurnAfter).toBeNull();
       expect(studyManager.getDialogTurnIndex()).toEqual(1);
       expect(studyManager.getDialogTurnText())
           .toEqual('What good movies are on right now');
@@ -110,6 +116,7 @@ describe('Study Manager', () => {
 
             setTimeout(() => {
               expect(studyManager.getDialogId()).toBe('dummy1');
+              expect(studyManager.waitingForPartnerTurnAfter).toBeNull();
               expect(studyManager.getDialogTurnIndex()).toEqual(2);
               expect(studyManager.getDialogTurnText())
                   .toEqual('We can check on our way there');
@@ -168,9 +175,120 @@ describe('Study Manager', () => {
           });
     });
 
-    for (const [command, isAbbreviation] of [
-             ['Start abbrev dummy1 B', true], ['Start full dummy1 B', false]] as
-         Array<[string, boolean]>) {
+    it('increment turn with user turn', (done) => {
+      studyManager.maybeHandleRemoteControlCommand('start abbrev dummy1 a')
+          .then(() => {
+            studyManager.incrementTurn('unexpected question');
+            setTimeout(() => {
+              expect(studyManager.getDialogTurnIndex()).toEqual(2);
+              expect(studyManager.waitingForPartnerTurnAfter).toBeNull();
+              const prevTurns = studyManager.getPreviousDialogTurns();
+              expect(prevTurns!.length).toEqual(2);
+              expect(prevTurns![0].text).toEqual('unexpected question');
+              expect(prevTurns![0].partnerId).toBeNull();
+              expect(prevTurns![1].text)
+                  .toEqual('What good movies are on right now');
+              expect(prevTurns![1].partnerId).toEqual('Partner');
+              done();
+            }, 10);
+          });
+    });
+
+    it('increment turn with user turn', (done) => {
+      studyManager.maybeHandleRemoteControlCommand('start abbrev dummy1 b')
+          .then(() => {
+            setTimeout(() => {
+              expect(studyManager.getDialogTurnIndex()).toEqual(1);
+              studyManager.incrementTurn('random reply');
+
+              expect(studyManager.getDialogTurnIndex()).toEqual(2);
+              expect(studyManager.waitingForPartnerTurnAfter).toBeNull();
+              const prevTurns = studyManager.getPreviousDialogTurns();
+              expect(prevTurns!.length).toEqual(2);
+              expect(prevTurns![0].text)
+                  .toEqual('Shall we go to the movies today');
+              expect(prevTurns![0].partnerId).toEqual('Partner');
+              expect(prevTurns![1].text).toEqual('random reply');
+              expect(prevTurns![1].partnerId).toBeNull();
+              done();
+            }, 10);
+          });
+    });
+
+    it('unscripted dialog goes into waiting mode', (done) => {
+      studyManager.maybeHandleRemoteControlCommand('start abbrev u1')
+          .then(() => {
+            setTimeout(() => {
+              expect(studyUserTurns.length).toEqual(1);
+              expect(studyUserTurns[0].instruction)
+                  .toEqual('Enter your reply in abbreviation.');
+              expect(studyUserTurns[0].text).toEqual('');
+              expect(studyUserTurns[0].isComplete).toBeFalse();
+
+              expect(HttpEventLogger.isFullLogging()).toBeTrue();
+              expect(studyManager.getDialogTurnIndex()).toEqual(1);
+              expect(studyManager.waitingForPartnerTurnAfter).toBeNull();
+
+              studyManager.incrementTurn('I like the weather today');
+              expect(studyManager.getDialogTurnIndex()).toEqual(2);
+              expect(studyManager.waitingForPartnerTurnAfter)
+                  .toBeGreaterThan(0);
+              const prevTurns = studyManager.getPreviousDialogTurns();
+              expect(prevTurns!.length).toEqual(2);
+              expect(prevTurns![0].text)
+                  .toEqual('How do you like the weather today?');
+              expect(prevTurns![0].partnerId).toBe('Partner');
+              expect(prevTurns![1].text).toEqual('I like the weather today');
+              expect(prevTurns![1].partnerId).toBeNull();
+              done();
+            }, 20);
+          });
+    });
+
+    for (const role of ['', 'a', 'b']) {
+      it('unscripted dialog: user role a is overridden: ' + role, (done) => {
+        studyManager.maybeHandleRemoteControlCommand(`start abbrev u1 ${role}`)
+            .then(() => {
+              expect(studyManager.getDialogId()).toEqual('u1');
+              expect(studyManager.getDialogTurnIndex()).toEqual(1);
+              expect(studyManager.isUserTurn).toBeTrue();
+              expect(studyManager.waitingForPartnerTurnAfter).toBeNull();
+              done();
+            });
+      });
+    }
+
+    it('unscripted dialog: provide manual partner turn', (done) => {
+      studyManager.maybeHandleRemoteControlCommand('start abbrev u1')
+          .then(() => {
+            setTimeout(() => {
+              studyManager.incrementTurn('I like the weather today');
+
+              setTimeout(() => {
+                studyManager.incrementTurn('What is your favorite season?');
+
+                expect(studyManager.getDialogTurnIndex()).toEqual(3);
+                expect(studyManager.waitingForPartnerTurnAfter).toBeNull();
+                const prevTurns = studyManager.getPreviousDialogTurns();
+                expect(prevTurns!.length).toEqual(3);
+                expect(prevTurns![0].text)
+                    .toEqual('How do you like the weather today?');
+                expect(prevTurns![0].partnerId).toBe('Partner');
+                expect(prevTurns![1].text).toEqual('I like the weather today');
+                expect(prevTurns![1].partnerId).toBeNull();
+                expect(prevTurns![2].text)
+                    .toEqual('What is your favorite season?');
+                expect(prevTurns![2].partnerId).toBe('Partner');
+                done();
+              }, 10);
+            }, 10);
+          });
+    });
+
+    for (const [command, isAbbreviation, expectedInstruction] of [
+             ['Start abbrev dummy1 B', true, 'Enter in abbreviation:'],
+             ['Start full dummy1 B', false, 'Enter in full:'],
+    ] as Array<[string, boolean, string]>) {
       it('start from partner turn: auto increments initially', done => {
         studyManager.maybeHandleRemoteControlCommand(command).then(() => {
           expect(studyManager.getDialogId()).toEqual('dummy1');
@@ -186,6 +304,7 @@ describe('Study Manager', () => {
 
           setTimeout(() => {
             expect(studyUserTurns).toEqual([{
+              instruction: expectedInstruction,
               text: 'What good movies are on right now',
               isAbbreviation: isAbbreviation,
               isComplete: false,

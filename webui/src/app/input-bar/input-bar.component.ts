@@ -751,6 +751,11 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     return this._contextualPhraseTags.slice();
   }
 
+  get isStudyOn(): boolean {
+    // TODO(cais): Add unit tests.
+    return this.studyManager.isStudyOn;
+  }
+
   get studyUserTurnText(): string|null {
     return this._studyUserTurnText;
   }

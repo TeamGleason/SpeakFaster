@@ -302,6 +302,7 @@
 
       <button
           #clickableButton
+          *ngIf="!isStudyOn"
           class="action-button inject-button"
           (click)="onInjectButtonClicked($event)">
         <img class="button-image" src="/assets/images/inject.png" alt="inject phrase" />
@@ -309,6 +310,7 @@
 
       <button
           #clickableButton
+          *ngIf="!isStudyOn"
           class="action-button favorite-button">
         <app-favorite-button-component
             [userId]="userId"

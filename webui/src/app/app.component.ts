@@ -10,6 +10,7 @@ import {ExternalEventsComponent} from './external/external-events.component';
 import {InputBarControlEvent} from './input-bar/input-bar.component';
 import {LoadLexiconRequest} from './lexicon/lexicon.component';
 import {configureService, FillMaskRequest, GetUserIdResponse, SpeakFasterService} from './speakfaster-service';
+import {StudyManager} from './study/study-manager';
 import {InputAbbreviationChangedEvent} from './types/abbreviation';
 import {AppState, getAppState, getPreviousNonMinimizedAppState, setAppState} from './types/app-state';
 import {AddContextualPhraseRequest} from './types/contextual_phrase';
@@ -85,7 +86,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   constructor(
       private route: ActivatedRoute,
       public speakFasterService: SpeakFasterService,
-      public eventLogger: HttpEventLogger) {
+      public studyManager: StudyManager, public eventLogger: HttpEventLogger) {
     this.eventLogger.setUserId(this._userId);
     console.log('Event logger session ID:', this.eventLogger.sessionId);
   }
@@ -409,11 +410,16 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   get nonMinimizedStatesAppStates(): AppState[] {
-    return [
-      AppState.QUICK_PHRASES_PARTNERS,
-      AppState.QUICK_PHRASES_FAVORITE,
-      AppState.ABBREVIATION_EXPANSION,
-    ];
+    // TODO(cais): Add unit tests.
+    if (this.studyManager.isStudyOn) {
+      return [AppState.ABBREVIATION_EXPANSION];
+    } else {
+      return [
+        AppState.QUICK_PHRASES_PARTNERS,
+        AppState.QUICK_PHRASES_FAVORITE,
+        AppState.ABBREVIATION_EXPANSION,
+      ];
+    }
   }
 
   getNonMinimizedStateImgSrc(appState: AppState, isActive: boolean): string {

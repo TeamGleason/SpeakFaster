@@ -403,6 +403,10 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
     return strings;
   }
 
+  get isStudyOn(): boolean {
+    return this.studyManager.isStudyOn;
+  }
+
   /**
    * Heuristics about the num_samples to use when requesting AE from server.
    */

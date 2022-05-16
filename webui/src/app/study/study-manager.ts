@@ -84,6 +84,7 @@ const STUDY_DIALOG_ENDPOINT = '/study_dialogs';
 })
 export class StudyManager {
   private dialogs: {[dialogId: string]: Dialog} = {};
+  private _isStudyOn: boolean = false;
   private turnTimestamps: Date[] = [];
   // The ID of the current ongoing dialog (if any). `null` means there is no
   // ongoing dialog.
@@ -121,7 +122,7 @@ export class StudyManager {
     text = text.trim().toLocaleLowerCase();
     let isHandledAsCommand = true;
     if (text === COMMAND_STUDY_ON) {
-      HttpEventLogger.setFullLogging(true);
+      this.switchToStudyOnMode();
     } else if (text === COMMAND_STUDY_OFF) {
       HttpEventLogger.setFullLogging(false);
       this.reset();
@@ -143,7 +144,7 @@ export class StudyManager {
         this.userRole = 'a';
         setTimeout(() => this.emitStudyUserTurn(), getUserTurnDelayMillis());
       }
-      HttpEventLogger.setFullLogging(true);
+      this.switchToStudyOnMode();
     } else if (text === DIALOG_STOP) {
       this.reset();
     } else {
@@ -155,6 +156,11 @@ export class StudyManager {
       });
     }
     return isHandledAsCommand;
+  }
+
+  private switchToStudyOnMode() {
+    HttpEventLogger.setFullLogging(true);
+    this._isStudyOn = true;
   }
 
   /** Emits a user's turn to the subject.  */
@@ -180,6 +186,7 @@ export class StudyManager {
   }
 
   private reset(error?: string) {
+    this._isStudyOn = false;
     this.dialogId = null;
     this.userRole = null;
     this.turnIndex = null;
@@ -247,6 +254,11 @@ export class StudyManager {
     this.isAbbreviation = isAbbreviation;
     this.turnIndex = 0;
     this.turnTimestamps.splice(0);
+  }
+
+  public get isStudyOn(): boolean {
+    // TODO(cais): Add unit test.
+    return this._isStudyOn;
   }
 
   /**

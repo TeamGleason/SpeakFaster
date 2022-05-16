@@ -2,8 +2,8 @@
 import {AfterViewInit, ChangeDetectorRef, Component, ElementRef, EventEmitter, Input, OnDestroy, OnInit, Output, QueryList, ViewChild, ViewChildren} from '@angular/core';
 import {Subject, Subscription} from 'rxjs';
 import {debounceTime} from 'rxjs/operators';
-import {injectKeys, injectTextAsKeys, requestSoftKeyboardReset, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
-import {endsWithSentenceEndPunctuation, isAlphanumericChar, removePunctuation} from 'src/utils/text-utils';
+import {injectTextAsKeys, requestSoftKeyboardReset, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
+import {removePunctuation} from 'src/utils/text-utils';
 import {createUuid} from 'src/utils/uuid';
 
 import {getPhraseStats, HttpEventLogger} from '../event-logger/event-logger-impl';
@@ -140,9 +140,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   state = State.ENTERING_BASE_TEXT;
   inputString: string = '';
   private static savedInputString: string = '';
-  private latestReconstructedString = '';      // TODO(cais): Remove?
-  private baseReconstructedText: string = '';  // TODO(cais): Remove?
-  private cutText = '';                        // TODO(cais): Remove?
+  private cutText = '';
   private lastNonEmptyPhrase: string|null = null;
 
   private textEntryEndSubjectSubscription?: Subscription;
@@ -163,7 +161,6 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     this.textEntryEndSubjectSubscription = this.textEntryEndSubject.subscribe(
         (textInjection: TextEntryEndEvent) => {
           if (textInjection.isFinal) {
-            this.latestReconstructedString = '';
             this.resetState();
           } else {
             this.updateInputString(textInjection.text);
@@ -180,7 +177,6 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
           if (event.hide !== undefined) {
             this._isHidden = event.hide;
           } else if (event.clearAll) {
-            this.baseReconstructedText = this.latestReconstructedString;
             this.resetState(/* cleanText= */ true, /* resetBase= */ true);
           } else if (event.appendText !== undefined) {
             ExternalEventsComponent.appendString(
@@ -228,8 +224,6 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
               this.cutText =
                   this._chips.map(chip => chip.text.trim()).join(' ') + ' ';
               this.inputString = this.cutText;
-              this.latestReconstructedString = '';
-              this.baseReconstructedText = '';
             }
           } else if (event.refocus) {
             if (this.inputTextArea) {
@@ -497,7 +491,6 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
 
   onChipClicked(index: number) {
     this._focusChipIndex = index;
-    this.baseReconstructedText = this.latestReconstructedString;
     if (this.state === State.CHOOSING_LETTER_CHIP ||
         this.state === State.FOCUSED_ON_LETTER_CHIP) {
       this.eventLogger.logAbbreviationExpansionSpellingChipSelection(
@@ -610,9 +603,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
 
   get hasOnlyOneTextPredictionChip(): boolean {
     return this._chips !== null && this._chips.length === 1 &&
-        this._chips[0].isTextPrediction === true &&
-        (this.latestReconstructedString.length ===
-         this.baseReconstructedText.length);
+        this._chips[0].isTextPrediction === true;
   }
 
   get hasNotification(): boolean {
@@ -658,7 +649,6 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!resetBase) {
       return;
     }
-    this.baseReconstructedText = '';
     this.cutText = '';
     this.focusOnInputTextArea();
     resetReconStates();

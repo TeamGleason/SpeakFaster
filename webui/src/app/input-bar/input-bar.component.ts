@@ -218,7 +218,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
                 this.ensureChipTypedTextCreated();
                 this._chipTypedText![i] = chip.text;
               }
-            });  // TODO(cais): Add unit test.
+            });
             if (this._chips.length > 1) {
               this.state = State.CHOOSING_WORD_CHIP;
               this.eventLogger.logAbbreviationExpansionStartWordRefinementMode(
@@ -322,7 +322,6 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private scaleInputTextFontSize(): void {
     // TODO(cais): Limit on over all text length.
-    // TODO(cais): Add unit tests.
     if (!this.inputTextArea) {
       return;
     }
@@ -351,7 +350,6 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
       element.style.fontSize = `${INPUT_TEXT_BASE_FONT_SIZE}px`;
       element.style.lineHeight = `${INPUT_TEXT_BASE_FONT_SIZE}px`;
     }
-    // TODO(cais): Add unit test.
     updateButtonBoxesForElements(this.instanceId, this.buttons);
   }
 
@@ -564,7 +562,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
         this.state === State.CHOOSING_LETTER_CHIP ||
         this.state === State.FOCUSED_ON_LETTER_CHIP) {
       this.state = State.ENTERING_BASE_TEXT;
-      this.restoreInputTextAreaState();  // TODO(cais): Add unit test.
+      this.restoreInputTextAreaState();
       updateButtonBoxesForElements(this.instanceId, this.buttons);
     }
   }

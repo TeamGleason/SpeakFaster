@@ -117,6 +117,22 @@ describe('InputBarComponent', () => {
     expect(fixture.debugElement.query(By.css('.abort-button'))).toBeNull();
   });
 
+  for (const [stringLength, expectedFontSizePx] of [
+           [20, 30], [100, 18.2], [400, 15]]) {
+    it(`entering long text reduces font size: length=${stringLength}, ` +
+           `fontSize=${expectedFontSizePx}`,
+       () => {
+         const message = 'a'.repeat(stringLength);
+         enterKeysIntoComponent(message);
+         fixture.detectChanges();
+
+         const inputText =
+             fixture.debugElement.query(By.css('.base-text-area'));
+         expect(inputText.nativeElement.value).toEqual(message);
+         expect(inputText.styles.fontSize).toEqual(`${expectedFontSizePx}px`);
+       });
+  }
+
   function enterKeysIntoComponent(text: string) {
     const inputText = fixture.debugElement.query(By.css('.base-text-area'));
     for (let i = 1; i <= text.length; ++i) {
@@ -420,6 +436,8 @@ describe('InputBarComponent', () => {
     fixture.detectChanges();
 
     expect(fixture.componentInstance.state).toEqual(State.ENTERING_BASE_TEXT);
+    const input = fixture.debugElement.query(By.css('.base-text-area'));
+    expect(input.nativeElement.value).toEqual('abc');
     const chips =
         fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'));
     expect(chips.length).toEqual(0);

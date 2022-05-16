@@ -99,7 +99,7 @@ export class StudyManager {
   private turnIndex: number|null = null;
   private actualTurnTexts: {[turnIndex: number]: string} = {};
   private isFullyScripted: boolean = true;
-  // Waitingfor partner turns after the epoch millis timestamp.
+  // Waiting for partner turns after the epoch millis timestamp.
   private _waitingForPartnerTurnAfter: number|null = null;
 
   // A subject for the turns that the user should enter.
@@ -318,7 +318,7 @@ export class StudyManager {
   /**
    * Increments the turn index in the ongoing dialog (if any).
    * @param turnText: The actual entered turn text. Optional. If not provided,
-   *   will use the turns from the script.
+   *   will use the turn from the script.
    * @returns A object with the following fields:
    *   - turnIndex: The 0-based turn index after the turn increment.
    *   - isComplete: A boolean flag for whether the dialog is complete after the

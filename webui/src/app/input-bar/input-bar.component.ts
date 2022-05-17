@@ -252,6 +252,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
           this._studyUserTurnText = turn.text;
           this._studyDialogEnded = turn.isComplete;
           this._studyDialogError = turn.error;
+          setTimeout(() => {this.focusOnInputTextArea()}, 10);
         });
   }
 

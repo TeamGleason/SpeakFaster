@@ -12,6 +12,7 @@ import {InputBarControlEvent} from './input-bar/input-bar.component';
 import {MetricsModule} from './metrics/metrics.module';
 import {MiniBarModule} from './mini-bar/mini-bar.module';
 import {clearSettings} from './settings/settings';
+import {StudyManager} from './study/study-manager';
 import {TestListener} from './test-utils/test-cefsharp-listener';
 import {AppState, resetStatesForTest, setAppState} from './types/app-state';
 
@@ -19,10 +20,12 @@ describe('AppComponent', () => {
   let fixture: ComponentFixture<AppComponent>;
   let testListener: TestListener;
   let inputBarControlEvents: InputBarControlEvent[];
+  let studyManager: StudyManager;
 
   beforeEach(async () => {
     testListener = new TestListener();
     (window as any)[cefSharp.BOUND_LISTENER_NAME] = testListener;
+    studyManager = new StudyManager(null, null);
     inputBarControlEvents = [];
     await TestBed
         .configureTestingModule({
@@ -40,6 +43,7 @@ describe('AppComponent', () => {
         })
         .compileComponents();
     fixture = TestBed.createComponent(AppComponent);
+    fixture.componentInstance.studyManager = studyManager;
     fixture.componentInstance.inputBarControlSubject.subscribe(event => {
       inputBarControlEvents.push(event);
     });
@@ -307,5 +311,21 @@ describe('AppComponent', () => {
     fixture.componentInstance.onAppStateDeminimized();
 
     expect(inputBarControlEvents.length).toEqual(1);
+  });
+
+  it('nonMinimizedStatesAppStates includes correct items: study off', () => {
+    expect(fixture.componentInstance.nonMinimizedStatesAppStates).toEqual([
+      AppState.QUICK_PHRASES_PARTNERS,
+      AppState.QUICK_PHRASES_FAVORITE,
+      AppState.ABBREVIATION_EXPANSION,
+    ]);
+  });
+
+  it('nonMinimizedStatesAppStates includes fewer items: study on', () => {
+    studyManager.maybeHandleRemoteControlCommand('study on');
+
+    expect(fixture.componentInstance.nonMinimizedStatesAppStates).toEqual([
+      AppState.ABBREVIATION_EXPANSION,
+    ]);
   });
 });

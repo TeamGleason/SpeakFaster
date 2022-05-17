@@ -252,6 +252,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
           this._studyUserTurnText = turn.text;
           this._studyDialogEnded = turn.isComplete;
           this._studyDialogError = turn.error;
+          setTimeout(() => {this.focusOnInputTextArea()}, 10);
         });
   }
 
@@ -749,6 +750,10 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
 
   get contextualPhraseTags(): string[] {
     return this._contextualPhraseTags.slice();
+  }
+
+  get isStudyOn(): boolean {
+    return this.studyManager.isStudyOn;
   }
 
   get studyUserTurnText(): string|null {

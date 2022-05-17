@@ -50,11 +50,16 @@ describe('Study Manager', () => {
       studyUserTurnsSubscription.unsubscribe();
     });
 
+    it('isStudyOn is initially false', () => {
+      expect(studyManager.isStudyOn).toBeFalse();
+    });
+
     it('sets logging mode to full for command study on', async () => {
       const handled =
           await studyManager.maybeHandleRemoteControlCommand('Study on');
 
       expect(handled).toBeTrue();
+      expect(studyManager.isStudyOn).toBeTrue();
       expect(HttpEventLogger.isFullLogging()).toBeTrue();
     });
 
@@ -64,6 +69,7 @@ describe('Study Manager', () => {
           await studyManager.maybeHandleRemoteControlCommand('Study off ');
 
       expect(handled).toBeTrue();
+      expect(studyManager.isStudyOn).toBeFalse();
       expect(HttpEventLogger.isFullLogging()).toBeFalse();
     });
 
@@ -94,6 +100,7 @@ describe('Study Manager', () => {
       await studyManager.maybeHandleRemoteControlCommand('start abbrev dummy1');
       const incrementResult = studyManager.incrementTurn();
 
+      expect(studyManager.isStudyOn).toBeTrue();
       expect(incrementResult.turnIndex).toEqual(1);
       expect(incrementResult.isComplete).toBeFalse();
       expect(studyManager.getDialogId()).toBe('dummy1');
@@ -115,6 +122,7 @@ describe('Study Manager', () => {
             studyManager.incrementTurn();
 
             setTimeout(() => {
+              expect(studyManager.isStudyOn).toBeTrue();
               expect(studyManager.getDialogId()).toBe('dummy1');
               expect(studyManager.waitingForPartnerTurnAfter).toBeNull();
               expect(studyManager.getDialogTurnIndex()).toEqual(2);
@@ -150,6 +158,7 @@ describe('Study Manager', () => {
             studyManager.incrementTurn();
             setTimeout(() => {
               const incrementResult = studyManager.incrementTurn();
+              expect(studyManager.isStudyOn).toBeTrue();
               expect(incrementResult.turnIndex).toEqual(3);
               expect(incrementResult.isComplete).toBeFalse();
               expect(studyManager.getDialogId()).toBe('dummy1');
@@ -180,6 +189,7 @@ describe('Study Manager', () => {
           .then(() => {
             studyManager.incrementTurn('unexpected question');
             setTimeout(() => {
+              expect(studyManager.isStudyOn).toBeTrue();
               expect(studyManager.getDialogTurnIndex()).toEqual(2);
               expect(studyManager.waitingForPartnerTurnAfter).toBeNull();
               const prevTurns = studyManager.getPreviousDialogTurns();
@@ -198,6 +208,7 @@ describe('Study Manager', () => {
       studyManager.maybeHandleRemoteControlCommand('start abbrev dummy1 b')
           .then(() => {
             setTimeout(() => {
+              expect(studyManager.isStudyOn).toBeTrue();
               expect(studyManager.getDialogTurnIndex()).toEqual(1);
               studyManager.incrementTurn('random reply');
 
@@ -219,6 +230,7 @@ describe('Study Manager', () => {
       studyManager.maybeHandleRemoteControlCommand('start abbrev u1')
           .then(() => {
             setTimeout(() => {
+              expect(studyManager.isStudyOn).toBeTrue();
               expect(studyUserTurns.length).toEqual(1);
               expect(studyUserTurns[0].instruction)
                   .toEqual('Enter your reply in abbreviation.');

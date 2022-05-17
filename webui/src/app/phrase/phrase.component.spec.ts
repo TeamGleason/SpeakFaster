@@ -49,6 +49,7 @@ describe('PhraseComponent', () => {
         })
         .compileComponents();
     fixture = TestBed.createComponent(PhraseComponent);
+    fixture.componentInstance.scaleFontSize = true;
     fixture.componentInstance.phraseText = 'my phrase';
     fixture.componentInstance.phraseId = 'dummy_phrase_id';
     fixture.componentInstance.phraseIndex = 2;
@@ -227,4 +228,51 @@ describe('PhraseComponent', () => {
 
     expect(fixture.debugElement.query(By.css('.edit-button'))).toBeNull();
   });
+
+  it('hides inject button if flag is false', () => {
+    fixture.componentInstance.showInjectButton = false;
+    fixture.componentInstance.showFavoriteButton = true;
+    fixture.componentInstance.phraseText = 'hi';
+    fixture.componentInstance.phraseIndex = 0;
+    fixture.componentInstance.isEditing = false;
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.inject-button')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.speak-button')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.favorite-button'))
+        .not.toBeNull();
+  });
+
+  it('Uses larger font size only speak button is shown', async () => {
+    const text = 'hi';
+    fixture.componentInstance.showInjectButton = false;
+    fixture.componentInstance.showFavoriteButton = false;
+    fixture.componentInstance.phraseDisplayText = text;
+    fixture.componentInstance.phraseText = text;
+    fixture.componentInstance.phraseIndex = 0;
+    fixture.componentInstance.isEditing = false;
+    fixture.detectChanges();
+    fixture.componentInstance.ngAfterViewInit();
+    await fixture.whenStable();
+
+    const phrase = fixture.debugElement.query(By.css('.phrase'));
+    expect(phrase.nativeElement.style.fontSize).toEqual('28px');
+  });
+
+  it('Use larger minimial font size when only speak button is shown',
+     async () => {
+       const text = 'hi '.repeat(100);
+       fixture.componentInstance.showInjectButton = false;
+       fixture.componentInstance.showFavoriteButton = false;
+       fixture.componentInstance.phraseDisplayText = text;
+       fixture.componentInstance.phraseText = text;
+       fixture.componentInstance.phraseIndex = 0;
+       fixture.componentInstance.isEditing = false;
+       fixture.detectChanges();
+       fixture.componentInstance.ngAfterViewInit();
+       await fixture.whenStable();
+
+       const phrase = fixture.debugElement.query(By.css('.phrase'));
+       expect(phrase.nativeElement.style.fontSize).toEqual('20px');
+     });
 });

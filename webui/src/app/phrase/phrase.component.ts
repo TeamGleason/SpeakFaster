@@ -4,6 +4,7 @@ import {updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/
 import {createUuid} from 'src/utils/uuid';
 
 import {SpeakFasterService} from '../speakfaster-service';
+import {StudyManager} from '../study/study-manager';
 
 export enum State {
   READY = 'READY',
@@ -18,9 +19,11 @@ export class PhraseComponent implements AfterViewInit, OnDestroy {
   private static readonly _NAME = 'PhraseComponent';
 
   private readonly instanceId = PhraseComponent._NAME + '_' + createUuid();
-  private static readonly BASE_FONT_SIZE_PX = 22;
+  private static readonly BASE_FONT_SIZE_PX_SMALL = 22;
+  private static readonly BASE_FONT_SIZE_PX_LARGE = 28;
   private static readonly FONT_SCALING_LENGTH_THRESHOLD = 32;
-  private static readonly MIN_FONT_SIZE_PX = 16;
+  private static readonly MIN_FONT_SIZE_PX_SMALL = 16;
+  private static readonly MIN_FONT_SIZE_PX_LARGE = 20;
   @Input() userId!: string;
   @Input() phraseText!: string;
   @Input() phraseDisplayText?: string;
@@ -28,6 +31,7 @@ export class PhraseComponent implements AfterViewInit, OnDestroy {
   @Input() phraseId?: string;
   @Input() tags?: string[];
   @Input() color: string = '#093F3A';
+  @Input() showInjectButton: boolean = true;
   @Input() showFavoriteButton: boolean = false;
   @Input() showExpandButton: boolean = false;
   @Input() scaleFontSize = false;
@@ -64,23 +68,7 @@ export class PhraseComponent implements AfterViewInit, OnDestroy {
   }
 
   ngAfterViewInit() {
-    let fontSizePx = PhraseComponent.BASE_FONT_SIZE_PX;
-    const displayTextLength = this.getDisplayedText().length;
-    // TODO(cais): Add unit test.
-    if (this.scaleFontSize &&
-        displayTextLength > PhraseComponent.FONT_SCALING_LENGTH_THRESHOLD) {
-      fontSizePx /= Math.pow(
-          (displayTextLength / PhraseComponent.FONT_SCALING_LENGTH_THRESHOLD),
-          1.1);
-      if (fontSizePx < PhraseComponent.MIN_FONT_SIZE_PX) {
-        fontSizePx = PhraseComponent.MIN_FONT_SIZE_PX;
-      }
-      this.phraseElement.nativeElement.style.fontSize =
-          `${fontSizePx.toFixed(1)}px`;
-      const lineHeightPx = fontSizePx + 2;
-      this.phraseElement.nativeElement.style.lineHeight =
-          `${lineHeightPx.toFixed(1)}px`;
-    }
+    this.adjustFontSize();
     // TODO(cais): Add unit test.
     const clicakbleAreas = this.isTextClickable ? this.clickableButtonsAndText :
                                                   this.clickableButtons;
@@ -88,6 +76,38 @@ export class PhraseComponent implements AfterViewInit, OnDestroy {
     clicakbleAreas.changes.subscribe((queryList: QueryList<ElementRef>) => {
       updateButtonBoxesForElements(this.instanceId, queryList);
     });
+  }
+
+  private adjustFontSize() {
+    let fontSizePx = this.baseFontSizePx;
+    const displayTextLength = this.getDisplayedText().length;
+    if (this.scaleFontSize) {
+      if (displayTextLength > PhraseComponent.FONT_SCALING_LENGTH_THRESHOLD) {
+        fontSizePx /= Math.pow(
+            (displayTextLength / PhraseComponent.FONT_SCALING_LENGTH_THRESHOLD),
+            1.1);
+      }
+      if (fontSizePx < this.minFontSizePx) {
+        fontSizePx = this.minFontSizePx;
+      }
+      this.phraseElement.nativeElement.style.fontSize =
+          `${fontSizePx.toFixed(1)}px`;
+      const lineHeightPx = fontSizePx + 2;
+      this.phraseElement.nativeElement.style.lineHeight =
+          `${lineHeightPx.toFixed(1)}px`;
+    }
+  }
+
+  private get baseFontSizePx() {
+    return (!this.showInjectButton && !this.showFavoriteButton) ?
+        PhraseComponent.BASE_FONT_SIZE_PX_LARGE :
+        PhraseComponent.BASE_FONT_SIZE_PX_SMALL;
+  }
+
+  private get minFontSizePx() {
+    return (!this.showInjectButton && !this.showFavoriteButton) ?
+        PhraseComponent.MIN_FONT_SIZE_PX_LARGE :
+        PhraseComponent.MIN_FONT_SIZE_PX_SMALL;
   }
 
   ngOnDestroy() {

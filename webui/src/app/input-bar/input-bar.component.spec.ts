@@ -30,6 +30,7 @@ class SpeakFasterServiceForTest {
 
 describe('InputBarComponent', () => {
   let testListener: TestListener;
+  let studyManager: StudyManager;
   let textEntryEndSubject: Subject<TextEntryEndEvent>;
   let inputBarControlSubject: Subject<InputBarControlEvent>;
   let abbreviationExpansionTriggers: Subject<InputAbbreviationChangedEvent>;
@@ -72,7 +73,7 @@ describe('InputBarComponent', () => {
       fillMaskRequests.push(request);
     });
 
-    const studyManager = new StudyManager(null, null);
+    studyManager = new StudyManager(null, null);
     studyManager.studyUserTurns = studyUserTurnsSubject;
     await TestBed
         .configureTestingModule({
@@ -1093,6 +1094,34 @@ describe('InputBarComponent', () => {
            fixture.debugElement.query(By.css('.base-text-area'));
        expect(focused!.nativeElement).toEqual(inputText.nativeElement);
      }));
+
+  it('isStudyOn is initially false', () => {
+    expect(fixture.componentInstance.isStudyOn).toBeFalse();
+  });
+
+  it('when study is on, hides inject and favorite buttons', () => {
+    studyManager.maybeHandleRemoteControlCommand('study on');
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.isStudyOn).toBeTrue();
+    expect(fixture.debugElement.query(By.css('.speak-button'))).not.toBeNull();
+    expect(fixture.debugElement.query(By.css('.inject-button'))).toBeNull();
+    expect(fixture.debugElement.query(By.css('app-favorite-button-component')))
+        .toBeNull();
+  });
+
+  it('when study if back off, shows inject and favorite buttons', () => {
+    studyManager.maybeHandleRemoteControlCommand('study on');
+    fixture.detectChanges();
+    studyManager.maybeHandleRemoteControlCommand('study off');
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.isStudyOn).toBeFalse();
+    expect(fixture.debugElement.query(By.css('.speak-button'))).not.toBeNull();
+    expect(fixture.debugElement.query(By.css('.inject-button'))).not.toBeNull();
+    expect(fixture.debugElement.query(By.css('app-favorite-button-component')))
+        .not.toBeNull();
+  });
 
   // TODO(cais): Test spelling valid word triggers AE, with debounce.
 });

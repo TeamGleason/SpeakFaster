@@ -31,7 +31,7 @@ export class PhraseComponent implements AfterViewInit, OnDestroy {
   @Input() phraseId?: string;
   @Input() tags?: string[];
   @Input() color: string = '#093F3A';
-  @Input() showInjectButton: boolean = true;  // TODO(cais): Add unit test.
+  @Input() showInjectButton: boolean = true;
   @Input() showFavoriteButton: boolean = false;
   @Input() showExpandButton: boolean = false;
   @Input() scaleFontSize = false;
@@ -81,12 +81,12 @@ export class PhraseComponent implements AfterViewInit, OnDestroy {
   private adjustFontSize() {
     let fontSizePx = this.baseFontSizePx;
     const displayTextLength = this.getDisplayedText().length;
-    // TODO(cais): Add unit test. DO NOT SUBMIT.
-    if (this.scaleFontSize &&
-        displayTextLength > PhraseComponent.FONT_SCALING_LENGTH_THRESHOLD) {
-      fontSizePx /= Math.pow(
-          (displayTextLength / PhraseComponent.FONT_SCALING_LENGTH_THRESHOLD),
-          1.1);
+    if (this.scaleFontSize) {
+      if (displayTextLength > PhraseComponent.FONT_SCALING_LENGTH_THRESHOLD) {
+        fontSizePx /= Math.pow(
+            (displayTextLength / PhraseComponent.FONT_SCALING_LENGTH_THRESHOLD),
+            1.1);
+      }
       if (fontSizePx < this.minFontSizePx) {
         fontSizePx = this.minFontSizePx;
       }

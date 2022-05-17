@@ -360,13 +360,16 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
                   getAbbreviationExpansionResponseStats(data.exactMatches));
               this.responseError = null;
               this.abbreviationOptions.splice(0);
-              if (data.exactMatches != null && !this.isStudyOn) {
+              if (data.exactMatches != null) {
                 // TODO(cais): Add unit test for not replacing words with names
                 // when study is on.
                 data.exactMatches.forEach(exactMatch => {
-                  const replaced =
-                      LexiconComponent.replacePersonNamesWithKnownValues(
-                          exactMatch);
+                  let replaced: string = exactMatch;
+                  if (!this.isStudyOn) {
+                    replaced =
+                        LexiconComponent.replacePersonNamesWithKnownValues(
+                            exactMatch);
+                  }
                   if (this.abbreviationOptions.indexOf(replaced) === -1) {
                     this.abbreviationOptions.push(replaced);
                   }

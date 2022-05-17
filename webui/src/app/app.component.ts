@@ -410,7 +410,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   get nonMinimizedStatesAppStates(): AppState[] {
-    // TODO(cais): Add unit tests.
     if (this.studyManager.isStudyOn) {
       return [AppState.ABBREVIATION_EXPANSION];
     } else {

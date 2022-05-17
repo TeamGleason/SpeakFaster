@@ -227,4 +227,18 @@ describe('PhraseComponent', () => {
 
     expect(fixture.debugElement.query(By.css('.edit-button'))).toBeNull();
   });
+
+  it('hides inject button if flag is false', () => {
+    fixture.componentInstance.showInjectButton = false;
+    fixture.componentInstance.showFavoriteButton = true;
+    fixture.componentInstance.phraseText = 'hi';
+    fixture.componentInstance.phraseIndex = 0;
+    fixture.componentInstance.isEditing = false;
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.inject-button')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.speak-button')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.favorite-button'))
+        .not.toBeNull();
+  });
 });

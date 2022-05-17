@@ -257,7 +257,6 @@ export class StudyManager {
   }
 
   public get isStudyOn(): boolean {
-    // TODO(cais): Add unit test.
     return this._isStudyOn;
   }
 

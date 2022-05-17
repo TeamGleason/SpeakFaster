@@ -323,4 +323,21 @@ describe('AbbreviationComponent', () => {
 
     expect(inputBarControlEvents.length).toEqual(1);
   });
+
+  it('isStudyOn is initially false', () => {
+    expect(fixture.componentInstance.isStudyOn).toBeFalse();
+  });
+
+  it('isStudyOn is true when studyManager receives command', () => {
+    studyManager.maybeHandleRemoteControlCommand('study on');
+
+    expect(fixture.componentInstance.isStudyOn).toBeTrue();
+  });
+
+  it('isStudyOn goes back to false when study is ended', () => {
+    studyManager.maybeHandleRemoteControlCommand('study on');
+    studyManager.maybeHandleRemoteControlCommand('study off');
+
+    expect(fixture.componentInstance.isStudyOn).toBeFalse();
+  });
 });

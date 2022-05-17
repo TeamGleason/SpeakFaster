@@ -752,7 +752,6 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   get isStudyOn(): boolean {
-    // TODO(cais): Add unit tests.
     return this.studyManager.isStudyOn;
   }
 

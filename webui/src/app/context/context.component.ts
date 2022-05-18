@@ -287,7 +287,6 @@ export class ContextComponent implements OnInit, OnDestroy, AfterViewInit {
             error => {
               this.cleanUpContextSignals();
               this.contextRetrievalError = 'Context retrieval error';
-              // this.populateConversationTurnWithDefault();
             });
   }
 

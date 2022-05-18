@@ -160,7 +160,6 @@ describe('ContextComponent', () => {
           expect(emittedSelectedTurns[0].length).toEqual(numContextTurns);
           expect(emittedSelectedTurns[0].map(turn => turn.speechContent))
               .toEqual(expectedContextTurns);
-          (studyManager as any).reset();
         });
   }
 });

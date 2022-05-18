@@ -11,7 +11,7 @@ import {InputBarChipComponent} from '../input-bar-chip/input-bar-chip.component'
 import {InputBarChipModule} from '../input-bar-chip/input-bar-chip.module';
 import {LoadLexiconRequest} from '../lexicon/lexicon.component';
 import {FillMaskRequest, SpeakFasterService} from '../speakfaster-service';
-import {StudyManager, StudyUserTurn} from '../study/study-manager';
+import {setDelaysForTesting, StudyManager, StudyUserTurn} from '../study/study-manager';
 import {TestListener} from '../test-utils/test-cefsharp-listener';
 import {InputAbbreviationChangedEvent} from '../types/abbreviation';
 import {AddContextualPhraseRequest, AddContextualPhraseResponse} from '../types/contextual_phrase';
@@ -46,6 +46,7 @@ describe('InputBarComponent', () => {
   let fillMaskRequests: FillMaskRequest[];
 
   beforeEach(async () => {
+    setDelaysForTesting(10e3, 50e3);
     testListener = new TestListener();
     (window as any)[cefSharp.BOUND_LISTENER_NAME] = testListener;
     textEntryEndSubject = new Subject();

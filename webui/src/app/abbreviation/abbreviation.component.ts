@@ -422,13 +422,17 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
     if (abbreviationSpec === null) {
       return 128;
     }
-    let maxAbbrevLength = 0;
+    // Total length of the abbreviation part plus the number of
+    let totalAbbrevLength = 0;
+    let totalKeywordCount = 0;
     for (const token of abbreviationSpec.tokens) {
-      if (!token.isKeyword && token.value.length > maxAbbrevLength) {
-        maxAbbrevLength = token.value.length;
+      if (token.isKeyword) {
+        totalKeywordCount
+      } else {
+        totalAbbrevLength += token.value.length;
       }
     }
-    return maxAbbrevLength > 5 ? 256 : 128;
+    return totalAbbrevLength + totalKeywordCount > 5 ? 256 : 128;
   }
 
   get refinementType(): RefinementType {

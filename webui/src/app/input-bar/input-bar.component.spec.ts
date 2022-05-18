@@ -39,6 +39,7 @@ describe('InputBarComponent', () => {
   let studyUserTurnsSubject: Subject<StudyUserTurn>;
   let fixture: ComponentFixture<InputBarComponent>;
   let speakFasterServiceForTest: SpeakFasterServiceForTest;
+  let inputStringChangedValues: string[];
   let textEntryEndEvents: TextEntryEndEvent[];
   let inputAbbreviationChangeEvents: InputAbbreviationChangedEvent[];
   let LoadLexiconRequests: LoadLexiconRequest[];
@@ -97,6 +98,10 @@ describe('InputBarComponent', () => {
         abbreviationExpansionTriggers;
     fixture.componentInstance.loadPrefixedLexiconRequestSubject =
         loadPrefixedLexiconRequestSubject;
+    inputStringChangedValues = [];
+    fixture.componentInstance.inputStringChanged.subscribe((str) => {
+      inputStringChangedValues.push(str);
+    });
     fixture.detectChanges();
   });
 
@@ -423,6 +428,14 @@ describe('InputBarComponent', () => {
          });
     }
   }
+
+  it('entering keys into text box issues inputStringChanged events', () => {
+    enterKeysIntoComponent('hi');
+
+    expect(inputStringChangedValues.length).toEqual(2);
+    expect(inputStringChangedValues[0]).toEqual('h');
+    expect(inputStringChangedValues[1]).toEqual('hi');
+  });
 
   it('clicking abort after clicking spell resets state', () => {
     enterKeysIntoComponent('abc');
@@ -901,6 +914,7 @@ describe('InputBarComponent', () => {
     expect(inputText.nativeElement.value).toEqual('foo bar');
     expect(fixture.componentInstance.inputString).toEqual('foo bar');
     expect(fixture.componentInstance.state).toEqual(State.ENTERING_BASE_TEXT);
+    expect(inputStringChangedValues).toEqual(['foo bar']);
   });
 
   it('onFavoritePhraseAdded with success issues text-entry end event', () => {
@@ -1090,8 +1104,7 @@ describe('InputBarComponent', () => {
            break;
          }
        }
-       const inputText =
-           fixture.debugElement.query(By.css('.base-text-area'));
+       const inputText = fixture.debugElement.query(By.css('.base-text-area'));
        expect(focused!.nativeElement).toEqual(inputText.nativeElement);
      }));
 

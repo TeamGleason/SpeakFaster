@@ -11,7 +11,7 @@ import {InputBarChipComponent} from '../input-bar-chip/input-bar-chip.component'
 import {InputBarChipModule} from '../input-bar-chip/input-bar-chip.module';
 import {LoadLexiconRequest} from '../lexicon/lexicon.component';
 import {FillMaskRequest, SpeakFasterService} from '../speakfaster-service';
-import {StudyManager, StudyUserTurn} from '../study/study-manager';
+import {setDelaysForTesting, StudyManager, StudyUserTurn} from '../study/study-manager';
 import {TestListener} from '../test-utils/test-cefsharp-listener';
 import {InputAbbreviationChangedEvent} from '../types/abbreviation';
 import {AddContextualPhraseRequest, AddContextualPhraseResponse} from '../types/contextual_phrase';
@@ -46,6 +46,7 @@ describe('InputBarComponent', () => {
   let fillMaskRequests: FillMaskRequest[];
 
   beforeEach(async () => {
+    setDelaysForTesting(10e3, 50e3);
     testListener = new TestListener();
     (window as any)[cefSharp.BOUND_LISTENER_NAME] = testListener;
     textEntryEndSubject = new Subject();
@@ -1134,6 +1135,28 @@ describe('InputBarComponent', () => {
     expect(fixture.debugElement.query(By.css('.inject-button'))).not.toBeNull();
     expect(fixture.debugElement.query(By.css('app-favorite-button-component')))
         .not.toBeNull();
+  });
+
+  it('when study is on, does not show cut-button', () => {
+    studyManager.maybeHandleRemoteControlCommand('study on');
+    inputBarControlSubject.next({
+      chips: [
+        {
+          text: 'it',
+        },
+        {
+          text: 'does',
+        },
+      ]
+    });
+    fixture.componentInstance.state = State.CHOOSING_WORD_CHIP;
+    fixture.detectChanges();
+    const chips =
+        fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'));
+    chips[1].nativeElement.click();
+    fixture.detectChanges();
+
+    expect(fixture.debugElement.query(By.css('.cut-button'))).toBeNull();
   });
 
   // TODO(cais): Test spelling valid word triggers AE, with debounce.

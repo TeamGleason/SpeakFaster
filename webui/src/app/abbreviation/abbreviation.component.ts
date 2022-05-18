@@ -5,6 +5,7 @@ import {createUuid} from 'src/utils/uuid';
 
 import {injectKeys, injectTextAsKeys, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from '../../utils/cefsharp';
 import {RefinementResult, RefinementType} from '../abbreviation-refinement/abbreviation-refinement.component';
+import {ContextComponent} from '../context/context.component';
 import {getAbbreviationExpansionRequestStats, getAbbreviationExpansionResponseStats, getPhraseStats, HttpEventLogger} from '../event-logger/event-logger-impl';
 import {VIRTUAL_KEY} from '../external/external-events.component';
 import {InputBarControlEvent} from '../input-bar/input-bar.component';
@@ -397,7 +398,9 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
 
   get usedContextStrings(): string[] {
     // TODO(#49): Limit by token length? Increase length.
-    const LIMIT_TURNS = 2;
+    const LIMIT_TURNS = this.isStudyOn ?
+        ContextComponent.MAX_USED_CONTEXT_COUNT_DURING_STUDY :
+        2;
     const LIMIT_CONTEXT_TURN_LENGTH = 60;
     const strings = [...this.conversationTurns.map(
         turn =>
@@ -419,13 +422,17 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
     if (abbreviationSpec === null) {
       return 128;
     }
-    let maxAbbrevLength = 0;
+    // Total length of the abbreviation part plus the number of
+    let totalAbbrevLength = 0;
+    let totalKeywordCount = 0;
     for (const token of abbreviationSpec.tokens) {
-      if (!token.isKeyword && token.value.length > maxAbbrevLength) {
-        maxAbbrevLength = token.value.length;
+      if (token.isKeyword) {
+        totalKeywordCount++;
+      } else {
+        totalAbbrevLength += token.value.length;
       }
     }
-    return maxAbbrevLength > 5 ? 256 : 128;
+    return totalAbbrevLength + totalKeywordCount > 5 ? 256 : 128;
   }
 
   get refinementType(): RefinementType {

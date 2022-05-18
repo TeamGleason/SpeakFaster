@@ -1136,5 +1136,27 @@ describe('InputBarComponent', () => {
         .not.toBeNull();
   });
 
+  it('when study is on, does not show cut-button', () => {
+    studyManager.maybeHandleRemoteControlCommand('study on');
+    inputBarControlSubject.next({
+      chips: [
+        {
+          text: 'it',
+        },
+        {
+          text: 'does',
+        },
+      ]
+    });
+    fixture.componentInstance.state = State.CHOOSING_WORD_CHIP;
+    fixture.detectChanges();
+    const chips =
+        fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'));
+    chips[1].nativeElement.click();
+    fixture.detectChanges();
+
+    expect(fixture.debugElement.query(By.css('.cut-button'))).toBeNull();
+  });
+
   // TODO(cais): Test spelling valid word triggers AE, with debounce.
 });

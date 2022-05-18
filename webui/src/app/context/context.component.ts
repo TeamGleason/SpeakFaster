@@ -21,7 +21,9 @@ import {DEFAULT_CONTEXT_SIGNALS} from './default-context';
 })
 export class ContextComponent implements OnInit, OnDestroy, AfterViewInit {
   private static readonly _NAME = 'ContextComponent';
-  // TODO(cais): Do not hardcode this user ID.
+  // Maximum number of used, most recent context signals, when study is on.
+  // When study is off, use of context signals follows user focus.
+  public static readonly MAX_USED_CONTEXT_COUNT_DURING_STUDY = 5;
   private static readonly MAX_DISPLAYED_CONTEXT_COUNT = 3;
   private static readonly MAX_FOCUS_CONTEXT_SIGNALS = 3;
 
@@ -31,6 +33,9 @@ export class ContextComponent implements OnInit, OnDestroy, AfterViewInit {
 
   private static readonly CONTEXT_POLLING_INTERVAL_MILLIS = 3 * 1000;
   private contextRetrievalTimerSubscription: Subscription|null = null;
+  // These are all the context signals, including the ones that are utilized
+  // (e.g., for AE) butnot displayed. These are the displayed context signals.
+  readonly allContextSignals: ConversationTurnContextSignal[] = [];
   readonly contextSignals: ConversationTurnContextSignal[] = [];
   contextRetrievalError: string|null = null;
 
@@ -115,6 +120,10 @@ export class ContextComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   onTurnClicked(event: Event, contextId: string) {
+    if (this.studyManager.isStudyOn) {
+      // TODO(cais): Add unit test.
+      return;
+    }
     const i = this.focusContextIds.indexOf(contextId);
     if (i === -1) {
       this.focusContextIds.push(contextId);
@@ -143,6 +152,7 @@ export class ContextComponent implements OnInit, OnDestroy, AfterViewInit {
           isTts: false,
           isHardcoded: true,
         });
+    this.allContextSignals.push(addedContextSignal);
     this.contextSignals.push(addedContextSignal);
     this.focusContextIds.splice(0);
     this.focusContextIds.push(addedContextSignal.contextId!);
@@ -153,6 +163,9 @@ export class ContextComponent implements OnInit, OnDestroy, AfterViewInit {
   // NOTE: document:keydown can prevent the default tab-switching
   // action of Alt + number keys.
   handleKeyboardEvent(event: KeyboardEvent): boolean {
+    if (this.studyManager.isStudyOn) {
+      return false;
+    }
     if (event.ctrlKey && event.key.toLocaleLowerCase() == 'c') {
       // Ctrl C for polling context.
       this.retrieveContext();
@@ -184,6 +197,7 @@ export class ContextComponent implements OnInit, OnDestroy, AfterViewInit {
       return;
     }
     this.cleanUpContextSignals();
+    this.allContextSignals.push(...DEFAULT_CONTEXT_SIGNALS);
     this.contextSignals.push(...DEFAULT_CONTEXT_SIGNALS);
     if (this.contextSignals.length > 0 && this.focusContextIds.length === 0) {
       this.focusContextIds.push(
@@ -206,13 +220,14 @@ export class ContextComponent implements OnInit, OnDestroy, AfterViewInit {
 
   private retrieveContext() {
     if (this.studyManager.isDialogOngoing()) {
+      this.allContextSignals.splice(0);
       this.contextSignals.splice(0);
       for (const {text, partnerId, timestamp} of this.studyManager
                .getPreviousDialogTurns()!) {
         if (isCommand(text)) {
           continue;
         }
-        this.contextSignals.push({
+        const signal: ConversationTurnContextSignal = {
           contextType: 'ConversationTurn',
           conversationTurn: {
             speakerId: partnerId,
@@ -222,14 +237,19 @@ export class ContextComponent implements OnInit, OnDestroy, AfterViewInit {
           userId: this.userId,
           contextId: createUuid(),
           timestamp,
-        });
+        };
+        this.allContextSignals.push(signal);
+        this.contextSignals.push(signal);
       }
       this.limitContextItemsCount();
       this.focusContextIds.splice(0);
       this.focusContextIds.push(
           ...this.contextSignals.map(signal => signal.contextId));
-      this.contextStringsSelected.next(
-          this.contextSignals.map(signal => signal.conversationTurn));
+      const signalsToEmit = this.studyManager.isStudyOn ?
+          this.allContextSignals :
+          this.contextSignals;
+      this.contextStringsSelected.emit(
+          signalsToEmit.map(signal => signal.conversationTurn));
       if (this.studyManager.waitingForPartnerTurnAfter === null) {
         return;
       }
@@ -404,6 +424,12 @@ export class ContextComponent implements OnInit, OnDestroy, AfterViewInit {
       const numExtras = this.contextSignals.length -
           ContextComponent.MAX_DISPLAYED_CONTEXT_COUNT;
       this.contextSignals.splice(0, numExtras);
+    }
+    if (this.allContextSignals.length >
+        ContextComponent.MAX_USED_CONTEXT_COUNT_DURING_STUDY) {
+      const numExtras = this.allContextSignals.length -
+          ContextComponent.MAX_USED_CONTEXT_COUNT_DURING_STUDY;
+      this.allContextSignals.splice(0, numExtras);
     }
   }
 

@@ -427,7 +427,7 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
     let totalKeywordCount = 0;
     for (const token of abbreviationSpec.tokens) {
       if (token.isKeyword) {
-        totalKeywordCount
+        totalKeywordCount++;
       } else {
         totalAbbrevLength += token.value.length;
       }

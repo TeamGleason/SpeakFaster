@@ -298,6 +298,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
 
   onInputTextAreaKeyUp(event: KeyboardEvent) {
     this.inputString = this.inputTextArea.nativeElement.value;
+    this.inputStringChanged.next(this.inputString);
     this.eventLogger.logKeypress(event as KeyboardEvent, this.inputString);
     this.scaleInputTextFontSize();
     if (ABBRVIATION_EXPANSION_TRIGGER_SUFFIX.some(
@@ -321,7 +322,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     }
     const element = this.inputTextArea.nativeElement;
     const textLength = this.inputString.length;
-    const widthPx = Math.min(textLength * 22, 600);
+    const widthPx = Math.min(textLength * 27, 600);
     element.style.width = `${widthPx}px`;
     let i = INPUT_TEXT_FONT_SIZE_SCALING_LENGTH_TICKS.length - 1;
     for (; i >= 0; --i) {

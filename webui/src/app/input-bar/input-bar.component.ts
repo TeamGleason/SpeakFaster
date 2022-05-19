@@ -322,7 +322,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     }
     const element = this.inputTextArea.nativeElement;
     const textLength = this.inputString.length;
-    const widthPx = Math.min(textLength * 27, 600);
+    const widthPx = Math.min(textLength * 25, 600);
     element.style.width = `${widthPx}px`;
     let i = INPUT_TEXT_FONT_SIZE_SCALING_LENGTH_TICKS.length - 1;
     for (; i >= 0; --i) {

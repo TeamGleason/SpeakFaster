@@ -125,7 +125,7 @@ export class StudyManager {
       this.switchToStudyOnMode();
     } else if (text === COMMAND_STUDY_OFF) {
       HttpEventLogger.setFullLogging(false);
-      this.reset();
+      this.reset(/* error= */ undefined, /* endStudy= */ true);
     } else if (
         text.startsWith(START_ABBREV_PREFIX) ||
         text.startsWith(START_FULL_PREFIX)) {
@@ -185,8 +185,10 @@ export class StudyManager {
     });
   }
 
-  private reset(error?: string) {
-    this._isStudyOn = false;
+  private reset(error?: string, endStudy: boolean = false) {
+    if (endStudy) {
+      this._isStudyOn = false;
+    }
     this.dialogId = null;
     this.userRole = null;
     this.turnIndex = null;

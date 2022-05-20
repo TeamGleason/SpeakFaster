@@ -19,10 +19,6 @@ app-context-component {
   height: 84px;
 }
 
-app-context-component.study-mode {
-  height: 64px;
-}
-
 app-text-to-speech-component {
   float: right;
 }
@@ -67,7 +63,8 @@ app-text-to-speech-component {
   display: none;
 }
 
-/* During study, make the main-area tall, so it is possible to go into the full-screen mode on mobile devices. */
+/* During study, make the main-area larger, so it is possible to */
+/* go into the full-screen mode on mobile devices. */
 .main-area.study-mode {
   width: 1800px;
   height: 1200px;
@@ -89,10 +86,6 @@ app-text-to-speech-component {
   display: flex;
   flex-direction: column;
   height: fit-content;
-}
-
-.main-right-pane.study-mode {
-  width: 1800px;
 }
 
 .mode-abbreviation-expansion {
@@ -194,9 +187,9 @@ app-text-to-speech-component {
       </div>
     </div>
 
-    <div class="main-right-pane" [ngClass]="{'study-mode': isStudyOn}">
+    <div class="main-right-pane">
       <app-context-component
-        [ngClass]="{'app-context-component-area-hidden': appState !== 'ABBREVIATION_EXPANSION', 'study-mode': isStudyOn}"
+        [ngClass]="{'app-context-component-area-hidden': appState !== 'ABBREVIATION_EXPANSION'}"
         [userId]="userId"
         [textEntryEndSubject]="textEntryEndSubject"
         [isDev]="isDev"

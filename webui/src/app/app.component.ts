@@ -219,10 +219,9 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private eyeTrackerStatusCallback(status: EYE_TRACKER_STATUS): void {
-    // TODO(cais): Add unit test.
     if (status === 'disconnected') {
       this._inputBarNotification =
-          '∅ Eye tracker is disonnected. Trying to reconnect...';
+          '∅ Eye tracker is disconnected. Trying to reconnect...';
     } else {
       this._inputBarNotification = undefined;
     }

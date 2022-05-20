@@ -309,7 +309,7 @@ export class ContextComponent implements OnInit, OnDestroy, AfterViewInit {
                                 .conversationTurn.speechContent;
       if (timestamp > afterEpochMillis) {
         console.log(
-            '*** Received manual partner turn:', speechContent, timestamp,
+            'Received manual partner turn:', speechContent, timestamp,
             this.studyManager.waitingForPartnerTurnAfter);
         this.studyManager.incrementTurn(speechContent);
         // TODO(cais): Add unit test.

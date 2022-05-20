@@ -344,6 +344,23 @@ describe('AppComponent', () => {
     fixture.detectChanges();
 
     expect(fixture.componentInstance.isStudyOn).toBeFalse();
+  });
 
+  it('eye tracker disconnection updates input-bar notification', () => {
+    (window as any).eyeTrackerStatusHook('disconnected');
+
+    expect(fixture.componentInstance.inputBarNotification)
+        .toMatch(/.* disconnected\..* reconnect/);
+    const lastEvent = inputBarControlEvents[inputBarControlEvents.length - 1];
+    expect(lastEvent).toEqual({refocus: true});
+  });
+
+  it('eye tracker reconnection updates input-bar notification', () => {
+    (window as any).eyeTrackerStatusHook('disconnected');
+    (window as any).eyeTrackerStatusHook('connected');
+
+    expect(fixture.componentInstance.inputBarNotification).toBeUndefined();
+    const lastEvent = inputBarControlEvents[inputBarControlEvents.length - 1];
+    expect(lastEvent).toEqual({refocus: true});
   });
 });

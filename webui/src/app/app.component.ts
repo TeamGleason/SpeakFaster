@@ -2,7 +2,7 @@ import {AfterViewInit, Component, ElementRef, OnDestroy, OnInit, QueryList, View
 import {ActivatedRoute} from '@angular/router';
 import {Subject} from 'rxjs';
 
-import {bindCefSharpListener, bringFocusAppToForeground, bringWindowToForeground, registerExternalAccessTokenHook, registerExternalKeypressHook, registerHostWindowFocusHook, resizeWindow, setHostEyeGazeOptions, toggleGazeButtonsState, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from '../utils/cefsharp';
+import {bindCefSharpListener, bringFocusAppToForeground, bringWindowToForeground, EYE_TRACKER_STATUS, registerExternalAccessTokenHook, registerExternalKeypressHook, registerEyeTrackerStatusHook, registerHostWindowFocusHook, resizeWindow, setHostEyeGazeOptions, toggleGazeButtonsState, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from '../utils/cefsharp';
 import {createUuid} from '../utils/uuid';
 
 import {HttpEventLogger} from './event-logger/event-logger-impl';
@@ -166,6 +166,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     registerExternalKeypressHook((vkCode: number, isExternal: boolean) => {
       ExternalEventsComponent.externalKeypressHook(vkCode, isExternal);
     });
+    registerEyeTrackerStatusHook(this.eyeTrackerStatusCallback.bind(this));
     const resizeObserver = new ResizeObserver(entries => {
       if (entries.length > 1) {
         throw new Error(
@@ -215,6 +216,19 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   ngOnDestroy() {
     updateButtonBoxesToEmpty(this.instanceId);
     this.eventLogger.logSessionEnd();
+  }
+
+  private eyeTrackerStatusCallback(status: EYE_TRACKER_STATUS): void {
+    // TODO(cais): Add unit test.
+    if (status === 'disconnected') {
+      this._inputBarNotification =
+          '∅ Eye tracker is disonnected. Trying to reconnect...';
+    } else {
+      this._inputBarNotification = undefined;
+    }
+    this.inputBarControlSubject.next({
+      refocus: true,
+    });
   }
 
   private appResizeCallback() {

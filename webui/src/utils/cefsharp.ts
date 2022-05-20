@@ -244,6 +244,18 @@ export function registerHostWindowFocusHook(callback: HostWindowFocusHook) {
   (window as any)['setHostWindowFocus'] = callback;
 }
 
+export type EYE_TRACKER_STATUS = 'disconnected'|'connected';
+
+export type EyeTrackerStatusHook = (status: EYE_TRACKER_STATUS) => void;
+
+/**
+ * Registers a callback to receive updates about eye tracker status from the
+ * host.
+ */
+export function registerEyeTrackerStatusHook(callback: EyeTrackerStatusHook) {
+  (window as any)['eyeTrackerStatusHook'] = callback;
+}
+
 export type ExternalAccessTokenHook = (accessToken: string) => void;
 
 /**

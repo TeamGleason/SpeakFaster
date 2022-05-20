@@ -123,7 +123,13 @@ translate strings into virtual key code values.
 The global function `window.setHostWindowFocus(isFocused: boolean)` provides the
 WebUI with the foreground (activated) state of the host window.
 
-### 3. Bound listner for WebUI-to-host information flow
+### 3. Listening for eye tracker device status
+
+The global function `window.eyeTrackerStatusHook(status: 'disconnected'|'connected')`
+provides the WebUI with updates when the eye tracking device is disconnected or
+reconnected.
+
+### 4. Bound listner for WebUI-to-host information flow
 
 The WebUI looks for the global `window.boundListener` object and expects
 it to have the following interface.

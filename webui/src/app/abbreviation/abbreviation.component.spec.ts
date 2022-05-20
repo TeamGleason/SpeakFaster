@@ -355,8 +355,4 @@ describe('AbbreviationComponent', () => {
         .toBeNull();
   });
 
-  it('does not show quick phrase when study is on',
-     () => {
-
-     });
 });

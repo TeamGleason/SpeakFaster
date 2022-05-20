@@ -422,7 +422,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   get isStudyOn(): boolean {
-    // TODO(cais): Add unit test.
     return this.studyManager.isStudyOn;
   }
 

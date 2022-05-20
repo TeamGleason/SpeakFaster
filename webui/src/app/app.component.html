@@ -33,9 +33,6 @@ app-text-to-speech-component {
   padding: 10px;
 }
 
-.bottom-area {
-}
-
 .button-image {
   max-width: 65%;
   max-height: 65%;
@@ -66,8 +63,16 @@ app-text-to-speech-component {
   display: none;
 }
 
+/* During study, make the main-area larger, so it is possible to */
+/* go into the full-screen mode on mobile devices. */
+.main-area.study-mode {
+  width: 1800px;
+  height: 1200px;
+  border-right: 1px solid white;
+}
+
 .main-left-pane {
-  align-items:flex-end;
+  align-items:flex-start;
   box-sizing: border-box;
   display: flex;
   min-height: 100%;
@@ -152,7 +157,7 @@ app-text-to-speech-component {
   <div
       class="main-area"
       *ngIf="hasAccessToken()"
-      [ngClass]="{'main-area-hidden': appState === 'MINIBAR'}">
+      [ngClass]="{'main-area-hidden': appState === 'MINIBAR', 'study-mode': isStudyOn}">
     <div class="main-left-pane">
       <div class="side-pane-button-container">
         <button

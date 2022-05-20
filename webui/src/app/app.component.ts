@@ -421,6 +421,10 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     }
   }
 
+  get isStudyOn(): boolean {
+    return this.studyManager.isStudyOn;
+  }
+
   getNonMinimizedStateImgSrc(appState: AppState, isActive: boolean): string {
     const activeStateString = isActive ? 'active' : 'inactive';
     switch (appState) {

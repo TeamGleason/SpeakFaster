@@ -364,6 +364,7 @@ describe('Study Manager', () => {
       const lastUserTurn = studyUserTurns[studyUserTurns.length - 1];
       expect(lastUserTurn.text).toBeNull();
       expect(lastUserTurn.isComplete).toBeTrue();
+      expect(studyManager.isStudyOn).toBeTrue();
     });
 
     it('Invalid dialog ID throws error', async () => {

@@ -236,7 +236,8 @@ describe('AppComponent', () => {
 
     const mainArea = fixture.debugElement.query(By.css('.main-area'));
     expect(mainArea).not.toBeNull();
-    expect(mainArea.classes['main-area-hidden']).toEqual(true);
+    expect(mainArea.classes['main-area-hidden']).toBeTrue();
+    expect(mainArea.classes['study-mode']).toBeUndefined();
     expect(mainArea.query(By.css('app-input-bar-component'))).not.toBeNull();
     expect(mainArea.query(By.css('app-abbreviation-component'))).not.toBeNull();
     expect(mainArea.query(By.css('app-context-component'))).not.toBeNull();
@@ -321,11 +322,28 @@ describe('AppComponent', () => {
     ]);
   });
 
-  it('nonMinimizedStatesAppStates includes fewer items: study on', () => {
+  it('special states are set after study on', async () => {
+    fixture.componentInstance.onNewAccessToken('foo-access-token');
+    setAppState(AppState.ABBREVIATION_EXPANSION);
     studyManager.maybeHandleRemoteControlCommand('study on');
+    fixture.detectChanges();
+    await fixture.whenStable();
 
+    expect(fixture.componentInstance.isStudyOn).toBeTrue();
     expect(fixture.componentInstance.nonMinimizedStatesAppStates).toEqual([
       AppState.ABBREVIATION_EXPANSION,
     ]);
+    const mainArea = fixture.debugElement.query(By.css('.main-area'));
+    expect(mainArea).not.toBeNull();
+    expect(mainArea.classes['study-mode']).toBeTrue();
+  });
+
+  it('isStudyOn reflects off state after on', () => {
+    studyManager.maybeHandleRemoteControlCommand('study on');
+    studyManager.maybeHandleRemoteControlCommand('study off');
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.isStudyOn).toBeFalse();
+
   });
 });

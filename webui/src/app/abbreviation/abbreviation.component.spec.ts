@@ -340,4 +340,23 @@ describe('AbbreviationComponent', () => {
 
     expect(fixture.componentInstance.isStudyOn).toBeFalse();
   });
+
+  it('does not show text prediction or quick phrases when study is on', () => {
+    studyManager.maybeHandleRemoteControlCommand('study on');
+    fixture.componentInstance.textPredictions.splice(0)
+    fixture.componentInstance.textPredictions.push('foo');
+    fixture.componentInstance.textPredictions.push('bar');
+    fixture.detectChanges();
+    const textPredictionButtons =
+        fixture.debugElement.queryAll(By.css('.text-prediction-button'));
+
+    expect(textPredictionButtons.length).toEqual(0);
+    expect(fixture.debugElement.query(By.css('app-quick-phrases-component')))
+        .toBeNull();
+  });
+
+  it('does not show quick phrase when study is on',
+     () => {
+
+     });
 });

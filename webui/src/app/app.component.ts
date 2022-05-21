@@ -342,6 +342,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     // TODO(cais): Add unit tests.
     this.conversationTurnsSelected.splice(0);
     this.conversationTurnsSelected.push(...conversationTurns);
+    this.inputBarControlSubject.next({refocus: true})
   }
 
   onAbbreviationInputChanged(abbreviationChangedEvent:

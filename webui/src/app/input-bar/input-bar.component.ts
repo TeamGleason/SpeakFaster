@@ -488,6 +488,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
           `Spelled string is valid word '${spelledString}': trigger AE`);
       this.triggerAbbreviationExpansion(/* isInFlight= */ true);
     }
+    updateButtonBoxesForElements(this.instanceId, this.buttons);
   }
 
   onChipClicked(index: number) {

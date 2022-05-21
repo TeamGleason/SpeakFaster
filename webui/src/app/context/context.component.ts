@@ -105,6 +105,11 @@ export class ContextComponent implements OnInit, OnDestroy, AfterViewInit {
             .subscribe(() => {
               this.retrieveContext();
             });
+    this.viewButtons.changes.subscribe(() => {
+      this.viewButtons.forEach((turnComponent) => {
+        turnComponent.forceUpdateButtonBox();
+      });
+    });
   }
 
   disableContinuousContextRetrieval() {

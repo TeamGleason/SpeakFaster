@@ -363,4 +363,14 @@ describe('AppComponent', () => {
     const lastEvent = inputBarControlEvents[inputBarControlEvents.length - 1];
     expect(lastEvent).toEqual({refocus: true});
   });
+
+  it('onContextStringsSelected orders input bar refocus', () => {
+    fixture.componentInstance.onContextStringsSelected([{
+      speakerId: 'Speaker001',
+      speechContent: 'hello',
+      startTimestamp: new Date(),
+    }]);
+
+    expect(inputBarControlEvents).toEqual([{refocus: true}]);
+  });
 });

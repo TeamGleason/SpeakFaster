@@ -86,4 +86,8 @@ export class ConversationTurnComponent implements AfterViewInit,
   ngOnDestroy() {
     updateButtonBoxesToEmpty(this.instanceId);
   }
+
+  forceUpdateButtonBox() {
+    updateButtonBoxesForElements(this.instanceId, this.buttons);
+  }
 }

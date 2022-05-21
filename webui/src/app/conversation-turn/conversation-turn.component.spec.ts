@@ -93,4 +93,26 @@ describe('ConversationTurnComponent', () => {
     expect(lastCall[1].length).toEqual(1);
     expect(lastCall[1][0].length).toEqual(4);
   }));
+
+  it('force updateButtonBoxes works', fakeAsync(() => {
+    fixture.componentInstance.turn = {
+      speakerId: 'foo_speaker',
+      startTimestamp: new Date(),
+      speechContent: 'Hi, there!',
+    };
+    fixture.detectChanges();
+    fixture.componentInstance.ngAfterContentChecked();
+    tick();
+
+    const previousCalls = testListener.updateButtonBoxesCalls.slice();
+    expect(previousCalls.length).toBeGreaterThan(0);
+    fixture.componentInstance.forceUpdateButtonBox();
+    tick(1);
+    const calls = testListener.updateButtonBoxesCalls.slice();
+    expect(calls.length).toEqual(previousCalls.length + 1);
+    const lastCall = calls[calls.length - 1];
+    expect(lastCall[0].indexOf('ConversationTurnComponent')).toEqual(0);
+    expect(lastCall[1].length).toEqual(1);
+    expect(lastCall[1][0].length).toEqual(4);
+  }));
 });

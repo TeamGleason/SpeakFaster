@@ -186,8 +186,6 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
           } else if (
               event.numCharsToDeleteFromEnd &&
               event.numCharsToDeleteFromEnd > 0) {
-            console.log(
-                '*** Deleting chars:', event.numCharsToDeleteFromEnd);  // DEBUG
             this.pendingCharDeletions = event.numCharsToDeleteFromEnd;
           } else if (event.appendText !== undefined) {
             ExternalEventsComponent.appendString(
@@ -616,6 +614,11 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
         });
       }
       return words.join(' ');
+    } else if (
+        this.state === State.FOCUSED_ON_LETTER_CHIP &&
+        this._chips.length === 1 && this._chipTypedText !== null &&
+        this._chipTypedText[0] !== null) {
+      return this._chipTypedText[0].trim();
     } else if (this.state === State.ENTERING_BASE_TEXT) {
       return this.inputString;
     }
@@ -632,6 +635,15 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   onSpeakAsIsButtonClicked(event?: Event) {
+    if (this.state === State.CHOOSING_LETTER_CHIP ||
+        (this.state === State.FOCUSED_ON_LETTER_CHIP &&
+             this._chips.length > 1 ||
+         this._chipTypedText === null || this._chipTypedText[0] === null ||
+         this._chipTypedText[0].trim() === '')) {
+      // The Speak button should do nothing when spelling a word, unless there
+      // is only one word.
+      return;
+    }
     const text = this.effectivePhrase;
     const repeatLastNonEmpty = text === '';
     this.eventLogger.logInputBarSpeakButtonClick(getPhraseStats(text));

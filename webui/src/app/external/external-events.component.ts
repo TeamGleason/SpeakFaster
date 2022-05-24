@@ -218,7 +218,6 @@ function processIgnoreMachineKeySequences(
     for (const ignoreConfig of ignoreMachineKeySequenceConfigs) {
       if (keySequenceEndsWith(
               reconState.keySequence, ignoreConfig.keySequence)) {
-        console.log('*** Ends with:', ignoreConfig.keySequence);  // DEBUG
         numDisacrdedChars =
             ignoreConfig.keySequence.length - ignoreConfig.ignoreStartIndex;
       }
@@ -724,9 +723,6 @@ export class ExternalEventsComponent implements OnInit {
       textEntryBeginSubject.next({timestampMillis: Date.now()});
     }
 
-    console.log(
-        '*** isInferredMachineKey=', isInferredMachineKey,
-        isExternal);  // DEBUG
     processIgnoreMachineKeySequences(
         isInferredMachineKey, reconState,
         isExternal ? undefined : inputBarControlSubject);

@@ -1,6 +1,7 @@
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {Subject} from 'rxjs';
 
+import {InputBarControlEvent} from '../input-bar/input-bar.component';
 import {TextEntryBeginEvent, TextEntryEndEvent} from '../types/text-entry';
 
 import {ExternalEventsComponent, getPunctuationLiteral, getVirtualkeyCode, LCTRL_KEY_HEAD_FOR_TTS_TRIGGER, resetReconStates, tryDetectoMultiKeyChar, VIRTUAL_KEY, VKCODE_SPECIAL_KEYS} from './external-events.component';
@@ -11,10 +12,12 @@ const END_KEY_CODE = getVirtualkeyCode(LCTRL_KEY_HEAD_FOR_TTS_TRIGGER)[0]
 describe('ExternalEventsComponent', () => {
   let textEntryBeginSubject: Subject<TextEntryBeginEvent>;
   let textEntryEndSubject: Subject<TextEntryEndEvent>;
+  let inputBarControlSubject: Subject<InputBarControlEvent>;
   let fixture: ComponentFixture<ExternalEventsComponent>;
   let component: ExternalEventsComponent;
   let beginEvents: TextEntryBeginEvent[];
   let endEvents: TextEntryEndEvent[];
+  let inputBarControlEvents: InputBarControlEvent[];
 
   beforeEach(async () => {
     await TestBed
@@ -25,14 +28,19 @@ describe('ExternalEventsComponent', () => {
         .compileComponents();
     textEntryBeginSubject = new Subject();
     textEntryEndSubject = new Subject();
+    inputBarControlSubject = new Subject();
     beginEvents = [];
     endEvents = [];
+    inputBarControlEvents = [];
     textEntryBeginSubject.subscribe((event) => beginEvents.push(event));
     textEntryEndSubject.subscribe((event) => endEvents.push(event));
+    inputBarControlSubject.subscribe(
+        (event) => inputBarControlEvents.push(event));
     fixture = TestBed.createComponent(ExternalEventsComponent);
     component = fixture.componentInstance;
     fixture.componentInstance.textEntryBeginSubject = textEntryBeginSubject;
     fixture.componentInstance.textEntryEndSubject = textEntryEndSubject;
+    fixture.componentInstance.inputBarControlSubject = inputBarControlSubject;
     fixture.detectChanges();
     jasmine.getEnv().allowRespy(true);
     ExternalEventsComponent.clearKeypressListeners();
@@ -632,6 +640,8 @@ describe('ExternalEventsComponent', () => {
       ['a'], ['a', ' '], ['a', ' ', ','], ['a', ' ', ',']
     ]);
     expect(reconstructedTexts).toEqual(['a', 'a ', 'a ,', 'a ,']);
+    expect(inputBarControlEvents.length).toEqual(1);
+    expect(inputBarControlEvents[0]).toEqual({numCharsToDeleteFromEnd: 1});
   });
 
   it('registerIgnoreKeySequence does not ignores human sequence', () => {

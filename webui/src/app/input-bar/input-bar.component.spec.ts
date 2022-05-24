@@ -1159,5 +1159,24 @@ describe('InputBarComponent', () => {
     expect(fixture.debugElement.query(By.css('.cut-button'))).toBeNull();
   });
 
+  it('numCharsToDeleteFromEnd truncates text from the end', () => {
+    inputBarControlSubject.next({
+      numCharsToDeleteFromEnd: 1,
+    });
+
+    const inputText = fixture.debugElement.query(By.css('.base-text-area'));
+    inputText.nativeElement.value = 'hi there, ';
+    const event1 = new KeyboardEvent('keypress', {key: ' '});
+    fixture.componentInstance.onInputTextAreaKeyUp(event1);
+    expect(inputText.nativeElement.value).toEqual('hi there,');
+    expect(fixture.componentInstance.inputString).toEqual('hi there,');
+
+    inputText.nativeElement.value = 'hi there, fine, ';
+    const event2 = new KeyboardEvent('keypress', {key: ' '});
+    fixture.componentInstance.onInputTextAreaKeyUp(event2);
+    expect(inputText.nativeElement.value).toEqual('hi there, fine, ');
+    expect(fixture.componentInstance.inputString).toEqual('hi there, fine, ');
+  });
+
   // TODO(cais): Test spelling valid word triggers AE, with debounce.
 });

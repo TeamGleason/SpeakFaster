@@ -294,6 +294,7 @@
     <div class="right-buttons-container">
       <button
           #clickableButton
+          *ngIf="!hideSpeakButton"
           class="action-button speak-button">
         <app-speak-button-component
             [phrase]="effectivePhrase"

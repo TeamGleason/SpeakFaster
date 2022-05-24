@@ -250,7 +250,7 @@ app-text-to-speech-component {
             [contextStrings]="contextStringsSelected.slice()"
             [languageCode]="languageCode"
             [textEntryEndSubject]="textEntryEndSubject"
-            [supportsAbbrevationExpansion]="appState === 'ABBREVIATION_EXPANSION'"
+            [supportsAbbrevationExpansion]="supportsAbbrevationExpansion"
             [favoriteButtonSendsUserFeedback]="appState === 'SETTINGS' || appState === 'HELP'"
             [inputBarControlSubject]="inputBarControlSubject"
             [loadPrefixedLexiconRequestSubject]="loadPrefixedLexiconRequestSubject"

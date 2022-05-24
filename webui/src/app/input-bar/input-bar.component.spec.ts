@@ -578,6 +578,7 @@ describe('InputBarComponent', () => {
   it('clicking speak button clears text & clicking again triggers repeat',
      () => {
        enterKeysIntoComponent('it');
+       fixture.componentInstance.state = State.ENTERING_BASE_TEXT;
        const speakButton = fixture.debugElement.query(By.css('.speak-button'))
                                .query(By.css('.speak-button'));
        speakButton.nativeElement.click();

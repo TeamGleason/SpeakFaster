@@ -50,8 +50,9 @@ describe('Study Manager', () => {
       studyUserTurnsSubscription.unsubscribe();
     });
 
-    it('isStudyOn is initially false', () => {
+    it('isStudyOn isAbbreviationMode are initially false', () => {
       expect(studyManager.isStudyOn).toBeFalse();
+      expect(studyManager.isAbbreviationMode).toBeFalse();
     });
 
     it('sets logging mode to full for command study on', async () => {
@@ -60,6 +61,7 @@ describe('Study Manager', () => {
 
       expect(handled).toBeTrue();
       expect(studyManager.isStudyOn).toBeTrue();
+      expect(studyManager.isAbbreviationMode).toBeFalse();
       expect(HttpEventLogger.isFullLogging()).toBeTrue();
     });
 
@@ -70,6 +72,7 @@ describe('Study Manager', () => {
 
       expect(handled).toBeTrue();
       expect(studyManager.isStudyOn).toBeFalse();
+      expect(studyManager.isAbbreviationMode).toBeFalse();
       expect(HttpEventLogger.isFullLogging()).toBeFalse();
     });
 
@@ -87,6 +90,7 @@ describe('Study Manager', () => {
 
       expect(handled).toBeTrue();
       expect(HttpEventLogger.isFullLogging()).toBeTrue();
+      expect(studyManager.isAbbreviationMode).toBeTrue();
       expect(studyManager.waitingForPartnerTurnAfter).toBeNull();
       expect(studyManager.getDialogId()).toBe('dummy1');
       expect(studyManager.getDialogTurnIndex()).toEqual(0);
@@ -101,6 +105,7 @@ describe('Study Manager', () => {
       const incrementResult = studyManager.incrementTurn();
 
       expect(studyManager.isStudyOn).toBeTrue();
+      expect(studyManager.isAbbreviationMode).toBeTrue();
       expect(incrementResult.turnIndex).toEqual(1);
       expect(incrementResult.isComplete).toBeFalse();
       expect(studyManager.getDialogId()).toBe('dummy1');
@@ -123,6 +128,7 @@ describe('Study Manager', () => {
 
             setTimeout(() => {
               expect(studyManager.isStudyOn).toBeTrue();
+              expect(studyManager.isAbbreviationMode).toBeTrue();
               expect(studyManager.getDialogId()).toBe('dummy1');
               expect(studyManager.waitingForPartnerTurnAfter).toBeNull();
               expect(studyManager.getDialogTurnIndex()).toEqual(2);
@@ -159,6 +165,7 @@ describe('Study Manager', () => {
             setTimeout(() => {
               const incrementResult = studyManager.incrementTurn();
               expect(studyManager.isStudyOn).toBeTrue();
+              expect(studyManager.isAbbreviationMode).toBeTrue();
               expect(incrementResult.turnIndex).toEqual(3);
               expect(incrementResult.isComplete).toBeFalse();
               expect(studyManager.getDialogId()).toBe('dummy1');
@@ -190,6 +197,7 @@ describe('Study Manager', () => {
             studyManager.incrementTurn('unexpected question');
             setTimeout(() => {
               expect(studyManager.isStudyOn).toBeTrue();
+              expect(studyManager.isAbbreviationMode).toBeTrue();
               expect(studyManager.getDialogTurnIndex()).toEqual(2);
               expect(studyManager.waitingForPartnerTurnAfter).toBeNull();
               const prevTurns = studyManager.getPreviousDialogTurns();
@@ -209,6 +217,7 @@ describe('Study Manager', () => {
           .then(() => {
             setTimeout(() => {
               expect(studyManager.isStudyOn).toBeTrue();
+              expect(studyManager.isAbbreviationMode).toBeTrue();
               expect(studyManager.getDialogTurnIndex()).toEqual(1);
               studyManager.incrementTurn('random reply');
 
@@ -231,6 +240,7 @@ describe('Study Manager', () => {
           .then(() => {
             setTimeout(() => {
               expect(studyManager.isStudyOn).toBeTrue();
+              expect(studyManager.isAbbreviationMode).toBeTrue();
               expect(studyUserTurns.length).toEqual(1);
               expect(studyUserTurns[0].instruction)
                   .toEqual('Enter your reply in abbreviation.');
@@ -303,6 +313,7 @@ describe('Study Manager', () => {
     ] as Array<[string, boolean, string]>) {
       it('start from partner turn: auto increments initially', done => {
         studyManager.maybeHandleRemoteControlCommand(command).then(() => {
+          expect(studyManager.isAbbreviationMode).toEqual(isAbbreviation);
           expect(studyManager.getDialogId()).toEqual('dummy1');
           expect(studyManager.getDialogTurnIndex()).toEqual(1);
           expect(studyManager.getDialogTurnText())

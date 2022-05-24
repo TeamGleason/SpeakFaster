@@ -637,9 +637,9 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   onSpeakAsIsButtonClicked(event?: Event) {
     if (this.state === State.CHOOSING_LETTER_CHIP ||
         (this.state === State.FOCUSED_ON_LETTER_CHIP &&
-             this._chips.length > 1 ||
-         this._chipTypedText === null || this._chipTypedText[0] === null ||
-         this._chipTypedText[0].trim() === '')) {
+         (this._chips.length > 1 || this._chipTypedText === null ||
+          this._chipTypedText[0] === null ||
+          this._chipTypedText[0].trim() === ''))) {
       // The Speak button should do nothing when spelling a word, unless there
       // is only one word.
       return;
@@ -787,6 +787,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   get isStudyOn(): boolean {
+    console.log('*** this.state=', this.state);  // DEBUG
     return this.studyManager.isStudyOn;
   }
 
@@ -804,5 +805,16 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
 
   get studyDialogError(): string|undefined {
     return this._studyDialogError;
+  }
+
+  get hideSpeakButton(): boolean {
+    const canOutputTextInBar =
+        (this.state === State.CHOOSING_WORD_CHIP ||
+         this.state === State.CHOOSING_LETTER_CHIP ||
+         this.state === State.FOCUSED_ON_WORD_CHIP ||
+         (this.state === State.FOCUSED_ON_LETTER_CHIP &&
+          this._chips.length === 1));
+    return this.isStudyOn && this.studyManager.isAbbreviationMode &&
+        !canOutputTextInBar;
   }
 }

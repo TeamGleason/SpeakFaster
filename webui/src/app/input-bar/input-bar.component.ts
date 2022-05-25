@@ -224,6 +224,10 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
                 this._chipTypedText![i] = chip.text;
               }
             });
+            if (this.inputTextArea && this.inputTextArea.nativeElement) {
+              // TODO(cais): Add unit test.
+              this.saveInputTextAreaState();
+            }
             if (this._chips.length > 1) {
               this.state = State.CHOOSING_WORD_CHIP;
               this.eventLogger.logAbbreviationExpansionStartWordRefinementMode(
@@ -234,7 +238,6 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
                   this._chips.map(chip => chip.text.trim()).join(' ') + ' ';
               this.inputString = this.cutText;
             }
-            this.saveInputTextAreaState();
           } else if (event.refocus) {
             if (this.inputTextArea) {
               this.focusOnInputTextArea();

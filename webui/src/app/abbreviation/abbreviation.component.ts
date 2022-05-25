@@ -392,7 +392,7 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
   }
 
   get phraseBackgroundColor(): string {
-    return '#0687BE';
+    return '#057bad';
   }
 
   get usedContextStrings(): string[] {

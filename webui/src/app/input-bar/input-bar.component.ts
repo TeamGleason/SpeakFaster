@@ -234,6 +234,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
                   this._chips.map(chip => chip.text.trim()).join(' ') + ' ';
               this.inputString = this.cutText;
             }
+            this.saveInputTextAreaState();
           } else if (event.refocus) {
             if (this.inputTextArea) {
               this.focusOnInputTextArea();

@@ -51,6 +51,9 @@ export interface InputBarControlEvent {
   // Clear all text and chips.
   clearAll?: boolean;
 
+  // Delete these many characters from the end.
+  numCharsToDeleteFromEnd?: number;
+
   // Signal to refresh quick phrases, e.g., after adding or editing a quick
   // phrase.
   refreshContextualPhrases?: boolean;
@@ -97,6 +100,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   // Maximum allowed length of the entire abbreviation, including the leading
   // keywords.
   private static readonly ABBREVIATION_MAX_TOTAL_LENGTH = 50;
+  // TODO(cais): Switch to the wait-and-send mode.
   private static readonly IN_FLIGHT_AE_TRIGGER_DEBOUNCE_MILLIS = 500;
 
   // NOTE(https://github.com/TeamGleason/SpeakFaster/issues/217): Some external
@@ -151,6 +155,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly inFlightAbbreviationExpansionTriggers:
       Subject<InputAbbreviationChangedEvent> = new Subject();
   private _contextualPhraseTags: string[] = ['favorite'];
+  private pendingCharDeletions: number = 0;
 
   constructor(
       public speakFasterService: SpeakFasterService,
@@ -178,6 +183,10 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
             this._isHidden = event.hide;
           } else if (event.clearAll) {
             this.resetState(/* cleanText= */ true, /* resetBase= */ true);
+          } else if (
+              event.numCharsToDeleteFromEnd &&
+              event.numCharsToDeleteFromEnd > 0) {
+            this.pendingCharDeletions = event.numCharsToDeleteFromEnd;
           } else if (event.appendText !== undefined) {
             ExternalEventsComponent.appendString(
                 event.appendText, /* isExternal= */ false);
@@ -215,6 +224,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
                 this._chipTypedText![i] = chip.text;
               }
             });
+            this.saveInputTextAreaState();
             if (this._chips.length > 1) {
               this.state = State.CHOOSING_WORD_CHIP;
               this.eventLogger.logAbbreviationExpansionStartWordRefinementMode(
@@ -298,6 +308,14 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
 
   onInputTextAreaKeyUp(event: KeyboardEvent) {
     this.inputString = this.inputTextArea.nativeElement.value;
+    if (this.pendingCharDeletions > 0) {
+      this.inputString = this.inputTextArea.nativeElement.value.substring(
+          0,
+          this.inputTextArea.nativeElement.value.length -
+              this.pendingCharDeletions);
+      this.pendingCharDeletions = 0;
+      this.inputTextArea.nativeElement.value = this.inputString;
+    }
     this.inputStringChanged.next(this.inputString);
     this.eventLogger.logKeypress(event as KeyboardEvent, this.inputString);
     this.scaleInputTextFontSize();
@@ -471,6 +489,9 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private saveInputTextAreaState() {
+    if (!this.inputTextArea || !this.inputTextArea.nativeElement) {
+      return;
+    }
     InputBarComponent.savedInputString = this.inputTextArea.nativeElement.value;
   }
 
@@ -597,6 +618,11 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
         });
       }
       return words.join(' ');
+    } else if (
+        this.state === State.FOCUSED_ON_LETTER_CHIP &&
+        this._chips.length === 1 && this._chipTypedText !== null &&
+        this._chipTypedText[0] !== null) {
+      return this._chipTypedText[0].trim();
     } else if (this.state === State.ENTERING_BASE_TEXT) {
       return this.inputString;
     }
@@ -613,6 +639,15 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   onSpeakAsIsButtonClicked(event?: Event) {
+    if (this.state === State.CHOOSING_LETTER_CHIP ||
+        (this.state === State.FOCUSED_ON_LETTER_CHIP &&
+         (this._chips.length > 1 || this._chipTypedText === null ||
+          this._chipTypedText[0] === null ||
+          this._chipTypedText[0].trim() === ''))) {
+      // The Speak button should do nothing when spelling a word, unless there
+      // is only one word.
+      return;
+    }
     const text = this.effectivePhrase;
     const repeatLastNonEmpty = text === '';
     this.eventLogger.logInputBarSpeakButtonClick(getPhraseStats(text));
@@ -653,6 +688,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     }
     this.cutText = '';
     this.focusOnInputTextArea();
+    this.pendingCharDeletions = 0;
     resetReconStates();
   }
 
@@ -772,5 +808,15 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
 
   get studyDialogError(): string|undefined {
     return this._studyDialogError;
+  }
+
+  get hideSpeakButton(): boolean {
+    const canOutputTextFromInputBar =
+        (this.state === State.CHOOSING_WORD_CHIP ||
+         this.state === State.FOCUSED_ON_WORD_CHIP ||
+         (this.state === State.FOCUSED_ON_LETTER_CHIP &&
+          this._chips.length === 1));
+    return this.isStudyOn && this.studyManager.isAbbreviationMode &&
+        !canOutputTextFromInputBar;
   }
 }

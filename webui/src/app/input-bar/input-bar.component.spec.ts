@@ -499,6 +499,31 @@ describe('InputBarComponent', () => {
     expect(fillMaskRequests.length).toEqual(0);
   });
 
+  it('chip injection remembers previous text', () => {
+    let inputText = fixture.debugElement.query(By.css('.base-text-area'));
+    inputText.nativeElement.value = 'xyz';
+    inputBarControlSubject.next({
+      chips: [
+        {
+          text: 'i',
+        },
+        {
+          text: 'feel',
+        },
+        {
+          text: 'great',
+        }
+      ]
+    });
+    fixture.detectChanges();
+    const abortButton = fixture.debugElement.query(By.css('.abort-button'));
+    abortButton.nativeElement.click();
+    fixture.detectChanges();
+
+    inputText = fixture.debugElement.query(By.css('.base-text-area'));
+    expect(inputText.nativeElement.value).toEqual('xyz');
+  });
+
   it('clicking word chip during refinement sets correct state', () => {
     inputBarControlSubject.next({
       chips: [
@@ -578,6 +603,7 @@ describe('InputBarComponent', () => {
   it('clicking speak button clears text & clicking again triggers repeat',
      () => {
        enterKeysIntoComponent('it');
+       fixture.componentInstance.state = State.ENTERING_BASE_TEXT;
        const speakButton = fixture.debugElement.query(By.css('.speak-button'))
                                .query(By.css('.speak-button'));
        speakButton.nativeElement.click();
@@ -612,6 +638,92 @@ describe('InputBarComponent', () => {
     expect(fixture.componentInstance.state).toEqual(State.CHOOSING_WORD_CHIP);
     const spellButton = fixture.debugElement.query(By.css('.spell-button'));
     expect(spellButton).not.toBeNull();
+  });
+
+  it('clicking speak button when choosing from 3 letters to spell is no-op',
+     () => {
+       fixture.componentInstance.inputString = 'ifg';
+       inputBarControlSubject.next({
+         chips: [
+           {
+             text: 'i',
+           },
+           {
+             text: 'feel',
+           },
+           {
+             text: 'great',
+           }
+         ]
+       });
+       fixture.detectChanges();
+       const wordChips =
+           fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'))
+       wordChips[1].nativeElement.click();
+       const spellButton = fixture.debugElement.query(By.css('.spell-button'));
+       spellButton.nativeElement.click();
+       fixture.detectChanges();
+       const speakButton = fixture.debugElement.query(By.css('.speak-button'))
+                               .query(By.css('.speak-button'));
+       speakButton.nativeElement.click();
+
+       expect(fixture.componentInstance.state)
+           .toEqual(State.CHOOSING_LETTER_CHIP);
+       expect(textEntryEndEvents.length).toEqual(0);
+     });
+
+  it('clicking speak button when spelling single word speaks word', () => {
+    enterKeysIntoComponent('b');
+    const spellButton = fixture.debugElement.query(By.css('.spell-button'));
+    spellButton.nativeElement.click();
+    fixture.detectChanges();
+    fixture.componentInstance.state = State.FOCUSED_ON_LETTER_CHIP;
+    fixture.componentInstance.onChipTextChanged({text: 'bit '}, 0);
+    fixture.detectChanges();
+    const speakButton = fixture.debugElement.query(By.css('.speak-button'))
+                            .query(By.css('.speak-button'));
+    speakButton.nativeElement.click();
+    fixture.detectChanges();
+
+    expect(textEntryEndEvents.length).toEqual(1);
+    expect(textEntryEndEvents[0].text).toEqual('bit');
+    expect(fixture.componentInstance.state).toEqual(State.ENTERING_BASE_TEXT);
+  });
+
+  it('clicking speak button when spelling single word empty is no-op', () => {
+    enterKeysIntoComponent('b');
+    const spellButton = fixture.debugElement.query(By.css('.spell-button'));
+    spellButton.nativeElement.click();
+    fixture.detectChanges();
+    fixture.componentInstance.state = State.FOCUSED_ON_LETTER_CHIP;
+    fixture.componentInstance.onChipTextChanged({text: ' '}, 0);
+    fixture.detectChanges();
+    const speakButton = fixture.debugElement.query(By.css('.speak-button'))
+                            .query(By.css('.speak-button'));
+    speakButton.nativeElement.click();
+    fixture.detectChanges();
+
+    expect(textEntryEndEvents.length).toEqual(0);
+    expect(fixture.componentInstance.state)
+        .toEqual(State.FOCUSED_ON_LETTER_CHIP);
+  });
+
+  it('clicking speak button when spelling > 1 words is no-op', () => {
+    enterKeysIntoComponent('abc');
+    const spellButton = fixture.debugElement.query(By.css('.spell-button'));
+    spellButton.nativeElement.click();
+    fixture.detectChanges();
+    fixture.componentInstance.state = State.FOCUSED_ON_LETTER_CHIP;
+    fixture.componentInstance.onChipTextChanged({text: 'bit '}, 1);
+    fixture.detectChanges();
+    const speakButton = fixture.debugElement.query(By.css('.speak-button'))
+                            .query(By.css('.speak-button'));
+    speakButton.nativeElement.click();
+    fixture.detectChanges();
+
+    expect(textEntryEndEvents.length).toEqual(0);
+    expect(fixture.componentInstance.state)
+        .toEqual(State.FOCUSED_ON_LETTER_CHIP);
   });
 
   it('spell button is shown when word chip is chosen', () => {
@@ -1158,6 +1270,57 @@ describe('InputBarComponent', () => {
 
     expect(fixture.debugElement.query(By.css('.cut-button'))).toBeNull();
   });
+
+  it('numCharsToDeleteFromEnd truncates text from the end', () => {
+    inputBarControlSubject.next({
+      numCharsToDeleteFromEnd: 1,
+    });
+
+    const inputText = fixture.debugElement.query(By.css('.base-text-area'));
+    inputText.nativeElement.value = 'hi there, ';
+    const event1 = new KeyboardEvent('keypress', {key: ' '});
+    fixture.componentInstance.onInputTextAreaKeyUp(event1);
+    expect(inputText.nativeElement.value).toEqual('hi there,');
+    expect(fixture.componentInstance.inputString).toEqual('hi there,');
+
+    inputText.nativeElement.value = 'hi there, fine, ';
+    const event2 = new KeyboardEvent('keypress', {key: ' '});
+    fixture.componentInstance.onInputTextAreaKeyUp(event2);
+    expect(inputText.nativeElement.value).toEqual('hi there, fine, ');
+    expect(fixture.componentInstance.inputString).toEqual('hi there, fine, ');
+  });
+
+  for (const state of [State.ENTERING_BASE_TEXT, State.CHOOSING_LETTER_CHIP]) {
+    it('study abbrev mode: hides speak button: state=' + state, async () => {
+      await studyManager.maybeHandleRemoteControlCommand('start abbrev dummy1');
+      fixture.componentInstance.state = state;
+      fixture.detectChanges();
+
+      expect(fixture.debugElement.query(By.css('.speak-button'))).toBeNull();
+    });
+  }
+
+  for (const state of [State.CHOOSING_WORD_CHIP, State.FOCUSED_ON_WORD_CHIP]) {
+    it('study abbrev mode: shows speak button: state=' + state, async () => {
+      await studyManager.maybeHandleRemoteControlCommand('start abbrev dummy1');
+      fixture.componentInstance.state = state;
+      fixture.detectChanges();
+
+      expect(fixture.debugElement.query(By.css('.speak-button')))
+          .not.toBeNull();
+    });
+  }
+
+  for (const state of [State.ENTERING_BASE_TEXT]) {
+    it('study full mode: shows speak button: state=' + state, async () => {
+      await studyManager.maybeHandleRemoteControlCommand('start full dummy1');
+      fixture.componentInstance.state = state;
+      fixture.detectChanges();
+
+      expect(fixture.debugElement.query(By.css('.speak-button')))
+          .not.toBeNull();
+    });
+  }
 
   // TODO(cais): Test spelling valid word triggers AE, with debounce.
 });

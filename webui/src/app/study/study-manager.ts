@@ -262,6 +262,10 @@ export class StudyManager {
     return this._isStudyOn;
   }
 
+  public get isAbbreviationMode(): boolean {
+    return this.isAbbreviation === true;
+  }
+
   /**
    * Gets the ID of the current ongoing dialog, if any. Returns `null` if and
    * only if there is no ongoing dialog.

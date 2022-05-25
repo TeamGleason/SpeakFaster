@@ -26,6 +26,7 @@ import {Component, Input, OnInit} from '@angular/core';
 import {Subject} from 'rxjs';
 import {keySequenceEndsWith, removePunctuation} from 'src/utils/text-utils';
 
+import {InputBarControlEvent} from '../input-bar/input-bar.component';
 import {TextEntryBeginEvent, TextEntryEndEvent} from '../types/text-entry';
 
 // The minimum delay between a preceeding keypress and an eye-gaze-triggered
@@ -209,7 +210,8 @@ function getEndKeyDestination(reconState: TextReconState): number {
 }
 
 function processIgnoreMachineKeySequences(
-    isInferredMachineKey: boolean, reconState: TextReconState): void {
+    isInferredMachineKey: boolean, reconState: TextReconState,
+    inputBarControlSubject?: Subject<InputBarControlEvent>): void {
   // Process ignored machine key sequences.
   let numDisacrdedChars = 0;
   if (isInferredMachineKey) {
@@ -226,6 +228,11 @@ function processIgnoreMachineKeySequences(
         0, reconState.text.length - numDisacrdedChars);
     reconState.keySequence.splice(
         reconState.keySequence.length - numDisacrdedChars);
+    if (inputBarControlSubject) {
+      inputBarControlSubject.next({
+        numCharsToDeleteFromEnd: numDisacrdedChars,
+      });
+    }
   }
 }
 
@@ -441,6 +448,7 @@ const externalReconState = createInitialTextReconState();
 const ignoreMachineKeySequenceConfigs: IgnoreMachineKeySequenceConfig[] = [];
 let textEntryBeginSubject: Subject<TextEntryBeginEvent>;
 let textEntryEndSubject: Subject<TextEntryEndEvent>;
+let inputBarControlSubject: Subject<InputBarControlEvent>;
 
 export function setInternalReconStateForTest(reconState: TextReconState) {
   Object.assign(internalReconState, reconState);
@@ -453,6 +461,7 @@ export function setInternalReconStateForTest(reconState: TextReconState) {
 export class ExternalEventsComponent implements OnInit {
   @Input() textEntryBeginSubject!: Subject<TextEntryBeginEvent>;
   @Input() textEntryEndSubject!: Subject<TextEntryEndEvent>;
+  @Input() inputBarControlSubject!: Subject<InputBarControlEvent>;
 
   private static readonly keypressListeners: KeypressListener[] = [];
   private static toggleForegroundCallback?: (toForeground: boolean) => void;
@@ -463,6 +472,7 @@ export class ExternalEventsComponent implements OnInit {
   ngOnInit() {
     textEntryBeginSubject = this.textEntryBeginSubject;
     textEntryEndSubject = this.textEntryEndSubject;
+    inputBarControlSubject = this.inputBarControlSubject;
     this.textEntryEndSubject.subscribe(event => {
       // TODO(cais): Add unit test.
       if (!event.isFinal) {
@@ -667,7 +677,7 @@ export class ExternalEventsComponent implements OnInit {
       if (isPrevKeyCtrl ||
           keySequenceEndsWith(
               reconState.keySequence, WORD_BACKSPACE_COMBO_KEY)) {
-        // Wod delete.
+        // Word delete.
         wordBackspace(reconState);
       } else {
         if (reconState.cursorPos > 0) {
@@ -713,7 +723,9 @@ export class ExternalEventsComponent implements OnInit {
       textEntryBeginSubject.next({timestampMillis: Date.now()});
     }
 
-    processIgnoreMachineKeySequences(isInferredMachineKey, reconState);
+    processIgnoreMachineKeySequences(
+        isInferredMachineKey, reconState,
+        isExternal ? undefined : inputBarControlSubject);
     if (!isExternal) {
       ExternalEventsComponent.keypressListeners.forEach(listener => {
         listener(reconState.keySequence, reconState.text);

@@ -30,7 +30,7 @@
 }
 
 .action-button.expand-button {
-  background-color: #525453;
+  background-color: #057bad;
   width: 100px;
 }
 
@@ -42,7 +42,6 @@
   align-items: center;
   background: #272626;
   border: none;
-  caret-shape: block;
   color: white;
   display: inline-flex;
   flex-direction: row;
@@ -294,6 +293,7 @@
     <div class="right-buttons-container">
       <button
           #clickableButton
+          *ngIf="!hideSpeakButton"
           class="action-button speak-button">
         <app-speak-button-component
             [phrase]="effectivePhrase"

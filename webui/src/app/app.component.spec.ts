@@ -338,12 +338,45 @@ describe('AppComponent', () => {
     expect(mainArea.classes['study-mode']).toBeTrue();
   });
 
-  it('isStudyOn reflects off state after on', () => {
+  it('isStudyOn reflects off state after on', async () => {
     studyManager.maybeHandleRemoteControlCommand('study on');
     studyManager.maybeHandleRemoteControlCommand('study off');
     fixture.detectChanges();
+    await fixture.whenStable();
 
     expect(fixture.componentInstance.isStudyOn).toBeFalse();
+  });
+
+  it('supportsAbbrevationExpansion reflects study manager full mode',
+     async () => {
+       setAppState(AppState.ABBREVIATION_EXPANSION);
+       fixture.detectChanges();
+       studyManager.maybeHandleRemoteControlCommand('start full dummy1');
+       fixture.detectChanges();
+       await fixture.whenStable();
+
+       expect(fixture.componentInstance.supportsAbbrevationExpansion)
+           .toBeFalse();
+     });
+
+  it('supportsAbbrevationExpansion reflects study manager abbrev mode',
+     async () => {
+       setAppState(AppState.ABBREVIATION_EXPANSION);
+       fixture.detectChanges();
+       studyManager.maybeHandleRemoteControlCommand('start abbrev dummy1');
+       fixture.detectChanges();
+       await fixture.whenStable();
+
+       expect(fixture.componentInstance.supportsAbbrevationExpansion)
+           .toBeTrue();
+     });
+
+  it('supportsAbbrevationExpansion reflects non-study mode', async () => {
+    setAppState(AppState.ABBREVIATION_EXPANSION);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(fixture.componentInstance.supportsAbbrevationExpansion).toBeTrue();
   });
 
   it('eye tracker disconnection updates input-bar notification', () => {

@@ -1265,5 +1265,37 @@ describe('InputBarComponent', () => {
     expect(fixture.componentInstance.inputString).toEqual('hi there, fine, ');
   });
 
+  for (const state of [State.ENTERING_BASE_TEXT, State.CHOOSING_LETTER_CHIP]) {
+    it('study abbrev mode: hides speak button: state=' + state, async () => {
+      await studyManager.maybeHandleRemoteControlCommand('start abbrev dummy1');
+      fixture.componentInstance.state = state;
+      fixture.detectChanges();
+
+      expect(fixture.debugElement.query(By.css('.speak-button'))).toBeNull();
+    });
+  }
+
+  for (const state of [State.CHOOSING_WORD_CHIP, State.FOCUSED_ON_WORD_CHIP]) {
+    it('study abbrev mode: shows speak button: state=' + state, async () => {
+      await studyManager.maybeHandleRemoteControlCommand('start abbrev dummy1');
+      fixture.componentInstance.state = state;
+      fixture.detectChanges();
+
+      expect(fixture.debugElement.query(By.css('.speak-button')))
+          .not.toBeNull();
+    });
+  }
+
+  for (const state of [State.ENTERING_BASE_TEXT]) {
+    it('study full mode: shows speak button: state=' + state, async () => {
+      await studyManager.maybeHandleRemoteControlCommand('start full dummy1');
+      fixture.componentInstance.state = state;
+      fixture.detectChanges();
+
+      expect(fixture.debugElement.query(By.css('.speak-button')))
+          .not.toBeNull();
+    });
+  }
+
   // TODO(cais): Test spelling valid word triggers AE, with debounce.
 });

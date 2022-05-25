@@ -807,13 +807,12 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   get hideSpeakButton(): boolean {
-    const canOutputTextInBar =
+    const canOutputTextFromInputBar =
         (this.state === State.CHOOSING_WORD_CHIP ||
-         this.state === State.CHOOSING_LETTER_CHIP ||
          this.state === State.FOCUSED_ON_WORD_CHIP ||
          (this.state === State.FOCUSED_ON_LETTER_CHIP &&
           this._chips.length === 1));
     return this.isStudyOn && this.studyManager.isAbbreviationMode &&
-        !canOutputTextInBar;
+        !canOutputTextFromInputBar;
   }
 }

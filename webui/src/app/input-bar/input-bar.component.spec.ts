@@ -499,6 +499,31 @@ describe('InputBarComponent', () => {
     expect(fillMaskRequests.length).toEqual(0);
   });
 
+  it('chip injection remembers previous text', () => {
+    let inputText = fixture.debugElement.query(By.css('.base-text-area'));
+    inputText.nativeElement.value = 'xyz';
+    inputBarControlSubject.next({
+      chips: [
+        {
+          text: 'i',
+        },
+        {
+          text: 'feel',
+        },
+        {
+          text: 'great',
+        }
+      ]
+    });
+    fixture.detectChanges();
+    const abortButton = fixture.debugElement.query(By.css('.abort-button'));
+    abortButton.nativeElement.click();
+    fixture.detectChanges();
+
+    inputText = fixture.debugElement.query(By.css('.base-text-area'));
+    expect(inputText.nativeElement.value).toEqual('xyz');
+  });
+
   it('clicking word chip during refinement sets correct state', () => {
     inputBarControlSubject.next({
       chips: [

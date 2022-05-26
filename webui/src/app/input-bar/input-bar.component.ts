@@ -321,6 +321,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     this.scaleInputTextFontSize();
     if (ABBRVIATION_EXPANSION_TRIGGER_SUFFIX.some(
             suffix => this.inputString.endsWith(suffix)) &&
+        this.supportsAbbrevationExpansion &&
         this.inputStringIsCompatibleWithAbbreviationExpansion) {
       this.triggerAbbreviationExpansion();
     }

@@ -321,8 +321,10 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     this.scaleInputTextFontSize();
     if (ABBRVIATION_EXPANSION_TRIGGER_SUFFIX.some(
             suffix => this.inputString.endsWith(suffix)) &&
-        this.supportsAbbrevationExpansion &&
+        !(this.studyManager.isStudyOn &&
+          !this.studyManager.isAbbreviationMode) &&
         this.inputStringIsCompatibleWithAbbreviationExpansion) {
+      // NOTE(#337): Under the full mode of study, AE should not be triggered.
       this.triggerAbbreviationExpansion();
     }
   }

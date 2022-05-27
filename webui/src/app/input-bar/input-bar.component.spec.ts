@@ -1322,5 +1322,26 @@ describe('InputBarComponent', () => {
     });
   }
 
+  // NOTE(#337): Under the full mode of study, Enter key ought not to trigger
+  // AE.
+  for (const [command, expectedNumTriggers] of [
+           ['start full dummy1', 0], ['start abbrev dummy1', 1]] as
+       Array<[string, number]>) {
+    it('Enter key under study full mode does not trigger AE: command=' +
+           command,
+       async () => {
+         await studyManager.maybeHandleRemoteControlCommand(command);
+         fixture.detectChanges();
+         const input = fixture.debugElement.query(By.css('.base-text-area'));
+         const event = new KeyboardEvent('keypress', {key: '\n'});
+         input.nativeElement.value = 'hi\n';
+         fixture.componentInstance.onInputTextAreaKeyUp(event);
+         fixture.detectChanges();
+
+         expect(inputAbbreviationChangeEvents.length)
+             .toEqual(expectedNumTriggers);
+       });
+  }
+
   // TODO(cais): Test spelling valid word triggers AE, with debounce.
 });

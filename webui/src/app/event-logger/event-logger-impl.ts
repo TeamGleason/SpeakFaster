@@ -50,8 +50,8 @@ export interface EventLogResponse {
 
 /**
  * Format / escape a text string for logging. Special characters such as single
- * and double quotes are escaped to prevent a class of issues during server-side
- * string parsing.
+ * and double quotes and newline characters are escaped to prevent a class of
+ * issues during server-side string parsing.
  */
 export function formatTextForLogging(text: string): string {
   // NOTE: `encodeURIComponent()` doesn't escape single quote.
@@ -234,6 +234,8 @@ export class HttpEventLogger implements EventLogger {
         getVirtualkeyCode(keyboardEvent.key);
     if (!HttpEventLogger.isFullLogging()) {
       text = null;
+    } else if (text !== null) {
+      text = formatTextForLogging(text);
     }
     // TODO(cais): Add unit test.
     await this
@@ -646,7 +648,7 @@ export class HttpEventLogger implements EventLogger {
         .pipe(retryWhen(
             error => error.pipe(
                 concatMap((error, count) => {
-                  if (count <= MAX_RETRIES) {
+                  if (count < MAX_RETRIES) {
                     return of(error);
                   }
                   return throwError(error);

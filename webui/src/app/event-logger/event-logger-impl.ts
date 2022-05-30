@@ -2,8 +2,8 @@
 
 import {HttpClient, HttpHeaders} from '@angular/common/http';
 import {Injectable} from '@angular/core';
-import {Observable, of} from 'rxjs';
-import {first} from 'rxjs/operators';
+import {Observable, of, throwError} from 'rxjs';
+import {concatMap, delay, first, retryWhen} from 'rxjs/operators';
 import {isTextContentKey} from 'src/utils/keyboard-utils';
 import {createUuid} from 'src/utils/uuid';
 
@@ -50,8 +50,8 @@ export interface EventLogResponse {
 
 /**
  * Format / escape a text string for logging. Special characters such as single
- * and double quotes are escaped to prevent a class of issues during server-side
- * string parsing.
+ * and double quotes and newline characters are escaped to prevent a class of
+ * issues during server-side string parsing.
  */
 export function formatTextForLogging(text: string): string {
   // NOTE: `encodeURIComponent()` doesn't escape single quote.
@@ -116,6 +116,9 @@ export function getContextualPhraseStats(phrase: ContextualPhrase):
   }
   return output;
 }
+
+const MAX_RETRIES = 3;
+const RETRY_DELAY_MILLIS = 1000;
 
 @Injectable({
   providedIn: 'root',
@@ -231,6 +234,8 @@ export class HttpEventLogger implements EventLogger {
         getVirtualkeyCode(keyboardEvent.key);
     if (!HttpEventLogger.isFullLogging()) {
       text = null;
+    } else if (text !== null) {
+      text = formatTextForLogging(text);
     }
     // TODO(cais): Add unit test.
     await this
@@ -637,7 +642,17 @@ export class HttpEventLogger implements EventLogger {
         'Content-Type': 'application/json',
       }),
     };
-    return this.http.post<EventLogResponse>(
-        EVENT_LOGS_ENDPOINT, JSON.stringify(eventLogEntry), httpOptions);
+    return this.http
+        .post<EventLogResponse>(
+            EVENT_LOGS_ENDPOINT, JSON.stringify(eventLogEntry), httpOptions)
+        .pipe(retryWhen(
+            error => error.pipe(
+                concatMap((error, count) => {
+                  if (count < MAX_RETRIES) {
+                    return of(error);
+                  }
+                  return throwError(error);
+                }),
+                delay(RETRY_DELAY_MILLIS))));
   }
 }

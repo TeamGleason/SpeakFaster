@@ -13,6 +13,11 @@ describe('EventLogger', () => {
       expect(formatTextForLogging('I\'m not saying \"you can\'t do it\"'))
           .toEqual('I%27m%20not%20saying%20%22you%20can%27t%20do%20it%22');
     });
+
+    it('Escapes newline character', () => {
+      expect(formatTextForLogging('Don\'t do it\nPlease\n'))
+      .toEqual('Don%27t%20do%20it%0APlease%0A');
+    });
   });
 
   describe('isFullLogging()', () => {

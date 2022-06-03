@@ -632,12 +632,13 @@ class DataManager(object):
           local_dest_dir, self._speaker_id_config_json_path)
       if misspelled_words:
         answer = sg.popup_yes_no(
-            "Found these misspelled words: " +
+            "Found misspelled words: " +
             ", ".join(("\"%s\"" % w) for w in misspelled_words) +
             "\n\nClick Yes to ignore them. Click No to go back and fix them.")
         if answer != "Yes":
           raise ValueError(
-              "There are misspelled words that you decided not to ignore.")
+              "There are misspelled word(s) that you decided not to ignore. "
+              "Please fix them in ELAN or curated.tsv.")
 
       message = "Postprocessing succeeded!"
       print(message)

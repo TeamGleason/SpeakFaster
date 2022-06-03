@@ -556,6 +556,8 @@ def postprocess_curated(input_dir, speaker_id_config_json_path):
 def get_misspelled_words(tsv_path):
   """Get misspelled words from all SpeechTranscript rows of the TSV file."""
   spell_checker = spellchecker.SpellChecker()
+  # For contractions.
+  spell_checker.word_frequency.load_words(["d", "ll", "m", "s", "t"])
   misspelled_words = set()
   column_order, has_header = infer_columns(tsv_path)
   rows = load_rows(

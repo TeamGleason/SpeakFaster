@@ -634,6 +634,7 @@ class DataManager(object):
         answer = sg.popup_yes_no(
             "Found misspelled words: " +
             ", ".join(("\"%s\"" % w) for w in misspelled_words) +
+            "\n\nDo you want to ignore them?"
             "\n\nClick Yes to ignore them. Click No to go back and fix them.")
         if answer != "Yes":
           raise ValueError(

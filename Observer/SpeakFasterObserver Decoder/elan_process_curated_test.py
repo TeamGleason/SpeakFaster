@@ -407,6 +407,187 @@ class CalculuateSpeechCurationStatsTest(tf.test.TestCase):
         "tim": "Partner001",
     }
 
+  def testCalculateStats_withAdditionsDeletionsAndEdits(self):
+    curated_rows = [
+        (1.0, 2.0, "SpeechTranscript", "When do you want to leave [U1] [SpeakerTTS:Sean]"),
+        (10.0, 20.0, "SpeechTranscript", "<RedactedSensitive>How about eight o'clock</RedactedSensitive> [U2] [Speaker:Tim]"),
+        (24.0, 25.0, "SpeechTranscript", "OK [SpeakerTTS:Sean]"),
+    ]
+    stats = elan_process_curated.calculate_speech_curation_stats(
+        self.merged_tsv_path, curated_rows, self.realname_to_pseudonym)
+    self.assertEqual(stats["original_num_utterances"], 3)
+    self.assertEqual(stats["curated_num_utterances"], 3)
+    self.assertEqual(stats["deleted_utterances"], [{
+        "utterance_id": "U3",
+        "utterance_summary": {
+            "char_length": 4,
+            "num_tokens": 1,
+            "token_lengths": [4],
+            "pos_tags": ["NN"],
+        },
+    }])
+    self.assertEqual(stats["added_utterances"], [{
+        "index": 2,
+        "utterance_summary": {
+            "char_length": 2,
+            "num_tokens": 1,
+            "pos_tags": ["NN"],
+            "token_lengths": [2],
+        },
+    }])
+    self.assertLen(stats["edited_utterances"], 2)
+    self.assertEqual(stats["edited_utterances"][0], {
+        "utterance_id": "U1",
+        "utterance_summary": {
+            "char_length": 25,
+            "num_tokens": 6,
+            "pos_tags": ["WRB", "VBP", "PRP", "VB", "TO", "VB"],
+            "token_lengths": [4, 2, 3, 4, 2, 5],
+            "wer": 1 / 6,
+        },
+    })
+    self.assertEqual(stats["edited_utterances"][1], {
+        "utterance_id": "U2",
+        "utterance_summary": {
+            "char_length": 23,
+            "num_tokens": 6,
+            "pos_tags": ["WRB", "RB", "CD", "NNS", "POS", "NN"],
+            "token_lengths": [3, 5, 5, 1, 1, 5],
+            "wer": 1 / 4,
+        },
+    })
+    self.assertEqual(stats["curated_speaker_id_to_original_speaker_id"], [{
+        "utterance_id": "U1",
+        "original_speaker_id": "#1",
+        "curated_speaker_id": "User001",
+    }, {
+        "utterance_id": "U2",
+        "original_speaker_id": "#2",
+        "curated_speaker_id": "Partner001",
+    }])
+
+  def testCalculateStats_raisesErrorForRemovedUtteranceId(self):
+    curated_rows = [
+        (1.0, 2.0, "SpeechTranscript", "When do you want to sleep [U1] [SpeakerTTS:Sean]"),
+        (10.0, 20.0, "SpeechTranscript", "How about kate o'clock [U2] [Speaker:Tim]"),
+        (21.0, 22.0, "SpeechTranscript", "Beep [Speaker #1]"),
+    ]
+    with self.assertRaisesRegex(
+        ValueError, r"deleted or changed .* utterance ID .*\[U3\]"):
+      elan_process_curated.calculate_speech_curation_stats(
+          self.merged_tsv_path, curated_rows, self.realname_to_pseudonym)
+
+  def testCalculateStats_raisesErrorForChangedUtteranceId(self):
+    curated_rows = [
+        (1.0, 2.0, "SpeechTranscript", "When do you want to sleep [U1] [SpeakerTTS:Sean]"),
+        (10.0, 20.0, "SpeechTranscript", "How about kate o'clock [U2] [Speaker:Tim]"),
+        (21.0, 22.0, "SpeechTranscript", "Beep [U30] [Speaker #1]"),
+    ]
+    with self.assertRaisesRegex(
+        ValueError, r"deleted or changed .* utterance ID .*\[U3\]"):
+      elan_process_curated.calculate_speech_curation_stats(
+          self.merged_tsv_path, curated_rows, self.realname_to_pseudonym)
+
+  def testCalculateCurationStats_redactedSpeakerId(self):
+    curated_rows = [
+        (10.0,
+         20.0,
+         "SpeechTranscript",
+         "<RedactedSpeaker>Hi</RedactedSpeaker> [U2] [Speaker:Redacted]"),
+    ]
+    stats = elan_process_curated.calculate_speech_curation_stats(
+        self.merged_tsv_path, curated_rows, self.realname_to_pseudonym)
+    self.assertEqual(stats["original_num_utterances"], 3)
+    self.assertEqual(stats["curated_num_utterances"], 1)
+    self.assertEqual(stats["curated_speaker_id_to_original_speaker_id"], [{
+        "utterance_id": "U2",
+        "original_speaker_id": "#2",
+        "curated_speaker_id": "redacted",
+    }])
+
+  def testCalculateCurationStats_invalidSpeakerIdRaisesValueError(self):
+    curated_rows = [
+        (10.0, 20.0, "SpeechTranscript", "Hi [U2] [Speaker:InvalidSpeaker]")]
+    with self.assertRaisesRegex(ValueError,
+                                "Cannot find speaker ID InvalidSpeaker"):
+      elan_process_curated.calculate_speech_curation_stats(
+          self.merged_tsv_path, curated_rows, self.realname_to_pseudonym)
+
+  def testCalculateStats_raisesErrorForDuplicateUtteranceTimeSpans(self):
+    curated_rows = [
+        (1.0, 2.0, "SpeechTranscript", "When do you want to sleep [U1] [SpeakerTTS:Sean]"),
+        (10.0, 20.0, "SpeechTranscript", "How about eight o'clock [U2] [Speaker:Tim]"),
+        (10.0, 20.0, "SpeechTranscript", "How about eight o'clock [U2] [Speaker:Tim]"),
+    ]
+    with self.assertRaisesRegex(
+        ValueError, r"multiple .* timestamp.*10.*20"):
+      elan_process_curated.calculate_speech_curation_stats(
+          self.merged_tsv_path, curated_rows, self.realname_to_pseudonym)
+
+  def testCheckKeypresses_letsCorrectDataPass(self):
+    curated_rows = [
+        [15.2, 16.0, "SpeechTranscript",
+         "I have <RedactedSensitive time=\"00:00:01.500-00:00:04\">abc</RedactedSensitive> [SpeakerTTS:Sean]"],
+        (30.0, 30.01, "Keypress", "a"),
+        (31.0, 31.01, "Keypress", "b"),
+        (32.0, 32.01, "Keypress", "c")]
+    elan_process_curated.check_keypresses(self.merged_tsv_path, curated_rows)
+    curated_rows = [
+        [30.0, 30.01, "Keypress", "a"],
+        [31.0, 31.01, "Keypress", "b"],
+        [32.0, 32.01, "Keypress", "c"]]
+    elan_process_curated.check_keypresses(self.merged_tsv_path, curated_rows)
+
+  def testCheckKeypresses_ignoresMismatchesInTEnd(self):
+    curated_rows = [
+        [15.2, 16.0, "SpeechTranscript",
+         "I have <RedactedSensitive time=\"00:00:01.500-00:00:04\">abc</RedactedSensitive> [SpeakerTTS:Sean]"],
+        (30.0, 30.02, "Keypress", "a"),
+        (31.0, 31.11, "Keypress", "b"),
+        (32.0, 33.01, "Keypress", "c")]
+    elan_process_curated.check_keypresses(self.merged_tsv_path, curated_rows)
+
+  def testCheckKeypresses_detectsAddedKeypresses(self):
+    curated_rows = [
+        (30.0, 30.01, "Keypress", "a"),
+        (30.5, 30.51, "Keypress", "A"),
+        (31.0, 31.01, "Keypress", "b"),
+        (32.0, 32.01, "Keypress", "c")]
+    with self.assertRaisesRegex(
+        ValueError,
+        r".*keypress row .*30\.5.*A.*missing from the original data.*"):
+      elan_process_curated.check_keypresses(self.merged_tsv_path, curated_rows)
+    curated_rows = [
+        (30.0, 30.01, "Keypress", "a"),
+        (30.5, 30.51, "Keypress", "A"),
+        (32.0, 32.01, "Keypress", "c")]
+    with self.assertRaisesRegex(
+        ValueError,
+        r".*keypress row .*30\.5.*A.*missing from the original data.*"):
+      elan_process_curated.check_keypresses(self.merged_tsv_path, curated_rows)
+    curated_rows = [
+        [30.0, 30.01, "Keypress", "a"],
+        [31.0, 31.01, "Keypress", "B"],
+        [32.0, 32.01, "Keypress", "c"]]
+    with self.assertRaisesRegex(
+        ValueError,
+        r".*keypress row .*31\.0.*B.*missing from the original data.*"):
+      elan_process_curated.check_keypresses(self.merged_tsv_path, curated_rows)
+
+  def testCheckKeypresses_detectsMissingKeypresses(self):
+    curated_rows = [
+        (30.0, 30.01, "Keypress", "a"),
+        (32.0, 32.01, "Keypress", "c")]
+    with self.assertRaisesRegex(
+        ValueError,
+        r".*keypress row .*31\.0.*b.*missing from the curated data.*"):
+      elan_process_curated.check_keypresses(self.merged_tsv_path, curated_rows)
+    curated_rows = []
+    with self.assertRaisesRegex(
+        ValueError,
+        r".*keypress row .*30\.0.*a.*missing from the curated data.*"):
+      elan_process_curated.check_keypresses(self.merged_tsv_path, curated_rows)
+
   def testGetMisspelledWords_returnsWrongWords(self):
     tsv_path = os.path.join("testdata", "curated_with_typos.tsv")
     misspelled_words = elan_process_curated.get_misspelled_words(tsv_path)

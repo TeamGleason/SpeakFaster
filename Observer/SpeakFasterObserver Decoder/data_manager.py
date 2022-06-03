@@ -628,8 +628,17 @@ class DataManager(object):
 
     local_dest_dir = self.get_local_session_dir(session_prefix)
     try:
-      elan_process_curated.postprocess_curated(
+      misspelled_words = elan_process_curated.postprocess_curated(
           local_dest_dir, self._speaker_id_config_json_path)
+      if misspelled_words:
+        answer = sg.popup_yes_no(
+            "Found these misspelled words: " +
+            ", ".join(("\"%s\"" % w) for w in misspelled_words) +
+            "\n\nClick Yes to ignore them. Click No to go back and fix them.")
+        if answer != "Yes":
+          raise ValueError(
+              "There are misspelled words that you decided not to ignore.")
+
       message = "Postprocessing succeeded!"
       print(message)
       sg.Popup(message, modal=True)

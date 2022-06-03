@@ -19,6 +19,7 @@ import os
 import re
 
 import numpy as np
+import spellchecker
 
 import file_naming
 import metadata_pb2
@@ -505,6 +506,15 @@ def parse_args():
 
 
 def postprocess_curated(input_dir, speaker_id_config_json_path):
+  """Performs postprocessing on a session directory.
+
+  Args:
+    input_dir: Input session directory path.
+    speaker_id_config_json_path: Path to the speaker ID JSON file.
+
+  Returns:
+    A list of misspelled words (if any).
+  """
   nlp.init()
 
   realname_to_pseudonym = load_speaker_map(speaker_id_config_json_path)
@@ -538,6 +548,26 @@ def postprocess_curated(input_dir, speaker_id_config_json_path):
     out_json["speech_curation_stats"] = speech_curation_stats
     json.dump(out_json, f, indent=2)
     print("\nWrote additional info to JSON file: %s" % out_json_path)
+
+  misspelled_words = get_misspelled_words(curated_tsv_path)
+  return misspelled_words
+
+
+def get_misspelled_words(tsv_path):
+  """Get misspelled words from all SpeechTranscript rows of the TSV file."""
+  spell_checker = spellchecker.SpellChecker()
+  misspelled_words = set()
+  column_order, has_header = infer_columns(tsv_path)
+  rows = load_rows(
+      tsv_path, column_order, has_header=has_header)
+  for row in rows:
+    tbegin, tend, tier, content = row
+    if tier != tsv_data.SPEECH_TRANSCRIPT_TIER:
+      continue
+    utterance = transcript_lib.extract_speech_content(content)
+    words = nlp.tokenize(utterance)
+    misspelled_words.update(spell_checker.unknown(words))
+  return list(misspelled_words)
 
 
 def main():

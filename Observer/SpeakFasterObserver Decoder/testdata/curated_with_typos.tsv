@@ -1,0 +1,6 @@
+Tier	tBegin	tEnd	Content
+Keypress	2.5	2.6	V
+SpeechTranscript	0.1	0.9	Hello, my freend
+SpeechTranscript	1.2	2.5	How are you doign today?
+AudioEvents1	3.0	3.2	Doorbell
+SpeechTranscript	4.2	4.5	It's great. Don't repeat it. I'll do it. I'm good. I'll be done by 12. How'd that sound?

@@ -588,6 +588,16 @@ class CalculuateSpeechCurationStatsTest(tf.test.TestCase):
         r".*keypress row .*30\.0.*a.*missing from the curated data.*"):
       elan_process_curated.check_keypresses(self.merged_tsv_path, curated_rows)
 
+  def testGetMisspelledWords_returnsWrongWords(self):
+    tsv_path = os.path.join("testdata", "curated_with_typos.tsv")
+    misspelled_words = elan_process_curated.get_misspelled_words(tsv_path)
+    self.assertItemsEqual(misspelled_words, ["freend", "doign"])
+
+  def testGetMisspelledWords_returnsEmptyListWhenAllWordsAreCorrect(self):
+    tsv_path = os.path.join("testdata", "curated_1.tsv")
+    misspelled_words = elan_process_curated.get_misspelled_words(tsv_path)
+    self.assertEqual(misspelled_words, [])
+
 
 if __name__ == "__main__":
   tf.test.main()

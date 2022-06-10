@@ -508,6 +508,8 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     this._chipTypedText![i] = spelledString;
     if (this.state === State.FOCUSED_ON_LETTER_CHIP &&
         LexiconComponent.isValidWord(spelledString.trim())) {
+      console.log(
+          `Spelled string is valid word '${spelledString}': trigger AE`);
       this.triggerAbbreviationExpansion(/* isInFlight= */ true);
     }
     updateButtonBoxesForElements(this.instanceId, this.buttons);

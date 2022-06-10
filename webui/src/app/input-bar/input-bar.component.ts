@@ -506,10 +506,8 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     this.ensureChipTypedTextCreated();
     const spelledString = event.text.trim();
     this._chipTypedText![i] = spelledString;
-    console.log('*** Got word:', spelledString);   // DEBUG
     if (this.state === State.FOCUSED_ON_LETTER_CHIP &&
         LexiconComponent.isValidWord(spelledString.trim())) {
-      console.log('*** Is valid word:', spelledString);  // DEBUG
       this.triggerAbbreviationExpansion(/* isInFlight= */ true);
     }
     updateButtonBoxesForElements(this.instanceId, this.buttons);

@@ -1,7 +1,7 @@
 /** An input bar, with related functional buttons. */
 import {AfterViewInit, ChangeDetectorRef, Component, ElementRef, EventEmitter, Input, OnDestroy, OnInit, Output, QueryList, ViewChild, ViewChildren} from '@angular/core';
 import {Subject, Subscription} from 'rxjs';
-import {debounceTime} from 'rxjs/operators';
+import {sampleTime} from 'rxjs/operators';
 import {injectTextAsKeys, requestSoftKeyboardReset, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
 import {removePunctuation} from 'src/utils/text-utils';
 import {createUuid} from 'src/utils/uuid';
@@ -152,7 +152,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   private abbreviationExpansionTriggersSubscription?: Subscription;
   private inFlightAbbreviationExpansionTriggerSubscription?: Subscription;
   private studyUserTurnsSubscription?: Subscription;
-  private readonly inFlightAbbreviationExpansionTriggers:
+  readonly inFlightAbbreviationExpansionTriggers:
       Subject<InputAbbreviationChangedEvent> = new Subject();
   private _contextualPhraseTags: string[] = ['favorite'];
   private pendingCharDeletions: number = 0;
@@ -251,7 +251,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
         });
     this.inFlightAbbreviationExpansionTriggerSubscription =
         this.inFlightAbbreviationExpansionTriggers
-            .pipe(debounceTime(
+            .pipe(sampleTime(
                 InputBarComponent.IN_FLIGHT_AE_TRIGGER_DEBOUNCE_MILLIS))
             .subscribe((event: InputAbbreviationChangedEvent) => {
               this.abbreviationExpansionTriggers.next(event);
@@ -506,10 +506,10 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     this.ensureChipTypedTextCreated();
     const spelledString = event.text.trim();
     this._chipTypedText![i] = spelledString;
+    console.log('*** Got word:', spelledString);   // DEBUG
     if (this.state === State.FOCUSED_ON_LETTER_CHIP &&
         LexiconComponent.isValidWord(spelledString.trim())) {
-      console.log(
-          `Spelled string is valid word '${spelledString}': trigger AE`);
+      console.log('*** Is valid word:', spelledString);  // DEBUG
       this.triggerAbbreviationExpansion(/* isInFlight= */ true);
     }
     updateButtonBoxesForElements(this.instanceId, this.buttons);

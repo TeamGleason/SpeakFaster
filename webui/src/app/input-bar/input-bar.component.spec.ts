@@ -1343,5 +1343,5 @@ describe('InputBarComponent', () => {
        });
   }
 
-  // TODO(cais): Test spelling valid word triggers AE, with debounce.
+  // TODO(cais): Test spelling valid word triggers AE, with sampleTime().
 });

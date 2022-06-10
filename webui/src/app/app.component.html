@@ -41,8 +41,12 @@ app-text-to-speech-component {
 .content {
   box-sizing: border-box;
   height: fit-content;
-  margin: 0;
+  margin: 4px;
   width: fit-content;
+}
+
+.content.study-mode {
+  margin: 0px;
 }
 
 .context-and-quick-phrase-container {
@@ -72,7 +76,7 @@ app-text-to-speech-component {
 }
 
 .main-left-pane {
-  align-items:flex-start;
+  align-items: flex-start;
   box-sizing: border-box;
   display: flex;
   min-height: 100%;
@@ -111,6 +115,7 @@ app-text-to-speech-component {
     #contentWrapper
     *ngIf="getUserRole() === 'AAC_USER' else partnerBlock"
     class="content"
+    [ngClass]="{'study-mode': isStudyOn}"
     role="main">
 
   <!-- This is a "virtual" component without any UI. It is purely for

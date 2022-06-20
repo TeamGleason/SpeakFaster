@@ -351,4 +351,12 @@
     {{notification}}
   </div>
 
+  <!-- TODO(cais): Add unit tests. -->
+  <input-text-predictions-component
+      *ngIf="!hasNotification && !isStudyOn"
+      [userId]="userId"
+      [inputString]="inputString"
+      [inputBarControlSubject]="inputBarControlSubject">
+  </input-text-predictions-component>
+
 </div>

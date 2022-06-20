@@ -2,15 +2,17 @@
 import {DebugElement, Injectable} from '@angular/core';
 import {ComponentFixture, fakeAsync, TestBed, tick} from '@angular/core/testing';
 import {By} from '@angular/platform-browser';
-import {Observable, Subject} from 'rxjs';
+import {Observable, of, Subject} from 'rxjs';
 
 import * as cefSharp from '../../utils/cefsharp';
 import {HttpEventLogger} from '../event-logger/event-logger-impl';
 import {VIRTUAL_KEY} from '../external/external-events.component';
 import {InputBarChipComponent} from '../input-bar-chip/input-bar-chip.component';
 import {InputBarChipModule} from '../input-bar-chip/input-bar-chip.module';
+import {InputTextPredictionsComponent} from '../input-text-predictions/input-text-predictions.component';
+import {InputTextPredictionsModule} from '../input-text-predictions/input-text-predictions.module';
 import {LoadLexiconRequest} from '../lexicon/lexicon.component';
-import {FillMaskRequest, SpeakFasterService} from '../speakfaster-service';
+import {FillMaskRequest, SpeakFasterService, TextPredictionRequest, TextPredictionResponse} from '../speakfaster-service';
 import {setDelaysForTesting, StudyManager, StudyUserTurn} from '../study/study-manager';
 import {TestListener} from '../test-utils/test-cefsharp-listener';
 import {InputAbbreviationChangedEvent} from '../types/abbreviation';
@@ -25,6 +27,11 @@ class SpeakFasterServiceForTest {
   public addContextualPhrase(request: AddContextualPhraseRequest):
       Observable<AddContextualPhraseResponse> {
     throw new Error('Should call spy instead of this method.');
+  }
+
+  public textPrediction(textPredictionRequest: TextPredictionRequest):
+      Observable<TextPredictionResponse> {
+    return of({outputs: []});
   }
 }
 
@@ -79,8 +86,12 @@ describe('InputBarComponent', () => {
     studyManager.studyUserTurns = studyUserTurnsSubject;
     await TestBed
         .configureTestingModule({
-          imports: [InputBarModule, InputBarChipModule],
-          declarations: [InputBarComponent, InputBarChipComponent],
+          imports:
+              [InputBarModule, InputBarChipModule, InputTextPredictionsModule],
+          declarations: [
+            InputBarComponent, InputBarChipComponent,
+            InputTextPredictionsComponent
+          ],
           providers: [
             {provide: SpeakFasterService, useValue: speakFasterServiceForTest},
             {provide: HttpEventLogger, useValue: new HttpEventLogger(null)},
@@ -1340,6 +1351,78 @@ describe('InputBarComponent', () => {
 
          expect(inputAbbreviationChangeEvents.length)
              .toEqual(expectedNumTriggers);
+       });
+  }
+
+  for (const [originalText, expectedText] of [
+           ['ba', 'bar'], ['foo b', 'foo bar'], ['foo  b', 'foo  bar'],
+           ['foo br', 'foo bar'], ['foo bar', 'foo bar'],
+           ['foo va', 'foo bar']]) {
+    it('suggestionSelection updates input string: current word: ' +
+           'original=' + originalText + '; expected=' + expectedText,
+       () => {
+         fixture.componentInstance.inputString = originalText;
+         fixture.componentInstance.inputBarControlSubject.next({
+           suggestionSelection: 'bar',
+         });
+
+         expect(fixture.componentInstance.inputString).toEqual(expectedText);
+         const inputText =
+             fixture.debugElement.query(By.css('.base-text-area'));
+         expect(inputText.nativeElement.value).toEqual(expectedText);
+       });
+  }
+
+  for (const [originalText, expectedText] of [
+           ['', 'bar'], [' ', ' bar'], ['foo ', 'foo bar']]) {
+    it('suggestionSelection updates input string: next word: ' +
+           'original=' + originalText + '; expected=' + expectedText,
+       () => {
+         fixture.componentInstance.inputString = originalText;
+         fixture.componentInstance.inputBarControlSubject.next({
+           suggestionSelection: 'bar',
+         });
+
+         expect(fixture.componentInstance.inputString).toEqual(expectedText);
+         const inputText =
+             fixture.debugElement.query(By.css('.base-text-area'));
+         expect(inputText.nativeElement.value).toEqual(expectedText);
+       });
+  }
+
+  it('suggestion whitespace is overridden after punctuation key', () => {
+    fixture.componentInstance.inputString = 'hi ';
+    fixture.componentInstance.inputBarControlSubject.next({
+      suggestionSelection: 'there ',
+    });
+    fixture.detectChanges();
+    const event = new KeyboardEvent('keypress', {key: '.'});
+    const inputText = fixture.debugElement.query(By.css('.base-text-area'));
+    inputText.nativeElement.value = 'hi there .';
+    fixture.componentInstance.onInputTextAreaKeyUp(event);
+    fixture.detectChanges();
+
+    expect(inputText.nativeElement.value).toEqual('hi there.');
+  });
+
+  for (const punctuationKey of ['.', ',', ';', ':']) {
+    it('suggestion whitespace is overridden after punctuation key: ' +
+           punctuationKey,
+       () => {
+         fixture.componentInstance.inputString = 'hi ';
+         fixture.componentInstance.inputBarControlSubject.next({
+           suggestionSelection: 'there ',
+         });
+         fixture.detectChanges();
+         const event = new KeyboardEvent('keypress', {key: punctuationKey});
+         const inputText =
+             fixture.debugElement.query(By.css('.base-text-area'));
+         inputText.nativeElement.value = 'hi there ' + punctuationKey;
+         fixture.componentInstance.onInputTextAreaKeyUp(event);
+         fixture.detectChanges();
+
+         expect(inputText.nativeElement.value)
+             .toEqual('hi there' + punctuationKey);
        });
   }
 

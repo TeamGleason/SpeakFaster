@@ -306,13 +306,6 @@ mat-progress-spinner {
     *ngIf="!isStudyOn &&
            (state === 'PRE_CHOOSING_EXPANSION' ||
             state === 'POST_CHOOSING_EXPANSION')">
-  <button
-      #clickableButton
-      *ngFor="let text of textPredictions; let i = index"
-      class="action-button text-prediction-button"
-      (click)="onTextPredictionButtonClicked($event, i)">
-    {{text}}
-  </button>
 
   <app-quick-phrases-component
       [userId]="userId"

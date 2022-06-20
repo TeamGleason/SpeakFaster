@@ -148,37 +148,6 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
                 .map(turn => turn.speechContent)
                 .join('. ') +
             '. ';
-    // TODO(cais): Clean up. DO NOT SUBMIT.
-    // this.speakFasterService
-    //     .textPrediction({
-    //       contextTurns:
-    //           conversationTurns.slice(0, n + 1).map(turn => turn.speechContent),
-    //       textPrefix,
-    //       timestamp: new Date().toISOString(),
-    //       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-    //     })
-    //     .subscribe((data: TextPredictionResponse) => {
-    //       if (!data.outputs) {
-    //         return;
-    //       }
-
-    //       // this.textPredictions.splice(0);
-    //       data.outputs.forEach(output => {
-    //         this.responseError = null;
-    //         const text = output.trim();
-    //         if (!text ||
-    //             !text.match(
-    //                 AbbreviationComponent._VALID_TEXT_CONTINUATION_REGEX) ||
-    //             output.toLocaleLowerCase().indexOf('speaker') !== -1) {
-    //           return;
-    //         }
-    //         this.textPredictions.push(output);
-    //       });
-    //       if (textPrefix.length > MAX_NUM_TEXT_PREDICTIONS) {
-    //         this.textPredictions.splice(MAX_NUM_TEXT_PREDICTIONS);
-    //       }
-    //       this.cdr.detectChanges();
-    //     });
   }
 
   ngOnDestroy() {
@@ -197,20 +166,6 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
   onTryAgainButtonClicked(event: Event) {
     this.expandAbbreviation();
   }
-
-  // TODO(cais): Clean up.
-  // onTextPredictionButtonClicked(event: Event, index: number) {
-  //   // NOTE: blur() call prevents future space keys from inadvertently
-  //   // clicking the button again.
-  //   // TODO(cais): Add unit test.
-  //   (event.target as HTMLButtonElement).blur();
-  //   this.inputBarControlSubject.next({
-  //     chips: [{
-  //       text: this.textPredictions[index],
-  //       isTextPrediction: true,
-  //     }],
-  //   });
-  // }
 
   get isStudyDialogOngoing() {
     return this.studyManager.getDialogId() !== null;

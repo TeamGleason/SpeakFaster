@@ -353,7 +353,7 @@
 
   <!-- TODO(cais): Add unit tests. -->
   <input-text-predictions-component
-      *ngIf="!hasNotification && !isStudyOn"
+      *ngIf="!hasNotification && !isStudyOn && state === 'ENTERING_BASE_TEXT'"
       [userId]="userId"
       [inputString]="inputString"
       [inputBarControlSubject]="inputBarControlSubject">

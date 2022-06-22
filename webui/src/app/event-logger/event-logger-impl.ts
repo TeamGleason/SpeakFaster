@@ -253,7 +253,6 @@ export class HttpEventLogger implements EventLogger {
   }
 
   async logInputBarSpeakButtonClick(phraseStats: PhraseStats) {
-    console.log('*** In logInputBarSpeakButtonClick()');  // DEBUG
     await this
         .logEvent({
           userId: this._userId!,
@@ -425,7 +424,6 @@ export class HttpEventLogger implements EventLogger {
   async logAbbreviationExpansionSelection(
       phraseStats: PhraseStats, index: number, numOptions: number,
       textSelectionType: TextSelectionType) {
-    console.log('*** In logAbbreviationExpansionSelection()');  // DEBUG
     await this
         .logEvent({
           userId: this._userId!,

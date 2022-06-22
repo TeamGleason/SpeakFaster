@@ -1,6 +1,7 @@
 /** Quick phrase list for direct selection. */
 import {AfterViewInit, ChangeDetectorRef, Component, ElementRef, Input, OnChanges, OnDestroy, OnInit, QueryList, SimpleChanges, ViewChildren} from '@angular/core';
 import {Subject} from 'rxjs';
+import {throttleTime} from 'rxjs/operators';
 import {updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
 import {createUuid} from 'src/utils/uuid';
 
@@ -9,6 +10,8 @@ import {InputBarControlEvent} from '../input-bar/input-bar.component';
 import {SpeakFasterService, TextPredictionResponse} from '../speakfaster-service';
 
 const MAX_NUM_PREDICTIONS = 3;
+
+const THROTTLE_TIME_MILLIS = 100;
 
 @Component({
   selector: 'input-text-predictions-component',
@@ -31,11 +34,19 @@ export class InputTextPredictionsComponent implements AfterViewInit, OnInit,
 
   readonly _predictions: string[] = [];
 
+  private readonly textPredictionTriggers: Subject<string> = new Subject;
+  private latestCompletedRequestTimestamp: number = -1;
+
   constructor(
       private speakFasterService: SpeakFasterService,
       private cdr: ChangeDetectorRef, private eventLogger: HttpEventLogger) {}
 
-  ngOnInit() {}
+  ngOnInit() {
+    this.textPredictionTriggers.pipe(throttleTime(THROTTLE_TIME_MILLIS))
+        .subscribe(textPrefix => {
+          this.getTextPredictions(textPrefix);
+        });
+  }
 
   ngAfterViewInit() {
     updateButtonBoxesForElements(this.instanceId, this.clickableButtons);
@@ -58,12 +69,12 @@ export class InputTextPredictionsComponent implements AfterViewInit, OnInit,
       return;
     }
     const textPrefix = changes.inputString.currentValue;
-    this.getTextPredictions(textPrefix);
+    this.textPredictionTriggers.next(textPrefix);
   }
 
   private getTextPredictions(textPrefix: string) {
-    // TODO(cais): Add throttling.
-    console.log('*** Calling textPrediction():', textPrefix);
+    // TODO(cais): Add event logging.
+    const t = new Date().getTime();
     this.speakFasterService
         .textPrediction({
           userId: this.userId,
@@ -72,6 +83,10 @@ export class InputTextPredictionsComponent implements AfterViewInit, OnInit,
         })
         .subscribe(
             (data: TextPredictionResponse) => {
+              if (t <= this.latestCompletedRequestTimestamp) {
+                // Out-of-order responses.
+                return;
+              }
               if (!data.outputs) {
                 return;
               }
@@ -79,13 +94,16 @@ export class InputTextPredictionsComponent implements AfterViewInit, OnInit,
               this._predictions.push(
                   ...data.outputs.slice(0, MAX_NUM_PREDICTIONS));
               this.cdr.detectChanges();
+              this.latestCompletedRequestTimestamp = t;
             },
             error => {
-              console.error('*** Text prediction error:', error);  // DEBUG
+              console.error('*** Text prediction error:', error);
+              this._predictions.splice(0);
             });
   }
 
   onPredictionButtonClicked(event: Event, index: number) {
+    // TODO(cais): Add event logging.
     const suggestionSelection = this.predictions[index] + ' ';
     this.inputBarControlSubject.next({suggestionSelection});
     this.reset();
@@ -94,7 +112,7 @@ export class InputTextPredictionsComponent implements AfterViewInit, OnInit,
   /** Resets state, including empties the predictions. */
   private reset() {
     this._predictions.splice(0);
-    this.cdr.detectChanges();
+    // this.cdr.detectChanges();
   }
 
   public get predictions(): string[] {

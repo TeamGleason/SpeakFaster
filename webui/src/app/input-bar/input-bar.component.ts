@@ -767,16 +767,6 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     return this.inputString.trim().length > 0 || this._chips.length > 0;
   }
 
-  get inputStringBeforeCursor(): string {
-    return this.inputString.substring(
-        0, ExternalEventsComponent.internalCursorPos);
-  }
-
-  get inputStringAfterCursor(): string {
-    return this.inputString.substring(
-        ExternalEventsComponent.internalCursorPos);
-  }
-
   /**
    * Whether the current input text in the input bar is compatible with
    * abbreviation expansion.

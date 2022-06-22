@@ -39,13 +39,14 @@ export class InputTextPredictionsComponent implements AfterViewInit, OnInit,
 
   constructor(
       private speakFasterService: SpeakFasterService,
-      private cdr: ChangeDetectorRef, private eventLogger: HttpEventLogger) {}
+      private eventLogger: HttpEventLogger) {}
 
   ngOnInit() {
-    this.textPredictionTriggers.pipe(throttleTime(THROTTLE_TIME_MILLIS))
-        .subscribe(textPrefix => {
-          this.getTextPredictions(textPrefix);
-        });
+    // TODO(cais): Resolve interaction with keyboard word prediction.
+    // this.textPredictionTriggers.pipe(throttleTime(THROTTLE_TIME_MILLIS))
+    this.textPredictionTriggers.subscribe(textPrefix => {
+      this.getTextPredictions(textPrefix);
+    });
   }
 
   ngAfterViewInit() {
@@ -68,7 +69,8 @@ export class InputTextPredictionsComponent implements AfterViewInit, OnInit,
       this.reset();
       return;
     }
-    const textPrefix = changes.inputString.currentValue;
+    // TODO(cais): Unit test for upper cases.
+    const textPrefix = changes.inputString.currentValue.toLocaleLowerCase();
     this.textPredictionTriggers.next(textPrefix);
   }
 
@@ -93,7 +95,6 @@ export class InputTextPredictionsComponent implements AfterViewInit, OnInit,
               this._predictions.splice(0);
               this._predictions.push(
                   ...data.outputs.slice(0, MAX_NUM_PREDICTIONS));
-              this.cdr.detectChanges();
               this.latestCompletedRequestTimestamp = t;
             },
             error => {
@@ -112,7 +113,6 @@ export class InputTextPredictionsComponent implements AfterViewInit, OnInit,
   /** Resets state, including empties the predictions. */
   private reset() {
     this._predictions.splice(0);
-    // this.cdr.detectChanges();
   }
 
   public get predictions(): string[] {

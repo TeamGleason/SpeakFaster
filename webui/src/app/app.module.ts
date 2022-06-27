@@ -21,7 +21,9 @@ import {TextToSpeechModule} from './text-to-speech/text-to-speech.module';
 import {TtsVoiceSelectionModule} from './tts-voice-selection/tts-voice-selection.module';
 
 @NgModule({
-  declarations: [AppComponent],
+  declarations: [
+    AppComponent,
+  ],
   imports: [
     InputBarModule,
     AbbreviationModule,

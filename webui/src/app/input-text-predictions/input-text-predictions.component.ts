@@ -3,12 +3,12 @@ import {AfterViewInit, Component, ElementRef, EventEmitter, Input, OnChanges, On
 import {Subject} from 'rxjs';
 import {throttleTime} from 'rxjs/operators';
 import {updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
+import {endsWithPunctuation} from 'src/utils/text-utils';
 import {createUuid} from 'src/utils/uuid';
 
 import {HttpEventLogger} from '../event-logger/event-logger-impl';
 import {InputBarControlEvent} from '../input-bar/input-bar.component';
 import {SpeakFasterService, TextPredictionResponse} from '../speakfaster-service';
-import {endsWithPunctuation} from 'src/utils/text-utils';
 
 const MAX_NUM_PREDICTIONS = 4;
 
@@ -39,8 +39,6 @@ export class InputTextPredictionsComponent implements AfterViewInit, OnInit,
   @ViewChildren('clickableButton')
   clickableButtons!: QueryList<ElementRef<HTMLElement>>;
 
-  // TODO(cais): Move the Expand button here as well.
-
   readonly _predictions: string[] = [];
 
   private readonly textPredictionTriggers: Subject<string> = new Subject;
@@ -62,8 +60,23 @@ export class InputTextPredictionsComponent implements AfterViewInit, OnInit,
     updateButtonBoxesForElements(this.instanceId, this.clickableButtons);
     this.clickableButtons.changes.subscribe(
         (queryList: QueryList<ElementRef>) => {
-          updateButtonBoxesForElements(this.instanceId, queryList);
+          this.updateButtonBoxes();
         });
+    // TODO(cais): Add unit tests.
+    this.updateButtonBoxes();
+  }
+
+  private updateButtonBoxes() {
+    const visibleList: QueryList<ElementRef<HTMLElement>> = new QueryList();
+    const visibleElementRefs: Array<ElementRef<HTMLElement>> = [];
+    this.clickableButtons.forEach(elementRef => {
+      const element = elementRef.nativeElement;
+      if (!element.classList.contains('invisible')) {
+        visibleElementRefs.push(elementRef);
+      }
+    });
+    visibleList.reset(visibleElementRefs);
+    updateButtonBoxesForElements(this.instanceId, visibleList);
   }
 
   ngOnDestroy(): void {
@@ -92,7 +105,8 @@ export class InputTextPredictionsComponent implements AfterViewInit, OnInit,
     this.speakFasterService
         .textPrediction({
           userId: this.userId,
-          contextTurns: [],  // TODO(cais):
+          // TODO(cais): Add more context to inputs for text prediction.
+          contextTurns: [],
           textPrefix,
         })
         .subscribe(

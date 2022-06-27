@@ -1,7 +1,7 @@
 /** Quick phrase list for direct selection. */
-import {AfterViewInit, ChangeDetectorRef, Component, ElementRef, Input, OnChanges, OnDestroy, OnInit, QueryList, SimpleChanges, ViewChildren} from '@angular/core';
+import {AfterViewInit, Component, ElementRef, EventEmitter, Input, OnChanges, OnDestroy, OnInit, Output, QueryList, SimpleChanges, ViewChildren} from '@angular/core';
 import {Subject} from 'rxjs';
-import {throttleTime} from 'rxjs/operators';
+import {expand, throttleTime} from 'rxjs/operators';
 import {updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
 import {createUuid} from 'src/utils/uuid';
 
@@ -9,7 +9,7 @@ import {HttpEventLogger} from '../event-logger/event-logger-impl';
 import {InputBarControlEvent} from '../input-bar/input-bar.component';
 import {SpeakFasterService, TextPredictionResponse} from '../speakfaster-service';
 
-const MAX_NUM_PREDICTIONS = 3;
+const MAX_NUM_PREDICTIONS = 4;
 
 const THROTTLE_TIME_MILLIS = 100;
 
@@ -28,9 +28,14 @@ export class InputTextPredictionsComponent implements AfterViewInit, OnInit,
   @Input() contextStrings!: string[];
   @Input() inputString!: string;
   @Input() inputBarControlSubject!: Subject<InputBarControlEvent>;
+  @Output() expandButtonClicked: EventEmitter<Event> = new EventEmitter();
+  @Output() spellButtonClicked: EventEmitter<Event> = new EventEmitter();
+  @Output() abortButtonClicked: EventEmitter<Event> = new EventEmitter();
 
   @ViewChildren('clickableButton')
   clickableButtons!: QueryList<ElementRef<HTMLElement>>;
+
+  // TODO(cais): Move the Expand button here as well.
 
   readonly _predictions: string[] = [];
 
@@ -117,5 +122,20 @@ export class InputTextPredictionsComponent implements AfterViewInit, OnInit,
 
   public get predictions(): string[] {
     return this._predictions.slice(0);
+  }
+
+  onExpandButtonClicked(event?: Event) {
+    // TODO(cais): Add unit test.
+    this.expandButtonClicked.emit(event);
+  }
+
+  onSpellButtonClicked(event?: Event) {
+    // TODO(cais): Add unit test.
+    this.spellButtonClicked.emit(event);
+  }
+
+  onAbortButtonClicked(event?: Event) {
+    // TODO(cais): Add unit test.
+    this.abortButtonClicked.emit(event);
   }
 }

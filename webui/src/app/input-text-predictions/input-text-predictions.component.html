@@ -13,7 +13,7 @@
   display: inline-block;
   height: 64px;
   padding-bottom: 0;
-  padding-left: 360px;
+  padding-left: 8px;
   padding-top: 8px;
   width: 100%;
 }
@@ -33,9 +33,55 @@
   width: fit-content;
 }
 
+.text-prediction-button.action-button {
+  border-radius: 8px;
+  border: none;
+  margin-right: 10px;
+  max-width: 100px;
+  min-width: 100px;
+  width: 100px;
+}
+
+.text-prediction-button.action-button.expand-button {
+  background-color: #057bad;
+}
+
+.text-prediction-button.action-button.spell-button {
+  background-color: #27ae60
+}
+
+.text-prediction-button.action-button.abort-button {
+  background: #525453;
+  margin-right: 20px;
+  max-width: 60px;
+  min-width: 60px;
+  width: 60px;
+}
+
 </style>
 
 <div class="container">
+  <button
+      #clickableButton
+      class="text-prediction-button action-button expand-button"
+      (click)="onExpandButtonClicked($event)">
+    Expand
+  </button>
+
+  <button
+      #clickableButton
+      class="text-prediction-button action-button spell-button"
+      (click)="onSpellButtonClicked($event)">
+    Spell
+  </button>
+
+  <button
+      #clickableButton
+      class="text-prediction-button action-button abort-button"
+      (click)="onAbortButtonClicked($event)">
+    X
+  </button>
+
   <button
       #clickableButton
       *ngFor="let prediction of predictions; let i = index"

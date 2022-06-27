@@ -34,7 +34,12 @@ export class AuthComponent implements OnInit, AfterViewInit, OnDestroy {
   constructor(
       private route: ActivatedRoute,
       public authService: GoogleDeviceAuthService,
-      private snackBar: MatSnackBar) {}
+      private snackBar: MatSnackBar) {
+
+    (window as any).getAccessToken = (): string => {
+      return this.accessToken;
+    }
+  }
 
   ngOnInit() {
     this.route.queryParams.subscribe(params => {

@@ -247,13 +247,14 @@
         </app-input-bar-chip-component>
       </div>
 
-      <div class="buttons-container">
+      <!-- When the text prediction bar is shown, it presents the Expand, Spell
+           and Abort buttons by itself. -->
+      <div
+          *ngIf="!showTextPredictionBar"
+          class="buttons-container">
         <button
             #clickableButton
-            *ngIf="(state === 'ENTERING_BASE_TEXT' ||
-                    state === 'CHOOSING_PHRASES' ||
-                    state === 'FOCUSED_ON_LETTER_CHIP') &&
-                    inputStringIsCompatibleWithAbbreviationExpansion && supportsAbbrevationExpansion"
+            *ngIf="showExpandButton"
             class="action-button expand-button"
             (click)="onExpandButtonClicked($event)">
           Expand
@@ -261,13 +262,7 @@
 
         <button
             #clickableButton
-            *ngIf="((state === 'ENTERING_BASE_TEXT') ||
-                    (state === 'CHOOSING_PHRASES') ||
-                    state === 'CHOOSING_WORD_CHIP' ||
-                    state === 'FOCUSED_ON_WORD_CHIP') &&
-                   inputStringIsCompatibleWithAbbreviationExpansion &&
-                   supportsAbbrevationExpansion &&
-                   !hasOnlyOneTextPredictionChip"
+            *ngIf="showSpellButton"
             class="action-button spell-button"
             (click)="onSpellButtonClicked($event)">
           Spell
@@ -353,10 +348,13 @@
 
   <!-- TODO(cais): Add unit tests. -->
   <input-text-predictions-component
-      *ngIf="!hasNotification && !isStudyOn && state === 'ENTERING_BASE_TEXT'"
+      *ngIf="showTextPredictionBar"
       [userId]="userId"
       [inputString]="inputString"
-      [inputBarControlSubject]="inputBarControlSubject">
+      [inputBarControlSubject]="inputBarControlSubject"
+      (expandButtonClicked)="onExpandButtonClicked($event)"
+      (spellButtonClicked)="onSpellButtonClicked($event)"
+      (abortButtonClicked)="onAbortButtonClicked($event)">
   </input-text-predictions-component>
 
 </div>

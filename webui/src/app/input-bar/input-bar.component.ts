@@ -763,6 +763,28 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     return this._chips[index].text;
   }
 
+  get showTextPredictionBar() {
+    return !this.hasNotification && !this.isStudyOn &&
+        this.state === State.ENTERING_BASE_TEXT;
+  }
+
+  get showExpandButton(): boolean {
+    return (this.state === State.ENTERING_BASE_TEXT ||
+            this.state === State.CHOOSING_PHRASES ||
+            this.state === State.FOCUSED_ON_LETTER_CHIP) &&
+        this.inputStringIsCompatibleWithAbbreviationExpansion &&
+        this.supportsAbbrevationExpansion;
+  }
+
+  get showSpellButton():
+      boolean{return((this.state === State.ENTERING_BASE_TEXT) ||
+                     (this.state === State.CHOOSING_PHRASES) ||
+                     this.state === State.CHOOSING_WORD_CHIP ||
+                     this.state === State.FOCUSED_ON_WORD_CHIP) &&
+              this.inputStringIsCompatibleWithAbbreviationExpansion &&
+              this.supportsAbbrevationExpansion &&
+              !this.hasOnlyOneTextPredictionChip}
+
   get hasInputStringOrChips(): boolean {
     return this.inputString.trim().length > 0 || this._chips.length > 0;
   }

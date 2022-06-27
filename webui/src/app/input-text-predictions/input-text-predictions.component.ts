@@ -1,13 +1,14 @@
 /** Quick phrase list for direct selection. */
 import {AfterViewInit, Component, ElementRef, EventEmitter, Input, OnChanges, OnDestroy, OnInit, Output, QueryList, SimpleChanges, ViewChildren} from '@angular/core';
 import {Subject} from 'rxjs';
-import {expand, throttleTime} from 'rxjs/operators';
+import {throttleTime} from 'rxjs/operators';
 import {updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
 import {createUuid} from 'src/utils/uuid';
 
 import {HttpEventLogger} from '../event-logger/event-logger-impl';
 import {InputBarControlEvent} from '../input-bar/input-bar.component';
 import {SpeakFasterService, TextPredictionResponse} from '../speakfaster-service';
+import {endsWithPunctuation} from 'src/utils/text-utils';
 
 const MAX_NUM_PREDICTIONS = 4;
 
@@ -85,6 +86,9 @@ export class InputTextPredictionsComponent implements AfterViewInit, OnInit,
   private getTextPredictions(textPrefix: string) {
     // TODO(cais): Add event logging.
     const t = new Date().getTime();
+    if (endsWithPunctuation(textPrefix)) {
+      textPrefix += ' ';
+    }
     this.speakFasterService
         .textPrediction({
           userId: this.userId,

@@ -708,7 +708,12 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
    * prediction.
    */
   private incorporateSuggestion(suggestion: string) {
-    if (this.inputString.match(/.*\s$/)) {
+    if (endsWithPunctuation(this.inputString) &&
+        !endsWithPunctuation(suggestion)) {
+      // Input string ends with a puncutation, but the selection does not
+      // end with a punctuation. We should add a space before the selection.
+      this.updateInputString(this.inputString + ' ' + suggestion);
+    } else if (this.inputString.match(/.*\s$/)) {
       this.updateInputString(this.inputString + suggestion);
     } else {
       // The current input string does not end in a whitespace.

@@ -18,6 +18,10 @@
   width: 100%;
 }
 
+.invisible {
+  visibility: hidden;
+}
+
 .text-prediction-button {
   background: #333;
   border: 1px solid #888;
@@ -63,6 +67,7 @@
 <div class="container">
   <button
       #clickableButton
+      [ngClass]="{'invisible': !showExpandButton}"
       class="text-prediction-button action-button expand-button"
       (click)="onExpandButtonClicked($event)">
     Expand
@@ -70,6 +75,7 @@
 
   <button
       #clickableButton
+      [ngClass]="{'invisible': !showSpellButton}"
       class="text-prediction-button action-button spell-button"
       (click)="onSpellButtonClicked($event)">
     Spell
@@ -77,6 +83,7 @@
 
   <button
       #clickableButton
+      [ngClass]="{'invisible': !showAbortButton}"
       class="text-prediction-button action-button abort-button"
       (click)="onAbortButtonClicked($event)">
     X

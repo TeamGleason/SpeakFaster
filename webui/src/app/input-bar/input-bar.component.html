@@ -249,12 +249,10 @@
 
       <!-- When the text prediction bar is shown, it presents the Expand, Spell
            and Abort buttons by itself. -->
-      <div
-          *ngIf="!showTextPredictionBar"
-          class="buttons-container">
+      <div class="buttons-container">
         <button
             #clickableButton
-            *ngIf="showExpandButton"
+            *ngIf="showExpandButton && !showTextPredictionBar"
             class="action-button expand-button"
             (click)="onExpandButtonClicked($event)">
           Expand
@@ -262,7 +260,7 @@
 
         <button
             #clickableButton
-            *ngIf="showSpellButton"
+            *ngIf="showSpellButton && !showTextPredictionBar"
             class="action-button spell-button"
             (click)="onSpellButtonClicked($event)">
           Spell
@@ -270,7 +268,7 @@
 
         <button
             #clickableButton
-            *ngIf="hasInputStringOrChips"
+            *ngIf="hasInputStringOrChips && !showTextPredictionBar"
             class="action-button abort-button"
             (click)="onAbortButtonClicked($event)">
           X
@@ -352,6 +350,9 @@
       [userId]="userId"
       [inputString]="inputString"
       [inputBarControlSubject]="inputBarControlSubject"
+      [showExpandButton]="showExpandButton"
+      [showSpellButton]="showSpellButton"
+      [showAbortButton]="hasInputStringOrChips"
       (expandButtonClicked)="onExpandButtonClicked($event)"
       (spellButtonClicked)="onSpellButtonClicked($event)"
       (abortButtonClicked)="onAbortButtonClicked($event)">

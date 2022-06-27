@@ -28,6 +28,9 @@ export class InputTextPredictionsComponent implements AfterViewInit, OnInit,
   @Input() contextStrings!: string[];
   @Input() inputString!: string;
   @Input() inputBarControlSubject!: Subject<InputBarControlEvent>;
+  @Input() showExpandButton!: boolean;
+  @Input() showSpellButton!: boolean;
+  @Input() showAbortButton!: boolean;
   @Output() expandButtonClicked: EventEmitter<Event> = new EventEmitter();
   @Output() spellButtonClicked: EventEmitter<Event> = new EventEmitter();
   @Output() abortButtonClicked: EventEmitter<Event> = new EventEmitter();

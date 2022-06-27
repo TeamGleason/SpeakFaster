@@ -92,7 +92,7 @@
   <button
       #clickableButton
       *ngFor="let prediction of predictions; let i = index"
-      class="text-prediction-button"
+      class="text-prediction-button prediction-button"
       (click)="onPredictionButtonClicked($event, i)">
     {{prediction}}
   </button>

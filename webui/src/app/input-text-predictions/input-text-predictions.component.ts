@@ -91,7 +91,6 @@ export class InputTextPredictionsComponent implements AfterViewInit, OnInit,
       this.reset();
       return;
     }
-    // TODO(cais): Unit test for upper cases.
     const textPrefix = changes.inputString.currentValue.toLocaleLowerCase();
     this.textPredictionTriggers.next(textPrefix);
   }

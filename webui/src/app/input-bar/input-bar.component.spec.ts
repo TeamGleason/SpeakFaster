@@ -1249,16 +1249,23 @@ describe('InputBarComponent', () => {
     expect(fixture.componentInstance.isStudyOn).toBeFalse();
   });
 
-  it('when study is on, hides inject and favorite buttons', () => {
-    studyManager.maybeHandleRemoteControlCommand('study on');
-    fixture.detectChanges();
+  it('when study is on, hides inject & favorite buttons & ' +
+         'InputTextPredictionComponent',
+     () => {
+       studyManager.maybeHandleRemoteControlCommand('study on');
+       fixture.detectChanges();
 
-    expect(fixture.componentInstance.isStudyOn).toBeTrue();
-    expect(fixture.debugElement.query(By.css('.speak-button'))).not.toBeNull();
-    expect(fixture.debugElement.query(By.css('.inject-button'))).toBeNull();
-    expect(fixture.debugElement.query(By.css('app-favorite-button-component')))
-        .toBeNull();
-  });
+       expect(fixture.componentInstance.isStudyOn).toBeTrue();
+       expect(fixture.debugElement.query(By.css('.speak-button')))
+           .not.toBeNull();
+       expect(fixture.debugElement.query(By.css('.inject-button'))).toBeNull();
+       expect(
+           fixture.debugElement.query(By.css('app-favorite-button-component')))
+           .toBeNull();
+       expect(fixture.debugElement.query(
+                  By.css('input-text-predictions-component')))
+           .toBeNull();
+     });
 
   it('when study if back off, shows inject and favorite buttons', () => {
     studyManager.maybeHandleRemoteControlCommand('study on');
@@ -1446,6 +1453,12 @@ describe('InputBarComponent', () => {
              .toEqual('hi there' + punctuationKey);
        });
   }
+
+  it('shows InpuTextPredictionsComponent by default', () => {
+    expect(
+        fixture.debugElement.query(By.css('input-text-predictions-component')))
+        .not.toBeNull();
+  });
 
   // TODO(cais): Test spelling valid word triggers AE, with sampleTime().
 });

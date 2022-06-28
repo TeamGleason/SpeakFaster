@@ -3,7 +3,7 @@ import {AfterViewInit, ChangeDetectorRef, Component, ElementRef, EventEmitter, I
 import {Subject, Subscription} from 'rxjs';
 import {sampleTime} from 'rxjs/operators';
 import {injectTextAsKeys, requestSoftKeyboardReset, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
-import {removePunctuation} from 'src/utils/text-utils';
+import {endsWithPunctuation, removePunctuation} from 'src/utils/text-utils';
 import {createUuid} from 'src/utils/uuid';
 
 import {getPhraseStats, HttpEventLogger} from '../event-logger/event-logger-impl';
@@ -47,6 +47,11 @@ export interface InputBarControlEvent {
   // Append text to the input bar. This does not erase the existing text in the
   // input bar.
   appendText?: string;
+
+  // Indicates a word suggestion has been selected. If the current text ends in
+  // whitespace, the string should be appended to the current text. Else, the
+  // last word of the current text should be replaced by the selection.
+  suggestionSelection?: string;
 
   // Clear all text and chips.
   clearAll?: boolean;
@@ -156,6 +161,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
       Subject<InputAbbreviationChangedEvent> = new Subject();
   private _contextualPhraseTags: string[] = ['favorite'];
   private pendingCharDeletions: number = 0;
+  private finalWhitespaceIsFromSuggestion: boolean = false;
 
   constructor(
       public speakFasterService: SpeakFasterService,
@@ -181,6 +187,9 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
         this.inputBarControlSubject.subscribe((event: InputBarControlEvent) => {
           if (event.hide !== undefined) {
             this._isHidden = event.hide;
+          } else if (event.suggestionSelection) {
+            // A selection has been made for word completion or word suggestion.
+            this.incorporateSuggestion(event.suggestionSelection);
           } else if (event.clearAll) {
             this.resetState(/* cleanText= */ true, /* resetBase= */ true);
           } else if (
@@ -308,6 +317,15 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
 
   onInputTextAreaKeyUp(event: KeyboardEvent) {
     this.inputString = this.inputTextArea.nativeElement.value;
+    if (this.finalWhitespaceIsFromSuggestion &&
+        endsWithPunctuation(this.inputString)) {
+      const length = this.inputString.length;
+      this.updateInputString(
+          this.inputString.substring(0, length - 2) +
+          this.inputString[length - 1]);
+      this.finalWhitespaceIsFromSuggestion = false;
+      return;
+    }
     if (this.pendingCharDeletions > 0) {
       this.inputString = this.inputTextArea.nativeElement.value.substring(
           0,
@@ -678,6 +696,39 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
+  /**
+   * Incorporates selected suggestion into the current input string.
+   *
+   * Takes into account of whether the current input string ends in whitespace.
+   * If it does, `suggestion` will be used as next-word prediction and be
+   * appended to the end of the input string. If it does not, `suggestion` will
+   * be used as a completion for the current final word and replace it.
+   *
+   * @param suggestion Selected word, either for word completion or next-word
+   * prediction.
+   */
+  private incorporateSuggestion(suggestion: string) {
+    if (endsWithPunctuation(this.inputString) &&
+        !endsWithPunctuation(suggestion)) {
+      // Input string ends with a puncutation, but the selection does not
+      // end with a punctuation. We should add a space before the selection.
+      this.updateInputString(this.inputString + ' ' + suggestion);
+    } else if (this.inputString.match(/.*\s$/)) {
+      this.updateInputString(this.inputString + suggestion);
+    } else {
+      // The current input string does not end in a whitespace.
+      // Find the last word.
+      let i = this.inputString.length - 1;
+      for (; i >= 0; --i) {
+        if (this.inputString[i].match(/\s/)) {
+          break;
+        }
+      }
+      this.updateInputString(this.inputString.substring(0, i + 1) + suggestion);
+    }
+    this.finalWhitespaceIsFromSuggestion = suggestion.match(/.*\s$/) !== null;
+  }
+
   private resetState(clearText: boolean = true, resetBase: boolean = true) {
     this.state = State.ENTERING_BASE_TEXT;
     this._chips.splice(0);
@@ -692,6 +743,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     this.cutText = '';
     this.focusOnInputTextArea();
     this.pendingCharDeletions = 0;
+    this.finalWhitespaceIsFromSuggestion = false;
     resetReconStates();
   }
 
@@ -716,18 +768,30 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     return this._chips[index].text;
   }
 
+  get showTextPredictionBar() {
+    return !this.hasNotification && !this.isStudyOn &&
+        this.state === State.ENTERING_BASE_TEXT;
+  }
+
+  get showExpandButton(): boolean {
+    return (this.state === State.ENTERING_BASE_TEXT ||
+            this.state === State.CHOOSING_PHRASES ||
+            this.state === State.FOCUSED_ON_LETTER_CHIP) &&
+        this.inputStringIsCompatibleWithAbbreviationExpansion &&
+        this.supportsAbbrevationExpansion;
+  }
+
+  get showSpellButton():
+      boolean{return((this.state === State.ENTERING_BASE_TEXT) ||
+                     (this.state === State.CHOOSING_PHRASES) ||
+                     this.state === State.CHOOSING_WORD_CHIP ||
+                     this.state === State.FOCUSED_ON_WORD_CHIP) &&
+              this.inputStringIsCompatibleWithAbbreviationExpansion &&
+              this.supportsAbbrevationExpansion &&
+              !this.hasOnlyOneTextPredictionChip}
+
   get hasInputStringOrChips(): boolean {
     return this.inputString.trim().length > 0 || this._chips.length > 0;
-  }
-
-  get inputStringBeforeCursor(): string {
-    return this.inputString.substring(
-        0, ExternalEventsComponent.internalCursorPos);
-  }
-
-  get inputStringAfterCursor(): string {
-    return this.inputString.substring(
-        ExternalEventsComponent.internalCursorPos);
   }
 
   /**

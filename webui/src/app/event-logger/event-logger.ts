@@ -183,6 +183,14 @@ export interface EventLogger {
       abbreviationLength: number, wordIndex: number): Promise<void>;
 
   /**
+   * Log the selection of a text prediction, most typically a word completion
+   * or next-word prediction. Note that this is different from contextual-phrase
+   * selections.
+   */
+  logTextPredictionSelection(phraseStats: PhraseStats, phraseIndex: number):
+      Promise<void>;
+
+  /**
    * Log the mode abort during abbreviation expansion, e.g., abort from word
    * refinement or from spelling.
    */

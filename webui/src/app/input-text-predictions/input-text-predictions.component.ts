@@ -1,0 +1,158 @@
+/** Quick phrase list for direct selection. */
+import {AfterViewInit, Component, ElementRef, EventEmitter, Input, OnChanges, OnDestroy, OnInit, Output, QueryList, SimpleChanges, ViewChildren} from '@angular/core';
+import {Subject} from 'rxjs';
+import {throttleTime} from 'rxjs/operators';
+import {updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
+import {endsWithPunctuation} from 'src/utils/text-utils';
+import {createUuid} from 'src/utils/uuid';
+
+import {getPhraseStats, HttpEventLogger} from '../event-logger/event-logger-impl';
+import {InputBarControlEvent} from '../input-bar/input-bar.component';
+import {SpeakFasterService, TextPredictionResponse} from '../speakfaster-service';
+
+const MAX_NUM_PREDICTIONS = 4;
+
+const THROTTLE_TIME_MILLIS = 100;
+
+@Component({
+  selector: 'input-text-predictions-component',
+  templateUrl: './input-text-predictions.component.html',
+})
+export class InputTextPredictionsComponent implements AfterViewInit, OnInit,
+                                                      OnChanges, OnDestroy {
+  private static readonly _NAME = 'InputTextPredictionsComponent';
+
+  private readonly instanceId =
+      InputTextPredictionsComponent._NAME + '_' + createUuid();
+
+  @Input() userId!: string;
+  @Input() contextStrings!: string[];
+  @Input() inputString!: string;
+  @Input() inputBarControlSubject!: Subject<InputBarControlEvent>;
+  @Input() showExpandButton!: boolean;
+  @Input() showSpellButton!: boolean;
+  @Input() showAbortButton!: boolean;
+  @Output() expandButtonClicked: EventEmitter<Event> = new EventEmitter();
+  @Output() spellButtonClicked: EventEmitter<Event> = new EventEmitter();
+  @Output() abortButtonClicked: EventEmitter<Event> = new EventEmitter();
+
+  @ViewChildren('clickableButton')
+  clickableButtons!: QueryList<ElementRef<HTMLElement>>;
+
+  readonly _predictions: string[] = [];
+
+  private readonly textPredictionTriggers: Subject<string> = new Subject;
+  private latestCompletedRequestTimestamp: number = -1;
+
+  constructor(
+      private speakFasterService: SpeakFasterService,
+      private eventLogger: HttpEventLogger) {}
+
+  ngOnInit() {
+    // TODO(cais): Resolve interaction with keyboard word prediction.
+    // this.textPredictionTriggers.pipe(throttleTime(THROTTLE_TIME_MILLIS))
+    this.textPredictionTriggers.subscribe(textPrefix => {
+      this.getTextPredictions(textPrefix);
+    });
+  }
+
+  ngAfterViewInit() {
+    updateButtonBoxesForElements(this.instanceId, this.clickableButtons);
+    this.clickableButtons.changes.subscribe(
+        (queryList: QueryList<ElementRef>) => {
+          this.updateButtonBoxes();
+        });
+    this.updateButtonBoxes();
+  }
+
+  private updateButtonBoxes() {
+    const visibleList: QueryList<ElementRef<HTMLElement>> = new QueryList();
+    const visibleElementRefs: Array<ElementRef<HTMLElement>> = [];
+    this.clickableButtons.forEach(elementRef => {
+      const element = elementRef.nativeElement;
+      if (!element.classList.contains('invisible')) {
+        visibleElementRefs.push(elementRef);
+      }
+    });
+    visibleList.reset(visibleElementRefs);
+    updateButtonBoxesForElements(this.instanceId, visibleList);
+  }
+
+  ngOnDestroy(): void {
+    updateButtonBoxesToEmpty(this.instanceId);
+  }
+
+  ngOnChanges(changes: SimpleChanges) {
+    if (!changes.inputString) {
+      return;
+    }
+    if (!changes.inputString.currentValue) {
+      this.reset();
+      return;
+    }
+    const textPrefix = changes.inputString.currentValue.toLocaleLowerCase();
+    this.textPredictionTriggers.next(textPrefix);
+  }
+
+  private getTextPredictions(textPrefix: string) {
+    // TODO(cais): Add event logging.
+    const t = new Date().getTime();
+    if (endsWithPunctuation(textPrefix)) {
+      textPrefix += ' ';
+    }
+    this.speakFasterService
+        .textPrediction({
+          userId: this.userId,
+          // TODO(cais): Add more context to inputs for text prediction.
+          contextTurns: [],
+          textPrefix,
+        })
+        .subscribe(
+            (data: TextPredictionResponse) => {
+              if (t <= this.latestCompletedRequestTimestamp) {
+                // Out-of-order responses.
+                return;
+              }
+              if (!data.outputs) {
+                return;
+              }
+              this._predictions.splice(0);
+              this._predictions.push(
+                  ...data.outputs.slice(0, MAX_NUM_PREDICTIONS));
+              this.latestCompletedRequestTimestamp = t;
+            },
+            error => {
+              console.error('*** Text prediction error:', error);
+              this._predictions.splice(0);
+            });
+  }
+
+  onPredictionButtonClicked(event: Event, index: number) {
+    const suggestionSelection = this.predictions[index] + ' ';
+    this.eventLogger.logTextPredictionSelection(
+        getPhraseStats(suggestionSelection), index);
+    this.inputBarControlSubject.next({suggestionSelection});
+    this.reset();
+  }
+
+  /** Resets state, including empties the predictions. */
+  private reset() {
+    this._predictions.splice(0);
+  }
+
+  public get predictions(): string[] {
+    return this._predictions.slice(0);
+  }
+
+  onExpandButtonClicked(event?: Event) {
+    this.expandButtonClicked.emit(event);
+  }
+
+  onSpellButtonClicked(event?: Event) {
+    this.spellButtonClicked.emit(event);
+  }
+
+  onAbortButtonClicked(event?: Event) {
+    this.abortButtonClicked.emit(event);
+  }
+}

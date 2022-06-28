@@ -31,7 +31,8 @@ export type EventName =
     'ContextualPhraseEditError'|'ContextualPhraseSelection'|
     'ContextualPhraseCopying'|'IncomingContextualTurn'|
     'InputBarInjectButtonClick'|'InputBarSpeakButtonClick'|'Keypress'|
-    'SessionEnd'|'SessionStart'|'SettingsChange'|'UserFeedback'|'RemoteCommand';
+    'SessionEnd'|'SessionStart'|'SettingsChange'|'TextPredictionSelection'|
+    'UserFeedback'|'RemoteCommand';
 
 export type EventLogEntry = {
   userId: string;
@@ -542,6 +543,22 @@ export class HttpEventLogger implements EventLogger {
           sessionId: this.sessionId,
           eventName: 'AbbreviationExpansionSpellingChipSelection',
           eventData: {abbreviationLength, wordIndex},
+          appState: getAppState(),
+        })
+        .pipe(first())
+        .toPromise();
+  }
+
+  async logTextPredictionSelection(
+      phraseStats: PhraseStats, phraseIndex: number): Promise<void> {
+    await this
+        .logEvent({
+          userId: this._userId!,
+          timestamp: this.getUtcEpochMillis(),
+          timezone: this.timezone,
+          sessionId: this.sessionId,
+          eventName: 'TextPredictionSelection',
+          eventData: {phraseStats, phraseIndex},
           appState: getAppState(),
         })
         .pipe(first())

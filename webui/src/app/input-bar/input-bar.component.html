@@ -78,7 +78,7 @@
 .container {
   display: flex;
   flex-direction: column;
-  height: fit-content;
+  height: 140px;
   overflow: visible;
   padding: 0 0 8px;
   position: relative;
@@ -247,13 +247,12 @@
         </app-input-bar-chip-component>
       </div>
 
+      <!-- When the text prediction bar is shown, it presents the Expand, Spell
+           and Abort buttons by itself. -->
       <div class="buttons-container">
         <button
             #clickableButton
-            *ngIf="(state === 'ENTERING_BASE_TEXT' ||
-                    state === 'CHOOSING_PHRASES' ||
-                    state === 'FOCUSED_ON_LETTER_CHIP') &&
-                    inputStringIsCompatibleWithAbbreviationExpansion && supportsAbbrevationExpansion"
+            *ngIf="showExpandButton && !showTextPredictionBar"
             class="action-button expand-button"
             (click)="onExpandButtonClicked($event)">
           Expand
@@ -261,13 +260,7 @@
 
         <button
             #clickableButton
-            *ngIf="((state === 'ENTERING_BASE_TEXT') ||
-                    (state === 'CHOOSING_PHRASES') ||
-                    state === 'CHOOSING_WORD_CHIP' ||
-                    state === 'FOCUSED_ON_WORD_CHIP') &&
-                   inputStringIsCompatibleWithAbbreviationExpansion &&
-                   supportsAbbrevationExpansion &&
-                   !hasOnlyOneTextPredictionChip"
+            *ngIf="showSpellButton && !showTextPredictionBar"
             class="action-button spell-button"
             (click)="onSpellButtonClicked($event)">
           Spell
@@ -275,7 +268,7 @@
 
         <button
             #clickableButton
-            *ngIf="hasInputStringOrChips"
+            *ngIf="hasInputStringOrChips && !showTextPredictionBar"
             class="action-button abort-button"
             (click)="onAbortButtonClicked($event)">
           X
@@ -350,5 +343,18 @@
       class="notification">
     {{notification}}
   </div>
+
+  <input-text-predictions-component
+      *ngIf="showTextPredictionBar"
+      [userId]="userId"
+      [inputString]="inputString"
+      [inputBarControlSubject]="inputBarControlSubject"
+      [showExpandButton]="showExpandButton"
+      [showSpellButton]="showSpellButton"
+      [showAbortButton]="hasInputStringOrChips"
+      (expandButtonClicked)="onExpandButtonClicked($event)"
+      (spellButtonClicked)="onSpellButtonClicked($event)"
+      (abortButtonClicked)="onAbortButtonClicked($event)">
+  </input-text-predictions-component>
 
 </div>

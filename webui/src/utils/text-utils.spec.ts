@@ -1,6 +1,6 @@
 /** Test utils for text-utils. */
 
-import {keySequenceEndsWith, limitStringLength, removePunctuation, trimStringAtHead} from './text-utils';
+import {endsWithPunctuation, keySequenceEndsWith, limitStringLength, removePunctuation, trimStringAtHead} from './text-utils';
 
 describe('text-utils', () => {
   describe('limitStringLength', () => {
@@ -69,6 +69,27 @@ describe('text-utils', () => {
       expect(removePunctuation('')).toEqual('');
       expect(removePunctuation(' ')).toEqual(' ');
       expect(removePunctuation('hi there')).toEqual('hi there');
+    });
+  });
+
+  describe('endsWithPunctuation', () => {
+    it('returns true', () => {
+      expect(endsWithPunctuation('.')).toBeTrue();
+      expect(endsWithPunctuation('hi.')).toBeTrue();
+      expect(endsWithPunctuation('hi..')).toBeTrue();
+      expect(endsWithPunctuation('hi,')).toBeTrue();
+      expect(endsWithPunctuation('hi,,')).toBeTrue();
+      expect(endsWithPunctuation('wait;')).toBeTrue();
+      expect(endsWithPunctuation('hello!')).toBeTrue();
+      expect(endsWithPunctuation('hello!!')).toBeTrue();
+      expect(endsWithPunctuation('hello?')).toBeTrue();
+    });
+
+    it('returns false', () => {
+      expect(endsWithPunctuation('')).toBeFalse();
+      expect(endsWithPunctuation(' ')).toBeFalse();
+      expect(endsWithPunctuation('wait')).toBeFalse();
+      expect(endsWithPunctuation('wait; ')).toBeFalse();
     });
   });
 });

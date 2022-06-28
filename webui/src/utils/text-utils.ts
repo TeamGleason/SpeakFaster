@@ -61,6 +61,14 @@ export function endsWithSentenceEndPunctuation(text: string): boolean {
 }
 
 /**
+ * Determine whether a string ends with punctuation (nt necessarily
+ * sentence-end).
+ */
+export function endsWithPunctuation(text: string): boolean {
+  return text.match(/.*[\,\;\:\.\!\?]$/) !== null;
+}
+
+/**
  * Trim string from the head, respecting word boundary.
  * @param str Input string.
  * @param maxLength Maximum allowed length.

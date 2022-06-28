@@ -17,7 +17,6 @@ import {AddContextualPhraseRequest} from './types/contextual_phrase';
 import {ConversationTurn} from './types/conversation';
 import {TextEntryBeginEvent, TextEntryEndEvent} from './types/text-entry';
 
-
 // Type signature of callback functions that listen to resizing of an element.
 export type AppResizeCallback = (height: number, width: number) => void;
 

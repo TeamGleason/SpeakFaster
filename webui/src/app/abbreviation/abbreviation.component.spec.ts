@@ -285,38 +285,6 @@ describe('AbbreviationComponent', () => {
     expect(fixture.componentInstance.responseError).toBeNull();
   });
 
-  it('clicking text prediction fires input-bar control event', () => {
-    fixture.componentInstance.textPredictions.splice(0)
-    fixture.componentInstance.textPredictions.push('foo');
-    fixture.componentInstance.textPredictions.push('bar');
-    fixture.detectChanges();
-    const textPredictionButtons =
-        fixture.debugElement.queryAll(By.css('.text-prediction-button'));
-    expect(textPredictionButtons.length).toEqual(2);
-    textPredictionButtons[1].nativeElement.click();
-    fixture.detectChanges();
-
-    expect(inputBarControlEvents.length).toEqual(2);
-    const [event] = inputBarControlEvents;
-    expect(event.clearAll).toBeUndefined();
-    expect(event.chips).toEqual([{
-      text: 'bar',
-      isTextPrediction: true,
-    }]);
-  });
-
-  it('does not show text predictions during study dialog', async () => {
-    await studyManager.maybeHandleRemoteControlCommand('Start abbrev dummy1');
-    fixture.componentInstance.textPredictions.splice(0)
-    fixture.componentInstance.textPredictions.push('foo');
-    fixture.componentInstance.textPredictions.push('bar');
-    fixture.detectChanges();
-
-    const textPredictionButtons =
-        fixture.debugElement.queryAll(By.css('.text-prediction-button'));
-    expect(textPredictionButtons.length).toEqual(0);
-  });
-
   it('clicking the container issues refocus signal', () => {
     const container = fixture.debugElement.query(By.css('.container'));
     container.nativeElement.click();
@@ -339,20 +307,6 @@ describe('AbbreviationComponent', () => {
     studyManager.maybeHandleRemoteControlCommand('study off');
 
     expect(fixture.componentInstance.isStudyOn).toBeFalse();
-  });
-
-  it('does not show text prediction or quick phrases when study is on', () => {
-    studyManager.maybeHandleRemoteControlCommand('study on');
-    fixture.componentInstance.textPredictions.splice(0)
-    fixture.componentInstance.textPredictions.push('foo');
-    fixture.componentInstance.textPredictions.push('bar');
-    fixture.detectChanges();
-    const textPredictionButtons =
-        fixture.debugElement.queryAll(By.css('.text-prediction-button'));
-
-    expect(textPredictionButtons.length).toEqual(0);
-    expect(fixture.debugElement.query(By.css('app-quick-phrases-component')))
-        .toBeNull();
   });
 
 });

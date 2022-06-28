@@ -6,7 +6,7 @@ import {updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/
 import {endsWithPunctuation} from 'src/utils/text-utils';
 import {createUuid} from 'src/utils/uuid';
 
-import {HttpEventLogger} from '../event-logger/event-logger-impl';
+import {getPhraseStats, HttpEventLogger} from '../event-logger/event-logger-impl';
 import {InputBarControlEvent} from '../input-bar/input-bar.component';
 import {SpeakFasterService, TextPredictionResponse} from '../speakfaster-service';
 
@@ -62,7 +62,6 @@ export class InputTextPredictionsComponent implements AfterViewInit, OnInit,
         (queryList: QueryList<ElementRef>) => {
           this.updateButtonBoxes();
         });
-    // TODO(cais): Add unit tests.
     this.updateButtonBoxes();
   }
 
@@ -129,8 +128,9 @@ export class InputTextPredictionsComponent implements AfterViewInit, OnInit,
   }
 
   onPredictionButtonClicked(event: Event, index: number) {
-    // TODO(cais): Add event logging.
     const suggestionSelection = this.predictions[index] + ' ';
+    this.eventLogger.logTextPredictionSelection(
+        getPhraseStats(suggestionSelection), index);
     this.inputBarControlSubject.next({suggestionSelection});
     this.reset();
   }
@@ -145,17 +145,14 @@ export class InputTextPredictionsComponent implements AfterViewInit, OnInit,
   }
 
   onExpandButtonClicked(event?: Event) {
-    // TODO(cais): Add unit test.
     this.expandButtonClicked.emit(event);
   }
 
   onSpellButtonClicked(event?: Event) {
-    // TODO(cais): Add unit test.
     this.spellButtonClicked.emit(event);
   }
 
   onAbortButtonClicked(event?: Event) {
-    // TODO(cais): Add unit test.
     this.abortButtonClicked.emit(event);
   }
 }

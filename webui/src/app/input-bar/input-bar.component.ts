@@ -708,24 +708,21 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
    * prediction.
    */
   private incorporateSuggestion(suggestion: string) {
-    if (endsWithPunctuation(this.inputString) &&
-        !endsWithPunctuation(suggestion)) {
-      // Input string ends with a puncutation, but the selection does not
-      // end with a punctuation. We should add a space before the selection.
-      this.updateInputString(this.inputString + ' ' + suggestion);
-    } else if (this.inputString.match(/.*\s$/)) {
-      this.updateInputString(this.inputString + suggestion);
-    } else {
-      // The current input string does not end in a whitespace.
-      // Find the last word.
-      let i = this.inputString.length - 1;
-      for (; i >= 0; --i) {
-        if (this.inputString[i].match(/\s/)) {
-          break;
-        }
+    let breakingIndex = this.inputString.length - 1;
+    while (breakingIndex >= 0) {
+      if (this.inputString[breakingIndex].match(/\s/) ||
+          endsWithPunctuation(
+              this.inputString.substring(0, breakingIndex + 1))) {
+        break;
       }
-      this.updateInputString(this.inputString.substring(0, i + 1) + suggestion);
+      breakingIndex--;
     }
+    let newString = this.inputString.substring(0, breakingIndex + 1);
+    if (endsWithPunctuation(newString)) {
+      newString += ' ';
+    }
+    newString += suggestion;
+    this.updateInputString(newString);
     this.finalWhitespaceIsFromSuggestion = suggestion.match(/.*\s$/) !== null;
   }
 

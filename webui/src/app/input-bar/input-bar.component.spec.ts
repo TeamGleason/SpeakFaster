@@ -1399,8 +1399,11 @@ describe('InputBarComponent', () => {
            ['foo ', 'bar', 'foo bar'],
            ['foo,', 'bar', 'foo, bar'],
            ['foo.', 'bar', 'foo. bar'],
-           ['foo,', 'bar,', 'bar,'],
-           ['foo bar,', 'bar.', 'foo bar.'],
+           ['foo,', 'bar', 'foo, bar'],
+           ['foo.b', 'bar', 'foo. bar'],
+           ['foo,b', 'bar', 'foo, bar'],
+           ['foo,', 'bar,', 'foo, bar,'],
+           ['foo bar,', 'bar.', 'foo bar, bar.'],
   ]) {
     it('suggestionSelection updates input string: next word: ' +
            'original=' + originalText + '; suggestion=' + suggestion +

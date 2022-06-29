@@ -3,7 +3,7 @@ import {AfterViewInit, Component, ElementRef, EventEmitter, Input, OnChanges, On
 import {Subject} from 'rxjs';
 import {throttleTime} from 'rxjs/operators';
 import {updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
-import {endsWithPunctuation} from 'src/utils/text-utils';
+import {endsWithPunctuation, isAlphanumericChar} from 'src/utils/text-utils';
 import {createUuid} from 'src/utils/uuid';
 
 import {getPhraseStats, HttpEventLogger} from '../event-logger/event-logger-impl';
@@ -97,8 +97,22 @@ export class InputTextPredictionsComponent implements AfterViewInit, OnInit,
   private getTextPredictions(textPrefix: string) {
     // TODO(cais): Add event logging.
     const t = new Date().getTime();
-    if (endsWithPunctuation(textPrefix)) {
-      textPrefix += ' ';
+    // Find the last punctuation character in the prefix.
+    let i = textPrefix.length - 1;
+    for (; i >= 0; --i) {
+      if (endsWithPunctuation(textPrefix.substring(0, i + 1))) {
+        break;
+      }
+    }
+    // If the last non-alphanumeric char is not followed by a whitespace, add a
+    // space after it. This ensures that a prefix such as "hi," will trigger
+    // next-word prediction, instead of word completion. It also ensures that a
+    // prefix such as "hi,t" will trigger word completion with "hi, " as the
+    // preceding sequence of words.
+    if (i >= 0 &&
+        (i === textPrefix.length - 1 || !textPrefix[i + 1].match(/\s/))) {
+      textPrefix =
+          textPrefix.substring(0, i + 1) + ' ' + textPrefix.substring(i + 1);
     }
     this.speakFasterService
         .textPrediction({

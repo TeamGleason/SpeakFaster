@@ -58,7 +58,14 @@ describe(
         (window as any)[BOUND_LISTENER_NAME] = undefined;
       });
 
-      for (const textPrefix of ['a', 'A']) {
+      for (const [textPrefix, predCallTextPrefix] of [
+               ['a', 'a'],
+               ['A', 'a'],
+               ['a,', 'a, '],
+               ['a,a', 'a, a'],
+               ['a, a', 'a, a'],
+               ['a,a a,', 'a,a a, '],
+      ]) {
         it('gets and shows correct word suggestions: textPrefix=' + textPrefix,
            () => {
              fixture.componentInstance.userId = 'User0';
@@ -71,8 +78,11 @@ describe(
                  {inputString: new SimpleChange('', textPrefix, true)});
              fixture.detectChanges();
 
-             expect(spy).toHaveBeenCalledOnceWith(
-                 {textPrefix: 'a', contextTurns: [], userId: 'User0'});
+             expect(spy).toHaveBeenCalledOnceWith({
+               textPrefix: predCallTextPrefix,
+               contextTurns: [],
+               userId: 'User0'
+             });
              const predictionButtons =
                  fixture.debugElement.queryAll(By.css('.prediction-button'));
              expect(predictionButtons.length).toEqual(3);

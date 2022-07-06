@@ -2,7 +2,7 @@
 import {AfterViewInit, Component, ElementRef, EventEmitter, Input, OnChanges, OnDestroy, OnInit, Output, QueryList, SimpleChanges, ViewChildren} from '@angular/core';
 import {Subject} from 'rxjs';
 import {throttleTime} from 'rxjs/operators';
-import {updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
+import {LONG_DWELL_ATTRIBUTE_KEY, LONG_DWELL_ATTRIBUTE_VALUE, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
 import {endsWithPunctuation, isAlphanumericChar} from 'src/utils/text-utils';
 import {createUuid} from 'src/utils/uuid';
 
@@ -70,6 +70,10 @@ export class InputTextPredictionsComponent implements AfterViewInit, OnInit,
     const visibleElementRefs: Array<ElementRef<HTMLElement>> = [];
     this.clickableButtons.forEach(elementRef => {
       const element = elementRef.nativeElement;
+      if (element.classList.contains('prediction-button')) {
+        element.setAttribute(
+            LONG_DWELL_ATTRIBUTE_KEY, LONG_DWELL_ATTRIBUTE_VALUE);
+      }
       if (!element.classList.contains('invisible')) {
         visibleElementRefs.push(elementRef);
       }

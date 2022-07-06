@@ -10,6 +10,10 @@ import {endsWithSentenceEndPunctuation} from './text-utils';
 const CEFSHARP_OBJECT_NAME = 'CefSharp';
 export const BOUND_LISTENER_NAME = 'boundListener';
 
+export const LONG_DWELL_ATTRIBUTE_KEY = 'longDwell';
+export const LONG_DWELL_ATTRIBUTE_VALUE = 'true';
+export const LONG_DWELL_THRESHOLD_DURATION_MILLIS = 400;
+
 export async function bindCefSharpListener() {
   if ((window as any)[BOUND_LISTENER_NAME]) {
     return;
@@ -59,12 +63,17 @@ export function updateButtonBoxesForElements(
   // positions may have a chance to stabilize. In some cases, the positions of
   // the elements need time to stop updating since the call to this function.
   setTimeout(() => {
-    const boxes: Array<[number, number, number, number]> = [];
+    const boxes: Array<number[]> = [];
     elements.forEach(elementRef => {
-      const box = elementRef.nativeElement.getBoundingClientRect();
+      const nativeElement = elementRef.nativeElement as HTMLElement;
+      const box = nativeElement.getBoundingClientRect();
+      const boxValues = [box.left, box.top, box.right, box.bottom];
+      if (nativeElement.getAttribute(LONG_DWELL_ATTRIBUTE_KEY)) {
+        boxValues.push(LONG_DWELL_THRESHOLD_DURATION_MILLIS);
+      }
       if (containerRect == null ||
           isRectVisibleInsideContainer(box, containerRect)) {
-        boxes.push([box.left, box.top, box.right, box.bottom]);
+        boxes.push(boxValues);
       }
     });
     updateButtonBoxes(instanceId, boxes);
@@ -151,8 +160,15 @@ export function removeAllButtonBoxes() {
   updateButtonBoxes(REMOVE_ALL_GAZE_BUTTONS_DIRECTIVE, []);
 }
 
-function updateButtonBoxes(
-    componentName: string, boxes: Array<[number, number, number, number]>) {
+/**
+ * Interface method for updating the button boxes of a component instance.
+ * @param componentName Name of the component instance.
+ * @param boxes Each element is a number[] of leghth 4 or 5. Length 4: the basic
+ *   case, which is interpreted as [left, top, right bottom]. Length 5: the
+ * extra element is interpreted as the custom threshold duration for gaze
+ * clicking, in the unit of milliseconds.
+ */
+function updateButtonBoxes(componentName: string, boxes: number[][]) {
   console.log(`updateButtonBoxes(): ${componentName}:`, JSON.stringify(boxes));
   if ((window as any)[BOUND_LISTENER_NAME] == null) {
     console.warn(`Cannot call updateButtonBoxes(), because object ${

@@ -3,7 +3,7 @@ import {AfterViewInit, Component, ElementRef, EventEmitter, Input, OnChanges, On
 import {Subject} from 'rxjs';
 import {throttleTime} from 'rxjs/operators';
 import {LONG_DWELL_ATTRIBUTE_KEY, LONG_DWELL_ATTRIBUTE_VALUE, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
-import {endsWithPunctuation, isAlphanumericChar} from 'src/utils/text-utils';
+import {endsWithPunctuation} from 'src/utils/text-utils';
 import {createUuid} from 'src/utils/uuid';
 
 import {getPhraseStats, HttpEventLogger} from '../event-logger/event-logger-impl';
@@ -12,7 +12,7 @@ import {SpeakFasterService, TextPredictionResponse} from '../speakfaster-service
 
 const MAX_NUM_PREDICTIONS = 4;
 
-const THROTTLE_TIME_MILLIS = 100;
+const THROTTLE_TIME_MILLIS = 50;
 
 @Component({
   selector: 'input-text-predictions-component',
@@ -50,10 +50,10 @@ export class InputTextPredictionsComponent implements AfterViewInit, OnInit,
 
   ngOnInit() {
     // TODO(cais): Resolve interaction with keyboard word prediction.
-    // this.textPredictionTriggers.pipe(throttleTime(THROTTLE_TIME_MILLIS))
-    this.textPredictionTriggers.subscribe(textPrefix => {
-      this.getTextPredictions(textPrefix);
-    });
+    this.textPredictionTriggers.pipe(throttleTime(THROTTLE_TIME_MILLIS))
+        .subscribe(textPrefix => {
+          this.getTextPredictions(textPrefix);
+        });
   }
 
   ngAfterViewInit() {
@@ -135,6 +135,9 @@ export class InputTextPredictionsComponent implements AfterViewInit, OnInit,
                 return;
               }
               this._predictions.splice(0);
+              if (!this.inputString) {
+                return;
+              }
               this._predictions.push(
                   ...data.outputs.slice(0, MAX_NUM_PREDICTIONS));
               this.latestCompletedRequestTimestamp = t;

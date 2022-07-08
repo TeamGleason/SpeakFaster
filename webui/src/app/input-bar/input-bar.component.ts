@@ -354,7 +354,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     this.focusOnInputTextArea();
   }
 
-  private scaleInputTextFontSize(): void {
+  private scaleInputTextFontSize(scrollToBottom = false): void {
     // TODO(cais): Limit on over all text length.
     if (!this.inputTextArea) {
       return;
@@ -383,6 +383,9 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     } else {
       element.style.fontSize = `${INPUT_TEXT_BASE_FONT_SIZE}px`;
       element.style.lineHeight = `${INPUT_TEXT_BASE_FONT_SIZE}px`;
+    }
+    if (scrollToBottom) {
+      element.scrollTop = element.scrollHeight;
     }
     updateButtonBoxesForElements(this.instanceId, this.buttons);
   }
@@ -724,6 +727,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     newString += suggestion;
     this.updateInputString(newString);
     this.finalWhitespaceIsFromSuggestion = suggestion.match(/.*\s$/) !== null;
+    this.scaleInputTextFontSize(/* scrollToBottom= */ true);
   }
 
   private resetState(clearText: boolean = true, resetBase: boolean = true) {

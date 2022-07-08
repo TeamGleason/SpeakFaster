@@ -1216,7 +1216,7 @@ describe('InputBarComponent', () => {
        const prevNumCalls1 = testListener.updateButtonBoxesCalls.length;
        inputBarControlSubject.next({appendText: 'foo bar'});
        fixture.detectChanges();
-       tick();
+       tick(100);
 
        expect(prevNumCalls1).toBeGreaterThan(prevNumCalls0);
        expect(testListener.updateButtonBoxesCalls.length)

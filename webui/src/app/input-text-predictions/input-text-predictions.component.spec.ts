@@ -73,7 +73,7 @@ describe(
                            .and.returnValues(of({
                              outputs: ['a', 'apple', 'any'],
                            }));
-             fixture.componentInstance.inputString = '';
+             fixture.componentInstance.inputString = 'a';
              fixture.componentInstance.ngOnChanges(
                  {inputString: new SimpleChange('', textPrefix, true)});
              fixture.detectChanges();
@@ -93,6 +93,23 @@ describe(
                  .toEqual('any');
            });
       }
+
+      it('does not display suggestion when input string is empty', () => {
+        fixture.componentInstance.userId = 'User0';
+        let spy = spyOn(speakFasterServiceForTest, 'textPrediction')
+                      .and.returnValues(of({
+                        outputs: ['a', 'apple', 'any'],
+                      }));
+        fixture.componentInstance.inputString = '';
+        const textPrefix = 'a';
+        fixture.componentInstance.ngOnChanges(
+            {inputString: new SimpleChange('', textPrefix, true)});
+        fixture.detectChanges();
+
+        const predictionButtons =
+            fixture.debugElement.queryAll(By.css('.prediction-button'));
+        expect(predictionButtons.length).toEqual(0);
+      });
 
       it('does not get predictions when text is empty', () => {
         fixture.componentInstance.userId = 'User0';
@@ -116,7 +133,7 @@ describe(
         spyOn(speakFasterServiceForTest, 'textPrediction').and.returnValues(of({
           outputs: ['a', 'apple', 'any'],
         }));
-        fixture.componentInstance.inputString = '';
+        fixture.componentInstance.inputString = 'a';
         fixture.componentInstance.ngOnChanges(
             {inputString: new SimpleChange('', 'a', true)});
         fixture.detectChanges();
@@ -188,34 +205,33 @@ describe(
              }));
 
       it('updateButtonBox: 2 + 2 buttons: long-dwell value',
-          fakeAsync(
-              () => {
-                fixture.componentInstance.showExpandButton = false;
-                fixture.componentInstance.showSpellButton = true;
-                fixture.componentInstance.showAbortButton = true;
-                (fixture.componentInstance as any)._predictions =
-                    ['hi', 'hello'];
-                // 2 buttons are fixed (spell and abort); another 2 buttons are
-                // dynamic word predictions (long dwell).
-                fixture.detectChanges();
-                console.log('=== Calling ngAfterViewInit()')
-                fixture.componentInstance.ngAfterViewInit();
-                tick();
+         fakeAsync(
+             () => {
+               fixture.componentInstance.showExpandButton = false;
+               fixture.componentInstance.showSpellButton = true;
+               fixture.componentInstance.showAbortButton = true;
+               (fixture.componentInstance as any)._predictions =
+                   ['hi', 'hello'];
+               // 2 buttons are fixed (spell and abort); another 2 buttons are
+               // dynamic word predictions (long dwell).
+               fixture.detectChanges();
+               fixture.componentInstance.ngAfterViewInit();
+               tick();
 
-                const lastCall =
+               const lastCall =
                   testListener.updateButtonBoxesCalls[testListener.updateButtonBoxesCalls.length
                   - 1];
-                expect(lastCall[0].startsWith('InputTextPredictionsComponent_'))
-                    .toBeTrue();
-                expect(lastCall[1].length).toEqual(4);
-                expect(lastCall[1][0].length).toEqual(4);
-                expect(lastCall[1][1].length).toEqual(4);
-                // The long-dwell word predicton buttons are called with
-                // length-5 number arrays. The last element of each array is
-                // the custom threshold duration in milliseconds.
-                expect(lastCall[1][2].length).toEqual(5);
-                expect(lastCall[1][2][4]).toEqual(400);
-                expect(lastCall[1][3].length).toEqual(5);
-                expect(lastCall[1][3][4]).toEqual(400);
-              }));
+               expect(lastCall[0].startsWith('InputTextPredictionsComponent_'))
+                   .toBeTrue();
+               expect(lastCall[1].length).toEqual(4);
+               expect(lastCall[1][0].length).toEqual(4);
+               expect(lastCall[1][1].length).toEqual(4);
+               // The long-dwell word predicton buttons are called with
+               // length-5 number arrays. The last element of each array is
+               // the custom threshold duration in milliseconds.
+               expect(lastCall[1][2].length).toEqual(5);
+               expect(lastCall[1][2][4]).toEqual(400);
+               expect(lastCall[1][3].length).toEqual(5);
+               expect(lastCall[1][3][4]).toEqual(400);
+             }));
     });

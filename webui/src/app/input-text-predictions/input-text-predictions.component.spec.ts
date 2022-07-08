@@ -215,7 +215,6 @@ describe(
                // 2 buttons are fixed (spell and abort); another 2 buttons are
                // dynamic word predictions (long dwell).
                fixture.detectChanges();
-               console.log('=== Calling ngAfterViewInit()')
                fixture.componentInstance.ngAfterViewInit();
                tick();
 

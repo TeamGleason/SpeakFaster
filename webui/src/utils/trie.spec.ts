@@ -44,10 +44,13 @@ fdescribe('Trie', () => {
 
   it('Inserting multiple single length-1 and length-2 sequence workds', () => {
     trie.insert(['apple']);
+    trie.insert(['orange', 'juice']);
     trie.insert(['apple', 'juice']);
     trie.insert(['apple', 'sauce']);
     trie.insert(['apple', 'juice']);
-    expect(trie.query([])).toEqual([{token: 'apple', count: 1}]);
+    expect(trie.query([])).toEqual([
+      {token: 'apple', count: 4 / 5}, {token: 'orange', count: 1 / 5}
+    ]);
     expect(trie.query(['apple'])).toEqual([
       {token: 'juice', count: 2 / 3}, {token: 'sauce', count: 1 / 3}
     ]);
@@ -64,5 +67,25 @@ fdescribe('Trie', () => {
     expect(trie.query(['apple', 'sauce'])).toEqual([]);
     expect(trie.query(['apple', 'juice', 'and'])).toEqual([]);
     expect(trie.query(['banana'])).toEqual([]);
+  });
+
+  it('Inserting empty token leads to error', () => {
+    expect(() => trie.insert([])).toThrowError(/Cannot insert empty tokens/);
+  });
+
+  it('Serialize to string: empty trie', () => {
+    expect(trie.serialize()).toEqual(JSON.stringify({'__trie__': {}}));
+  });
+
+  it('Serialize to string: non-empty trie', () => {
+    trie.insert(['apple']);
+    trie.insert(['orange', 'juice']);
+    trie.insert(['apple', 'juice']);
+    expect(trie.serialize()).toEqual(JSON.stringify({
+      '__trie__': {
+        'apple': {'count': 2, '__children__': {'juice': {'count': 1}}},
+        'orange': {'count': 1, '__children__': {'juice': {'count': 1}}},
+      }
+    }));
   });
 });

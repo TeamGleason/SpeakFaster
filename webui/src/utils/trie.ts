@@ -1,12 +1,12 @@
 /** Trie data structure. */
 
 const TRIE_ROOT_KEY = '__trie__';
-const CHILD_KEY = '__children__';
+const CHILDREN_KEY = '__children__';
 const SEQUENCE_LENGTH_LIMIT = 50;
 
 export interface TokenCandidate {
   token: string;
-  count: number;
+  score: number;
 }
 
 class TrieNode {
@@ -68,19 +68,19 @@ class TrieNode {
     });
     const output = this.children.map((child, i) => ({
                                        token: child.token,
-                                       count: child.count / totalCount,
+                                       score: child.count / totalCount,
                                      }));
-    // Sort in descending order.
+    // Sort in descending order of score and then ascending order of token.
     output.sort((a: TokenCandidate, b: TokenCandidate) => {
-      if (a.count > b.count) {
+      if (a.score > b.score) {
         return -1;
-      } else if (a.count < b.count) {
+      } else if (a.score < b.score) {
         return 1;
       } else {
         if (a.token > b.token) {
-          return -1;
-        } else if (a.token < b.token) {
           return 1;
+        } else if (a.token < b.token) {
+          return -1;
         } else {
           return 0;
         }
@@ -101,17 +101,32 @@ class TrieNode {
     this.children.forEach(child => {
       output[child.token] = {
         count: child.count,
-      }
+      };
       if (child.node.hasChildren) {
-        output[child.token][CHILD_KEY] = child.node.serializeToObject();
+        output[child.token][CHILDREN_KEY] = child.node.serializeToObject();
       }
     });
     return output;
   }
+
+  public deserialize(object: {[token: string]: any}) {
+    this.children.splice(0);
+    for (const token in object) {
+      const child = {
+        token,
+        count: object[token].count as number,
+        node: new TrieNode(),
+      };
+      if (object[token][CHILDREN_KEY]) {
+        child.node.deserialize(object[token][CHILDREN_KEY]);
+      }
+      this.children.push(child);
+    }
+  }
 }
 
 export class Trie {
-  private readonly root: TrieNode = new TrieNode();
+  private root: TrieNode = new TrieNode();
 
   constructor() {}
 
@@ -151,5 +166,13 @@ export class Trie {
   /** Serialize the entire Trie to a JSON parsable string. */
   public serialize(): string {
     return JSON.stringify(this.serializeToObject());
+  }
+
+  public static deserialize(serialized: string): Trie {
+    const trie = new Trie();
+    const parsed = JSON.parse(serialized);
+    trie.root = new TrieNode();
+    trie.root.deserialize(parsed[TRIE_ROOT_KEY]);
+    return trie;
   }
 }

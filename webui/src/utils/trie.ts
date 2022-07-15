@@ -13,12 +13,6 @@ class TrieNode {
   // A TrieNode without any children is a leaf node.
   private children: Array<{token: string; node: TrieNode; count: number;}> = [];
 
-  /**
-   * Constructor for TrieNode.
-   *
-   * @param node The string for the current node, the special token '' is used
-   *     to indicate the root of the Trie.
-   */
   constructor() {}
 
   public insert(tokens: string[]) {
@@ -34,8 +28,6 @@ class TrieNode {
         node: childNode,
         count: 1,
       });
-      // this.childNodes.push(childNode);
-      // this.counts.push(1);
     } else {  // Child node already exists.
       this.children[childIndex].count++;
       childNode = this.children[childIndex].node;
@@ -135,10 +127,20 @@ export class Trie {
    * @param sequence A sequence of units. Typically a sequence of words.
    */
   public insert(sequence: string[]) {
-    // TODO(cais): Add length limit.
+    if (sequence.length > SEQUENCE_LENGTH_LIMIT) {
+      sequence = sequence.slice(0, SEQUENCE_LENGTH_LIMIT);
+    }
     this.root.insert(sequence);
   }
 
+  /**
+   * Query the try for the next token.
+   *
+   * @param prefix: A list of string tokens as the prefix.
+   * @returns The candidates, sorted in descending order the candidates' scores.
+   *   The scores are determined by count (frequency). In case of tie in the
+   *   scores, the candidates are sorted in alphabetical order.
+   */
   public query(prefix: string[]): TokenCandidate[] {
     let node: TrieNode|null = this.root;
     let i = 0;
@@ -168,6 +170,7 @@ export class Trie {
     return JSON.stringify(this.serializeToObject());
   }
 
+  /** Deserialize trie from a serialized form. */
   public static deserialize(serialized: string): Trie {
     const trie = new Trie();
     const parsed = JSON.parse(serialized);

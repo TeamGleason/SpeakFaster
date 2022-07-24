@@ -108,14 +108,17 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   // TODO(cais): Switch to the wait-and-send mode.
   private static readonly IN_FLIGHT_AE_TRIGGER_DEBOUNCE_MILLIS = 500;
 
+  // NOTE(cais): If abbreviation expansion with mid-sentence comma is
+  // prioritized, retsore the following ignore key sequence. This is
+  // related to the fact that eye-gaze keyboards often attach as space
+  // automatically after a comma.
   // NOTE(https://github.com/TeamGleason/SpeakFaster/issues/217): Some external
   // keyboards attach a space right after a comma, which causes trouble for
   // abbreviations containing commas ("g.hay").
-  private static readonly IGNORE_MACHINE_KEY_SEQUENCE:
-      IgnoreMachineKeySequenceConfig = {
-        keySequence: [VIRTUAL_KEY.COMMA, VIRTUAL_KEY.SPACE],
-        ignoreStartIndex: 1,
-      }
+  private static readonly IGNORE_MACHINE_KEY_SEQUENCE?:
+      IgnoreMachineKeySequenceConfig = undefined;
+  // { keySequence: [VIRTUAL_KEY.COMMA, VIRTUAL_KEY.SPACE], ignoreStartIndex: 1,
+  // }
 
   @Input() userId!: string;
   @Input() contextStrings!: string[];
@@ -181,8 +184,10 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
             this.lastNonEmptyPhrase = textInjection.text.trim();
           }
         });
-    ExternalEventsComponent.registerIgnoreKeySequence(
-        InputBarComponent.IGNORE_MACHINE_KEY_SEQUENCE);
+    if (InputBarComponent.IGNORE_MACHINE_KEY_SEQUENCE) {
+      ExternalEventsComponent.registerIgnoreKeySequence(
+          InputBarComponent.IGNORE_MACHINE_KEY_SEQUENCE);
+    }
     this.inputBarChipsSubscription =
         this.inputBarControlSubject.subscribe((event: InputBarControlEvent) => {
           if (event.hide !== undefined) {
@@ -308,8 +313,10 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
       this.inFlightAbbreviationExpansionTriggerSubscription.unsubscribe();
     }
     updateButtonBoxesToEmpty(this.instanceId);
-    ExternalEventsComponent.unregisterIgnoreKeySequence(
-        InputBarComponent.IGNORE_MACHINE_KEY_SEQUENCE);
+    if (InputBarComponent.IGNORE_MACHINE_KEY_SEQUENCE) {
+      ExternalEventsComponent.unregisterIgnoreKeySequence(
+          InputBarComponent.IGNORE_MACHINE_KEY_SEQUENCE);
+    }
     if (this.studyUserTurnsSubscription) {
       this.studyUserTurnsSubscription.unsubscribe();
     }

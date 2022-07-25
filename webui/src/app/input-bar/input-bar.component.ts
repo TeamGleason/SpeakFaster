@@ -164,7 +164,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
       Subject<InputAbbreviationChangedEvent> = new Subject();
   private _contextualPhraseTags: string[] = ['favorite'];
   private pendingCharDeletions: number = 0;
-  private finalWhitespaceIsFromSuggestion: boolean = false;
+  private suggestionBasedSpaceIndex: number|null = null;
 
   constructor(
       public speakFasterService: SpeakFasterService,
@@ -324,13 +324,14 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
 
   onInputTextAreaKeyUp(event: KeyboardEvent) {
     this.inputString = this.inputTextArea.nativeElement.value;
-    if (this.finalWhitespaceIsFromSuggestion &&
-        endsWithPunctuation(this.inputString)) {
-      const length = this.inputString.length;
+    if (this.suggestionBasedSpaceIndex !== null &&
+        this.inputString.length > this.suggestionBasedSpaceIndex &&
+        this.inputString[this.suggestionBasedSpaceIndex] === ' ' &&
+        endsWithPunctuation(this.inputString.trim())) {
       this.updateInputString(
-          this.inputString.substring(0, length - 2) +
-          this.inputString[length - 1]);
-      this.finalWhitespaceIsFromSuggestion = false;
+          this.inputString.substring(0, this.suggestionBasedSpaceIndex) +
+          this.inputString.substring(this.suggestionBasedSpaceIndex + 1));
+      this.suggestionBasedSpaceIndex = null;
       return;
     }
     if (this.pendingCharDeletions > 0) {
@@ -733,7 +734,8 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     }
     newString += suggestion;
     this.updateInputString(newString);
-    this.finalWhitespaceIsFromSuggestion = suggestion.match(/.*\s$/) !== null;
+    this.suggestionBasedSpaceIndex =
+        suggestion[suggestion.length - 1] ? newString.length - 1 : null;
     this.scaleInputTextFontSize(/* scrollToBottom= */ true);
   }
 
@@ -751,7 +753,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     this.cutText = '';
     this.focusOnInputTextArea();
     this.pendingCharDeletions = 0;
-    this.finalWhitespaceIsFromSuggestion = false;
+    this.suggestionBasedSpaceIndex = null;
     resetReconStates();
   }
 

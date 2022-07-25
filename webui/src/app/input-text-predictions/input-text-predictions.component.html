@@ -11,15 +11,22 @@
 
 .container {
   display: inline-block;
-  height: 64px;
+  height: 84px;
   padding-bottom: 0;
   padding-left: 8px;
-  padding-top: 8px;
+  padding-top: 32px;
   width: 100%;
 }
 
 .invisible {
   visibility: hidden;
+}
+
+.predictions-container {
+  display: inline-flex;
+  height: wrap-content;
+  min-width: 624px;
+  width: 624px;
 }
 
 .text-prediction-button {
@@ -32,7 +39,7 @@
   height: 60px;
   line-height: 56px;
   margin: 4px 16px 0 0;
-  min-width: 152px;
+  min-width: 140px;
   vertical-align: top;
   width: fit-content;
 }
@@ -56,6 +63,7 @@
 
 .text-prediction-button.action-button.abort-button {
   background: #525453;
+  margin-left: 16px;
   margin-right: 20px;
   max-width: 60px;
   min-width: 60px;
@@ -65,6 +73,25 @@
 </style>
 
 <div class="container">
+
+  <div class="predictions-container">
+    <button
+        #clickableButton
+        *ngFor="let prediction of predictions; let i = index"
+        class="text-prediction-button prediction-button"
+        (click)="onPredictionButtonClicked($event, i)">
+      {{prediction}}
+    </button>
+  </div>
+
+  <button
+      #clickableButton
+      [ngClass]="{'invisible': !showAbortButton}"
+      class="text-prediction-button action-button abort-button"
+      (click)="onAbortButtonClicked($event)">
+    X
+  </button>
+
   <button
       #clickableButton
       [ngClass]="{'invisible': !showExpandButton}"
@@ -79,21 +106,5 @@
       class="text-prediction-button action-button spell-button"
       (click)="onSpellButtonClicked($event)">
     Spell
-  </button>
-
-  <button
-      #clickableButton
-      [ngClass]="{'invisible': !showAbortButton}"
-      class="text-prediction-button action-button abort-button"
-      (click)="onAbortButtonClicked($event)">
-    X
-  </button>
-
-  <button
-      #clickableButton
-      *ngFor="let prediction of predictions; let i = index"
-      class="text-prediction-button prediction-button"
-      (click)="onPredictionButtonClicked($event, i)">
-    {{prediction}}
   </button>
 </div>

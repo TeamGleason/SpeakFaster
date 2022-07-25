@@ -1436,9 +1436,9 @@ describe('InputBarComponent', () => {
     expect(inputText.nativeElement.value).toEqual('hi there.');
   });
 
-  for (const punctuationKey of ['.', ',', ';', ':']) {
+  for (const punctuationKey of ['.', ',', ';', ':', ', ', '.  ']) {
     it('suggestion whitespace is overridden after punctuation key: ' +
-           punctuationKey,
+           `"${punctuationKey}"`,
        () => {
          fixture.componentInstance.inputString = 'hi ';
          fixture.componentInstance.inputBarControlSubject.next({

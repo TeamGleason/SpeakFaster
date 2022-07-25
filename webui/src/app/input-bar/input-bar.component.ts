@@ -108,14 +108,17 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   // TODO(cais): Switch to the wait-and-send mode.
   private static readonly IN_FLIGHT_AE_TRIGGER_DEBOUNCE_MILLIS = 500;
 
+  // NOTE(cais): If abbreviation expansion with mid-sentence comma is
+  // prioritized, retsore the following ignore key sequence. This is
+  // related to the fact that eye-gaze keyboards often attach as space
+  // automatically after a comma.
   // NOTE(https://github.com/TeamGleason/SpeakFaster/issues/217): Some external
   // keyboards attach a space right after a comma, which causes trouble for
   // abbreviations containing commas ("g.hay").
-  private static readonly IGNORE_MACHINE_KEY_SEQUENCE:
-      IgnoreMachineKeySequenceConfig = {
-        keySequence: [VIRTUAL_KEY.COMMA, VIRTUAL_KEY.SPACE],
-        ignoreStartIndex: 1,
-      }
+  private static readonly IGNORE_MACHINE_KEY_SEQUENCE?:
+      IgnoreMachineKeySequenceConfig = undefined;
+  // { keySequence: [VIRTUAL_KEY.COMMA, VIRTUAL_KEY.SPACE], ignoreStartIndex: 1,
+  // }
 
   @Input() userId!: string;
   @Input() contextStrings!: string[];
@@ -161,7 +164,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
       Subject<InputAbbreviationChangedEvent> = new Subject();
   private _contextualPhraseTags: string[] = ['favorite'];
   private pendingCharDeletions: number = 0;
-  private finalWhitespaceIsFromSuggestion: boolean = false;
+  private suggestionBasedSpaceIndex: number|null = null;
 
   constructor(
       public speakFasterService: SpeakFasterService,
@@ -181,8 +184,10 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
             this.lastNonEmptyPhrase = textInjection.text.trim();
           }
         });
-    ExternalEventsComponent.registerIgnoreKeySequence(
-        InputBarComponent.IGNORE_MACHINE_KEY_SEQUENCE);
+    if (InputBarComponent.IGNORE_MACHINE_KEY_SEQUENCE) {
+      ExternalEventsComponent.registerIgnoreKeySequence(
+          InputBarComponent.IGNORE_MACHINE_KEY_SEQUENCE);
+    }
     this.inputBarChipsSubscription =
         this.inputBarControlSubject.subscribe((event: InputBarControlEvent) => {
           if (event.hide !== undefined) {
@@ -308,8 +313,10 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
       this.inFlightAbbreviationExpansionTriggerSubscription.unsubscribe();
     }
     updateButtonBoxesToEmpty(this.instanceId);
-    ExternalEventsComponent.unregisterIgnoreKeySequence(
-        InputBarComponent.IGNORE_MACHINE_KEY_SEQUENCE);
+    if (InputBarComponent.IGNORE_MACHINE_KEY_SEQUENCE) {
+      ExternalEventsComponent.unregisterIgnoreKeySequence(
+          InputBarComponent.IGNORE_MACHINE_KEY_SEQUENCE);
+    }
     if (this.studyUserTurnsSubscription) {
       this.studyUserTurnsSubscription.unsubscribe();
     }
@@ -317,13 +324,14 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
 
   onInputTextAreaKeyUp(event: KeyboardEvent) {
     this.inputString = this.inputTextArea.nativeElement.value;
-    if (this.finalWhitespaceIsFromSuggestion &&
-        endsWithPunctuation(this.inputString)) {
-      const length = this.inputString.length;
+    if (this.suggestionBasedSpaceIndex !== null &&
+        this.inputString.length > this.suggestionBasedSpaceIndex &&
+        this.inputString[this.suggestionBasedSpaceIndex] === ' ' &&
+        endsWithPunctuation(this.inputString.trim())) {
       this.updateInputString(
-          this.inputString.substring(0, length - 2) +
-          this.inputString[length - 1]);
-      this.finalWhitespaceIsFromSuggestion = false;
+          this.inputString.substring(0, this.suggestionBasedSpaceIndex) +
+          this.inputString.substring(this.suggestionBasedSpaceIndex + 1));
+      this.suggestionBasedSpaceIndex = null;
       return;
     }
     if (this.pendingCharDeletions > 0) {
@@ -726,7 +734,8 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     }
     newString += suggestion;
     this.updateInputString(newString);
-    this.finalWhitespaceIsFromSuggestion = suggestion.match(/.*\s$/) !== null;
+    this.suggestionBasedSpaceIndex =
+        suggestion[suggestion.length - 1] ? newString.length - 1 : null;
     this.scaleInputTextFontSize(/* scrollToBottom= */ true);
   }
 
@@ -744,7 +753,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     this.cutText = '';
     this.focusOnInputTextArea();
     this.pendingCharDeletions = 0;
-    this.finalWhitespaceIsFromSuggestion = false;
+    this.suggestionBasedSpaceIndex = null;
     resetReconStates();
   }
 

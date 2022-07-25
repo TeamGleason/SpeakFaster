@@ -224,14 +224,16 @@ describe(
                expect(lastCall[0].startsWith('InputTextPredictionsComponent_'))
                    .toBeTrue();
                expect(lastCall[1].length).toEqual(4);
-               expect(lastCall[1][0].length).toEqual(4);
-               expect(lastCall[1][1].length).toEqual(4);
                // The long-dwell word predicton buttons are called with
                // length-5 number arrays. The last element of each array is
                // the custom threshold duration in milliseconds.
-               expect(lastCall[1][2].length).toEqual(5);
-               expect(lastCall[1][2][4]).toEqual(400);
-               expect(lastCall[1][3].length).toEqual(5);
-               expect(lastCall[1][3][4]).toEqual(400);
+               expect(lastCall[1][0].length).toEqual(5);
+               expect(lastCall[1][0][4]).toEqual(400);
+               expect(lastCall[1][1].length).toEqual(5);
+               expect(lastCall[1][1][4]).toEqual(400);
+               // The remaining buttons are not long-dwell. So they have the
+               // usual length-4 arrays as the call args.
+               expect(lastCall[1][2].length).toEqual(4);
+               expect(lastCall[1][3].length).toEqual(4);
              }));
     });

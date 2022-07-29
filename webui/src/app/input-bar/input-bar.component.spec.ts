@@ -1463,23 +1463,25 @@ describe('InputBarComponent', () => {
         .not.toBeNull();
   });
 
-  for (const [string, expectedBool] of [
-           ['foo ,', true],
-           ['foo ;', true],
-           ['foo :', true],
-           ['foo , ', true],
-           ['foo .', true],
-           ['foo . ', true],
-           ['foo ?', true],
-           ['foo ! ', true],
-           ['foo .  ', true],
-           ['foo b', false],
-           ['foo,', false],
-           ['foo bar,', false],
-  ] as Array<[string, boolean]>) {
+  for (const [suggestionSpaceIndex, string, expectedBool] of [
+           [3, 'foo ,', true],
+           [4, 'f , ', false],
+           [3, 'foo ;', true],
+           [3, 'foo :', true],
+           [3, 'foo , ', true],
+           [3, 'foo .', true],
+           [3, 'foo . ', true],
+           [3, 'foo ?', true],
+           [3, 'foo ! ', true],
+           [3, 'foo .  ', true],
+           [3, 'foo b', false],
+           [3, 'foo,', false],
+           [3, 'foo bar,', false],
+           [null, 'foo ,', false],
+  ] as Array<[number|null, string, boolean]>) {
     it('inputStringHasOnlyPuncutationAfterSuggestionSpace return right answer',
        () => {
-         (fixture.componentInstance as any).suggestionBasedSpaceIndex = 3;
+         (fixture.componentInstance as any).suggestionBasedSpaceIndex = suggestionSpaceIndex;
          fixture.componentInstance.inputString = string;
          expect(fixture.componentInstance
                     .inputStringHasOnlyPuncutationAfterSuggestionSpace())

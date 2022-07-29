@@ -247,7 +247,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     if (prevAppState === newState) {
       return;
     }
-    console.log('*** Changing app state to:', newState);  // DEBUG
     this.eventLogger.logAppStageChange(prevAppState, newState);
     // TODO(cais): Debug the case of finishing an AE in InputBarComponent then
     // switching to a QuickPhraseComponent to do filtering.
@@ -402,7 +401,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   onAiSettingsButtonClicked(event: Event) {
-    console.log('*** AI settings button clicked');  // DEBUG
     // TODO(cais): Add unit test.
     this.changeAppState(AppState.AI_SETTINGS);
   }

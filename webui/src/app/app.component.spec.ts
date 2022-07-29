@@ -14,7 +14,7 @@ import {MiniBarModule} from './mini-bar/mini-bar.module';
 import {clearSettings} from './settings/settings';
 import {StudyManager} from './study/study-manager';
 import {TestListener} from './test-utils/test-cefsharp-listener';
-import {AppState, resetStatesForTest, setAppState} from './types/app-state';
+import {AppState, getAppState, resetStatesForTest, setAppState} from './types/app-state';
 
 describe('AppComponent', () => {
   let fixture: ComponentFixture<AppComponent>;
@@ -405,5 +405,17 @@ describe('AppComponent', () => {
     }]);
 
     expect(inputBarControlEvents).toEqual([{refocus: true}]);
+  });
+
+  it('onEyeGazeSettingsButtonClicked triggers app state change', () => {
+    fixture.componentInstance.onEyeGazeSettingsButtonClicked(
+        new MouseEvent('click'));
+    expect(getAppState()).toEqual(AppState.EYE_GAZE_SETTINGS);
+  });
+
+  it('onAiSettingsButtonClicked triggers app state change', () => {
+    fixture.componentInstance.onAiSettingsButtonClicked(
+        new MouseEvent('click'));
+    expect(getAppState()).toEqual(AppState.AI_SETTINGS);
   });
 });

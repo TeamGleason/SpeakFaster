@@ -144,14 +144,12 @@ export class InputTextPredictionsComponent implements AfterViewInit, OnInit,
               }
               const numWordSuggestions =
                   await this.getNumWordSuggestionsFromSettings();
-              console.log(
-                  '*** numWordSugestions=', numWordSuggestions);  // DEBUG
               this._predictions.push(
                   ...data.outputs.slice(0, numWordSuggestions));
               this.latestCompletedRequestTimestamp = t;
             },
             error => {
-              console.error('*** Text prediction error:', error);
+              console.error('Text prediction error:', error);
               this._predictions.splice(0);
             });
   }

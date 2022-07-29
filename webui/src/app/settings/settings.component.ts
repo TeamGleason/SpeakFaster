@@ -112,7 +112,6 @@ export class SettingsComponent implements AfterViewInit, OnInit, OnDestroy {
   }
 
   onAiSettingsButtonClicked(event: Event) {
-    console.log('*** AI settings button clicked');  // DEBUG
     this.aiSettingsButtonClicked.emit(event);
   }
 

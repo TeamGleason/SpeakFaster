@@ -208,4 +208,28 @@ describe('SettingsComponent', () => {
     expect(lastCall[0]).toEqual('__remove_all__');
     expect(lastCall[1]).toEqual([]);
   });
+
+  it('clicking eye gaze settings button emits event', () => {
+    let callCount = 0;
+    fixture.componentInstance.eyeGazeSettingsButtonClicked.subscribe(() => {
+      callCount++;
+    });
+    const eyeGazeSettingsButton =
+        fixture.debugElement.query(By.css('.eye-gaze-settings-button'));
+    eyeGazeSettingsButton.nativeElement.click();
+
+    expect(callCount).toEqual(1);
+  });
+
+  it('clicking AI settings button emits event', () => {
+    let callCount = 0;
+    fixture.componentInstance.aiSettingsButtonClicked.subscribe(() => {
+      callCount++;
+    });
+    const aiSettingsButton =
+        fixture.debugElement.query(By.css('.ai-settings-button'));
+    aiSettingsButton.nativeElement.click();
+
+    expect(callCount).toEqual(1);
+  });
 });

@@ -8,6 +8,7 @@ import {Observable, of, Subject} from 'rxjs';
 import {BOUND_LISTENER_NAME} from '../../utils/cefsharp';
 import {HttpEventLogger} from '../event-logger/event-logger-impl';
 import {InputBarControlEvent} from '../input-bar/input-bar.component';
+import {clearSettings, setNumWordSuggestions} from '../settings/settings';
 import {SpeakFasterService, TextPredictionRequest, TextPredictionResponse} from '../speakfaster-service';
 import {TestListener} from '../test-utils/test-cefsharp-listener';
 
@@ -56,6 +57,7 @@ describe(
 
       afterEach(async () => {
         (window as any)[BOUND_LISTENER_NAME] = undefined;
+        clearSettings();
       });
 
       for (const [textPrefix, predCallTextPrefix] of [
@@ -67,7 +69,7 @@ describe(
                ['a,a a,', 'a,a a, '],
       ]) {
         it('gets and shows correct word suggestions: textPrefix=' + textPrefix,
-           () => {
+           async () => {
              fixture.componentInstance.userId = 'User0';
              let spy = spyOn(speakFasterServiceForTest, 'textPrediction')
                            .and.returnValues(of({
@@ -76,6 +78,7 @@ describe(
              fixture.componentInstance.inputString = 'a';
              fixture.componentInstance.ngOnChanges(
                  {inputString: new SimpleChange('', textPrefix, true)});
+             await fixture.whenStable();
              fixture.detectChanges();
 
              expect(spy).toHaveBeenCalledOnceWith({
@@ -93,6 +96,26 @@ describe(
                  .toEqual('any');
            });
       }
+
+      it('obeys numWordSugestions in settings', async () => {
+        await setNumWordSuggestions(2);
+        fixture.componentInstance.userId = 'User0';
+        let spy = spyOn(speakFasterServiceForTest, 'textPrediction')
+                      .and.returnValues(of({
+                        outputs: ['a', 'apple', 'any'],
+                      }));
+        fixture.componentInstance.inputString = 'a';
+        fixture.componentInstance.ngOnChanges(
+            {inputString: new SimpleChange('', 'a', true)});
+        await fixture.whenStable();
+        fixture.detectChanges();
+
+        const predictionButtons =
+            fixture.debugElement.queryAll(By.css('.prediction-button'));
+        expect(predictionButtons.length).toEqual(2);
+        expect(predictionButtons[0].nativeElement.innerText).toEqual('a');
+        expect(predictionButtons[1].nativeElement.innerText).toEqual('apple');
+      });
 
       it('does not display suggestion when input string is empty', () => {
         fixture.componentInstance.userId = 'User0';
@@ -128,7 +151,7 @@ describe(
         expect(predictionButtons.length).toEqual(0);
       });
 
-      it('clicking word option emits correct event for input bar', () => {
+      it('clicking word option emits correct event for input bar', async () => {
         fixture.componentInstance.userId = 'User0';
         spyOn(speakFasterServiceForTest, 'textPrediction').and.returnValues(of({
           outputs: ['a', 'apple', 'any'],
@@ -136,6 +159,7 @@ describe(
         fixture.componentInstance.inputString = 'a';
         fixture.componentInstance.ngOnChanges(
             {inputString: new SimpleChange('', 'a', true)});
+        await fixture.whenStable();
         fixture.detectChanges();
 
         const predictionButtons =

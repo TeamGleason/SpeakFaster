@@ -400,6 +400,11 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     this.changeAppState(AppState.EYE_GAZE_SETTINGS);
   }
 
+  onAiSettingsButtonClicked(event: Event) {
+    // TODO(cais): Add unit test.
+    this.changeAppState(AppState.AI_SETTINGS);
+  }
+
   isQuickPhrasesAppState() {
     const appState = getAppState();
     return appState === AppState.QUICK_PHRASES_FAVORITE ||

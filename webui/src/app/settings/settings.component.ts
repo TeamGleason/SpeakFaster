@@ -28,6 +28,8 @@ export class SettingsComponent implements AfterViewInit, OnInit, OnDestroy {
   @Output() helpButtonClicked: EventEmitter<Event> = new EventEmitter();
   @Output()
   eyeGazeSettingsButtonClicked: EventEmitter<Event> = new EventEmitter();
+  @Output()
+  aiSettingsButtonClicked: EventEmitter<Event> = new EventEmitter();
 
   constructor(
       private cdr: ChangeDetectorRef, private eventLogger: HttpEventLogger) {}
@@ -107,6 +109,10 @@ export class SettingsComponent implements AfterViewInit, OnInit, OnDestroy {
 
   onEyeGazeSettingsButtonClicked(event: Event) {
     this.eyeGazeSettingsButtonClicked.emit(event);
+  }
+
+  onAiSettingsButtonClicked(event: Event) {
+    this.aiSettingsButtonClicked.emit(event);
   }
 
   get versionString(): string {

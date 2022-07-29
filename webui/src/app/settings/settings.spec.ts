@@ -1,7 +1,7 @@
 /** Unit tests for settings. */
 import {BOUND_LISTENER_NAME} from '../../utils/cefsharp';
 
-import {clearSettings, ensureAppSettingsLoaded, getAppSettings, LOCAL_STORAGE_ITEM_NAME, modifyAppSettingsForTest, setDwellDelayMillis, setGazeFuzzyRadius, setGenericTtsVoiceName as setGenericTtsVoiceName, setShowGazeTracker, setTtsSpeakingRate, setTtsVoiceType, setTtsVolume, tryLoadSettings, trySaveSettings} from './settings';
+import {clearSettings, ensureAppSettingsLoaded, getAppSettings, LOCAL_STORAGE_ITEM_NAME, modifyAppSettingsForTest, setDwellDelayMillis, setEnableInckw, setGazeFuzzyRadius, setGenericTtsVoiceName as setGenericTtsVoiceName, setNumWordSuggestions, setShowGazeTracker, setTtsSpeakingRate, setTtsVoiceType, setTtsVolume, tryLoadSettings, trySaveSettings} from './settings';
 
 describe('settings', () => {
   beforeEach(async () => {
@@ -26,6 +26,8 @@ describe('settings', () => {
        expect(settings!.showGazeTracker).toEqual('YES');
        expect(settings!.gazeFuzzyRadius).toEqual(20);
        expect(settings!.dwellDelayMillis).toEqual(400);
+       expect(settings!.numWordSuggestions).toEqual(4);
+       expect(settings!.enableInckw).toBeFalse();
      });
 
   it('ensureAppSettingsLoaded updates missing fields', async () => {
@@ -131,5 +133,17 @@ describe('settings', () => {
     await expectAsync(setDwellDelayMillis(-10)).toBeRejectedWithError();
     await expectAsync(setDwellDelayMillis(NaN)).toBeRejectedWithError();
     await expectAsync(setDwellDelayMillis(Infinity)).toBeRejectedWithError();
+  });
+
+  it('setting number of word suggestions works', async () => {
+    await setNumWordSuggestions(5);
+    const settings = await tryLoadSettings();
+    expect(settings?.numWordSuggestions).toEqual(5);
+  });
+
+  it('setting enableInckw works', async () => {
+    await setEnableInckw(true);
+    const settings = await tryLoadSettings();
+    expect(settings?.enableInckw).toBeTrue();
   });
 });

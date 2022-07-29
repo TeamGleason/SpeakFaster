@@ -16,6 +16,9 @@ export enum AppState {
   SETTINGS = 'SETTINGS',
   // The eye-gaze settings page.
   EYE_GAZE_SETTINGS = 'EYE_GAZE_SETTINGS',
+  // AI settings page: with options related to word suggestions and abbreviation
+  // expansions.
+  AI_SETTINGS = 'AI_SETTINGS',
   // The help page.
   HELP = 'HELP',
   // Selecting TTS voice.

@@ -12,6 +12,7 @@ import {InputBarChipModule} from '../input-bar-chip/input-bar-chip.module';
 import {InputTextPredictionsComponent} from '../input-text-predictions/input-text-predictions.component';
 import {InputTextPredictionsModule} from '../input-text-predictions/input-text-predictions.module';
 import {LoadLexiconRequest} from '../lexicon/lexicon.component';
+import {clearSettings, LOCAL_STORAGE_ITEM_NAME, setEnableInckw} from '../settings/settings';
 import {FillMaskRequest, SpeakFasterService, TextPredictionRequest, TextPredictionResponse} from '../speakfaster-service';
 import {setDelaysForTesting, StudyManager, StudyUserTurn} from '../study/study-manager';
 import {TestListener} from '../test-utils/test-cefsharp-listener';
@@ -35,7 +36,7 @@ class SpeakFasterServiceForTest {
   }
 }
 
-fdescribe('InputBarComponent', () => {
+describe('InputBarComponent', () => {
   let testListener: TestListener;
   let studyManager: StudyManager;
   let textEntryEndSubject: Subject<TextEntryEndEvent>;
@@ -49,10 +50,13 @@ fdescribe('InputBarComponent', () => {
   let inputStringChangedValues: string[];
   let textEntryEndEvents: TextEntryEndEvent[];
   let inputAbbreviationChangeEvents: InputAbbreviationChangedEvent[];
+  let inFlightAbbreviationChangeEvents: InputAbbreviationChangedEvent[];
   let LoadLexiconRequests: LoadLexiconRequest[];
   let fillMaskRequests: FillMaskRequest[];
 
   beforeEach(async () => {
+    clearSettings();
+    localStorage.removeItem(LOCAL_STORAGE_ITEM_NAME);
     setDelaysForTesting(10e3, 50e3);
     testListener = new TestListener();
     (window as any)[cefSharp.BOUND_LISTENER_NAME] = testListener;
@@ -72,6 +76,7 @@ fdescribe('InputBarComponent', () => {
         (event: InputAbbreviationChangedEvent) => {
           inputAbbreviationChangeEvents.push(event);
         });
+
     LoadLexiconRequests = [];
     loadPrefixedLexiconRequestSubject.subscribe(
         (request: LoadLexiconRequest) => {
@@ -114,6 +119,11 @@ fdescribe('InputBarComponent', () => {
     fixture.componentInstance.inputStringChanged.subscribe((str) => {
       inputStringChangedValues.push(str);
     });
+    inFlightAbbreviationChangeEvents = [];
+    fixture.componentInstance.inFlightAbbreviationExpansionTriggers.subscribe(
+        (event: InputAbbreviationChangedEvent) => {
+          inFlightAbbreviationChangeEvents.push(event);
+        });
     fixture.detectChanges();
   });
 
@@ -202,14 +212,14 @@ fdescribe('InputBarComponent', () => {
            ['abc ', ' '],
   ] as Array<[string, string]>) {
     it(`Keys trigger abbreviation expansion: ${originalText}: ${newKey}`,
-       () => {
+       async () => {
          const inputText =
              fixture.debugElement.query(By.css('.base-text-area'));
          inputText.nativeElement.value = originalText;
          fixture.detectChanges();
          inputText.nativeElement.value = originalText + newKey;
          const event = new KeyboardEvent('keypress', {key: '\n'});
-         fixture.componentInstance.onInputTextAreaKeyUp(event);
+         await fixture.componentInstance.onInputTextAreaKeyUp(event);
          fixture.detectChanges();
 
          expect(inputAbbreviationChangeEvents.length).toEqual(1);
@@ -229,14 +239,14 @@ fdescribe('InputBarComponent', () => {
   ] as Array<[string, string]>) {
     it('Keys trigger abbreviation multi-token abbreviation expansion:' +
            `original text=${originalText}, trigger=${triggerKey}`,
-       () => {
+       async () => {
          const inputText =
              fixture.debugElement.query(By.css('.base-text-area'));
          inputText.nativeElement.value = originalText;
          fixture.detectChanges();
          inputText.nativeElement.value = originalText + triggerKey;
          const event = new KeyboardEvent('keypress', {key: triggerKey});
-         fixture.componentInstance.onInputTextAreaKeyUp(event);
+         await fixture.componentInstance.onInputTextAreaKeyUp(event);
          fixture.detectChanges();
 
          expect(inputAbbreviationChangeEvents.length).toEqual(1);
@@ -415,34 +425,83 @@ fdescribe('InputBarComponent', () => {
     expect(testListener.numRequestSoftkeyboardResetCalls).toEqual(1);
   });
 
-  fit('spelling word then enter trigger key triggers AE: ',
-      async () => {
-        enterKeysIntoComponent('abc');
-        const spellButton = fixture.debugElement.query(By.css('.spell-button'));
-        spellButton.nativeElement.click();
-        fixture.detectChanges();
-        // The ending punctuation should be ignored by keyword AE.
-        fixture.componentInstance.state = State.FOCUSED_ON_LETTER_CHIP;
-        fixture.componentInstance.onChipTextChanged({text: 'bit'}, 1);
-        fixture.detectChanges();
-        const expandButton =
-            fixture.debugElement.query(By.css('.expand-button'));
-        expandButton.nativeElement.click();
-        fixture.detectChanges();
+  it('spelling valid word triggers AE', async () => {
+    enterKeysIntoComponent('abc');
+    const spellButton = fixture.debugElement.query(By.css('.spell-button'));
+    spellButton.nativeElement.click();
+    fixture.detectChanges();
+    fixture.componentInstance.state = State.FOCUSED_ON_LETTER_CHIP;
+    spyOn(fixture.componentInstance, 'isValidWord').and.returnValue(true);
+    await fixture.componentInstance.onChipTextChanged({text: 'bit'}, 1);
+    fixture.detectChanges();
 
-        expect(fixture.componentInstance
-                   .inputStringIsCompatibleWithAbbreviationExpansion)
-            .toBeTrue();
-        expect(inputAbbreviationChangeEvents.length).toEqual(1);
-        expect(inputAbbreviationChangeEvents[0].requestExpansion).toBeTrue();
-        const {abbreviationSpec} = inputAbbreviationChangeEvents[0];
-        expect(abbreviationSpec.tokens.length).toEqual(3);
-        expect(abbreviationSpec.readableString).toEqual('a bit c');
-        const {tokens} = abbreviationSpec;
-        expect(tokens[0]).toEqual({value: 'a', isKeyword: false});
-        expect(tokens[1]).toEqual({value: 'bit', isKeyword: true});
-        expect(tokens[2]).toEqual({value: 'c', isKeyword: false});
-      });
+    expect(fixture.componentInstance
+               .inputStringIsCompatibleWithAbbreviationExpansion)
+        .toBeTrue();
+    expect(inFlightAbbreviationChangeEvents.length).toEqual(1);
+    expect(inFlightAbbreviationChangeEvents[0].requestExpansion).toBeTrue();
+    const {abbreviationSpec} = inFlightAbbreviationChangeEvents[0];
+    expect(abbreviationSpec.tokens.length).toEqual(3);
+    expect(abbreviationSpec.readableString).toEqual('a bit c');
+    const {tokens} = abbreviationSpec;
+    expect(tokens[0]).toEqual({value: 'a', isKeyword: false});
+    expect(tokens[1]).toEqual(
+        {value: 'bit', isKeyword: true, wordAbbrevMode: undefined});
+    expect(tokens[2]).toEqual({value: 'c', isKeyword: false});
+  });
+
+  it('spelling invalid word does not trigger AE', async () => {
+    enterKeysIntoComponent('abc');
+    const spellButton = fixture.debugElement.query(By.css('.spell-button'));
+    spellButton.nativeElement.click();
+    fixture.detectChanges();
+    fixture.componentInstance.state = State.FOCUSED_ON_LETTER_CHIP;
+    spyOn(fixture.componentInstance, 'isValidWord').and.returnValue(false);
+    await fixture.componentInstance.onChipTextChanged({text: 'bar'}, 1);
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance
+               .inputStringIsCompatibleWithAbbreviationExpansion)
+        .toBeTrue();
+    expect(inFlightAbbreviationChangeEvents.length).toEqual(0);
+  });
+
+  it('entering word prefix triggers inckw AE', async () => {
+    await setEnableInckw(true);
+    enterKeysIntoComponent('abc');
+    const spellButton = fixture.debugElement.query(By.css('.spell-button'));
+    spellButton.nativeElement.click();
+    fixture.detectChanges();
+    fixture.componentInstance.state = State.FOCUSED_ON_LETTER_CHIP;
+    spyOn(fixture.componentInstance, 'isValidWord').and.returnValue(false);
+    await fixture.componentInstance.onChipTextChanged({text: 'br'}, 1);
+    fixture.detectChanges();
+
+    expect(inFlightAbbreviationChangeEvents.length).toEqual(1);
+    expect(inFlightAbbreviationChangeEvents[0].requestExpansion).toBeTrue();
+    const {abbreviationSpec} = inFlightAbbreviationChangeEvents[0];
+    expect(abbreviationSpec.tokens.length).toEqual(3);
+    expect(abbreviationSpec.readableString).toEqual('a br c');
+    const {tokens} = abbreviationSpec;
+    expect(tokens[0]).toEqual({value: 'a', isKeyword: false});
+    expect(tokens[1]).toEqual(
+        {value: 'br', isKeyword: true, wordAbbrevMode: 'PREFIX'});
+    expect(tokens[2]).toEqual({value: 'c', isKeyword: false});
+  });
+
+  it('entering length-1 prefix does not trigger inckw AE', async () => {
+    await setEnableInckw(true);
+    enterKeysIntoComponent('abc');
+    const spellButton = fixture.debugElement.query(By.css('.spell-button'));
+    spellButton.nativeElement.click();
+    fixture.detectChanges();
+    fixture.componentInstance.state = State.FOCUSED_ON_LETTER_CHIP;
+    spyOn(fixture.componentInstance, 'isValidWord').and.returnValue(false);
+    await fixture.componentInstance.onChipTextChanged({text: 'b'}, 1);
+    fixture.detectChanges();
+
+    expect(inFlightAbbreviationChangeEvents.length).toEqual(0);
+  });
 
   it('entering keys into text box issues inputStringChanged events', () => {
     enterKeysIntoComponent('hi');
@@ -452,14 +511,15 @@ fdescribe('InputBarComponent', () => {
     expect(inputStringChangedValues[1]).toEqual('hi');
   });
 
-  it('clicking abort after clicking spell resets state', () => {
+  it('clicking abort after clicking spell resets state', async () => {
     enterKeysIntoComponent('abc');
     const spellButton = fixture.debugElement.query(By.css('.spell-button'));
     spellButton.nativeElement.click();
     fixture.detectChanges();
     // The ending punctuation should be ignored by keyword AE.
     fixture.componentInstance.state = State.FOCUSED_ON_LETTER_CHIP;
-    fixture.componentInstance.onChipTextChanged({text: 'bit'}, 1);
+    spyOn(fixture.componentInstance, 'isValidWord').and.returnValue(true);
+    await fixture.componentInstance.onChipTextChanged({text: 'bit'}, 1);
     const abortButton = fixture.debugElement.query(By.css('.abort-button'));
     abortButton.nativeElement.click();
     fixture.detectChanges();
@@ -476,13 +536,10 @@ fdescribe('InputBarComponent', () => {
     const expandButton = fixture.debugElement.query(By.css('.expand-button'));
     expandButton.nativeElement.click();
 
-    expect(inputAbbreviationChangeEvents.length).toEqual(1);
-    expect(inputAbbreviationChangeEvents[0].requestExpansion).toBeTrue();
-    const {abbreviationSpec} = inputAbbreviationChangeEvents[0];
-    expect(abbreviationSpec.tokens.length).toEqual(1);
-    expect(abbreviationSpec.tokens[0].value).toEqual('abc');
-    expect(abbreviationSpec.tokens[0].isKeyword).toBeFalse();
-    expect(abbreviationSpec.readableString).toEqual('abc');
+    expect(inFlightAbbreviationChangeEvents.length).toEqual(1);
+    expect(inFlightAbbreviationChangeEvents[0].requestExpansion).toBeTrue();
+    const {abbreviationSpec} = inFlightAbbreviationChangeEvents[0];
+    expect(abbreviationSpec.tokens.length).toEqual(3);
   });
 
   it('chips are shown during refinement', () => {
@@ -1359,7 +1416,7 @@ fdescribe('InputBarComponent', () => {
          const input = fixture.debugElement.query(By.css('.base-text-area'));
          const event = new KeyboardEvent('keypress', {key: '\n'});
          input.nativeElement.value = 'hi\n';
-         fixture.componentInstance.onInputTextAreaKeyUp(event);
+         await fixture.componentInstance.onInputTextAreaKeyUp(event);
          fixture.detectChanges();
 
          expect(inputAbbreviationChangeEvents.length)

@@ -323,7 +323,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  onInputTextAreaKeyUp(event: KeyboardEvent) {
+  async onInputTextAreaKeyUp(event: KeyboardEvent) {
     this.inputString = this.inputTextArea.nativeElement.value;
     if (this.inputStringHasOnlyPuncutationAfterSuggestionSpace()) {
       this.updateInputString(
@@ -349,7 +349,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
           !this.studyManager.isAbbreviationMode) &&
         this.inputStringIsCompatibleWithAbbreviationExpansion) {
       // NOTE(#337): Under the full mode of study, AE should not be triggered.
-      this.triggerAbbreviationExpansion();
+      await this.triggerAbbreviationExpansion();
     }
   }
 
@@ -547,7 +547,6 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   async onChipTextChanged(event: {text: string}, i: number) {
-    console.log('*** onChipTextChanged A100');  // DEBUG
     this.ensureChipTypedTextCreated();
     const spelledString = event.text.trim();
     this._chipTypedText![i] = spelledString;
@@ -558,17 +557,20 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
         if (isValidWordOrIncompleteKeyword) {
           console.log(`Spelled string is an incommplete keyword: trigger AE`);
         }
-      } else if (LexiconComponent.isValidWord(spelledString.trim())) {
+      } else if (this.isValidWord(spelledString.trim())) {
         console.log(
             `Spelled string is valid word '${spelledString}': trigger AE`);
         isValidWordOrIncompleteKeyword = true;
       }
-      console.log('*** onChipTextChanged A120:', isValidWordOrIncompleteKeyword);  // DEBUG
       if (isValidWordOrIncompleteKeyword) {
         await this.triggerAbbreviationExpansion(/* isInFlight= */ true);
       }
     }
     updateButtonBoxesForElements(this.instanceId, this.buttons);
+  }
+
+  isValidWord(str: string): boolean {
+    return LexiconComponent.isValidWord(str);
   }
 
   onChipClicked(index: number) {

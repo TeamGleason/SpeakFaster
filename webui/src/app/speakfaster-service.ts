@@ -236,11 +236,17 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
     const keywordIndices: number[] = [];
     let wordAbbrevMode: string|null = null;
     for (let i = 0; i < abbreviationSpec.tokens.length; ++i) {
-      if (abbreviationSpec.tokens[i].isKeyword) {
+      const token = abbreviationSpec.tokens[i];
+      if (token.isKeyword) {
         keywordIndices.push(i);
-
-        if (abbreviationSpec.tokens[i].wordAbbrevMode) {
-          wordAbbrevMode = abbreviationSpec.tokens[i].wordAbbrevMode as string;
+        if (wordAbbrevMode === null) {
+          if (token.wordAbbrevMode) {
+            wordAbbrevMode = token.wordAbbrevMode as string;
+          }
+        } else if (wordAbbrevMode !== token.wordAbbrevMode) {
+          throw new Error(
+              `Incompatible word abbrev modes: ${wordAbbrevMode} ` +
+              `and ${token.wordAbbrevMode}`);
         }
       }
     }

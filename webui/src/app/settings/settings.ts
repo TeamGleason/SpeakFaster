@@ -38,6 +38,12 @@ export interface AppSettings {
 
   // Dwell delay for gaze clicking in the app. Unit: milliseconds.
   dwellDelayMillis?: number;
+
+  // Number of word suggestions (e.g., from a neural LM).
+  numWordSuggestions?: number;
+
+  // Whether incomplete-keyword (inckw) AE is enabled.
+  enableInckw?: boolean;
 }
 
 let appSettings: AppSettings|null = null;
@@ -50,6 +56,8 @@ export function getDefaultAppSettings(): AppSettings {
     showGazeTracker: 'YES',
     gazeFuzzyRadius: DEFAULT_GAZE_FUZZY_RADIUS,
     dwellDelayMillis: DEFAULT_DWELL_DELAY_MILLIS,
+    numWordSuggestions: 4,
+    enableInckw: false,
   };
 }
 
@@ -167,6 +175,18 @@ export async function setGazeFuzzyRadius(radius: number) {
   }
   await ensureAppSettingsLoaded();
   appSettings!.gazeFuzzyRadius = radius;
+  await trySaveSettings();
+}
+
+export async function setNumWordSuggestions(numWordSuggestions: number) {
+  await ensureAppSettingsLoaded();
+  appSettings!.numWordSuggestions = numWordSuggestions;
+  await trySaveSettings();
+}
+
+export async function setEnableInckw(enableInckw: boolean) {
+  await ensureAppSettingsLoaded();
+  appSettings!.enableInckw = enableInckw;
   await trySaveSettings();
 }
 

@@ -238,12 +238,17 @@ app-text-to-speech-component {
           [userGivenName]="userGivenName"
           (ttsVoiceSelectionButtonClicked)="onTtsVoiceSelectionButtonClicked($event)"
           (helpButtonClicked)="onHelpButtonClicked($event)"
-          (eyeGazeSettingsButtonClicked)="onEyeGazeSettingsButtonClicked($event)">
+          (eyeGazeSettingsButtonClicked)="onEyeGazeSettingsButtonClicked($event)"
+          (aiSettingsButtonClicked)="onAiSettingsButtonClicked($event)">
       </app-settings-component>
 
       <app-settings-eye-gaze-component
           *ngIf="appState === 'EYE_GAZE_SETTINGS'">
       </app-settings-eye-gaze-component>
+
+      <app-settings-ai-component
+          *ngIf="appState === 'AI_SETTINGS'">
+      </app-settings-ai-component>
 
       <app-help-component
           *ngIf="appState === 'HELP'">

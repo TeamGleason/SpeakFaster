@@ -8,9 +8,12 @@ import {createUuid} from 'src/utils/uuid';
 
 import {getPhraseStats, HttpEventLogger} from '../event-logger/event-logger-impl';
 import {InputBarControlEvent} from '../input-bar/input-bar.component';
+import {getAppSettings} from '../settings/settings';
 import {SpeakFasterService, TextPredictionResponse} from '../speakfaster-service';
 
-const MAX_NUM_PREDICTIONS = 4;
+// The default value for the number of word suggestions, used when the value is
+// unavailable from app settings.
+const DEFAULT_NUM_WORD_SUGGESTIONS = 4;
 
 const THROTTLE_TIME_MILLIS = 50;
 
@@ -40,6 +43,7 @@ export class InputTextPredictionsComponent implements AfterViewInit, OnInit,
   clickableButtons!: QueryList<ElementRef<HTMLElement>>;
 
   readonly _predictions: string[] = [];
+  private numWordSuggestions = DEFAULT_NUM_WORD_SUGGESTIONS;
 
   private readonly textPredictionTriggers: Subject<string> = new Subject;
   private latestCompletedRequestTimestamp: number = -1;
@@ -126,7 +130,7 @@ export class InputTextPredictionsComponent implements AfterViewInit, OnInit,
           textPrefix,
         })
         .subscribe(
-            (data: TextPredictionResponse) => {
+            async (data: TextPredictionResponse) => {
               if (t <= this.latestCompletedRequestTimestamp) {
                 // Out-of-order responses.
                 return;
@@ -138,8 +142,12 @@ export class InputTextPredictionsComponent implements AfterViewInit, OnInit,
               if (!this.inputString) {
                 return;
               }
+              const numWordSuggestions =
+                  await this.getNumWordSuggestionsFromSettings();
+              console.log(
+                  '*** numWordSugestions=', numWordSuggestions);  // DEBUG
               this._predictions.push(
-                  ...data.outputs.slice(0, MAX_NUM_PREDICTIONS));
+                  ...data.outputs.slice(0, numWordSuggestions));
               this.latestCompletedRequestTimestamp = t;
             },
             error => {
@@ -159,6 +167,14 @@ export class InputTextPredictionsComponent implements AfterViewInit, OnInit,
   /** Resets state, including empties the predictions. */
   private reset() {
     this._predictions.splice(0);
+  }
+
+  private async getNumWordSuggestionsFromSettings(): Promise<number> {
+    const appSettings = await getAppSettings();
+    if (!appSettings || !appSettings.numWordSuggestions) {
+      return DEFAULT_NUM_WORD_SUGGESTIONS;
+    }
+    return appSettings.numWordSuggestions;
   }
 
   public get predictions(): string[] {

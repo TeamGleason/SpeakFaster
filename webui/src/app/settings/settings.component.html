@@ -40,6 +40,10 @@
   width: 800px;
 }
 
+.logging-tag {
+  margin-left: 8px;
+}
+
 .option-button {
   align-items: center;
   background: #333;
@@ -63,9 +67,17 @@
   background: darkgreen;
 }
 
-.option-button.eye-gaze-settings-button {
+.option-button.ai-settings-button {
   line-height: 24px;
   margin-right: 0;
+  width: 240px;
+}
+
+.option-button.eye-gaze-settings-button {
+  font-size: 20px;
+  line-height: 24px;
+  margin-right: 0;
+  width: 240px;
 }
 
 .option-button.quit-button {
@@ -77,8 +89,8 @@
 }
 
 .option-button.help-button {
-  min-width: 120px;
   margin-right: 0;
+  width: 240px;
 }
 
 .option-button.reload-button {
@@ -161,6 +173,21 @@
       <img class="icon-image" src="/assets/images/close.png">
       Quit app
   </button>
+
+  <div class="sign-in-section">
+    <div *ngIf="userGivenName !== null">
+      Signed in as:
+      <span class="sign-in-content">{{userGivenName}}</span>
+      <span
+          *ngIf="userEmail !== null"
+          class="sign-in-content">
+        ({{userEmail}})
+      </span>
+    </div>
+    <div class="sign-in-content user-id">
+      (ID: {{userId}})
+    </div>
+  </div>
 
   <div
       *ngIf="isFullLogging"
@@ -297,26 +324,19 @@
 
     <button
         #clickableButton
+        class="option-button ai-settings-button"
+        (click)="onAiSettingsButtonClicked($event)">
+      <img class="icon-image" src="/assets/images/abbreviation-expansion-inactive.png">
+      AI settings
+    </button>
+
+    <button
+        #clickableButton
         class="option-button help-button"
         (click)="onHelpButtonClicked($event)">
       <img class="icon-image" src="/assets/images/help.png">
       Help
     </button>
-
-    <div class="sign-in-section">
-      <div *ngIf="userGivenName !== null">
-        Signed in as:
-        <span class="sign-in-content">{{userGivenName}}</span>
-        <span
-            *ngIf="userEmail !== null"
-            class="sign-in-content">
-          ({{userEmail}})
-        </span>
-      </div>
-      <div class="sign-in-content user-id">
-        (ID: {{userId}})
-      </div>
-    </div>
 
   </div>
 </div>

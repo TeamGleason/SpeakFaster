@@ -1463,5 +1463,29 @@ describe('InputBarComponent', () => {
         .not.toBeNull();
   });
 
+  for (const [string, expectedBool] of [
+           ['foo ,', true],
+           ['foo ;', true],
+           ['foo :', true],
+           ['foo , ', true],
+           ['foo .', true],
+           ['foo . ', true],
+           ['foo ?', true],
+           ['foo ! ', true],
+           ['foo .  ', true],
+           ['foo b', false],
+           ['foo,', false],
+           ['foo bar,', false],
+  ] as Array<[string, boolean]>) {
+    it('inputStringHasOnlyPuncutationAfterSuggestionSpace return right answer',
+       () => {
+         (fixture.componentInstance as any).suggestionBasedSpaceIndex = 3;
+         fixture.componentInstance.inputString = string;
+         expect(fixture.componentInstance
+                    .inputStringHasOnlyPuncutationAfterSuggestionSpace())
+             .toEqual(expectedBool);
+       });
+  }
+
   // TODO(cais): Test spelling valid word triggers AE, with sampleTime().
 });

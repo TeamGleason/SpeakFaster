@@ -324,13 +324,10 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
 
   onInputTextAreaKeyUp(event: KeyboardEvent) {
     this.inputString = this.inputTextArea.nativeElement.value;
-    if (this.suggestionBasedSpaceIndex !== null &&
-        this.inputString.length > this.suggestionBasedSpaceIndex &&
-        this.inputString[this.suggestionBasedSpaceIndex] === ' ' &&
-        endsWithPunctuation(this.inputString.trim())) {
+    if (this.inputStringHasOnlyPuncutationAfterSuggestionSpace()) {
       this.updateInputString(
-          this.inputString.substring(0, this.suggestionBasedSpaceIndex) +
-          this.inputString.substring(this.suggestionBasedSpaceIndex + 1));
+          this.inputString.substring(0, this.suggestionBasedSpaceIndex!) +
+          this.inputString.substring(this.suggestionBasedSpaceIndex! + 1));
       this.suggestionBasedSpaceIndex = null;
       return;
     }
@@ -353,6 +350,21 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
       // NOTE(#337): Under the full mode of study, AE should not be triggered.
       this.triggerAbbreviationExpansion();
     }
+  }
+
+  inputStringHasOnlyPuncutationAfterSuggestionSpace(): boolean {
+    if (this.suggestionBasedSpaceIndex === null) {
+      return false;
+    }
+    if (this.inputString[this.suggestionBasedSpaceIndex] !== ' ') {
+      return false;
+    }
+    if (this.inputString.length <= this.suggestionBasedSpaceIndex) {
+      return false;
+    }
+    const suffix =
+        this.inputString.substring(this.suggestionBasedSpaceIndex + 1).trim();
+    return suffix.match(/^[\,\;\:\.\!\?]+$/) !== null;
   }
 
   onMainAreaClicked(event: Event) {

@@ -2,6 +2,8 @@
 
 import {VIRTUAL_KEY} from '../external/external-events.component';
 
+export type WordAbbrevMode = 'PREFIX'|'CONSONANTS_WITH_INITIAL_VOWEL';
+
 /**
  * A token in an abbreviation. In the context of abbreviation, a token is
  * defined as a unit that represents a word. It can be:
@@ -16,6 +18,10 @@ export interface AbbreviationToken {
 
   // Whether this token is word in its literal form, i.e., a keyword.
   readonly isKeyword: boolean;
+
+  // Word abbreviation mode. If undefined and `isKeyword` is true, this means
+  // this token is a complete keyword.
+  readonly wordAbbrevMode?: WordAbbrevMode;
 }
 
 /**

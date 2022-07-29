@@ -9,6 +9,7 @@ import {createUuid} from 'src/utils/uuid';
 import {getPhraseStats, HttpEventLogger} from '../event-logger/event-logger-impl';
 import {ExternalEventsComponent, IgnoreMachineKeySequenceConfig, repeatVirtualKey, resetReconStates, VIRTUAL_KEY} from '../external/external-events.component';
 import {LexiconComponent, LoadLexiconRequest} from '../lexicon/lexicon.component';
+import {getAppSettings} from '../settings/settings';
 import {FillMaskRequest, SpeakFasterService} from '../speakfaster-service';
 import {StudyManager} from '../study/study-manager';
 import {AbbreviationSpec, AbbreviationToken, InputAbbreviationChangedEvent} from '../types/abbreviation';
@@ -414,11 +415,12 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     this.triggerAbbreviationExpansion();
   }
 
-  private triggerAbbreviationExpansion(isInFlight: boolean = false) {
+  private async triggerAbbreviationExpansion(isInFlight: boolean = false) {
     const precedingText = '';
     const eraserLength = this.inputString.length;
 
     let abbreviationSpec = this.getNonSpellingAbbreviationExpansion();
+    const isIncompleteKeyword = (await getAppSettings()).enableInckw;
     if (this.state === State.FOCUSED_ON_LETTER_CHIP) {
       const tokens: AbbreviationToken[] = [];
       let pendingChars: string = '';
@@ -438,6 +440,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
                        .trim()
                        .toLocaleLowerCase(),
             isKeyword: true,
+            wordAbbrevMode: isIncompleteKeyword ? 'PREFIX' : undefined,
           });
         } else {
           // The word has *not* been spelled out.
@@ -543,15 +546,27 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     this.updateInputString(InputBarComponent.savedInputString);
   }
 
-  onChipTextChanged(event: {text: string}, i: number) {
+  async onChipTextChanged(event: {text: string}, i: number) {
+    console.log('*** onChipTextChanged A100');  // DEBUG
     this.ensureChipTypedTextCreated();
     const spelledString = event.text.trim();
     this._chipTypedText![i] = spelledString;
-    if (this.state === State.FOCUSED_ON_LETTER_CHIP &&
-        LexiconComponent.isValidWord(spelledString.trim())) {
-      console.log(
-          `Spelled string is valid word '${spelledString}': trigger AE`);
-      this.triggerAbbreviationExpansion(/* isInFlight= */ true);
+    if (this.state === State.FOCUSED_ON_LETTER_CHIP) {
+      let isValidWordOrIncompleteKeyword = false;
+      if ((await getAppSettings()).enableInckw) {
+        isValidWordOrIncompleteKeyword = spelledString.trim().length > 1;
+        if (isValidWordOrIncompleteKeyword) {
+          console.log(`Spelled string is an incommplete keyword: trigger AE`);
+        }
+      } else if (LexiconComponent.isValidWord(spelledString.trim())) {
+        console.log(
+            `Spelled string is valid word '${spelledString}': trigger AE`);
+        isValidWordOrIncompleteKeyword = true;
+      }
+      console.log('*** onChipTextChanged A120:', isValidWordOrIncompleteKeyword);  // DEBUG
+      if (isValidWordOrIncompleteKeyword) {
+        await this.triggerAbbreviationExpansion(/* isInFlight= */ true);
+      }
     }
     updateButtonBoxesForElements(this.instanceId, this.buttons);
   }

@@ -35,7 +35,7 @@ class SpeakFasterServiceForTest {
   }
 }
 
-describe('InputBarComponent', () => {
+fdescribe('InputBarComponent', () => {
   let testListener: TestListener;
   let studyManager: StudyManager;
   let textEntryEndSubject: Subject<TextEntryEndEvent>;
@@ -415,41 +415,34 @@ describe('InputBarComponent', () => {
     expect(testListener.numRequestSoftkeyboardResetCalls).toEqual(1);
   });
 
-  for (const triggerKey of [VIRTUAL_KEY.SPACE, VIRTUAL_KEY.ENTER]) {
-    for (const endPunctuation of ['.', '?', '!']) {
-      it('spelling word then enter trigger key triggers AE: ' +
-             `trigger key = ${triggerKey}; ` +
-             `ending punctuation = ${endPunctuation}`,
-         () => {
-           enterKeysIntoComponent('abc');
-           const spellButton =
-               fixture.debugElement.query(By.css('.spell-button'));
-           spellButton.nativeElement.click();
-           fixture.detectChanges();
-           // The ending punctuation should be ignored by keyword AE.
-           fixture.componentInstance.state = State.FOCUSED_ON_LETTER_CHIP;
-           fixture.componentInstance.onChipTextChanged({text: 'bit'}, 1);
-           fixture.detectChanges();
-           const expandButton =
-               fixture.debugElement.query(By.css('.expand-button'));
-           expandButton.nativeElement.click();
-           fixture.detectChanges();
+  fit('spelling word then enter trigger key triggers AE: ',
+      async () => {
+        enterKeysIntoComponent('abc');
+        const spellButton = fixture.debugElement.query(By.css('.spell-button'));
+        spellButton.nativeElement.click();
+        fixture.detectChanges();
+        // The ending punctuation should be ignored by keyword AE.
+        fixture.componentInstance.state = State.FOCUSED_ON_LETTER_CHIP;
+        fixture.componentInstance.onChipTextChanged({text: 'bit'}, 1);
+        fixture.detectChanges();
+        const expandButton =
+            fixture.debugElement.query(By.css('.expand-button'));
+        expandButton.nativeElement.click();
+        fixture.detectChanges();
 
-           expect(fixture.componentInstance
-                      .inputStringIsCompatibleWithAbbreviationExpansion)
-               .toBeTrue();
-           expect(inputAbbreviationChangeEvents.length).toEqual(1);
-           expect(inputAbbreviationChangeEvents[0].requestExpansion).toBeTrue();
-           const {abbreviationSpec} = inputAbbreviationChangeEvents[0];
-           expect(abbreviationSpec.tokens.length).toEqual(3);
-           expect(abbreviationSpec.readableString).toEqual('a bit c');
-           const {tokens} = abbreviationSpec;
-           expect(tokens[0]).toEqual({value: 'a', isKeyword: false});
-           expect(tokens[1]).toEqual({value: 'bit', isKeyword: true});
-           expect(tokens[2]).toEqual({value: 'c', isKeyword: false});
-         });
-    }
-  }
+        expect(fixture.componentInstance
+                   .inputStringIsCompatibleWithAbbreviationExpansion)
+            .toBeTrue();
+        expect(inputAbbreviationChangeEvents.length).toEqual(1);
+        expect(inputAbbreviationChangeEvents[0].requestExpansion).toBeTrue();
+        const {abbreviationSpec} = inputAbbreviationChangeEvents[0];
+        expect(abbreviationSpec.tokens.length).toEqual(3);
+        expect(abbreviationSpec.readableString).toEqual('a bit c');
+        const {tokens} = abbreviationSpec;
+        expect(tokens[0]).toEqual({value: 'a', isKeyword: false});
+        expect(tokens[1]).toEqual({value: 'bit', isKeyword: true});
+        expect(tokens[2]).toEqual({value: 'c', isKeyword: false});
+      });
 
   it('entering keys into text box issues inputStringChanged events', () => {
     enterKeysIntoComponent('hi');
@@ -1478,10 +1471,11 @@ describe('InputBarComponent', () => {
            [3, 'foo,', false],
            [3, 'foo bar,', false],
            [null, 'foo ,', false],
-  ] as Array<[number|null, string, boolean]>) {
+  ] as Array<[number | null, string, boolean]>) {
     it('inputStringHasOnlyPuncutationAfterSuggestionSpace return right answer',
        () => {
-         (fixture.componentInstance as any).suggestionBasedSpaceIndex = suggestionSpaceIndex;
+         (fixture.componentInstance as any).suggestionBasedSpaceIndex =
+             suggestionSpaceIndex;
          fixture.componentInstance.inputString = string;
          expect(fixture.componentInstance
                     .inputStringHasOnlyPuncutationAfterSuggestionSpace())

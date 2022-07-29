@@ -1,6 +1,6 @@
-/** Quick phrase list for direct selection. */
+/** Settings component. */
 import {AfterViewInit, ChangeDetectorRef, Component, ElementRef, EventEmitter, Input, OnDestroy, OnInit, Output, QueryList, ViewChildren} from '@angular/core';
-import {getHostInfo, REMOVE_ALL_GAZE_BUTTONS_DIRECTIVE, removeAllButtonBoxes, requestQuitApp, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
+import {getHostInfo, removeAllButtonBoxes, requestQuitApp, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
 import {createUuid} from 'src/utils/uuid';
 
 import {HttpEventLogger} from '../event-logger/event-logger-impl';

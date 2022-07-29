@@ -1,12 +1,12 @@
 /** HTTP service of SpeakFaster. */
 
-import {HttpClient} from '@angular/common/http';
+import {HttpClient, HttpParams} from '@angular/common/http';
 import {Injectable} from '@angular/core';
-import {Observable, ObservedValueOf, throwError} from 'rxjs';
+import {Observable, throwError} from 'rxjs';
 import {catchError, timeout} from 'rxjs/operators';
 import {trimStringAtHead} from 'src/utils/text-utils';
 
-import {AbbreviationSpec} from './types/abbreviation';
+import {AbbreviationSpec, WordAbbrevMode} from './types/abbreviation';
 import {ContextSignal} from './types/context';
 import {AddContextualPhraseRequest, AddContextualPhraseResponse, ContextualPhrase, DeleteContextualPhraseRequest, DeleteContextualPhraseResponse, EditContextualPhraseRequest, EditContextualPhraseResponse, MarkContextualPhraseUsageRequest, MarkContextualPhraseUsageResponse} from './types/contextual_phrase';
 
@@ -234,21 +234,30 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
     speechContent = trimStringAtHead(speechContent, contextMathLengthChars);
     const {endpoint, headers, withCredentials} = this.getServerCallParams();
     const keywordIndices: number[] = [];
+    let wordAbbrevMode: string|null = null;
     for (let i = 0; i < abbreviationSpec.tokens.length; ++i) {
       if (abbreviationSpec.tokens[i].isKeyword) {
         keywordIndices.push(i);
+
+        if (abbreviationSpec.tokens[i].wordAbbrevMode) {
+          wordAbbrevMode = abbreviationSpec.tokens[i].wordAbbrevMode as string;
+        }
       }
+    }
+    const params = {
+      mode: 'abbreviation_expansion',
+      acronym: abbreviationSpec.readableString,
+      speechContent,
+      keywordIndices: keywordIndices.join(','),
+      precedingText: precedingText || '',
+      numSamples,
+    };
+    if (keywordIndices && wordAbbrevMode) {
+      (params as any)['wordAbbrevMode'] = wordAbbrevMode;
     }
     return this.http
         .get<AbbreviationExpansionRespnose>(endpoint, {
-          params: {
-            mode: 'abbreviation_expansion',
-            acronym: abbreviationSpec.readableString,
-            speechContent,
-            keywordIndices: keywordIndices.join(','),
-            precedingText: precedingText || '',
-            numSamples,
-          },
+          params,
           withCredentials,
           headers,
         })

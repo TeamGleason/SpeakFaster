@@ -18,7 +18,7 @@
   color: #aaa;
   display: flex;
   flex-direction: row;
-  font-size: 20px;
+  font-size: 18px;
 }
 
 .header-section {
@@ -33,6 +33,13 @@
   margin: 10px;
   height: 36px;
   width: 32px;
+}
+
+.icon-image-small {
+  align-self: center;
+  margin: 6px;
+  height: 28px;
+  width: 24px;
 }
 
 .left-column {
@@ -82,9 +89,10 @@
 
 .option-button.quit-button {
   background-color: rgb(210, 105, 0);
-  font-size: 20px;
+  font-size: 16px;
   height: 48px;
-  margin-left: 32px;
+  margin-left: 24px;
+  min-width: 136px;
   padding-right: 8px;
 }
 
@@ -95,6 +103,8 @@
 
 .option-button.reload-button {
   height: 48px;
+  font-size: 16px;
+  min-width: 152px;
   padding-right: 20px;
 }
 
@@ -134,7 +144,7 @@
   color: #888;
   display: flex;
   flex-direction: column;
-  font-size: 21px;
+  font-size: 18px;
   text-align: end;
 }
 
@@ -162,7 +172,7 @@
       #clickableButton
       class="option-button reload-button"
       (click)="onReloadAppButtonClicked($event)">
-      <img class="icon-image" src="/assets/images/repeat.png">
+      <img class="icon-image-small" src="/assets/images/repeat.png">
       Reload app
   </button>
 
@@ -170,7 +180,7 @@
       #clickableButton
       class="option-button quit-button"
       (click)="onQuitAppButtonClicked($event)">
-      <img class="icon-image" src="/assets/images/close.png">
+      <img class="icon-image-small" src="/assets/images/close.png">
       Quit app
   </button>
 

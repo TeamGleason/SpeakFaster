@@ -3,7 +3,7 @@
 import {HttpClient, HttpParams} from '@angular/common/http';
 import {Injectable} from '@angular/core';
 import {Observable, throwError} from 'rxjs';
-import {catchError, timeout} from 'rxjs/operators';
+import {catchError, map, timeout} from 'rxjs/operators';
 import {trimStringAtHead} from 'src/utils/text-utils';
 
 import {AbbreviationSpec, WordAbbrevMode} from './types/abbreviation';
@@ -261,12 +261,14 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
     if (keywordIndices && wordAbbrevMode) {
       (params as any)['wordAbbrevMode'] = wordAbbrevMode;
     }
-    return this.http
-        .get<AbbreviationExpansionRespnose>(endpoint, {
-          params,
-          withCredentials,
-          headers,
-        })
+    const body = {json: JSON.stringify(params)};
+
+    // this.http
+    //     .post<AbbreviationExpansionRespnose>(endpoint, body, {
+    //       headers,
+    //     })
+    return invokeEndpointCompat<AbbreviationExpansionRespnose>(
+               endpoint, this.http, params, headers, withCredentials)
         .pipe(
             timeout(ABBREVIATION_EXPANSION_TIMEOUT_MILLIS),
             catchError(error => {
@@ -508,4 +510,40 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
     const withCredentials: boolean = configuration.accessToken === '';
     return {endpoint: configuration.endpoint, headers, withCredentials};
   }
+}
+
+/**
+ * Invoke API endpoint in a backward-compatible way.
+ * @param endpoint
+ */
+export function invokeEndpointCompat<T>(
+    endpoint: string, http: HttpClient, params: any, headers: any,
+    withCredentials: boolean): Observable<T> {
+  if (endpoint.endsWith(':call')) {  // New POST endpoint.
+    const body = {json: JSON.stringify(params)};
+    return http
+        .post<T>(endpoint, body, {
+          headers,
+        })
+        .pipe(
+            map(response => maybeStripJsonField(response) as T),
+        );
+  } else {  // Old GET endpoint.
+    return http.get<T>(endpoint, {
+      params,
+      withCredentials,
+      headers,
+    });
+  }
+}
+
+// TODO(cais): Add unit test.
+export function maybeStripJsonField(response: any) {
+  if (response.json) {
+    if (typeof response.json === 'string') {
+      return JSON.parse(response.json);
+    }
+    return response.json;
+  }
+  return response;
 }

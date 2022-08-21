@@ -5,6 +5,7 @@ import {Subject} from 'rxjs';
 import {bindCefSharpListener, bringFocusAppToForeground, bringWindowToForeground, EYE_TRACKER_STATUS, registerExternalAccessTokenHook, registerExternalKeypressHook, registerEyeTrackerStatusHook, registerHostWindowFocusHook, resizeWindow, setHostEyeGazeOptions, toggleGazeButtonsState, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from '../utils/cefsharp';
 import {createUuid} from '../utils/uuid';
 
+import {OAuth2Helper} from './auth/oauth2-helper';
 import {HttpEventLogger} from './event-logger/event-logger-impl';
 import {ExternalEventsComponent} from './external/external-events.component';
 import {InputBarControlEvent} from './input-bar/input-bar.component';
@@ -108,6 +109,17 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       }
       if (params['show_metrics']) {
         this._showMetrics = this.stringValueMeansTrue(params['show_metrics']);
+      }
+      if (params['client_id']) {
+        const oauth2helper =
+            new OAuth2Helper(params['client_id'], this.onNewAccessToken.bind(this));
+        // const oauth2helper =
+        //     new OAuth2Helper(params['client_id'], (accessToken) => {
+        //       console.log('New access token from oauth2Helper:', accessToken);  // DEBUG
+        //     });
+        console.log('*** oauth2helper:', oauth2helper);  // DEBUG
+        oauth2helper.init();
+        // oauth2helper.signIn();
       }
       const useOauth = params['use_oauth'];
       if (typeof useOauth === 'string' &&
@@ -292,8 +304,9 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   onNewAccessToken(accessToken: string) {
     this._accessToken = accessToken;
+    console.log('*** Configuration access token:', accessToken, this.endpoint);  // DEBUG
     configureService({
-      endpoint: this._endpoint,
+      endpoint: this.endpoint,
       accessToken,
     });
   }

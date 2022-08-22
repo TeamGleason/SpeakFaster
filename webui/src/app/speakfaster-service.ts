@@ -215,6 +215,7 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
 
   ping() {
     const {headers, withCredentials} = this.getServerCallParams();
+    // TODO(cais): Migrate to compat.
     return this.http.get<PingResponse>(configuration!.endpoint, {
       params: {
         mode: 'ping',
@@ -261,12 +262,6 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
     if (keywordIndices && wordAbbrevMode) {
       (params as any)['wordAbbrevMode'] = wordAbbrevMode;
     }
-    const body = {json: JSON.stringify(params)};
-
-    // this.http
-    //     .post<AbbreviationExpansionRespnose>(endpoint, body, {
-    //       headers,
-    //     })
     return invokeEndpointCompat<AbbreviationExpansionRespnose>(
                endpoint, this.http, params, headers, withCredentials)
         .pipe(
@@ -302,12 +297,8 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
     if (textPredictionRequest.allowedTags) {
       params['allowedTags'] = textPredictionRequest.allowedTags.join(',');
     }
-    return this.http
-        .get<TextPredictionResponse>(endpoint, {
-          params,
-          withCredentials,
-          headers,
-        })
+    return invokeEndpointCompat<TextPredictionResponse>(
+               endpoint, this.http, params, headers, withCredentials)
         .pipe(timeout(TEXT_PREDICTION_TIMEOUT_MILLIS), catchError(error => {
                 return throwError(makeTimeoutErrorMessage(
                     'Text prediction', TEXT_PREDICTION_TIMEOUT_MILLIS));
@@ -325,12 +316,8 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
           request.contextualPhrase.tags.join(',') :
           undefined,
     };
-    return this.http
-        .get<AddContextualPhraseResponse>(endpoint, {
-          params,
-          withCredentials,
-          headers,
-        })
+    return invokeEndpointCompat<AddContextualPhraseResponse>(
+               endpoint, this.http, params, headers, withCredentials)
         .pipe(timeout(CONTEXT_PHRASES_TIMEOUT_MILLIS), catchError(error => {
                 return throwError(makeTimeoutErrorMessage(
                     'Add context phrase', CONTEXT_PHRASES_TIMEOUT_MILLIS));
@@ -345,12 +332,8 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
       userId: request.userId,
       phraseId: request.phraseId,
     };
-    return this.http
-        .get<DeleteContextualPhraseResponse>(endpoint, {
-          params,
-          withCredentials,
-          headers,
-        })
+    return invokeEndpointCompat<DeleteContextualPhraseResponse>(
+               endpoint, this.http, params, headers, withCredentials)
         .pipe(timeout(CONTEXT_PHRASES_TIMEOUT_MILLIS), catchError(error => {
                 return throwError(makeTimeoutErrorMessage(
                     'Delete context phrase', CONTEXT_PHRASES_TIMEOUT_MILLIS));
@@ -367,12 +350,8 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
       text: request.text,
       displayText: request.displayText,
     };
-    return this.http
-        .get<EditContextualPhraseResponse>(endpoint, {
-          params,
-          withCredentials,
-          headers,
-        })
+    return invokeEndpointCompat<EditContextualPhraseResponse>(
+               endpoint, this.http, params, headers, withCredentials)
         .pipe(timeout(CONTEXT_PHRASES_TIMEOUT_MILLIS), catchError(error => {
                 return throwError(makeTimeoutErrorMessage(
                     'Edit context phrase', CONTEXT_PHRASES_TIMEOUT_MILLIS));
@@ -388,12 +367,8 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
       phraseId: request.phraseId,
       lastUsedTimestamp: new Date().toISOString(),
     };
-    return this.http
-        .get<MarkContextualPhraseUsageResponse>(endpoint, {
-          params,
-          withCredentials,
-          headers,
-        })
+    return invokeEndpointCompat<MarkContextualPhraseUsageResponse>(
+               endpoint, this.http, params, headers, withCredentials)
         .pipe(timeout(CONTEXT_PHRASES_TIMEOUT_MILLIS), catchError(error => {
                 return throwError(makeTimeoutErrorMessage(
                     'Mark context phrase', CONTEXT_PHRASES_TIMEOUT_MILLIS));
@@ -407,31 +382,27 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
       speechContent: trimStringAtHead(
           request.speechContent, FILL_MASK_CONTEXT_MAX_LENGTH_CHARS),
     };
-    return this.http
-        .get<FillMaskResponse>(endpoint, {
-          params: {
-            mode: 'fill_mask',
-            ...request,
-          },
-          withCredentials,
-          headers,
-        })
+    const params = {
+      mode: 'fill_mask',
+      ...request,
+    };
+    return invokeEndpointCompat<FillMaskResponse>(
+               endpoint, this.http, params, headers, withCredentials)
         .pipe(timeout(FILL_MASK_TIMEOUT_MILLIS), catchError(error => {
                 return throwError(makeTimeoutErrorMessage(
                     'Word replacement', FILL_MASK_TIMEOUT_MILLIS));
               }));
   }
 
-  retrieveContext(userId: string) {
+  retrieveContext(userId: string): Observable<RetrieveContextResponse> {
     const {endpoint, headers, withCredentials} = this.getServerCallParams();
-    return this.http.get<RetrieveContextResponse>(endpoint, {
-      params: {
-        mode: 'retrieve_context',
-        userId: userId,
-      },
-      withCredentials,
-      headers,
-    });
+    const params = {
+      mode: 'retrieve_context',
+      userId: userId,
+    };
+    // TODO(cais): Add time out? DO NOT SUBMIT.
+    return invokeEndpointCompat<RetrieveContextResponse>(
+        endpoint, this.http, params, headers, withCredentials);
   }
 
   registerContext(
@@ -441,18 +412,17 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
     const {endpoint, headers, withCredentials} = this.getServerCallParams();
     startTimestamp = startTimestamp || new Date();
     timezone = timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
-    return this.http.get<RegisterContextResponse>(endpoint, {
-      params: {
-        mode: 'register_context',
-        userId: userId,
-        speechContent: speechContent,
-        startTimestamp: startTimestamp.toISOString(),
-        timezone: timezone,
-        speakerId: partnerName,
-      },
-      withCredentials,
-      headers,
-    });
+    const params = {
+      mode: 'register_context',
+      userId: userId,
+      speechContent: speechContent,
+      startTimestamp: startTimestamp.toISOString(),
+      timezone: timezone,
+      speakerId: partnerName,
+    }
+    // TODO(cais): Add time out? DO NOT SUBMIT.
+    return invokeEndpointCompat<RegisterContextResponse>(
+        endpoint, this.http, params, headers, withCredentials)
   }
 
   getUserId(userEmail: string): Observable<GetUserIdResponse> {
@@ -477,16 +447,15 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
 
   getLexicon(request: GetLexiconRequest): Observable<GetLexiconResponse> {
     const {endpoint, headers, withCredentials} = this.getServerCallParams();
-    return this.http.get<GetLexiconResponse>(endpoint, {
-      params: {
-        mode: 'get_lexicon',
-        languageCode: request.languageCode,
-        subset: request.subset || '',
-        prefix: request.prefix || '',
-      },
-      withCredentials,
-      headers,
-    });
+    const params = {
+      mode: 'get_lexicon',
+      languageCode: request.languageCode,
+      subset: request.subset || '',
+      prefix: request.prefix || '',
+    }
+    // TODO(cais): Add time out? DO NOT SUBMIT.
+    return invokeEndpointCompat<GetLexiconResponse>(
+        endpoint, this.http, params, headers, withCredentials);
   }
 
   private getServerCallParams(): {

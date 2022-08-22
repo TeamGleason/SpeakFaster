@@ -215,7 +215,6 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
 
   ping() {
     const {headers, withCredentials} = this.getServerCallParams();
-    // TODO(cais): Migrate to compat.
     return this.http.get<PingResponse>(configuration!.endpoint, {
       params: {
         mode: 'ping',
@@ -505,7 +504,6 @@ export function invokeEndpointCompat<T>(
   }
 }
 
-// TODO(cais): Add unit test.
 export function maybeStripJsonField(response: any) {
   if (response.json) {
     if (typeof response.json === 'string') {

@@ -79,6 +79,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   inputString: string = '';
 
   private _inputBarNotification?: string;
+  private _errorMessage?: string = undefined;
 
   @ViewChildren('clickableButton')
   clickableButtons!: QueryList<ElementRef<HTMLElement>>;
@@ -110,18 +111,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       if (params['show_metrics']) {
         this._showMetrics = this.stringValueMeansTrue(params['show_metrics']);
       }
-      if (params['client_id']) {
-        const oauth2helper = new OAuth2Helper(
-            params['client_id'], this.onNewAccessToken.bind(this));
-        // const oauth2helper =
-        //     new OAuth2Helper(params['client_id'], (accessToken) => {
-        //       console.log('New access token from oauth2Helper:',
-        //       accessToken);  // DEBUG
-        //     });
-        console.log('*** oauth2helper:', oauth2helper);  // DEBUG
-        oauth2helper.init();
-        // oauth2helper.signIn();
-      }
       const useOauth = params['use_oauth'];
       if (typeof useOauth === 'string' &&
           (useOauth.toLocaleLowerCase() === 'false' || useOauth === '0')) {
@@ -129,8 +118,30 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
         configureService({
           endpoint: this._endpoint,
           accessToken: '',
-        })
+        });
       }
+      if (params['client_id'] && this.useAccessToken) {
+        const oauth2Helper = new OAuth2Helper(params['client_id'], {
+          onSuccess: (accessToken: string, user: gapi.auth2.GoogleUser) => {
+            this.onNewAccessToken(accessToken);
+          },
+          onInvalidClientId: (invalidClientId) => {
+            this._errorMessage = 'Error: invalid OAuth2 client ID';
+          },
+          onInvalidUserInfo: () => {
+            this._errorMessage = 'Error: OAuth2 failed to get user info';
+          },
+          onUserNotAuthorized: () => {},
+          onNoGapiError: () => {
+            this._errorMessage = 'Error: No gapi available.';
+          },
+          onMiscError: (error: Error) => {
+            this._errorMessage = `Error: ${error.message}`;
+          },
+        });
+        oauth2Helper.init();
+      }
+
       // TODO(cais): Add unit tests.
       const userEmail = params['user_email'];
       console.log(`Got user email from URL parameters: ${userEmail}`);
@@ -305,13 +316,15 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   onNewAccessToken(accessToken: string) {
     this._accessToken = accessToken;
-    console.log(
-        '*** Configuration access token:', accessToken,
-        this.endpoint);  // DEBUG
     configureService({
       endpoint: this.endpoint,
       accessToken,
     });
+  }
+
+  get errorMessage(): string|undefined {
+    // TODO(cais): Add unit tests. DO NOT SUBMIT.
+    return this._errorMessage;
   }
 
   get hasAccessToken(): boolean {

@@ -323,7 +323,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   get errorMessage(): string|undefined {
-    // TODO(cais): Add unit tests. DO NOT SUBMIT.
     return this._errorMessage;
   }
 

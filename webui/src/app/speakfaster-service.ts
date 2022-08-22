@@ -197,6 +197,7 @@ const ABBREVIATION_EXPANSION_TIMEOUT_MILLIS = 6000;
 const TEXT_PREDICTION_TIMEOUT_MILLIS = 6000;
 const FILL_MASK_TIMEOUT_MILLIS = 6000;
 const CONTEXT_PHRASES_TIMEOUT_MILLIS = 10000;
+const LEXICON_TIMEOUT_MILLIS = 10000;
 
 const ABBREVIATION_EXPANSION_CONTEXT_MAX_LENGTH_CHARS = 1000;
 const ABBREVIATION_EXPANSION_WITH_KEYWORDS_CONTEXT_MAX_LENGTH_CHARS = 200;
@@ -262,14 +263,12 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
       (params as any)['wordAbbrevMode'] = wordAbbrevMode;
     }
     return invokeEndpointCompat<AbbreviationExpansionRespnose>(
-               endpoint, this.http, params, headers, withCredentials)
-        .pipe(
-            timeout(ABBREVIATION_EXPANSION_TIMEOUT_MILLIS),
-            catchError(error => {
-              return throwError(makeTimeoutErrorMessage(
-                  'Abbreviation expansion',
-                  ABBREVIATION_EXPANSION_TIMEOUT_MILLIS));
-            }));
+               endpoint, this.http, params, headers, withCredentials,
+               ABBREVIATION_EXPANSION_TIMEOUT_MILLIS)
+        .pipe(catchError(error => {
+          return throwError(makeTimeoutErrorMessage(
+              'Abbreviation expansion', ABBREVIATION_EXPANSION_TIMEOUT_MILLIS));
+        }));
   }
 
   textPrediction(textPredictionRequest: TextPredictionRequest):
@@ -297,11 +296,12 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
       params['allowedTags'] = textPredictionRequest.allowedTags.join(',');
     }
     return invokeEndpointCompat<TextPredictionResponse>(
-               endpoint, this.http, params, headers, withCredentials)
-        .pipe(timeout(TEXT_PREDICTION_TIMEOUT_MILLIS), catchError(error => {
-                return throwError(makeTimeoutErrorMessage(
-                    'Text prediction', TEXT_PREDICTION_TIMEOUT_MILLIS));
-              }));
+               endpoint, this.http, params, headers, withCredentials,
+               TEXT_PREDICTION_TIMEOUT_MILLIS)
+        .pipe(catchError(error => {
+          return throwError(makeTimeoutErrorMessage(
+              'Text prediction', TEXT_PREDICTION_TIMEOUT_MILLIS));
+        }));
   }
 
   addContextualPhrase(request: AddContextualPhraseRequest):
@@ -316,11 +316,12 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
           undefined,
     };
     return invokeEndpointCompat<AddContextualPhraseResponse>(
-               endpoint, this.http, params, headers, withCredentials)
-        .pipe(timeout(CONTEXT_PHRASES_TIMEOUT_MILLIS), catchError(error => {
-                return throwError(makeTimeoutErrorMessage(
-                    'Add context phrase', CONTEXT_PHRASES_TIMEOUT_MILLIS));
-              }));
+               endpoint, this.http, params, headers, withCredentials,
+               CONTEXT_PHRASES_TIMEOUT_MILLIS)
+        .pipe(catchError(error => {
+          return throwError(makeTimeoutErrorMessage(
+              'Add context phrase', CONTEXT_PHRASES_TIMEOUT_MILLIS));
+        }));
   }
 
   deleteContextualPhrase(request: DeleteContextualPhraseRequest):
@@ -350,11 +351,12 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
       displayText: request.displayText,
     };
     return invokeEndpointCompat<EditContextualPhraseResponse>(
-               endpoint, this.http, params, headers, withCredentials)
-        .pipe(timeout(CONTEXT_PHRASES_TIMEOUT_MILLIS), catchError(error => {
-                return throwError(makeTimeoutErrorMessage(
-                    'Edit context phrase', CONTEXT_PHRASES_TIMEOUT_MILLIS));
-              }));
+               endpoint, this.http, params, headers, withCredentials,
+               CONTEXT_PHRASES_TIMEOUT_MILLIS)
+        .pipe(catchError(error => {
+          return throwError(makeTimeoutErrorMessage(
+              'Edit context phrase', CONTEXT_PHRASES_TIMEOUT_MILLIS));
+        }));
   }
 
   markContextualPhraseUsage(request: MarkContextualPhraseUsageRequest):
@@ -367,11 +369,12 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
       lastUsedTimestamp: new Date().toISOString(),
     };
     return invokeEndpointCompat<MarkContextualPhraseUsageResponse>(
-               endpoint, this.http, params, headers, withCredentials)
-        .pipe(timeout(CONTEXT_PHRASES_TIMEOUT_MILLIS), catchError(error => {
-                return throwError(makeTimeoutErrorMessage(
-                    'Mark context phrase', CONTEXT_PHRASES_TIMEOUT_MILLIS));
-              }));
+               endpoint, this.http, params, headers, withCredentials,
+               CONTEXT_PHRASES_TIMEOUT_MILLIS)
+        .pipe(catchError(error => {
+          return throwError(makeTimeoutErrorMessage(
+              'Mark context phrase', CONTEXT_PHRASES_TIMEOUT_MILLIS));
+        }));
   }
 
   fillMask(request: FillMaskRequest): Observable<FillMaskResponse> {
@@ -386,11 +389,12 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
       ...request,
     };
     return invokeEndpointCompat<FillMaskResponse>(
-               endpoint, this.http, params, headers, withCredentials)
-        .pipe(timeout(FILL_MASK_TIMEOUT_MILLIS), catchError(error => {
-                return throwError(makeTimeoutErrorMessage(
-                    'Word replacement', FILL_MASK_TIMEOUT_MILLIS));
-              }));
+               endpoint, this.http, params, headers, withCredentials,
+               FILL_MASK_TIMEOUT_MILLIS)
+        .pipe(catchError(error => {
+          return throwError(makeTimeoutErrorMessage(
+              'Word replacement', FILL_MASK_TIMEOUT_MILLIS));
+        }));
   }
 
   retrieveContext(userId: string): Observable<RetrieveContextResponse> {
@@ -399,9 +403,9 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
       mode: 'retrieve_context',
       userId: userId,
     };
-    // TODO(cais): Add time out? DO NOT SUBMIT.
     return invokeEndpointCompat<RetrieveContextResponse>(
-        endpoint, this.http, params, headers, withCredentials);
+        endpoint, this.http, params, headers, withCredentials,
+        CONTEXT_PHRASES_TIMEOUT_MILLIS);
   }
 
   registerContext(
@@ -418,10 +422,10 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
       startTimestamp: startTimestamp.toISOString(),
       timezone: timezone,
       speakerId: partnerName,
-    }
-    // TODO(cais): Add time out? DO NOT SUBMIT.
+    };
     return invokeEndpointCompat<RegisterContextResponse>(
-        endpoint, this.http, params, headers, withCredentials)
+        endpoint, this.http, params, headers, withCredentials,
+        CONTEXT_PHRASES_TIMEOUT_MILLIS);
   }
 
   getUserId(userEmail: string): Observable<GetUserIdResponse> {
@@ -451,10 +455,10 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
       languageCode: request.languageCode,
       subset: request.subset || '',
       prefix: request.prefix || '',
-    }
-    // TODO(cais): Add time out? DO NOT SUBMIT.
+    };
     return invokeEndpointCompat<GetLexiconResponse>(
-        endpoint, this.http, params, headers, withCredentials);
+        endpoint, this.http, params, headers, withCredentials,
+        LEXICON_TIMEOUT_MILLIS);
   }
 
   private getServerCallParams(): {
@@ -485,16 +489,20 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
  */
 export function invokeEndpointCompat<T>(
     endpoint: string, http: HttpClient, params: any, headers: any,
-    withCredentials: boolean): Observable<T> {
+    withCredentials: boolean, timeoutMillis?: number): Observable<T> {
   if (endpoint.endsWith(':call')) {  // New POST endpoint.
     const body = {json: JSON.stringify(params)};
-    return http
-        .post<T>(endpoint, body, {
-          headers,
-        })
-        .pipe(
-            map(response => maybeStripJsonField(response) as T),
-        );
+    let observable =
+        http.post<T>(endpoint, body, {
+              headers,
+            })
+            .pipe(
+                map(response => maybeStripJsonField(response) as T),
+            );
+    if (timeoutMillis) {
+      observable = observable.pipe(timeout(timeoutMillis));
+    }
+    return observable;
   } else {  // Old GET endpoint.
     return http.get<T>(endpoint, {
       params,

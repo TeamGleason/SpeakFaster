@@ -134,6 +134,8 @@ app-text-to-speech-component {
     <app-auth-component (newAccessToken)="onNewAccessToken($event)"></app-auth-component>
   </div>
 
+  <div *ngIf="errorMessage" class="error-message">{{errorMessage}}</div>
+
   <app-external-events-component
       #externalEvents
       [textEntryBeginSubject]="textEntryBeginSubject"
@@ -202,7 +204,6 @@ app-text-to-speech-component {
     </div>
 
     <div class="main-right-pane">
-      <div *ngIf="errorMessage" class="error-message">{{errorMessage}}</div>
 
       <app-context-component
         [ngClass]="{'app-context-component-area-hidden': appState !== 'ABBREVIATION_EXPANSION'}"

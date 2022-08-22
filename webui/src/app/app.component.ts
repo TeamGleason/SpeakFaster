@@ -1,4 +1,4 @@
-import {AfterViewInit, Component, ElementRef, OnDestroy, OnInit, QueryList, ViewChild, ViewChildren} from '@angular/core';
+import {AfterViewInit, ChangeDetectorRef, Component, ElementRef, OnDestroy, OnInit, QueryList, ViewChild, ViewChildren} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
 import {Subject} from 'rxjs';
 
@@ -111,11 +111,12 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
         this._showMetrics = this.stringValueMeansTrue(params['show_metrics']);
       }
       if (params['client_id']) {
-        const oauth2helper =
-            new OAuth2Helper(params['client_id'], this.onNewAccessToken.bind(this));
+        const oauth2helper = new OAuth2Helper(
+            params['client_id'], this.onNewAccessToken.bind(this));
         // const oauth2helper =
         //     new OAuth2Helper(params['client_id'], (accessToken) => {
-        //       console.log('New access token from oauth2Helper:', accessToken);  // DEBUG
+        //       console.log('New access token from oauth2Helper:',
+        //       accessToken);  // DEBUG
         //     });
         console.log('*** oauth2helper:', oauth2helper);  // DEBUG
         oauth2helper.init();
@@ -304,14 +305,16 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   onNewAccessToken(accessToken: string) {
     this._accessToken = accessToken;
-    console.log('*** Configuration access token:', accessToken, this.endpoint);  // DEBUG
+    console.log(
+        '*** Configuration access token:', accessToken,
+        this.endpoint);  // DEBUG
     configureService({
       endpoint: this.endpoint,
       accessToken,
     });
   }
 
-  hasAccessToken(): boolean {
+  get hasAccessToken(): boolean {
     return !this.useAccessToken || this._accessToken !== '';
   }
 

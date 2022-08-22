@@ -1,12 +1,12 @@
 /** HTTP service of SpeakFaster. */
 
-import {HttpClient, HttpParams} from '@angular/common/http';
+import {HttpClient} from '@angular/common/http';
 import {Injectable} from '@angular/core';
 import {Observable, throwError} from 'rxjs';
 import {catchError, map, timeout} from 'rxjs/operators';
 import {trimStringAtHead} from 'src/utils/text-utils';
 
-import {AbbreviationSpec, WordAbbrevMode} from './types/abbreviation';
+import {AbbreviationSpec} from './types/abbreviation';
 import {ContextSignal} from './types/context';
 import {AddContextualPhraseRequest, AddContextualPhraseResponse, ContextualPhrase, DeleteContextualPhraseRequest, DeleteContextualPhraseResponse, EditContextualPhraseRequest, EditContextualPhraseResponse, MarkContextualPhraseUsageRequest, MarkContextualPhraseUsageResponse} from './types/contextual_phrase';
 
@@ -482,8 +482,7 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
 }
 
 /**
- * Invoke API endpoint in a backward-compatible way.
- * @param endpoint
+ * Invokes API endpoint in a backward-compatible way.
  */
 export function invokeEndpointCompat<T>(
     endpoint: string, http: HttpClient, params: any, headers: any,

@@ -9,6 +9,11 @@ export class OAuth2Helper {
   private user?: gapi.auth2.GoogleUser;
   private _accessToken: string|null = null;
 
+  /** Singleton access. Requires a unique client ID. */
+  public getInstance(client_id: string) {
+
+  }
+
   constructor(
       private readonly clientId: string,
       private onNewAccessToken: (token: string) => void) {}

@@ -124,6 +124,9 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
         const oauth2Helper = new OAuth2Helper(params['client_id'], {
           onSuccess: (accessToken: string, user: gapi.auth2.GoogleUser) => {
             this.onNewAccessToken(accessToken);
+            this._userEmail = user.getBasicProfile().getEmail();
+            this._userGivenName = user.getBasicProfile().getGivenName();
+            this.getUserId();
           },
           onInvalidClientId: (invalidClientId) => {
             this._errorMessage = 'Error: invalid OAuth2 client ID';
@@ -147,7 +150,21 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       console.log(`Got user email from URL parameters: ${userEmail}`);
       if (userEmail && userEmail !== this._userEmail) {
         this._userEmail = userEmail;
-        this.speakFasterService.getUserId(userEmail).subscribe(
+        this.getUserId();
+      }
+      const userGivenName = params['user_given_name'];
+      if (userGivenName && userGivenName !== this._userGivenName) {
+        this._userGivenName = userGivenName;
+      }
+    });
+  }
+
+  private getUserId() {
+    if (!this._userEmail) {
+      return;
+    }
+    this.speakFasterService.getUserId(this._userEmail)
+        .subscribe(
             (response: GetUserIdResponse) => {
               if (response.error) {
                 console.error(
@@ -165,12 +182,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
               console.error(
                   'Failed to convert user email to user ID:', this.userEmail);
             });
-      }
-      const userGivenName = params['user_given_name'];
-      if (userGivenName && userGivenName !== this._userGivenName) {
-        this._userGivenName = userGivenName;
-      }
-    });
   }
 
   private stringValueMeansTrue(str: string): boolean {

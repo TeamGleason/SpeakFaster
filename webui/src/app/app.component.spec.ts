@@ -433,4 +433,14 @@ describe('AppComponent', () => {
     const errorMessage = fixture.debugElement.query(By.css('.error-message'));
     expect(errorMessage.nativeElement.innerText).toEqual('Error: Foo');
   });
+
+  it('hasAccessToken initially returns false', () => {
+    expect(fixture.componentInstance.hasAccessToken).toBeFalse();
+  });
+
+  it('hasAccessToken returns true if access_token is provided', () => {
+    fixture.componentInstance.onNewAccessToken('foo_access_token');
+    expect(fixture.componentInstance.hasAccessToken).toBeTrue();
+  });
+
 });

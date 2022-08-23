@@ -9,9 +9,6 @@ export class OAuth2Helper {
   private user?: gapi.auth2.GoogleUser;
   private _accessToken: string|null = null;
 
-  /** Singleton access. Requires a unique client ID. */
-  public getInstance(client_id: string) {}
-
   constructor(private readonly clientId: string, private callbacks: {
     onSuccess: (token: string, user: gapi.auth2.GoogleUser) => void,
     onInvalidClientId: (clientId: string) => void,
@@ -69,7 +66,7 @@ export class OAuth2Helper {
     if (!isAuthorized) {
       this.callbacks.onUserNotAuthorized();
       console.error('*** User is not authorized for given scope');
-      this.signIn();  // TODO(cais): Confirm.
+      this.signIn();
       return;
     }
     this._accessToken = this.user.getAuthResponse().access_token;
@@ -78,7 +75,6 @@ export class OAuth2Helper {
   }
 
   public signIn() {
-    console.log('*** Calling signIn():', this.googleAuth);  // DEBUG
     this.googleAuth!.signIn();
   }
 

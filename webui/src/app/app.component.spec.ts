@@ -418,4 +418,29 @@ describe('AppComponent', () => {
         new MouseEvent('click'));
     expect(getAppState()).toEqual(AppState.AI_SETTINGS);
   });
+
+  it('Initially does not show error message', () => {
+    setAppState(AppState.ABBREVIATION_EXPANSION);
+    expect(fixture.componentInstance.errorMessage).toBeUndefined();
+    expect(fixture.debugElement.query(By.css('.error-message'))).toBeNull();
+  });
+
+  it('Shows error message when set to non-empty', () => {
+    setAppState(AppState.ABBREVIATION_EXPANSION);
+    (fixture.componentInstance as any)._errorMessage = 'Error: Foo';
+    fixture.detectChanges();
+    expect(fixture.componentInstance.errorMessage).toEqual('Error: Foo');
+    const errorMessage = fixture.debugElement.query(By.css('.error-message'));
+    expect(errorMessage.nativeElement.innerText).toEqual('Error: Foo');
+  });
+
+  it('hasAccessToken initially returns false', () => {
+    expect(fixture.componentInstance.hasAccessToken).toBeFalse();
+  });
+
+  it('hasAccessToken returns true if access_token is provided', () => {
+    fixture.componentInstance.onNewAccessToken('foo_access_token');
+    expect(fixture.componentInstance.hasAccessToken).toBeTrue();
+  });
+
 });

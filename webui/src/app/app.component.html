@@ -58,6 +58,10 @@ app-text-to-speech-component {
   overflow-y: hidden;
 }
 
+.error-message {
+  color: red;
+}
+
 .main-area {
   align-items: flex-start;
   display: flex;
@@ -126,9 +130,11 @@ app-text-to-speech-component {
        handling keyboard events. -->
   <app-keyboard-component></app-keyboard-component>
 
-  <div *ngIf="!hasAccessToken()" class="auth-area">
+  <div *ngIf="!hasAccessToken" class="auth-area">
     <app-auth-component (newAccessToken)="onNewAccessToken($event)"></app-auth-component>
   </div>
+
+  <div *ngIf="errorMessage" class="error-message">{{errorMessage}}</div>
 
   <app-external-events-component
       #externalEvents
@@ -144,7 +150,7 @@ app-text-to-speech-component {
 
   <div
       class="minimized-area"
-      *ngIf="hasAccessToken() && appState === 'MINIBAR'">
+      *ngIf="hasAccessToken && appState === 'MINIBAR'">
     <app-mini-bar-component
       [appState]="appState"
       (appStateDeminimized)="onAppStateDeminimized()">
@@ -152,13 +158,13 @@ app-text-to-speech-component {
   </div>
 
   <app-metrics-component
-      *ngIf="showMetrics && hasAccessToken() && appState !== 'MINIBAR'"
+      *ngIf="showMetrics && hasAccessToken && appState !== 'MINIBAR'"
       [textEntryBeginSubject]="textEntryBeginSubject"
       [textEntryEndSubject]="textEntryEndSubject">
   </app-metrics-component>
 
   <app-lexicon-component
-      *ngIf="hasAccessToken()"
+      *ngIf="hasAccessToken"
       [languageCode]="languageCode"
       [userId]="userId"
       [loadPrefixedLexiconRequestSubject]="loadPrefixedLexiconRequestSubject"
@@ -166,7 +172,7 @@ app-text-to-speech-component {
 
   <div
       class="main-area"
-      *ngIf="hasAccessToken()"
+      *ngIf="hasAccessToken"
       [ngClass]="{'main-area-hidden': appState === 'MINIBAR', 'study-mode': isStudyOn}">
     <div class="main-left-pane">
       <div class="side-pane-button-container">
@@ -198,6 +204,7 @@ app-text-to-speech-component {
     </div>
 
     <div class="main-right-pane">
+
       <app-context-component
         [ngClass]="{'app-context-component-area-hidden': appState !== 'ABBREVIATION_EXPANSION'}"
         [userId]="userId"

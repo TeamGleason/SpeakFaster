@@ -67,17 +67,17 @@ describe('AuthComponent', () => {
            'Cannot authenticate. Missing client ID.', 'error');
      });
 
-  it('clicking authenticate button without client_secret leads to error snackbar',
+  it('clicking authenticate button without client_secret does not call error snackbar',
      () => {
        mockActivatedRoute.testParams = {
          client_id: 'foo_client_id',
+         // Notice missing client_secret.
        };
        fixture.detectChanges();
        const spy = spyOn(component, 'showSnackBar').and.callThrough();
        const button = fixture.debugElement.query(By.css('#authenticate'));
        button.triggerEventHandler('click', null);
-       expect(spy).toHaveBeenCalledWith(
-           'Cannot authenticate. Missing client secret.', 'error');
+       expect(spy).not.toHaveBeenCalled();
      });
 
   it('clicking authenticate button should call device code route and display url and user code',

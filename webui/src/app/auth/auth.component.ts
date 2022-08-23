@@ -77,7 +77,6 @@ export class AuthComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
     if (this.clientSecret === '') {
-      this.showSnackBar('Cannot authenticate. Missing client secret.', 'error');
       return;
     }
     this.authService.getDeviceCode(this.clientId)

@@ -1,8 +1,8 @@
 /** Component that supports partner sign-in and sending of context turns. */
 import {ChangeDetectorRef, Component, ElementRef, EventEmitter, OnInit, Output, QueryList, ViewChild, ViewChildren} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
-import {} from 'gapi.auth2';
 
+import {OAuth2Helper} from '../auth/oauth2-helper';
 import {PartnerUsersResponse, SpeakFasterService} from '../speakfaster-service';
 
 const DEFAULT_USER_IDS: string[] = ['cais', 'testuser'];
@@ -28,18 +28,12 @@ export enum State {
   templateUrl: './partner.component.html',
 })
 export class PartnerComponent implements OnInit {
-  private static readonly GOOGLE_AUTH_SCOPE =
-      'https://www.googleapis.com/auth/userinfo.email';
-  private static readonly DISCOVERY_URL =
-      'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
-
   state: State = State.NOT_SIGNED_IN;
   private clientId: string = '';
 
+  private oauth2Helper?: OAuth2Helper;
   private googleAuth?: gapi.auth2.GoogleAuth;
-  private user?: gapi.auth2.GoogleUser;
   private speechRecognition: any;
-  private _accessToken: string|null = null;
   private _partnerEmail: string|null = null;
   private _partnerGivenName: string|null = null;
   private _partnerProfileImageUrl: string|null = null;
@@ -62,68 +56,38 @@ export class PartnerComponent implements OnInit {
     this.route.queryParams.subscribe(params => {
       if (params['client_id'] && this.clientId === '') {
         this.clientId = params['client_id'];
+        this.oauth2Helper = new OAuth2Helper(this.clientId, {
+          onSuccess: this.onSuccess.bind(this),
+          onInvalidClientId: this.onInvalidClientId.bind(this),
+          onInvalidUserInfo: () => {},
+          onUserNotAuthorized: this.onUserNotAuthorized.bind(this),
+          onNoGapiError: () => {},
+          onMiscError: () => {},
+        });
+        this.state = State.SIGNING_IN;
+        this.oauth2Helper.init();
       }
     });
-    if ((window as any).gapi) {
-      gapi.load('client:auth2', () => {
-        if (!this.clientId) {
-          this._errorMessage = 'Missing client ID. Check URL.';
-          this.cdr.detectChanges();
-          return;
-        }
-        console.log('Creating gapi client');
-        this.state = State.SIGNING_IN;
-        gapi.client
-            .init({
-              clientId: this.clientId,
-              scope: PartnerComponent.GOOGLE_AUTH_SCOPE,
-              discoveryDocs: [PartnerComponent.DISCOVERY_URL],
-            })
-            .then(() => {
-              console.log(
-                  'gapi client is created. Creating google auth instance.');
-              this.googleAuth = gapi.auth2.getAuthInstance();
-              console.log('Created google auth instance.');
-              this.googleAuth.isSignedIn.listen(() => {
-                console.log('google auth is signed in.');
-                this.getUserInfo();
-              });
-              this.getUserInfo();
-            });
-        this.cdr.detectChanges();
-      });
-    } else {
-      console.error('gapi is not defined. cannot perform authentication.');
-    }
   }
 
-  private getUserInfo(): void {
-    if (!this.user) {
-      this.user = this.googleAuth!.currentUser.get();
-      console.log('Got current user:', this.user);
-    }
-    if (!this.user) {
-      this._errorMessage = 'Failed to get current user';
-      this.resetPartnerInfo();
-      this.state = State.NOT_SIGNED_IN;
-      this.cdr.detectChanges();
-      console.error('Failed to get current user');
-      return;
-    }
-    const isAuthorized =
-        this.user.hasGrantedScopes(PartnerComponent.GOOGLE_AUTH_SCOPE);
-    if (!isAuthorized) {
-      this._errorMessage = 'Not authorized for given scope';
-      this.resetPartnerInfo();
-      this.state = State.NOT_SIGNED_IN;
-      this.cdr.detectChanges();
-      console.error('User is not authorized for given scope');
-      return;
-    }
-    this._accessToken = this.user.getAuthResponse().access_token;
+  private onInvalidClientId(): void {
+    this._errorMessage = 'Invalid client ID. Check URL.';
+    this.cdr.detectChanges();
+  }
+
+  private onUserNotAuthorized() {
+    this._errorMessage = 'Not authorized for given scope';
+    this.resetPartnerInfo();
+    this.state = State.NOT_SIGNED_IN;
+    this.cdr.detectChanges();
+    console.error('User is not authorized for given scope');
+    return;
+  }
+
+  private onSuccess(accessToken: string, user: gapi.auth2.GoogleUser) {
     console.log('Got user access token.');
-    this.newAccessToken.emit(this._accessToken);
-    const userProfile = this.user.getBasicProfile();
+    this.newAccessToken.emit(accessToken);
+    const userProfile = user.getBasicProfile();
     this._partnerEmail = userProfile.getEmail();
     this._partnerGivenName = userProfile.getGivenName();
     this._partnerProfileImageUrl = userProfile.getImageUrl();
@@ -139,7 +103,8 @@ export class PartnerComponent implements OnInit {
               this.cdr.detectChanges();
             },
             (error) => {
-              this._errorMessage = 'Failed to get partner users. Using default.';
+              this._errorMessage =
+                  'Failed to get partner users. Using default.';
               this._userIds.splice(0);
               this._userIds.push(...DEFAULT_USER_IDS);
               this.state = State.READY;
@@ -156,7 +121,6 @@ export class PartnerComponent implements OnInit {
   }
 
   private resetPartnerInfo() {
-    this._accessToken = null;
     this._partnerEmail = null;
     this._partnerGivenName = null;
     this._partnerProfileImageUrl = null;
@@ -165,9 +129,9 @@ export class PartnerComponent implements OnInit {
 
   partnerToggleAuthenticationState() {
     if (this.state === State.NOT_SIGNED_IN) {
-      this.googleAuth!.signIn();
+      this.oauth2Helper!.signIn();
     } else {
-      this.googleAuth!.signOut();
+      this.oauth2Helper!.signOut();
     }
   }
 
@@ -258,8 +222,7 @@ export class PartnerComponent implements OnInit {
               if (registerContextResponse.result === 'SUCCESS') {
                 this.turnText = '';
                 this._errorMessage = null;
-                this._infoMessage =
-                    `Sent to ${userId}: "${speechContent}"`;
+                this._infoMessage = `Sent to ${userId}: "${speechContent}"`;
                 if (this.turnTextInput) {
                   this.turnTextInput.nativeElement.value = '';
                 }

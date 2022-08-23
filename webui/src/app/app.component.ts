@@ -5,6 +5,7 @@ import {Subject} from 'rxjs';
 import {bindCefSharpListener, bringFocusAppToForeground, bringWindowToForeground, EYE_TRACKER_STATUS, registerExternalAccessTokenHook, registerExternalKeypressHook, registerEyeTrackerStatusHook, registerHostWindowFocusHook, resizeWindow, setHostEyeGazeOptions, toggleGazeButtonsState, updateButtonBoxesForElements, updateButtonBoxesToEmpty} from '../utils/cefsharp';
 import {createUuid} from '../utils/uuid';
 
+import {OAuth2Helper} from './auth/oauth2-helper';
 import {HttpEventLogger} from './event-logger/event-logger-impl';
 import {ExternalEventsComponent} from './external/external-events.component';
 import {InputBarControlEvent} from './input-bar/input-bar.component';
@@ -78,6 +79,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   inputString: string = '';
 
   private _inputBarNotification?: string;
+  private _errorMessage?: string = undefined;
 
   @ViewChildren('clickableButton')
   clickableButtons!: QueryList<ElementRef<HTMLElement>>;
@@ -116,14 +118,53 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
         configureService({
           endpoint: this._endpoint,
           accessToken: '',
-        })
+        });
       }
+      if (params['client_id'] && this.useAccessToken) {
+        const oauth2Helper = new OAuth2Helper(params['client_id'], {
+          onSuccess: (accessToken: string, user: gapi.auth2.GoogleUser) => {
+            this.onNewAccessToken(accessToken);
+            this._userEmail = user.getBasicProfile().getEmail();
+            this._userGivenName = user.getBasicProfile().getGivenName();
+            this.getUserId();
+          },
+          onInvalidClientId: (invalidClientId) => {
+            this._errorMessage = 'Error: invalid OAuth2 client ID';
+          },
+          onInvalidUserInfo: () => {
+            this._errorMessage = 'Error: OAuth2 failed to get user info';
+          },
+          onUserNotAuthorized: () => {},
+          onNoGapiError: () => {
+            this._errorMessage = 'Error: No gapi available.';
+          },
+          onMiscError: (error: Error) => {
+            this._errorMessage = `Error: ${error.message}`;
+          },
+        });
+        oauth2Helper.init();
+      }
+
       // TODO(cais): Add unit tests.
       const userEmail = params['user_email'];
       console.log(`Got user email from URL parameters: ${userEmail}`);
       if (userEmail && userEmail !== this._userEmail) {
         this._userEmail = userEmail;
-        this.speakFasterService.getUserId(userEmail).subscribe(
+        this.getUserId();
+      }
+      const userGivenName = params['user_given_name'];
+      if (userGivenName && userGivenName !== this._userGivenName) {
+        this._userGivenName = userGivenName;
+      }
+    });
+  }
+
+  private getUserId() {
+    if (!this._userEmail) {
+      return;
+    }
+    this.speakFasterService.getUserId(this._userEmail)
+        .subscribe(
             (response: GetUserIdResponse) => {
               if (response.error) {
                 console.error(
@@ -141,12 +182,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
               console.error(
                   'Failed to convert user email to user ID:', this.userEmail);
             });
-      }
-      const userGivenName = params['user_given_name'];
-      if (userGivenName && userGivenName !== this._userGivenName) {
-        this._userGivenName = userGivenName;
-      }
-    });
   }
 
   private stringValueMeansTrue(str: string): boolean {
@@ -293,12 +328,16 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   onNewAccessToken(accessToken: string) {
     this._accessToken = accessToken;
     configureService({
-      endpoint: this._endpoint,
+      endpoint: this.endpoint,
       accessToken,
     });
   }
 
-  hasAccessToken(): boolean {
+  get errorMessage(): string|undefined {
+    return this._errorMessage;
+  }
+
+  get hasAccessToken(): boolean {
     return !this.useAccessToken || this._accessToken !== '';
   }
 

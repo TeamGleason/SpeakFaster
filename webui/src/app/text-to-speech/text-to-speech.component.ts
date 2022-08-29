@@ -3,7 +3,7 @@ import {HttpErrorResponse} from '@angular/common/http';
 import {ChangeDetectorRef, Component, ElementRef, Input, OnInit, QueryList, ViewChildren} from '@angular/core';
 import {Subject} from 'rxjs';
 
-import {AppSettings, getAppSettings} from '../settings/settings';
+import {AppSettings, getAppSettings, setTtsVoiceType} from '../settings/settings';
 import {TextToSpeechErrorResponse, TextToSpeechService} from '../text-to-speech-service';
 import {setUtteranceVoice} from '../tts-voice-selection/tts-voice-selection.component';
 import {TextEntryEndEvent} from '../types/text-entry';
@@ -100,7 +100,17 @@ export class TextToSpeechComponent implements OnInit {
   ngOnInit() {
     // NOTE: Reference getVoice() at the beginning because the voices are
     // populated lazily in some browsers and WebViews.
-    window.speechSynthesis.getVoices();
+    if (window.speechSynthesis) {
+      window.speechSynthesis.getVoices();
+    } else {
+      console.warn(
+          'window.speechSynthesis is unavailable; ' +
+          'automatically falling back to cloud TTS');
+      // When window.speechSynthesis is unavailable (in certain browsers such as
+      // Opera Android), automatically go to the cloud TTS option.
+      setTtsVoiceType('PERSONALIZED');
+    }
+
     this.textEntryEndSubject.subscribe(async event => {
       if (!event.isFinal) {
         return;
@@ -132,6 +142,7 @@ export class TextToSpeechComponent implements OnInit {
    * Send Cloud call for speech synthesis and then play the synthesized audio.
    */
   private doCloudTextToSpeech(text: string, appSettings: AppSettings) {
+    console.log('*** C100:', text);  // DEBUG
     if (this.accessToken.length === 0) {
       TextToSpeechComponent.listeners.forEach(listener => {
         listener({state: 'ERROR', errorMessage: 'No access token'});

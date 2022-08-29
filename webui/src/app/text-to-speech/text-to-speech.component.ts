@@ -142,7 +142,6 @@ export class TextToSpeechComponent implements OnInit {
    * Send Cloud call for speech synthesis and then play the synthesized audio.
    */
   private doCloudTextToSpeech(text: string, appSettings: AppSettings) {
-    console.log('*** C100:', text);  // DEBUG
     if (this.accessToken.length === 0) {
       TextToSpeechComponent.listeners.forEach(listener => {
         listener({state: 'ERROR', errorMessage: 'No access token'});

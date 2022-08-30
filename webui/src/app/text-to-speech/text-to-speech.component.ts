@@ -100,8 +100,8 @@ export class TextToSpeechComponent implements OnInit {
   ngOnInit() {
     // NOTE: Reference getVoice() at the beginning because the voices are
     // populated lazily in some browsers and WebViews.
-    if (window.speechSynthesis) {
-      window.speechSynthesis.getVoices();
+    if (this.getSpeechSynthesis()) {
+      this.getSpeechSynthesis()!.getVoices();
     } else {
       console.warn(
           'window.speechSynthesis is unavailable; ' +
@@ -216,7 +216,7 @@ export class TextToSpeechComponent implements OnInit {
     utterance.volume = getLocalTextToSpeechVolume(appSettings);
     utterance.rate = appSettings.ttsSpeakingRate || 1.0;
     if (!this.audioPlayDisabledForTest) {
-      window.speechSynthesis.speak(utterance);
+      this.getSpeechSynthesis()!.speak(utterance);
     }
   }
 
@@ -232,5 +232,9 @@ export class TextToSpeechComponent implements OnInit {
 
   get audioPlayCallCount(): number {
     return this._audioPlayCallCount;
+  }
+
+  getSpeechSynthesis(): SpeechSynthesis|undefined {
+    return window.speechSynthesis;
   }
 }

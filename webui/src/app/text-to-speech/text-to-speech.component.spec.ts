@@ -4,7 +4,7 @@ import {ComponentFixture, fakeAsync, TestBed, tick} from '@angular/core/testing'
 import {of, Subject, throwError} from 'rxjs';
 import {BOUND_LISTENER_NAME} from 'src/utils/cefsharp';
 
-import {clearSettings, setTtsVoiceType} from '../settings/settings';
+import {clearSettings, getAppSettings, setTtsVoiceType} from '../settings/settings';
 import {TextEntryEndEvent} from '../types/text-entry';
 
 import {getCloudTextToSpeechVolumeGainDb, getLocalTextToSpeechVolume, TextToSpeechComponent, TextToSpeechEvent, TextToSpeechListener} from './text-to-speech.component';
@@ -262,4 +262,14 @@ describe('TextToSpeechCmponent', () => {
        expect(component.ttsAudioElements.first.nativeElement.src)
            .toEqual('data:audio/wav;base64,0123abcd');
      }));
+
+  it('Initializes to cloud (personalized) TTS if speechSynthesis is unavailable',
+      async () => {
+        setTtsVoiceType('GENERIC');
+        spyOn(fixture.componentInstance, 'getSpeechSynthesis')
+            .and.returnValue(undefined);
+        fixture.componentInstance.ngOnInit();
+        await fixture.whenStable();
+        expect((await getAppSettings()).ttsVoiceType).toEqual('PERSONALIZED');
+      });
 });

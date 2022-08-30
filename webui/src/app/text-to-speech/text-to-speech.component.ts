@@ -3,7 +3,7 @@ import {HttpErrorResponse} from '@angular/common/http';
 import {ChangeDetectorRef, Component, ElementRef, Input, OnInit, QueryList, ViewChildren} from '@angular/core';
 import {Subject} from 'rxjs';
 
-import {AppSettings, getAppSettings} from '../settings/settings';
+import {AppSettings, getAppSettings, setTtsVoiceType} from '../settings/settings';
 import {TextToSpeechErrorResponse, TextToSpeechService} from '../text-to-speech-service';
 import {setUtteranceVoice} from '../tts-voice-selection/tts-voice-selection.component';
 import {TextEntryEndEvent} from '../types/text-entry';
@@ -100,7 +100,17 @@ export class TextToSpeechComponent implements OnInit {
   ngOnInit() {
     // NOTE: Reference getVoice() at the beginning because the voices are
     // populated lazily in some browsers and WebViews.
-    window.speechSynthesis.getVoices();
+    if (this.getSpeechSynthesis()) {
+      this.getSpeechSynthesis()!.getVoices();
+    } else {
+      console.warn(
+          'window.speechSynthesis is unavailable; ' +
+          'automatically falling back to cloud TTS');
+      // When window.speechSynthesis is unavailable (in certain browsers such as
+      // Opera Android), automatically go to the cloud TTS option.
+      setTtsVoiceType('PERSONALIZED');
+    }
+
     this.textEntryEndSubject.subscribe(async event => {
       if (!event.isFinal) {
         return;
@@ -206,7 +216,7 @@ export class TextToSpeechComponent implements OnInit {
     utterance.volume = getLocalTextToSpeechVolume(appSettings);
     utterance.rate = appSettings.ttsSpeakingRate || 1.0;
     if (!this.audioPlayDisabledForTest) {
-      window.speechSynthesis.speak(utterance);
+      this.getSpeechSynthesis()!.speak(utterance);
     }
   }
 
@@ -222,5 +232,9 @@ export class TextToSpeechComponent implements OnInit {
 
   get audioPlayCallCount(): number {
     return this._audioPlayCallCount;
+  }
+
+  getSpeechSynthesis(): SpeechSynthesis|undefined {
+    return window.speechSynthesis;
   }
 }

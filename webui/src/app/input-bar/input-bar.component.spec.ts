@@ -36,7 +36,7 @@ class SpeakFasterServiceForTest {
   }
 }
 
-fdescribe('InputBarComponent', () => {
+describe('InputBarComponent', () => {
   let testListener: TestListener;
   let studyManager: StudyManager;
   let textEntryEndSubject: Subject<TextEntryEndEvent>;

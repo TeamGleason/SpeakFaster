@@ -36,7 +36,7 @@ class SpeakFasterServiceForTest {
   }
 }
 
-describe('InputBarComponent', () => {
+fdescribe('InputBarComponent', () => {
   let testListener: TestListener;
   let studyManager: StudyManager;
   let textEntryEndSubject: Subject<TextEntryEndEvent>;
@@ -689,7 +689,7 @@ describe('InputBarComponent', () => {
        expect(textEntryEndEvents[1].repeatLastNonEmpty).toBeTrue();
      });
 
-  it('spell button is shown during word refinement', () => {
+  it('spell button is not shown during word refinement', () => {
     fixture.componentInstance.inputString = 'ifg';
     inputBarControlSubject.next({
       chips: [
@@ -708,40 +708,45 @@ describe('InputBarComponent', () => {
 
     expect(fixture.componentInstance.state).toEqual(State.CHOOSING_WORD_CHIP);
     const spellButton = fixture.debugElement.query(By.css('.spell-button'));
-    expect(spellButton).not.toBeNull();
+    expect(spellButton).toBeNull();
   });
 
-  it('clicking speak button when choosing from 3 letters to spell is no-op',
-     () => {
-       fixture.componentInstance.inputString = 'ifg';
-       inputBarControlSubject.next({
-         chips: [
-           {
-             text: 'i',
-           },
-           {
-             text: 'feel',
-           },
-           {
-             text: 'great',
-           }
-         ]
-       });
-       fixture.detectChanges();
-       const wordChips =
-           fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'))
-       wordChips[1].nativeElement.click();
-       const spellButton = fixture.debugElement.query(By.css('.spell-button'));
-       spellButton.nativeElement.click();
-       fixture.detectChanges();
-       const speakButton = fixture.debugElement.query(By.css('.speak-button'))
-                               .query(By.css('.speak-button'));
-       speakButton.nativeElement.click();
+  // NOTE(cais): We currently do not support going into spelling mode after
+  // entering word-replacement mode.
+  //
+  // it('clicking speak button when choosing from 3 letters to spell is no-op',
+  //    () => {
+  //      fixture.componentInstance.inputString = 'ifg';
+  //      inputBarControlSubject.next({
+  //        chips: [
+  //          {
+  //            text: 'i',
+  //          },
+  //          {
+  //            text: 'feel',
+  //          },
+  //          {
+  //            text: 'great',
+  //          }
+  //        ]
+  //      });
+  //      fixture.detectChanges();
+  //      const wordChips =
+  //          fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'))
+  //      wordChips[1].nativeElement.click();
+  //      const spellButton =
+  //      fixture.debugElement.query(By.css('.spell-button'));
+  //      spellButton.nativeElement.click();
+  //      fixture.detectChanges();
+  //      const speakButton =
+  //      fixture.debugElement.query(By.css('.speak-button'))
+  //                              .query(By.css('.speak-button'));
+  //      speakButton.nativeElement.click();
 
-       expect(fixture.componentInstance.state)
-           .toEqual(State.CHOOSING_LETTER_CHIP);
-       expect(textEntryEndEvents.length).toEqual(0);
-     });
+  //      expect(fixture.componentInstance.state)
+  //          .toEqual(State.CHOOSING_LETTER_CHIP);
+  //      expect(textEntryEndEvents.length).toEqual(0);
+  //    });
 
   it('clicking speak button when spelling single word speaks word', () => {
     enterKeysIntoComponent('b');
@@ -797,7 +802,7 @@ describe('InputBarComponent', () => {
         .toEqual(State.FOCUSED_ON_LETTER_CHIP);
   });
 
-  it('spell button is shown when word chip is chosen', () => {
+  it('spell button is not shown when word chip is chosen', () => {
     fixture.componentInstance.inputString = 'ifg';
     inputBarControlSubject.next({
       chips: [
@@ -819,7 +824,7 @@ describe('InputBarComponent', () => {
 
     expect(fixture.componentInstance.state).toEqual(State.FOCUSED_ON_WORD_CHIP);
     const spellButton = fixture.debugElement.query(By.css('.spell-button'));
-    expect(spellButton).not.toBeNull();
+    expect(spellButton).toBeNull();
   });
 
   it('typing after word chips are injected', () => {
@@ -845,43 +850,45 @@ describe('InputBarComponent', () => {
 
     expect(fixture.componentInstance.state).toEqual(State.ENTERING_BASE_TEXT);
     const spellButton = fixture.debugElement.query(By.css('.spell-button'));
-    expect(spellButton).not.toBeNull();
+    expect(spellButton).toBeNull();
   });
 
-  it('clicking spell under word refinement enters spelling mode', () => {
-    fixture.componentInstance.inputString = 'ifg';
-    inputBarControlSubject.next({
-      chips: [
-        {
-          text: 'i',
-        },
-        {
-          text: 'feel',
-        },
-        {
-          text: 'great',
-        }
-      ]
-    });
-    fixture.detectChanges();
-    const wordChips =
-        fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'))
-    wordChips[1].nativeElement.click();
-    const spellButton = fixture.debugElement.query(By.css('.spell-button'));
-    spellButton.nativeElement.click();
-    fixture.detectChanges();
+  // NOTE(cais): We currently don't allow users to go into spelling mode once
+  // they are in word-replacement mode.
+  // it('clicking spell under word refinement enters spelling mode', () => {
+  //   fixture.componentInstance.inputString = 'ifg';
+  //   inputBarControlSubject.next({
+  //     chips: [
+  //       {
+  //         text: 'i',
+  //       },
+  //       {
+  //         text: 'feel',
+  //       },
+  //       {
+  //         text: 'great',
+  //       }
+  //     ]
+  //   });
+  //   fixture.detectChanges();
+  //   const wordChips =
+  //       fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'))
+  //   wordChips[1].nativeElement.click();
+  //   const spellButton = fixture.debugElement.query(By.css('.spell-button'));
+  //   spellButton.nativeElement.click();
+  //   fixture.detectChanges();
 
-    expect(fixture.componentInstance.state).toEqual(State.CHOOSING_LETTER_CHIP);
-    const letterChips =
-        fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'))
-    expect(letterChips.length).toEqual(3);
-    expect((letterChips[0].componentInstance as InputBarChipComponent).text)
-        .toEqual('i');
-    expect((letterChips[1].componentInstance as InputBarChipComponent).text)
-        .toEqual('f');
-    expect((letterChips[2].componentInstance as InputBarChipComponent).text)
-        .toEqual('g');
-  });
+  //   expect(fixture.componentInstance.state).toEqual(State.CHOOSING_LETTER_CHIP);
+  //   const letterChips =
+  //       fixture.debugElement.queryAll(By.css('app-input-bar-chip-component'))
+  //   expect(letterChips.length).toEqual(3);
+  //   expect((letterChips[0].componentInstance as InputBarChipComponent).text)
+  //       .toEqual('i');
+  //   expect((letterChips[1].componentInstance as InputBarChipComponent).text)
+  //       .toEqual('f');
+  //   expect((letterChips[2].componentInstance as InputBarChipComponent).text)
+  //       .toEqual('g');
+  // });
 
   it('inject text button injects keypresses added final period & space', () => {
     enterKeysIntoComponent('all good');
@@ -1250,7 +1257,7 @@ describe('InputBarComponent', () => {
         .toEqual('go');
     expect(fixture.componentInstance.state).toEqual(State.CHOOSING_WORD_CHIP);
     expect(fixture.debugElement.query(By.css('.expand-button'))).toBeNull();
-    expect(fixture.debugElement.query(By.css('.spell-button'))).not.toBeNull();
+    expect(fixture.debugElement.query(By.css('.spell-button'))).toBeNull();
     expect(fixture.debugElement.query(By.css('.length-limit-exceeded')))
         .toBeNull();
     expect(fixture.debugElement.query(By.css('.abort-button'))).not.toBeNull();

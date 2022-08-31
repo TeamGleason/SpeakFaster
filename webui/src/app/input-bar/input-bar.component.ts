@@ -822,9 +822,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
 
   get showSpellButton():
       boolean{return((this.state === State.ENTERING_BASE_TEXT) ||
-                     (this.state === State.CHOOSING_PHRASES) ||
-                     this.state === State.CHOOSING_WORD_CHIP ||
-                     this.state === State.FOCUSED_ON_WORD_CHIP) &&
+                     (this.state === State.CHOOSING_PHRASES)) &&
               this.inputStringIsCompatibleWithAbbreviationExpansion &&
               this.supportsAbbrevationExpansion &&
               !this.hasOnlyOneTextPredictionChip}

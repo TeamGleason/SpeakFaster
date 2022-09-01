@@ -1,6 +1,6 @@
 /** Test utils for text-utils. */
 
-import {endsWithPunctuation, keySequenceEndsWith, limitStringLength, removePunctuation, trimStringAtHead} from './text-utils';
+import {endsWithPunctuation, extractEndPunctuation, keySequenceEndsWith, limitStringLength, removePunctuation, trimStringAtHead} from './text-utils';
 
 describe('text-utils', () => {
   describe('limitStringLength', () => {
@@ -90,6 +90,29 @@ describe('text-utils', () => {
       expect(endsWithPunctuation(' ')).toBeFalse();
       expect(endsWithPunctuation('wait')).toBeFalse();
       expect(endsWithPunctuation('wait; ')).toBeFalse();
+    });
+  });
+
+  describe('extractEndPunctuation', () => {
+    it('returns correct empty string', () => {
+      expect(extractEndPunctuation('')).toEqual('');
+      expect(extractEndPunctuation('foo')).toEqual('');
+      expect(extractEndPunctuation(',foo')).toEqual('');
+      expect(extractEndPunctuation(',foo ')).toEqual('');
+      expect(extractEndPunctuation('foo-bar-')).toEqual('');
+    });
+
+    it('returns correct punctuation', () => {
+      expect(extractEndPunctuation(',')).toEqual(',');
+      expect(extractEndPunctuation(':,')).toEqual(':,');
+      expect(extractEndPunctuation('foo,')).toEqual(',');
+      expect(extractEndPunctuation('foo,,')).toEqual(',,');
+      expect(extractEndPunctuation('foo;')).toEqual(';');
+      expect(extractEndPunctuation('foo:')).toEqual(':');
+      expect(extractEndPunctuation('foo...')).toEqual('...');
+      expect(extractEndPunctuation('foo!')).toEqual('!');
+      expect(extractEndPunctuation('foo?')).toEqual('?');
+      expect(extractEndPunctuation('foo!?')).toEqual('!?');
     });
   });
 });

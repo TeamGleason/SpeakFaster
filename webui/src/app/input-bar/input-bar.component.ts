@@ -599,13 +599,15 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
       tokens[index] = '_';
       const phraseWithMask = tokens.join(' ');
       const maskInitial = this._chips[index].text[0];
+      const originalChipStrings = this._chips.map(chip => chip.text);
       this.eventLogger.logAbbreviatonExpansionWordRefinementRequest(
-          getPhraseStats(this._chips.map(chip => chip.text).join(' ')),
+          getPhraseStats(originalChipStrings.join(' ')),
           this._focusChipIndex);
       this.fillMaskTriggers.next({
         speechContent: this.contextStrings.join('|'),
         phraseWithMask,
         maskInitial,
+        originalChipStrings,
       });
       this.state = State.FOCUSED_ON_WORD_CHIP;
     }

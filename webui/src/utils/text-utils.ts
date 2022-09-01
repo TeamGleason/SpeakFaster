@@ -65,7 +65,16 @@ export function endsWithSentenceEndPunctuation(text: string): boolean {
  * sentence-end).
  */
 export function endsWithPunctuation(text: string): boolean {
-  return text.match(/.*[\,\;\:\.\!\?]$/) !== null;
+  return extractEndPunctuation(text) !== '';
+}
+
+export function extractEndPunctuation(text: string): string {
+  const searchIndex = text.search(/[\,\;\:\.\!\?]+$/);
+  if (searchIndex === -1) {
+    return '';
+  } else {
+    return text.substring(searchIndex);
+  }
 }
 
 /**

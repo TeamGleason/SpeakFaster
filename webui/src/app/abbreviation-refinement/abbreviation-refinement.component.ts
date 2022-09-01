@@ -1,6 +1,7 @@
 import {AfterViewInit, Component, ElementRef, EventEmitter, Input, OnChanges, OnInit, Output, QueryList, SimpleChanges, ViewChildren} from '@angular/core';
 import {Subscription} from 'rxjs';
 import {updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
+import {extractEndPunctuation} from 'src/utils/text-utils';
 import {createUuid} from 'src/utils/uuid';
 
 import {getAbbreviationExpansionResponseStats, HttpEventLogger} from '../event-logger/event-logger-impl';
@@ -116,8 +117,20 @@ export class AbbreviationRefinementComponent implements OnInit, AfterViewInit,
     const replacement = this._replacements[index];
     this.eventLogger.logAbbreviationExpansionWordRefinementSelection(
         replacement.length, index);
+    const tokens = this.fillMaskRequest.phraseWithMask.split(/\s+/);
+    let newPhrase: string = '';
+    tokens.forEach((token, i) => {
+      if (token === '_') {
+        const endPunctuation =
+            extractEndPunctuation(this.fillMaskRequest.originalChipStrings[i]);
+        newPhrase += replacement + endPunctuation + ' ';
+
+      } else {
+        newPhrase += token + ' ';
+      }
+    });
     this.refinementResult.emit({
-      phrase: this.fillMaskRequest.phraseWithMask.replace('_', replacement),
+      phrase: newPhrase.trim(),
       isAbort: false,
     });
   }

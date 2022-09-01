@@ -66,7 +66,9 @@ export interface FillMaskRequest {
 
   phraseWithMask: string;
 
-  maskInitial: string
+  maskInitial: string;
+
+  originalChipStrings: string[];
 }
 
 export interface FillMaskResponse {

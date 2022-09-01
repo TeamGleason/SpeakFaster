@@ -93,6 +93,7 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
     this.fillMaskRequestTriggersSubscription =
         this.fillMaskTriggers.subscribe((request: FillMaskRequest) => {
           this.fillMaskRequest = request;
+          // console.log('*** Going into word replacement:', this.abbreviationOptions[this._selectedAbbreviationIndex]);  // DEBUG
           this.state = State.REFINING_EXPANSION;
           this.cdr.detectChanges();
         });
@@ -232,6 +233,7 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
   }
 
   onRefinementResult(refinementResult: RefinementResult) {
+    console.log('*** refinementResult:', refinementResult);  // DEBUG
     if (!refinementResult.isAbort) {
       this.responseError = null;
       this.abbreviationOptions.splice(0);

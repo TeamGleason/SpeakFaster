@@ -641,6 +641,7 @@ describe('InputBarComponent', () => {
          speechContent: 'How are you',
          phraseWithMask: 'i feel _',
          maskInitial: 'g',
+         originalChipStrings: ['i', 'feel', 'great'],
        });
        expect(testListener.numRequestSoftkeyboardResetCalls).toEqual(1);
      });

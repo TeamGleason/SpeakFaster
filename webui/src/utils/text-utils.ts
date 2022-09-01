@@ -70,11 +70,7 @@ export function endsWithPunctuation(text: string): boolean {
 
 export function extractEndPunctuation(text: string): string {
   const searchIndex = text.search(/[\,\;\:\.\!\?]+$/);
-  if (searchIndex === -1) {
-    return '';
-  } else {
-    return text.substring(searchIndex);
-  }
+  return searchIndex === -1 ? '' : text.substring(searchIndex);
 }
 
 /**

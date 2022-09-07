@@ -428,6 +428,8 @@ export class StudyManager {
         'See you later',
       ],
     };
+    this.dialogs['utest1'] = createUnscriptedDialogWithInitialQuestion(
+        'How do you like the weather today?');
   }
 }
 

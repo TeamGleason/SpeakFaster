@@ -236,7 +236,7 @@ describe('Study Manager', () => {
     });
 
     it('unscripted dialog goes into waiting mode', (done) => {
-      studyManager.maybeHandleRemoteControlCommand('start abbrev u1')
+      studyManager.maybeHandleRemoteControlCommand('start abbrev utest1')
           .then(() => {
             setTimeout(() => {
               expect(studyManager.isStudyOn).toBeTrue();
@@ -269,9 +269,9 @@ describe('Study Manager', () => {
 
     for (const role of ['', 'a', 'b']) {
       it('unscripted dialog: user role a is overridden: ' + role, (done) => {
-        studyManager.maybeHandleRemoteControlCommand(`start abbrev u1 ${role}`)
+        studyManager.maybeHandleRemoteControlCommand(`start abbrev utest1 ${role}`)
             .then(() => {
-              expect(studyManager.getDialogId()).toEqual('u1');
+              expect(studyManager.getDialogId()).toEqual('utest1');
               expect(studyManager.getDialogTurnIndex()).toEqual(1);
               expect(studyManager.isUserTurn).toBeTrue();
               expect(studyManager.waitingForPartnerTurnAfter).toBeNull();
@@ -281,7 +281,7 @@ describe('Study Manager', () => {
     }
 
     it('unscripted dialog: provide manual partner turn', (done) => {
-      studyManager.maybeHandleRemoteControlCommand('start abbrev u1')
+      studyManager.maybeHandleRemoteControlCommand('start abbrev utest1')
           .then(() => {
             setTimeout(() => {
               studyManager.incrementTurn('I like the weather today');

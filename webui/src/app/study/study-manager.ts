@@ -428,22 +428,8 @@ export class StudyManager {
         'See you later',
       ],
     };
-    this.dialogs['u1'] = createUnscriptedDialogWithInitialQuestion(
+    this.dialogs['utest1'] = createUnscriptedDialogWithInitialQuestion(
         'How do you like the weather today?');
-    this.dialogs['u2'] =
-        createUnscriptedDialogWithInitialQuestion('What did you do yesterday?');
-    this.dialogs['u3'] =
-        createUnscriptedDialogWithInitialQuestion('What pets have you had?');
-    this.dialogs['u4'] = createUnscriptedDialogWithInitialQuestion(
-        'What kind of books do you read?');
-    this.dialogs['u5'] = createUnscriptedDialogWithInitialQuestion(
-        'What kind of music do you listen to?');
-    this.dialogs['u6'] = createUnscriptedDialogWithInitialQuestion(
-        'What sports do you like to watch?');
-    this.dialogs['u7'] = createUnscriptedDialogWithInitialQuestion(
-        'Where would you like to go for vacation?');
-    this.dialogs['u8'] = createUnscriptedDialogWithInitialQuestion(
-        'Do you like the city you live in?');
   }
 }
 

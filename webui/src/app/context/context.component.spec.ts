@@ -162,4 +162,35 @@ describe('ContextComponent', () => {
               .toEqual(expectedContextTurns);
         });
   }
+
+  it('isStudyOn is false by default', () => {
+    textEntryEndSubject.next({
+      text: 'Hello, world',
+      timestampMillis: new Date().getTime(),
+      isFinal: true,
+    });
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.isStudyOn).toBeFalse();
+  });
+
+  it('Setting isStudyOn to true sets child properties', () => {
+    fixture.componentInstance.isStudyOn = true;
+    textEntryEndSubject.next({
+      text: 'Hello, world',
+      timestampMillis: new Date().getTime(),
+      isFinal: true,
+    });
+    textEntryEndSubject.next({
+      text: 'Hello, universe',
+      timestampMillis: new Date().getTime(),
+      isFinal: true,
+    });
+    fixture.detectChanges();
+
+    const turnComponents = fixture.debugElement.queryAll(
+        By.css('app-conversation-turn-component'));
+    expect(turnComponents.length).toEqual(2);
+    expect(turnComponents[0].componentInstance.isCompact).toBeTrue();
+  });
 });

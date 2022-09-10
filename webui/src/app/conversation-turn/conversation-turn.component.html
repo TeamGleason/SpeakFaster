@@ -35,6 +35,11 @@
   border: 2px solid gold;
 }
 
+.compact-size {
+  font-size: 24px;
+  height: 64px;
+}
+
 .hardcode-tag {
   background-color: lightgrey;
   border: 1px solid #888;
@@ -98,7 +103,7 @@
 <button
     #button
     class="conversation-turn"
-    [ngClass]="{'focused-turn': isFocus, 'self-turn': isSelf}">
+    [ngClass]="{'focused-turn': isFocus, 'self-turn': isSelf, 'compact-size': isCompact}">
   <div
       *ngIf="!turn.isTts && turn.speakerId != null && turn.speakerId.length > 0"
       class="speaker-tag">

@@ -16,7 +16,7 @@ app-abbreviation-component {
 
 app-context-component {
   display: block;
-  height: 84px;
+  height: wrap-content;
 }
 
 app-text-to-speech-component {
@@ -208,6 +208,7 @@ app-text-to-speech-component {
       <app-context-component
         [ngClass]="{'app-context-component-area-hidden': appState !== 'ABBREVIATION_EXPANSION'}"
         [userId]="userId"
+        [isStudyOn]="isStudyOn"
         [textEntryEndSubject]="textEntryEndSubject"
         [isDev]="isDev"
         (contextStringsUpdated)="onContextStringsUpdated($event)"

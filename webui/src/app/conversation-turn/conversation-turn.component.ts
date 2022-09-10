@@ -26,6 +26,7 @@ export class ConversationTurnComponent implements AfterViewInit,
 
   @Input() turn!: ConversationTurn;
   @Input() isFocus: boolean = false;
+  @Input() isCompact: boolean = false;
   @Input() showTimestamp: boolean = false;
   // Whether the turn is from the user per se (as versus a conversation
   // partner).

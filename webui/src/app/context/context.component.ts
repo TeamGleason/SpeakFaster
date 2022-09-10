@@ -28,6 +28,7 @@ export class ContextComponent implements OnInit, OnDestroy, AfterViewInit {
   private static readonly MAX_FOCUS_CONTEXT_SIGNALS = 3;
 
   @Input() userId!: string;
+  @Input() isStudyOn: boolean = false;
   @Input() textEntryEndSubject!: Subject<TextEntryEndEvent>;
   @Input() isDev: boolean = false;
 

@@ -77,42 +77,68 @@ describe('ConversationTurnComponent', () => {
   }
 
   it('calls updateButtonBoxesCalls', fakeAsync(() => {
-    fixture.componentInstance.turn = {
-      speakerId: 'foo_speaker',
-      startTimestamp: new Date(),
-      speechContent: 'Hi, there!',
-    };
-    fixture.detectChanges();
-    fixture.componentInstance.ngAfterContentChecked();
-    tick();
+       fixture.componentInstance.turn = {
+         speakerId: 'foo_speaker',
+         startTimestamp: new Date(),
+         speechContent: 'Hi, there!',
+       };
+       fixture.detectChanges();
+       fixture.componentInstance.ngAfterContentChecked();
+       tick();
 
-    const calls = testListener.updateButtonBoxesCalls;
-    expect(calls.length).toBeGreaterThan(0);
-    const lastCall = calls[calls.length - 1];
-    expect(lastCall[0].indexOf('ConversationTurnComponent')).toEqual(0);
-    expect(lastCall[1].length).toEqual(1);
-    expect(lastCall[1][0].length).toEqual(4);
-  }));
+       const calls = testListener.updateButtonBoxesCalls;
+       expect(calls.length).toBeGreaterThan(0);
+       const lastCall = calls[calls.length - 1];
+       expect(lastCall[0].indexOf('ConversationTurnComponent')).toEqual(0);
+       expect(lastCall[1].length).toEqual(1);
+       expect(lastCall[1][0].length).toEqual(4);
+     }));
 
   it('force updateButtonBoxes works', fakeAsync(() => {
+       fixture.componentInstance.turn = {
+         speakerId: 'foo_speaker',
+         startTimestamp: new Date(),
+         speechContent: 'Hi, there!',
+       };
+       fixture.detectChanges();
+       fixture.componentInstance.ngAfterContentChecked();
+       tick();
+
+       const previousCalls = testListener.updateButtonBoxesCalls.slice();
+       expect(previousCalls.length).toBeGreaterThan(0);
+       fixture.componentInstance.forceUpdateButtonBox();
+       tick(1);
+       const calls = testListener.updateButtonBoxesCalls.slice();
+       expect(calls.length).toEqual(previousCalls.length + 1);
+       const lastCall = calls[calls.length - 1];
+       expect(lastCall[0].indexOf('ConversationTurnComponent')).toEqual(0);
+       expect(lastCall[1].length).toEqual(1);
+       expect(lastCall[1][0].length).toEqual(4);
+     }));
+
+  it('isCompact is false by default', () => {
     fixture.componentInstance.turn = {
       speakerId: 'foo_speaker',
       startTimestamp: new Date(),
       speechContent: 'Hi, there!',
+      isTts: false,
     };
     fixture.detectChanges();
-    fixture.componentInstance.ngAfterContentChecked();
-    tick();
 
-    const previousCalls = testListener.updateButtonBoxesCalls.slice();
-    expect(previousCalls.length).toBeGreaterThan(0);
-    fixture.componentInstance.forceUpdateButtonBox();
-    tick(1);
-    const calls = testListener.updateButtonBoxesCalls.slice();
-    expect(calls.length).toEqual(previousCalls.length + 1);
-    const lastCall = calls[calls.length - 1];
-    expect(lastCall[0].indexOf('ConversationTurnComponent')).toEqual(0);
-    expect(lastCall[1].length).toEqual(1);
-    expect(lastCall[1][0].length).toEqual(4);
-  }));
+    expect(fixture.componentInstance.isCompact).toBeFalse();
+    expect(fixture.debugElement.query(By.css('.compact-size'))).toBeNull();
+  });
+
+  it('Setting isCompact to true sets the correct css class', () => {
+    fixture.componentInstance.isCompact = true;
+    fixture.componentInstance.turn = {
+      speakerId: 'foo_speaker',
+      startTimestamp: new Date(),
+      speechContent: 'Hi, there!',
+      isTts: false,
+    };
+    fixture.detectChanges();
+
+    expect(fixture.debugElement.query(By.css('.compact-size'))).not.toBeNull();
+  });
 });

@@ -16,7 +16,7 @@ app-abbreviation-component {
 
 app-context-component {
   display: block;
-  height: wrap-content;
+  height: 84px;
 }
 
 app-text-to-speech-component {
@@ -25,6 +25,10 @@ app-text-to-speech-component {
 
 .app-context-component-area-hidden {
   display: none;
+}
+
+.app-context-compact {
+  height: 72px;
 }
 
 .auth-area {
@@ -206,7 +210,7 @@ app-text-to-speech-component {
     <div class="main-right-pane">
 
       <app-context-component
-        [ngClass]="{'app-context-component-area-hidden': appState !== 'ABBREVIATION_EXPANSION'}"
+        [ngClass]="{'app-context-component-area-hidden': appState !== 'ABBREVIATION_EXPANSION', 'app-context-compact': isStudyOn}"
         [userId]="userId"
         [isStudyOn]="isStudyOn"
         [textEntryEndSubject]="textEntryEndSubject"

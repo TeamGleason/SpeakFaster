@@ -4,7 +4,6 @@ import {updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/
 import {createUuid} from 'src/utils/uuid';
 
 import {SpeakFasterService} from '../speakfaster-service';
-import {StudyManager} from '../study/study-manager';
 
 export enum State {
   READY = 'READY',
@@ -37,6 +36,7 @@ export class PhraseComponent implements AfterViewInit, OnDestroy {
   @Input() scaleFontSize = false;
   @Input() isTextClickable: boolean = false;
   @Input() isEditing: boolean = false;
+  @Input() emphasizeSpeakButton: boolean = false;
   @Output()
   textClicked: EventEmitter<{phraseText: string, phraseIndex: number}> =
       new EventEmitter();

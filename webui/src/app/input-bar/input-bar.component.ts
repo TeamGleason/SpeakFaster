@@ -107,7 +107,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
   // keywords.
   private static readonly ABBREVIATION_MAX_TOTAL_LENGTH = 50;
   // TODO(cais): Switch to the wait-and-send mode.
-  private static readonly IN_FLIGHT_AE_TRIGGER_DEBOUNCE_MILLIS = 500;
+  private static readonly IN_FLIGHT_AE_TRIGGER_DEBOUNCE_MILLIS = 600;
 
   // NOTE(cais): If abbreviation expansion with mid-sentence comma is
   // prioritized, retsore the following ignore key sequence. This is

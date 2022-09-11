@@ -309,4 +309,22 @@ describe('AbbreviationComponent', () => {
     expect(fixture.componentInstance.isStudyOn).toBeFalse();
   });
 
+  it('displays expansion options with emphasized speak button during study', () => {
+    studyManager.maybeHandleRemoteControlCommand('study on');
+    populateAbbreviationOptions(['what time is it', 'we took it in']);
+    fixture.componentInstance.state = State.CHOOSING_EXPANSION;
+    fixture.detectChanges();
+    const expansions =
+        fixture.debugElement.queryAll(By.css('app-phrase-component'));
+    expect(expansions.length).toEqual(2);
+    expect(expansions[0].nativeElement.innerText).toEqual('what time is it');
+    expect(expansions[1].nativeElement.innerText).toEqual('we took it in');
+
+    const phraseComponents =
+        fixture.debugElement.queryAll(By.css('app-phrase-component'));
+    expect(phraseComponents.length).toEqual(2);
+    expect(phraseComponents[0].componentInstance.emphasizeSpeakButton).toBeTrue();
+    expect(phraseComponents[1].componentInstance.emphasizeSpeakButton).toBeTrue();
+  });
+
 });

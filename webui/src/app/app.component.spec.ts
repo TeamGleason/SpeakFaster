@@ -347,6 +347,16 @@ describe('AppComponent', () => {
     expect(fixture.componentInstance.isStudyOn).toBeFalse();
   });
 
+  it('isStudyOn sets compact context component', () => {
+    fixture.componentInstance.onNewAccessToken('foo-access-token');
+    setAppState(AppState.ABBREVIATION_EXPANSION);
+    studyManager.maybeHandleRemoteControlCommand('study on');
+    fixture.detectChanges();
+
+    const mainArea = fixture.debugElement.query(By.css('.main-area'));
+    expect(mainArea.query(By.css('.app-context-compact'))).not.toBeNull();
+  });
+
   it('supportsAbbrevationExpansion reflects study manager full mode',
      async () => {
        setAppState(AppState.ABBREVIATION_EXPANSION);

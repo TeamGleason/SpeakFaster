@@ -275,4 +275,22 @@ describe('PhraseComponent', () => {
        const phrase = fixture.debugElement.query(By.css('.phrase'));
        expect(phrase.nativeElement.style.fontSize).toEqual('20px');
      });
+
+  it('emphasizeSpeakButton is false by default', () => {
+    fixture.componentInstance.phraseText = 'Hello';
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.emphasizeSpeakButton).toBeFalse();
+    expect(fixture.debugElement.query(By.css('.speak-button-emphasized')))
+        .toBeNull();
+  });
+
+  it('Setting emphasizeSpeakButton to true sets correct CSS class', () => {
+    fixture.componentInstance.phraseText = 'Hello';
+    fixture.componentInstance.emphasizeSpeakButton = true;
+    fixture.detectChanges();
+
+    expect(fixture.debugElement.query(By.css('.speak-button-emphasized')))
+        .not.toBeNull();
+  });
 });

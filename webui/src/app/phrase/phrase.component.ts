@@ -37,6 +37,7 @@ export class PhraseComponent implements AfterViewInit, OnDestroy {
   @Input() scaleFontSize = false;
   @Input() isTextClickable: boolean = false;
   @Input() isEditing: boolean = false;
+  @Input() emphasizeSpeakButton: boolean = false;
   @Output()
   textClicked: EventEmitter<{phraseText: string, phraseIndex: number}> =
       new EventEmitter();

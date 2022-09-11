@@ -292,6 +292,7 @@ mat-progress-spinner {
           [scaleFontSize]="true"
           [showInjectButton]="!isStudyOn"
           [showFavoriteButton]="!isStudyOn"
+          [emphasizeSpeakButton]="isStudyOn"
           [color]="phraseBackgroundColor"
           [isTextClickable]="true"
           (textClicked)="onTextClicked($event)"

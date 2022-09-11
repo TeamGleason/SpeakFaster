@@ -59,6 +59,12 @@
   width: 76px;
 }
 
+.speak-button-emphasized {
+  background-color: #20AE69;
+  border: 1px solid #eee;
+  border-radius: 8px;
+}
+
 </style>
 
 <div class="phrase-container"
@@ -78,6 +84,7 @@
       #clickableButton
       *ngIf="!isEditing"
       class="action-button speak-button"
+      [ngClass]="{'speak-button-emphasized': emphasizeSpeakButton}"
       (click)="onSpeakButtonClicked($event)">
     <img class="button-image" src="/assets/images/speak.png" alt="speak phrase" />
   </button>

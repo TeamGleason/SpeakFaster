@@ -4,7 +4,6 @@ import {updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/
 import {createUuid} from 'src/utils/uuid';
 
 import {SpeakFasterService} from '../speakfaster-service';
-import {StudyManager} from '../study/study-manager';
 
 export enum State {
   READY = 'READY',

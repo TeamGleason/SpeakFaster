@@ -3,8 +3,6 @@ Processes keypress protobuffers to generate visualized results.
 Can generate various statistics (WPM, KSR, Error Rate) as well
 as output files capable of being used in other tools.
 """
-from typing import List, Tuple
-
 import argparse
 import csv
 import datetime
@@ -1032,7 +1030,6 @@ def keypress_in_keypresses(keypress, keypresses):
         timestamps = [item[0] for item in keypresses]
         return keypress[0] in timestamps
     return keypress in keypresses
-
 
 
 def write_extra_and_missing_keypresses_to_tsv(

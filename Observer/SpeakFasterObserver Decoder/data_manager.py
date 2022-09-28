@@ -297,7 +297,7 @@ class DataManager(object):
         os.remove(tmp_filepath)
       elif obj_key.endswith("-Keypresses.protobuf"):
         tmp_filepath = self._download_to_temp_file(obj_key)
-        keypresses = process_keypresses.load_keypresses_from_file(tmp_filepath)
+        keypresses = process_keypresses.load_keypresses_from_protobuf_file(tmp_filepath)
         num_keypresses += len(keypresses.keyPresses)
         os.remove(tmp_filepath)
     if not time_zone:
@@ -1058,6 +1058,7 @@ def main():
               [sg.Button("Open session folder", key="OPEN_SESSION_FOLDER")],
               [sg.Button("Refresh session state", key="REFRESH_SESSION_STATE")],
               [sg.Button("Show raw ASR", key="OPEN_RAW_ASR")],
+              [sg.Button("Check keypresses", key="CHECK_KEYPRESSES")],
           ]),
       ],
       [
@@ -1176,6 +1177,7 @@ def main():
                    "OPEN_SESSION_FOLDER",
                    "REFRESH_SESSION_STATE",
                    "OPEN_RAW_ASR",
+                   "CHECK_KEYPRESSES",
                    "CLAIM_SESSION",
                    "UNCLAIM_SESSION",
                    "DOWNLOAD_SESSION_TO_LOCAL",
@@ -1219,6 +1221,27 @@ def main():
               "Make sure the session is preprocessed and downloaded." % asr_tsv_path,
               modal=True)
         continue
+      elif event == "CHECK_KEYPRESSES":
+        session_dir_path = data_manager.get_local_session_dir(session_prefix)
+        merged_path = os.path.join(
+            session_dir_path, file_naming.MERGED_TSV_FILENAME)
+        processed_path = os.path.join(
+            session_dir_path, file_naming.CURATED_PROCESSED_TSV_FILENAME)
+        print(merged_path, processed_path)
+        merged_keypresses = process_keypresses.load_keypresses_from_tsv_file(
+            merged_path)
+        processed_keypresses = process_keypresses.load_keypresses_from_tsv_file(
+            processed_path)
+        (extra_keypresses,
+         missing_keypresses) = process_keypresses.check_keypresses(
+            merged_keypresses, processed_keypresses)
+        print("Extra keypresses:", extra_keypresses)
+        print("Missing keypresses:", missing_keypresses)
+        keypress_checks_tsv_path = os.path.join(
+            session_dir_path, file_naming.KEYPRESS_CHECKS_TSV_FILENAME)
+        process_keypresses.write_extra_and_missing_keypresses_to_tsv(
+            keypress_checks_tsv_path, extra_keypresses, missing_keypresses)
+        print("Wrote keypress check results to %s" % keypress_checks_tsv_path)
       elif event == "CLAIM_SESSION":
         data_manager.claim_session(session_prefix)
         _show_session_info(window, data_manager, session_container_prefixes,

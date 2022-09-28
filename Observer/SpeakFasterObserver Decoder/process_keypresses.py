@@ -3,7 +3,10 @@ Processes keypress protobuffers to generate visualized results.
 Can generate various statistics (WPM, KSR, Error Rate) as well
 as output files capable of being used in other tools.
 """
+from typing import List, Tuple
+
 import argparse
+import csv
 import datetime
 import glob
 import jsonpickle
@@ -933,7 +936,7 @@ def load_keypresses_from_directory(keypress_directorypath):
     return merged_keypresses
 
 
-def load_keypresses_from_file(keypress_filepath):
+def load_keypresses_from_protobuf_file(keypress_filepath):
     """Loads keypress protobuffer from keypress_filepath.
 
     Returns:
@@ -946,6 +949,83 @@ def load_keypresses_from_file(keypress_filepath):
         keypresses.ParseFromString(keypress_protobuf_bytes)
 
     return keypresses
+
+
+def load_keypresses_from_tsv_file(tsv_filepath):
+    """Loads keypresses from a TSV file.
+
+    Args:
+      tsv_filepath: Path to the TSV file.
+
+    Returns:
+      A list of (timestamp_s, key_content) tuples.
+    """
+    timestamps_s = []
+    key_contents = []
+    with open(tsv_filepath, "rt") as f:
+        for t_begin, t_end, tier, content in csv.reader(f, delimiter="\t"):
+            if tier != tsv_data.KEYPRESS_TIER:
+                continue
+            timestamps_s.append(float(t_begin))
+            key_contents.append(content)
+    return list(zip(timestamps_s, key_contents))
+
+
+def check_keypresses(ref_keypresses, proc_keypresses):
+    """Check proc_keypresses against ref_keypresses.
+
+    Detect keypresses that are missing and return them (if any).
+
+    Args:
+      ref_keypresses: A list of (timestamp_s, content) tuples.
+      proc_keypresses: Same format as ref_keypresses.
+
+    Returns:
+      1. A list of extraneous keypresses in proc_keypresses, in the form of
+         (index, timestamp_s, content) tuples.
+      2. A list of missing keypresses in proc_keypresses, in the form of
+         (index, timestamp_s, content) tuples. The index is calculated after
+         the extraneous keypresses are removed from proc_keypresses.
+    """
+    proc_extra_keypresses = []
+    proc_missing_keypresses = []
+    proc_ts = [item[0] for item in proc_keypresses]
+    # Locate the first ref keypress in proc_keypresses.
+    if (ref_keypresses and proc_keypresses and
+        ref_keypresses[0] != proc_keypresses[0]):
+        raise ValueError(
+            "Mismatch in the first entry: %s != %s" %
+            (ref_keypresses[0], proc_keypresses[0]))
+    proc_idx = 0
+    # Detect any proc keypresses that are missing from ref keypress.
+    # I.e., extraneous keypresses in proc that somehow got added.
+    for i, proc_keypress in enumerate(proc_keypresses):
+        if proc_keypress not in ref_keypresses:
+            proc_extra_keypresses.append((i, proc_keypress[0], proc_keypress[1]))
+    for extra_index, _, _ in reversed(proc_extra_keypresses):
+        del proc_keypresses[extra_index]
+    # Detect missing keypresses in proc_keypresses.
+    for i, ref_keypress in enumerate(ref_keypresses):
+        if (proc_idx >= len(proc_keypresses) or
+            ref_keypress != proc_keypresses[proc_idx]):
+            proc_missing_keypresses.append((proc_idx, ref_keypress[0], ref_keypress[1]))
+        else:
+            proc_idx += 1
+    return proc_extra_keypresses, proc_missing_keypresses
+
+
+def write_extra_and_missing_keypresses_to_tsv(
+    tsv_filepath, extra_keypresses, missing_keypresses):
+    with open(tsv_filepath, "wt") as f:
+        # Write the header.
+        f.write("Type\tIndex\tTimestamp\tContent\n")
+        for index, timestamp_s, extra_keypress in extra_keypresses:
+            f.write("Extra\t%d\t%.3f\t%s\n" %
+                    (index, timestamp_s, extra_keypress))
+        for index, timestamp_s, missing_keypress in missing_keypresses:
+            print(index, type(timestamp_s), missing_keypress)
+            f.write("Missing\t%d\t%.3f\t%s\n" %
+                    (index, timestamp_s, missing_keypress))
 
 
 def save_string_to_file(output_filepath, output_string):
@@ -1052,7 +1132,7 @@ if __name__ == "__main__":
     if parsed_args.input_directory_path:
         KEYPRESSES = load_keypresses_from_directory(parsed_args.input_directory_path)
     elif parsed_args.input_filepath:
-        KEYPRESSES = load_keypresses_from_file(parsed_args.input_filepath)
+        KEYPRESSES = load_keypresses_from_protobuf_file(parsed_args.input_filepath)
 
     if not KEYPRESSES:
         print("Failed loading keypresses!")

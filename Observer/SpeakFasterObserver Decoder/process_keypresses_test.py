@@ -270,6 +270,120 @@ class PhraseTest(unittest.TestCase):
     phrase.speak(gaze_keypress_count=2)
     phrase.finalize(keypresses, 5)
 
+  def testCheckKeypresses_noMissingOrExtra(self):
+    ref_keypresses = [(0.100, "b"), (1.100, "a"), (1.100, "r")]
+    proc_keypresses = [(0.100, "b"), (1.100, "a"), (1.100, "r")]
+    extra_keypresses, missing_keypresses = process_keypresses.check_keypresses(
+        ref_keypresses, proc_keypresses)
+    self.assertEqual(extra_keypresses, [])
+    self.assertEqual(missing_keypresses, [])
+
+  def testCheckKeypresses_tailMissing_returnsCorrectMissingKeysNotRepeating(self):
+    ref_keypresses = [(0.100, "b"), (1.100, "a"), (1.100, "r"),
+                      (1.100, "Space")]
+    proc_keypresses = [(0.100, "b"), (1.100, "a"),]
+    extra_keypresses, missing_keypresses = process_keypresses.check_keypresses(
+        ref_keypresses, proc_keypresses)
+    self.assertEqual(extra_keypresses, [])
+    self.assertEqual(missing_keypresses, [(2, 1.100, "r"), (2, 1.100, "Space")])
+
+  def testCheckKeypresses_headMissing_returnsCorrectMissingKeysNotRepeating(self):
+    ref_keypresses = [(0.100, "b"), (1.100, "a"), (1.100, "r"),
+                      (1.100, "Space")]
+    proc_keypresses = [(0.100, "b"), (1.100, "Space"),]
+    extra_keypresses, missing_keypresses = process_keypresses.check_keypresses(
+        ref_keypresses, proc_keypresses)
+    self.assertEqual(extra_keypresses, [])
+    self.assertEqual(missing_keypresses, [(1, 1.100, "a"), (1, 1.100, "r")])
+
+  def testCheckKeypresses_multipleMissingSpans(self):
+    ref_keypresses = [(0.100, "b"), (1.100, "a"), (1.100, "r"),
+                      (1.100, "Space"), (2.000, "f"), (3.000, "o"),
+                      (3.000, "o"), (3.000, "Space")]
+    proc_keypresses = [(0.100, "b"), (1.100, "Space"), (2.000, "f"),
+                       (3.000, "o")]
+    extra_keypresses, missing_keypresses = process_keypresses.check_keypresses(
+        ref_keypresses, proc_keypresses)
+    self.assertEqual(extra_keypresses, [])
+    self.assertEqual(missing_keypresses,
+                     [(1, 1.100, "a"), (1, 1.100, "r"), (4, 3.000, "o"),
+                      (4, 3.000, "Space")])
+
+  def testCheckKeypresses_tailMissing_returnsCorrectMissingKeysRepeating(self):
+    ref_keypresses = [(0.100, "f"), (1.100, "o"), (1.100, "o"),
+                      (1.100, "Space")]
+    proc_keypresses = [(0.100, "f"), (1.100, "o"),]
+    extra_keypresses, missing_keypresses = process_keypresses.check_keypresses(
+        ref_keypresses, proc_keypresses)
+    self.assertEqual(extra_keypresses, [])
+    self.assertEqual(missing_keypresses, [(2, 1.100, "o"), (2, 1.100, "Space")])
+
+  def testCheckKeypresses_headMissing_returnsCorrectMissingKeysRepeating(self):
+    ref_keypresses = [(0.100, "f"), (1.100, "o"), (1.100, "o"),
+                      (1.100, "Space")]
+    proc_keypresses = [(0.100, "f"), (1.100, "Space"),]
+    extra_keypresses, missing_keypresses = process_keypresses.check_keypresses(
+        ref_keypresses, proc_keypresses)
+    self.assertEqual(extra_keypresses, [])
+    self.assertEqual(missing_keypresses, [(1, 1.100, "o"), (1, 1.100, "o")])
+
+  def testCheckKeypresses_extraneousKeypressInProc(self):
+    ref_keypresses = [(0.100, "f"), (1.100, "o"), (1.100, "o")]
+    proc_keypresses = [(0.100, "f"), (0.6, "r"), (1.100, "o"), (1.100, "o")]
+    extra_keypresses, missing_keypresses = process_keypresses.check_keypresses(
+        ref_keypresses, proc_keypresses)
+    self.assertEqual(extra_keypresses, [(1, 0.6, "r")])
+    self.assertEqual(missing_keypresses, [])
+
+  def testCheckKeypresses_shiftedInProc(self):
+    ref_keypresses = [(0.100, "b"), (1.100, "a"), (1.100, "r")]
+    proc_keypresses = [(0.100, "b"), (1.099, "a"), (1.100, "r")]
+    extra_keypresses, missing_keypresses = process_keypresses.check_keypresses(
+        ref_keypresses, proc_keypresses)
+    self.assertEqual(extra_keypresses, [(1, 1.099, "a")])
+    self.assertEqual(missing_keypresses, [(1, 1.100, "a")])
+
+  def testCheckKeypresses_shiftedInProcPlusMissing(self):
+    ref_keypresses = [(0.100, "b"), (1.100, "a"), (1.100, "r"), (2.000, "f")]
+    proc_keypresses = [(0.100, "b"), (1.099, "a"), (1.999, "f")]
+    extra_keypresses, missing_keypresses = process_keypresses.check_keypresses(
+        ref_keypresses, proc_keypresses)
+    self.assertEqual(extra_keypresses, [(1, 1.099, "a"), (2, 1.999, "f")])
+    self.assertEqual(missing_keypresses, [(1, 1.100, "a"), (1, 1.100, "r"),
+                                          (1, 2.000, "f")])
+
+  def testCheckKeypresses_edgeCaseEmptyProc(self):
+    ref_keypresses = [(0.100, "b"), (1.100, "a"), (1.100, "a")]
+    proc_keypresses = []
+    extra_keypresses, missing_keypresses = process_keypresses.check_keypresses(
+        ref_keypresses, proc_keypresses)
+    self.assertEqual(extra_keypresses, [])
+    self.assertEqual(missing_keypresses,
+                     [(0, 0.100, "b"), (0, 1.100, "a"), (0, 1.100, "a")])
+
+  def testCheckKeypresses_edgeCaseEmptyRef(self):
+    ref_keypresses = []
+    proc_keypresses = [(0.100, "b"), (1.100, "a"), (1.100, "a")]
+    extra_keypresses, missing_keypresses = process_keypresses.check_keypresses(
+        ref_keypresses, proc_keypresses)
+    self.assertEqual(extra_keypresses,
+                     [(0, 0.100, "b"), (1, 1.100, "a"), (2, 1.100, "a")])
+    self.assertEqual(missing_keypresses, [])
+
+  def testCheckKeypresses_edgeCaseEmptyRefAndProc(self):
+    ref_keypresses = []
+    proc_keypresses = []
+    extra_keypresses, missing_keypresses = process_keypresses.check_keypresses(
+        ref_keypresses, proc_keypresses)
+    self.assertEqual(extra_keypresses, [])
+    self.assertEqual(missing_keypresses, [])
+
+  def testCheckKeypresses_initialMismatchRaisesError(self):
+    ref_keypresses = [(0.100, "b"), (1.100, "a")]
+    proc_keypresses = [(0.100, "g"), (1.100, "a")]
+    with self.assertRaisesRegexp(ValueError, "Mismatch in the first entry"):
+        process_keypresses.check_keypresses(ref_keypresses, proc_keypresses)
+
 
 if __name__ == "__main__":
   unittest.main()

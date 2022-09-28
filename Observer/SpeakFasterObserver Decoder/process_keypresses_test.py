@@ -1,6 +1,7 @@
 """Unit tests for the process_keypresses module."""
 import csv
 from datetime import datetime
+import os
 import tempfile
 import unittest
 
@@ -424,6 +425,7 @@ class PhraseTest(unittest.TestCase):
     self.assertEqual(rows[2], ["Missing", "20", "10.800", "b"])
     self.assertEqual(rows[3], ["Missing", "20", "10.800", "c"])
     self.assertEqual(rows[4], ["Missing", "20", "10.801", "d"])
+    os.remove(temp_tsv_path)
 
 
 if __name__ == "__main__":

@@ -15,6 +15,7 @@ import re
 import string
 import sys
 
+import elan_process_curated
 import keypresses_pb2
 import transcript_lib
 import tsv_data
@@ -991,27 +992,47 @@ def check_keypresses(ref_keypresses, proc_keypresses):
     proc_missing_keypresses = []
     proc_ts = [item[0] for item in proc_keypresses]
     # Locate the first ref keypress in proc_keypresses.
-    if (ref_keypresses and proc_keypresses and
-        ref_keypresses[0] != proc_keypresses[0]):
-        raise ValueError(
-            "Mismatch in the first entry: %s != %s" %
-            (ref_keypresses[0], proc_keypresses[0]))
+    if ref_keypresses and proc_keypresses:
+        if proc_keypresses[0][1] == elan_process_curated.REDACTED_KEY:
+            if ref_keypresses[0][0] != proc_keypresses[0][0]:
+                raise ValueError(
+                    "Mismatch in the first entry: %s != %s" %
+                    (ref_keypresses[0], proc_keypresses[0]))
+        else:
+            if ref_keypresses[0] != proc_keypresses[0]:
+                raise ValueError(
+                    "Mismatch in the first entry: %s != %s" %
+                    (ref_keypresses[0], proc_keypresses[0]))
     proc_idx = 0
     # Detect any proc keypresses that are missing from ref keypress.
     # I.e., extraneous keypresses in proc that somehow got added.
     for i, proc_keypress in enumerate(proc_keypresses):
-        if proc_keypress not in ref_keypresses:
-            proc_extra_keypresses.append((i, proc_keypress[0], proc_keypress[1]))
+        if not keypress_in_keypresses(proc_keypress, ref_keypresses):
+            proc_extra_keypresses.append((
+                i, proc_keypress[0], proc_keypress[1]))
     for extra_index, _, _ in reversed(proc_extra_keypresses):
         del proc_keypresses[extra_index]
     # Detect missing keypresses in proc_keypresses.
     for i, ref_keypress in enumerate(ref_keypresses):
-        if (proc_idx >= len(proc_keypresses) or
-            ref_keypress != proc_keypresses[proc_idx]):
-            proc_missing_keypresses.append((proc_idx, ref_keypress[0], ref_keypress[1]))
-        else:
+        if (proc_idx < len(proc_keypresses) and
+            ref_keypress == proc_keypresses[proc_idx]):
             proc_idx += 1
+        elif (proc_idx < len(proc_keypresses) and
+              proc_keypresses[proc_idx][1] == elan_process_curated.REDACTED_KEY and
+              proc_keypresses[proc_idx][0] == ref_keypress[0]):
+            proc_idx += 1
+        else:
+            proc_missing_keypresses.append((proc_idx, ref_keypress[0], ref_keypress[1]))
     return proc_extra_keypresses, proc_missing_keypresses
+
+
+def keypress_in_keypresses(keypress, keypresses):
+    """Check whether keypress is in keypresses, taking into account redaction."""
+    if keypress[1] == elan_process_curated.REDACTED_KEY:
+        timestamps = [item[0] for item in keypresses]
+        return keypress[0] in timestamps
+    return keypress in keypresses
+
 
 
 def write_extra_and_missing_keypresses_to_tsv(

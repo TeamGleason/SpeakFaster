@@ -384,6 +384,29 @@ class PhraseTest(unittest.TestCase):
     with self.assertRaisesRegexp(ValueError, "Mismatch in the first entry"):
         process_keypresses.check_keypresses(ref_keypresses, proc_keypresses)
 
+  def testCheckKeypresses_redactedKeysAreIgnored_equality(self):
+    ref_keypresses = [(0.100, "b"), (1.100, "a"), (1.100, "r")]
+    proc_keypresses = [(0.100, "[RedactedKey]"), (1.100, "a"), (1.100, "r")]
+    extra_keypresses, missing_keypresses = process_keypresses.check_keypresses(
+        ref_keypresses, proc_keypresses)
+    self.assertEqual(extra_keypresses, [])
+    self.assertEqual(missing_keypresses, [])
+
+  def testCheckKeypresses_redactedKeysAreIgnored_returnsMissingKey(self):
+    ref_keypresses = [(0.100, "b"), (1.100, "a"), (1.100, "r")]
+    proc_keypresses = [(0.100, "[RedactedKey]"), (1.100, "r")]
+    extra_keypresses, missing_keypresses = process_keypresses.check_keypresses(
+        ref_keypresses, proc_keypresses)
+    self.assertEqual(extra_keypresses, [])
+    self.assertEqual(missing_keypresses, [(1, 1.100, "a")])
+
+  def testCheckKeypresses_firstRedactedKeyIsShiftedSlightly(self):
+    ref_keypresses = [(0.100, "b"), (1.100, "a"), (1.100, "r")]
+    proc_keypresses = [(0.115, "[RedactedKey]"), (1.100, "a"), (1.100, "r")]
+    with self.assertRaisesRegexp(ValueError, "Mismatch in the first entry"):
+      process_keypresses.check_keypresses(
+          ref_keypresses, proc_keypresses)
+
 
 if __name__ == "__main__":
   unittest.main()

@@ -996,7 +996,7 @@ def upload_curated_freeform_text(window,
     f.write(redacted_freeform_txt)
   destination_blob_prefix = "/".join(
       [GCS_CURATED_FREEFORM_UPLOAD_PREFIX] +
-      [item for item in container_rpefix.split("/") if item] +
+      [item for item in container_prefix.split("/") if item] +
       ["freeform_text_%s" % datetime.datetime.now().isoformat()])
   uploaded_file_names = [
       os.path.relpath(metadata_json_path, tmp_dir),

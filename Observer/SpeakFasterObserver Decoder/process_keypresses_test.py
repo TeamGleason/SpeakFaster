@@ -1,7 +1,10 @@
 """Unit tests for the process_keypresses module."""
+import csv
 from datetime import datetime
-from google import protobuf
+import tempfile
 import unittest
+
+from google import protobuf
 
 import keypresses_pb2
 import process_keypresses
@@ -404,8 +407,23 @@ class PhraseTest(unittest.TestCase):
     ref_keypresses = [(0.100, "b"), (1.100, "a"), (1.100, "r")]
     proc_keypresses = [(0.115, "[RedactedKey]"), (1.100, "a"), (1.100, "r")]
     with self.assertRaisesRegexp(ValueError, "Mismatch in the first entry"):
-      process_keypresses.check_keypresses(
-          ref_keypresses, proc_keypresses)
+      process_keypresses.check_keypresses(ref_keypresses, proc_keypresses)
+
+  def testWriteExtraAndMissingKeypressesToTsv(self):
+    extra_keypresses = [(10, 0.800, "z")]
+    missing_keypresses = [(20, 10.800, "b"), (20, 10.800, "c"), (20, 10.801, "d")]
+    temp_tsv_path = tempfile.mktemp(suffix=".tsv")
+    process_keypresses.write_extra_and_missing_keypresses_to_tsv(
+        temp_tsv_path, extra_keypresses, missing_keypresses)
+
+    with open(temp_tsv_path, "rt") as f:
+      rows = list(row for row in csv.reader(f, delimiter="\t"))
+    self.assertEqual(len(rows), 5)
+    self.assertEqual(rows[0], ["Type", "Index", "Timestamp", "Content"])
+    self.assertEqual(rows[1], ["Extra", "10", "0.800", "z"])
+    self.assertEqual(rows[2], ["Missing", "20", "10.800", "b"])
+    self.assertEqual(rows[3], ["Missing", "20", "10.800", "c"])
+    self.assertEqual(rows[4], ["Missing", "20", "10.801", "d"])
 
 
 if __name__ == "__main__":

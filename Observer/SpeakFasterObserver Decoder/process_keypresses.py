@@ -1044,7 +1044,6 @@ def write_extra_and_missing_keypresses_to_tsv(
             f.write("Extra\t%d\t%.3f\t%s\n" %
                     (index, timestamp_s, extra_keypress))
         for index, timestamp_s, missing_keypress in missing_keypresses:
-            print(index, type(timestamp_s), missing_keypress)
             f.write("Missing\t%d\t%.3f\t%s\n" %
                     (index, timestamp_s, missing_keypress))
 

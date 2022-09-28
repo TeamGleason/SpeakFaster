@@ -996,7 +996,7 @@ def upload_curated_freeform_text(window,
     f.write(redacted_freeform_txt)
   destination_blob_prefix = "/".join(
       [GCS_CURATED_FREEFORM_UPLOAD_PREFIX] +
-      [item for item in container_prefix.split("/") if item] +
+      [item for item in container_rpefix.split("/") if item] +
       ["freeform_text_%s" % datetime.datetime.now().isoformat()])
   uploaded_file_names = [
       os.path.relpath(metadata_json_path, tmp_dir),
@@ -1227,6 +1227,12 @@ def main():
             session_dir_path, file_naming.MERGED_TSV_FILENAME)
         processed_path = os.path.join(
             session_dir_path, file_naming.CURATED_PROCESSED_TSV_FILENAME)
+        if not os.path.isfile(merged_path):
+          print("File not found: %s" % merged_path)
+          continue
+        if not os.path.isfile(processed_path):
+          print("File not found: %s" % processed_path)
+          continue
         print(merged_path, processed_path)
         merged_keypresses = process_keypresses.load_keypresses_from_tsv_file(
             merged_path)
@@ -1242,6 +1248,13 @@ def main():
         process_keypresses.write_extra_and_missing_keypresses_to_tsv(
             keypress_checks_tsv_path, extra_keypresses, missing_keypresses)
         print("Wrote keypress check results to %s" % keypress_checks_tsv_path)
+        destination_blob_prefix = "/".join(
+            [GCS_POSTPROCESSED_UPLOAD_PREFIX] +
+            [item for item in session_prefix.split("/") if item])
+        gcloud_utils.upload_files_as_objects(
+            session_dir_path, [os.path.basename(keypress_checks_tsv_path)],
+            data_manager.gcs_bucket_name, destination_blob_prefix)
+        continue
       elif event == "CLAIM_SESSION":
         data_manager.claim_session(session_prefix)
         _show_session_info(window, data_manager, session_container_prefixes,

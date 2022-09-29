@@ -1047,10 +1047,8 @@ def _check_keypresses(data_manager, session_prefix):
   local_status = data_manager.get_local_session_folder_status(
        session_prefix)
   if (remote_status == STATE_POSTPROCESSED and
-      local_status not in (STATE_CURATED, STATE_POSTPROCESSED)):
+      local_status not in (STATE_POSTPROCESSED,)):
     data_manager.sync_to_local(session_prefix)
-  print("remote_status =", remote_status)  # DEBUG
-  print("local_status =", local_status)  # DEBUG
   session_dir_path = data_manager.get_local_session_dir(session_prefix)
   merged_path = os.path.join(
       session_dir_path, file_naming.MERGED_TSV_FILENAME)

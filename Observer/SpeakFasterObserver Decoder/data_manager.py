@@ -903,6 +903,25 @@ def _download_preprocess_upload_sessions_from(window,
           len(task_session_prefixes), True)
 
 
+def _check_keypresses_from(window,
+                           data_manager,
+                           session_container_prefixes,
+                           session_prefixes):
+  container_prefix = _get_container_prefix(window, session_container_prefixes)
+  session_prefix = _get_session_prefix(
+      window, session_container_prefixes, session_prefixes)
+  task_session_prefixes = []
+  start_index = -1
+  for i, prefix in enumerate(session_prefixes):
+    if container_prefix + prefix == session_prefix:
+      start_index = i
+      break
+  assert start_index >= 0
+  session_prefixes = session_prefixes[start_index:]
+  for sessino_prefix in session_prefixes:
+    _check_keypresses(data_manager, session_prefix)
+
+
 def _apply_session_colors(window):
   if not _UI_STATE["session_colors"]:
     return
@@ -1009,6 +1028,41 @@ def upload_curated_freeform_text(window,
       gcs_bucket_name, destination_blob_prefix, uploaded_file_names))
 
 
+def _check_keypresses(data_manager, session_prefix):
+  session_dir_path = data_manager.get_local_session_dir(session_prefix)
+  merged_path = os.path.join(
+      session_dir_path, file_naming.MERGED_TSV_FILENAME)
+  processed_path = os.path.join(
+      session_dir_path, file_naming.CURATED_PROCESSED_TSV_FILENAME)
+  if not os.path.isfile(merged_path):
+    print("File not found: %s" % merged_path)
+    return
+  if not os.path.isfile(processed_path):
+    print("File not found: %s" % processed_path)
+    return
+  print("Comparing %s vs. %s" % (merged_path, processed_path))
+  merged_keypresses = process_keypresses.load_keypresses_from_tsv_file(
+      merged_path)
+  processed_keypresses = process_keypresses.load_keypresses_from_tsv_file(
+      processed_path)
+  (extra_keypresses,
+    missing_keypresses) = process_keypresses.check_keypresses(
+      merged_keypresses, processed_keypresses)
+  print("Extra keypresses:", extra_keypresses)
+  print("Missing keypresses:", missing_keypresses)
+  keypress_checks_tsv_path = os.path.join(
+      session_dir_path, file_naming.KEYPRESS_CHECKS_TSV_FILENAME)
+  process_keypresses.write_extra_and_missing_keypresses_to_tsv(
+      keypress_checks_tsv_path, extra_keypresses, missing_keypresses)
+  print("Wrote keypress check results to %s" % keypress_checks_tsv_path)
+  destination_blob_prefix = "/".join(
+      [GCS_POSTPROCESSED_UPLOAD_PREFIX] +
+      [item for item in session_prefix.split("/") if item])
+  gcloud_utils.upload_files_as_objects(
+      session_dir_path, [os.path.basename(keypress_checks_tsv_path)],
+      data_manager.gcs_bucket_name, destination_blob_prefix)
+
+
 LIST_BOX_WIDTH = 100
 
 
@@ -1109,6 +1163,8 @@ def main():
           sg.Text("", size=(15, 2)),
           sg.Button("Preprocess and upload sessions from here on",
                     key="DOWNLOAD_PREPROCESS_UPLOAD_SESSIONS_BATCH"),
+          sg.Button("Check keypresses from here on",
+                    key="CHECK_KEYPRESSES_BATCH"),
           sg.Button("Upload curated free-form text",
                     key="UPLOAD_CURATED_FREEFORM_TEXT"),
       ],
@@ -1184,6 +1240,7 @@ def main():
                    "PREPROCESS_SESSION",
                    "UPLOAD_PREPROC",
                    "DOWNLOAD_PREPROCESS_UPLOAD_SESSIONS_BATCH",
+                   "CHECK_KEYPRESSES_BATCH",
                    "POSTPROC_CURATION",
                    "UPLOAD_POSTPROC",
                    "UPLOAD_TO_GCS"):
@@ -1222,38 +1279,7 @@ def main():
               modal=True)
         continue
       elif event == "CHECK_KEYPRESSES":
-        session_dir_path = data_manager.get_local_session_dir(session_prefix)
-        merged_path = os.path.join(
-            session_dir_path, file_naming.MERGED_TSV_FILENAME)
-        processed_path = os.path.join(
-            session_dir_path, file_naming.CURATED_PROCESSED_TSV_FILENAME)
-        if not os.path.isfile(merged_path):
-          print("File not found: %s" % merged_path)
-          continue
-        if not os.path.isfile(processed_path):
-          print("File not found: %s" % processed_path)
-          continue
-        print(merged_path, processed_path)
-        merged_keypresses = process_keypresses.load_keypresses_from_tsv_file(
-            merged_path)
-        processed_keypresses = process_keypresses.load_keypresses_from_tsv_file(
-            processed_path)
-        (extra_keypresses,
-         missing_keypresses) = process_keypresses.check_keypresses(
-            merged_keypresses, processed_keypresses)
-        print("Extra keypresses:", extra_keypresses)
-        print("Missing keypresses:", missing_keypresses)
-        keypress_checks_tsv_path = os.path.join(
-            session_dir_path, file_naming.KEYPRESS_CHECKS_TSV_FILENAME)
-        process_keypresses.write_extra_and_missing_keypresses_to_tsv(
-            keypress_checks_tsv_path, extra_keypresses, missing_keypresses)
-        print("Wrote keypress check results to %s" % keypress_checks_tsv_path)
-        destination_blob_prefix = "/".join(
-            [GCS_POSTPROCESSED_UPLOAD_PREFIX] +
-            [item for item in session_prefix.split("/") if item])
-        gcloud_utils.upload_files_as_objects(
-            session_dir_path, [os.path.basename(keypress_checks_tsv_path)],
-            data_manager.gcs_bucket_name, destination_blob_prefix)
+        _check_keypresses(data_manager, session_prefix)
         continue
       elif event == "CLAIM_SESSION":
         data_manager.claim_session(session_prefix)
@@ -1277,6 +1303,8 @@ def main():
         status_message = "Uploading session preprocessing results. Please wait..."
       elif event == "DOWNLOAD_PREPROCESS_UPLOAD_SESSIONS_BATCH":
         status_message = "Batch downloading, preprocessing and uploading sessions. Please wait..."
+      elif event == "CHECK_KEYPRESSES_BATCH":
+        status_message = "Batch checking keypresses. Please wait..."
       elif event == "POSTPROC_CURATION":
         status_message = "Postprocessing curation results. Please wait..."
       elif event == "UPLOAD_POSTPROC":
@@ -1305,6 +1333,10 @@ def main():
            window, data_manager, session_container_prefixes, session_prefixes)
         status_message = ""
         sessions_changed = True
+      elif event == "CHECK_KEYPRESSES_BATCH":
+        _check_keypresses_from(
+            window, data_manager, session_container_prefixes, session_prefixes)
+        sessions_changed = False
       elif event == "POSTPROC_CURATION":
         (status_message,
          sessions_changed) = data_manager.postprocess_curation(session_prefix)

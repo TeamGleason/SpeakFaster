@@ -372,7 +372,7 @@ class DataManager(object):
       session_gcs_status[get_base_session_prefix(session_prefix)] = (
           STATE_UPLOADED if self.is_session_uploaded_to_gcs(
               container_prefix + session_prefix)
-          else STATE_NOT_)
+          else STATE_NOT_UPLOADED)
     self._session_keypresses_per_second = session_keypresses_per_second
     self._session_gcs_status = session_gcs_status
     _print_time_summary_table(start_time_table)

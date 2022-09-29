@@ -931,7 +931,7 @@ def _check_keypresses_from(window,
       break
   assert start_index >= 0
   session_prefixes = session_prefixes[start_index:]
-  for sessino_prefix in session_prefixes:
+  for session_prefix in session_prefixes:
     _check_keypresses(data_manager, session_prefix)
 
 

@@ -59,6 +59,19 @@ GCS_CURATED_FREEFORM_UPLOAD_PREFIX = "curated_freeform"
 GCS_POSTPROCESSED_UPLOAD_PREFIX = "postprocessed"
 CLAIM_JSON_FILENAME = "claim.json"
 
+STATE_NOT_DOWNLOADED = "NOT_DOWNLOADED"
+STATE_DOWNLOADED = "DOWNLOADED"
+STATE_PREPROCESSED = "PREPROCESSED"
+STATE_CURATED = "CURATED"
+STATE_POSTPROCESSED = "POSTPROCESSED"
+
+# Remote states only:
+STATE_NOT_PREPROCESSED = "NOT_PREPROCESSED"
+
+# GCS states only:
+STATE_NOT_UPLOADED = "NOT_UPLOADED"
+STATE_UPLOADED = "UPLOADED"
+
 # The set of files to upload to shared GCS folder. Must only include
 # the post-processed, curated results.
 POSTPROCESSING_FILES_TO_UPLOAD = (
@@ -357,9 +370,9 @@ class DataManager(object):
           get_base_session_prefix(session_prefix)] = (
               None if duration_s == 0 else num_keypresses / duration_s)
       session_gcs_status[get_base_session_prefix(session_prefix)] = (
-          "UPLOADED" if self.is_session_uploaded_to_gcs(
+          STATE_UPLOADED if self.is_session_uploaded_to_gcs(
               container_prefix + session_prefix)
-          else "NOT_UPLOADED")
+          else STATE_NOT_UPLOADED)
     self._session_keypresses_per_second = session_keypresses_per_second
     self._session_gcs_status = session_gcs_status
     _print_time_summary_table(start_time_table)
@@ -398,7 +411,7 @@ class DataManager(object):
   def get_local_session_folder_status(self, session_prefix):
     local_dest_dir = self.get_local_session_dir(session_prefix)
     if not os.path.isdir(local_dest_dir):
-      return "NOT_DOWNLOADED"
+      return STATE_NOT_DOWNLOADED
     else:
       if (self._nonempty_file_exists(
               local_dest_dir, file_naming.CURATED_PROCESSED_JSON_FILENAME) and
@@ -406,21 +419,21 @@ class DataManager(object):
               local_dest_dir, file_naming.CURATED_PROCESSED_TSV_FILENAME) and
           self._nonempty_file_exists(
               local_dest_dir, file_naming.CURATED_PROCESSED_SPEECH_ONLY_TSV_FILENAME)):
-        return "POSTPROCESSED"
+        return STATE_POSTPROCESSED
       elif self._nonempty_file_exists(
           local_dest_dir, file_naming.CURATED_TSV_FILENAME):
-        return "CURATED"
+        return STATE_CURATED
       elif (self._nonempty_file_exists(
               local_dest_dir, file_naming.MERGED_TSV_FILENAME) and
           self._nonempty_file_exists(
               local_dest_dir, file_naming.CONCATENATED_AUDIO_FILENAME) and
           self._nonempty_file_exists(
               local_dest_dir, file_naming.SCREENSHOTS_MP4_FILENAME)):
-        return "PREPROCESSED"
+        return STATE_PREPROCESSED
       elif glob.glob(os.path.join(local_dest_dir, "*-SessionEnd.bin")):
-        return "DOWNLOADED"
+        return STATE_DOWNLOADED
       else:
-        return "NOT_DOWNLOADED"
+        return STATE_NOT_DOWNLOADED
 
   def get_session_keypresses_per_second(self, session_prefix):
     session_prefix = get_base_session_prefix(session_prefix)
@@ -443,7 +456,7 @@ class DataManager(object):
     kps_string = ("[? kps]" if keypresses_per_second is None else
                   ("[%.2f kps]" % keypresses_per_second))
     gcs_string = ""
-    if remote_status == "POSTPROCESSED":
+    if remote_status == STATE_POSTPROCESSED:
       session_gcs_status = self.get_session_gcs_status(session_prefix)
       gcs_string = ("" if session_gcs_status is None else
                     ("[GCS: %s]" % session_gcs_status))
@@ -493,20 +506,20 @@ class DataManager(object):
     """
     if use_cached:
       if session_prefix in self._sessions_with_curated_processed_tsv:
-        return "POSTPROCESSED"
+        return STATE_POSTPROCESSED
       elif session_prefix in self._sessions_with_merged_tsv:
-        return "PREPROCESSED"
+        return STATE_PREPROCESSED
       else:
-        return "NOT_PREPROCESSED"
+        return STATE_NOT_PREPROCESSED
     else:
       if self._remote_object_exists(
          session_prefix, file_naming.CURATED_PROCESSED_TSV_FILENAME):
-        return "POSTPROCESSED"
+        return STATE_POSTPROCESSED
       elif self._remote_object_exists(
         session_prefix, file_naming.MERGED_TSV_FILENAME):
-        return "PREPROCESSED"
+        return STATE_PREPROCESSED
       else:
-        return "NOT_PREPROCESSED"
+        return STATE_NOT_PREPROCESSED
 
   def get_remote_session_claim_username(self, session_prefix):
     f = io.BytesIO()
@@ -558,7 +571,7 @@ class DataManager(object):
   def preprocess_session(self, session_prefix):
     to_run_preproc = True
     if self.get_local_session_folder_status(session_prefix) in (
-        "PREPROCESSED", "CURATED", "POSTPROCESSED"):
+        STATE_PREPROCESSED, STATE_CURATED, STATE_POSTPROCESSED):
       answer = sg.popup_yes_no(
           "Session %s has already been preprocessed locally. "
           "Do you want to run preprocessing again?" % session_prefix)
@@ -578,14 +591,14 @@ class DataManager(object):
 
   def upload_sesssion_preproc_results(self, session_prefix):
     if self.get_local_session_folder_status(session_prefix) not in  (
-        "PREPROCESSED", "CURATED", "POSTPROCESSED"):
+        STATE_PREPROCESSED, STATE_CURATED, STATE_POSTPROCESSED):
       sg.Popup(
           "Cannot upload the preprocessing results of session %s, "
           "because no preprocessing results are found" % session_prefix,
           modal=True)
       return "Not uploading preprocessing results", False
     to_upload = True
-    if self.get_remote_session_folder_status(session_prefix) != "NOT_PREPROCESSED":
+    if self.get_remote_session_folder_status(session_prefix) != STATE_NOT_PREPROCESSED:
       answer = sg.popup_yes_no(
           "Session %s already contains preprocessing results remotely. "
           "Do you want to upload preprocessing results again?" % session_prefix)
@@ -608,7 +621,7 @@ class DataManager(object):
   def postprocess_curation(self, session_prefix):
     local_dest_dir = self.get_local_session_dir(session_prefix)
     local_status = self.get_local_session_folder_status(session_prefix)
-    if local_status not in ("CURATED", "POSTPROCESSED"):
+    if local_status not in (STATE_CURATED, STATE_POSTPROCESSED):
       sg.Popup(
           "Cannot postprocess the curation results of session %s, "
           "because the local directory for the session doesn't contain "
@@ -618,7 +631,7 @@ class DataManager(object):
       return ("Not postprocessing curation results: Cannot find %s" %
               file_naming.CURATED_TSV_FILENAME), False
     to_postprocess = True
-    if local_status == "POSTPROCESSED":
+    if local_status == STATE_POSTPROCESSED:
       answer = sg.popup_yes_no(
           "Session is %s already postprocessed successfully. "
           "Do you want to do postprocessing again?" % session_prefix)
@@ -653,7 +666,7 @@ class DataManager(object):
 
   def upload_session_postproc_results(self, session_prefix, to_gcs=False):
     """Upload post processing results to S3 or GCS."""
-    if self.get_local_session_folder_status(session_prefix) != "POSTPROCESSED":
+    if self.get_local_session_folder_status(session_prefix) != STATE_POSTPROCESSED:
       sg.Popup(
           "Cannot upload the postprocessing results of session %s, "
           "because no postprocessing results are found" % session_prefix,
@@ -661,7 +674,7 @@ class DataManager(object):
       return "Not uploading postprocessing results", False
     to_upload = True
     if (not to_gcs and
-        self.get_remote_session_folder_status(session_prefix) == "POSTPROCESSED"):
+        self.get_remote_session_folder_status(session_prefix) == STATE_POSTPROCESSED):
       answer = sg.popup_yes_no(
           "Session %s already contains postprocessing results remotely. "
           "Do you want to upload postprocessing results again?" % session_prefix)
@@ -810,12 +823,12 @@ def _list_sessions(window,
         container_prefix + session_prefix)
     session_prefixes_with_status.append(data_manager.get_session_status_string(
         session_prefix, remote_status, local_status))
-    if remote_status == "POSTPROCESSED":
-      if data_manager.get_session_gcs_status(session_prefix) == "UPLOADED":
+    if remote_status == STATE_POSTPROCESSED:
+      if data_manager.get_session_gcs_status(session_prefix) == STATE_UPLOADED:
         session_color = "gray"
       else:
         session_color = "green"
-    elif remote_status == "PREPROCESSED":
+    elif remote_status == STATE_PREPROCESSED:
       session_color = "blue"
     else:
       session_color = "black"
@@ -869,7 +882,7 @@ def _download_preprocess_upload_sessions_from(window,
   print("List of sessions to run:")
   for session_prefix in session_prefixes:
     if data_manager.get_remote_session_folder_status(
-        container_prefix + session_prefix) != "NOT_PREPROCESSED":
+        container_prefix + session_prefix) != STATE_NOT_PREPROCESSED:
       continue
     (_, _, _, _, num_keypresses, num_audio_files,
      _, _) = data_manager.get_session_details(container_prefix + session_prefix)
@@ -890,11 +903,11 @@ def _download_preprocess_upload_sessions_from(window,
   for session_prefix in task_session_prefixes:
     print("")
     local_status = data_manager.get_local_session_folder_status(session_prefix)
-    if local_status == "NOT_DOWNLOADED":
+    if local_status == STATE_NOT_DOWNLOADED:
       print("Downloading %s ..." % session_prefix)
       data_manager.sync_to_local(session_prefix)
     local_status = data_manager.get_local_session_folder_status(session_prefix)
-    if local_status == "DOWNLOADED":
+    if local_status == STATE_DOWNLOADED:
       print("Preprocessing %s ..." % session_prefix)
       data_manager.preprocess_session(session_prefix)
     print("Uploading preprocessing results for %s..." % session_prefix)
@@ -1029,6 +1042,15 @@ def upload_curated_freeform_text(window,
 
 
 def _check_keypresses(data_manager, session_prefix):
+  remote_status = data_manager.get_remote_session_folder_status(
+      session_prefix, use_cached=True)
+  local_status = data_manager.get_local_session_folder_status(
+       session_prefix)
+  if (remote_status == STATE_POSTPROCESSED and
+      local_status not in (STATE_CURATED, STATE_POSTPROCESSED)):
+    data_manager.sync_to_local(session_prefix)
+  print("remote_status =", remote_status)  # DEBUG
+  print("local_status =", local_status)  # DEBUG
   session_dir_path = data_manager.get_local_session_dir(session_prefix)
   merged_path = os.path.join(
       session_dir_path, file_naming.MERGED_TSV_FILENAME)

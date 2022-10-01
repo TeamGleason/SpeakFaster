@@ -985,22 +985,33 @@ def check_keypresses(ref_keypresses, proc_keypresses):
       2. A list of missing keypresses in proc_keypresses, in the form of
          (index, timestamp_s, content) tuples. The index is calculated after
          the extraneous keypresses are removed from proc_keypresses.
+
+    Raises:
+      ValueError, if the first entry in proc_keypresses cannot be found in
+        ref_keypresses.
     """
     proc_extra_keypresses = []
     proc_missing_keypresses = []
     proc_ts = [item[0] for item in proc_keypresses]
     # Locate the first ref keypress in proc_keypresses.
-    if ref_keypresses and proc_keypresses:
-        if proc_keypresses[0][1] == elan_process_curated.REDACTED_KEY:
-            if ref_keypresses[0][0] != proc_keypresses[0][0]:
-                raise ValueError(
-                    "Mismatch in the first entry: %s != %s" %
-                    (ref_keypresses[0], proc_keypresses[0]))
-        else:
-            if ref_keypresses[0] != proc_keypresses[0]:
-                raise ValueError(
-                    "Mismatch in the first entry: %s != %s" %
-                    (ref_keypresses[0], proc_keypresses[0]))
+    if proc_keypresses and ref_keypresses:
+        ref_start_idx = None
+        first_proc_key = proc_keypresses[0]
+        for i, ref_keypress in enumerate(ref_keypresses):
+            if (first_proc_key[0] == ref_keypress[0] and
+                (first_proc_key[1] == ref_keypress[1] or
+                first_proc_key[1] == elan_process_curated.REDACTED_KEY)):
+                ref_start_idx = i
+                break
+        if ref_start_idx is None:
+            raise ValueError("Cannot find the first processed key: %s" %
+                             proc_keypresses[0])
+        for i in range(ref_start_idx):
+            proc_missing_keypresses.append((
+                i, ref_keypresses[i][0], ref_keypresses[i][1]))
+    else:
+        ref_start_idx = 0
+    ref_keypresses = ref_keypresses[ref_start_idx:]
     proc_idx = 0
     # Detect any proc keypresses that are missing from ref keypress.
     # I.e., extraneous keypresses in proc that somehow got added.
@@ -1020,7 +1031,8 @@ def check_keypresses(ref_keypresses, proc_keypresses):
               proc_keypresses[proc_idx][0] == ref_keypress[0]):
             proc_idx += 1
         else:
-            proc_missing_keypresses.append((proc_idx, ref_keypress[0], ref_keypress[1]))
+            proc_missing_keypresses.append((
+                proc_idx + ref_start_idx, ref_keypress[0], ref_keypress[1]))
     return proc_extra_keypresses, proc_missing_keypresses
 
 

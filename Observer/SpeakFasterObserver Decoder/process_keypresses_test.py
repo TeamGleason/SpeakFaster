@@ -385,7 +385,8 @@ class PhraseTest(unittest.TestCase):
   def testCheckKeypresses_initialMismatchRaisesError(self):
     ref_keypresses = [(0.100, "b"), (1.100, "a")]
     proc_keypresses = [(0.100, "g"), (1.100, "a")]
-    with self.assertRaisesRegexp(ValueError, "Mismatch in the first entry"):
+    with self.assertRaisesRegexp(
+        ValueError, "Cannot find the first processed key"):
         process_keypresses.check_keypresses(ref_keypresses, proc_keypresses)
 
   def testCheckKeypresses_redactedKeysAreIgnored_equality(self):
@@ -404,11 +405,25 @@ class PhraseTest(unittest.TestCase):
     self.assertEqual(extra_keypresses, [])
     self.assertEqual(missing_keypresses, [(1, 1.100, "a")])
 
-  def testCheckKeypresses_firstRedactedKeyIsShiftedSlightly(self):
-    ref_keypresses = [(0.100, "b"), (1.100, "a"), (1.100, "r")]
-    proc_keypresses = [(0.115, "[RedactedKey]"), (1.100, "a"), (1.100, "r")]
-    with self.assertRaisesRegexp(ValueError, "Mismatch in the first entry"):
-      process_keypresses.check_keypresses(ref_keypresses, proc_keypresses)
+  def testCheckKeypresses_firstRefKeysAreMissingAtTheBeginning(self):
+    ref_keypresses = [(0.100, "b"), (0.200, "l"), (1.100, "a"), (1.100, "r")]
+    proc_keypresses = [(1.100, "a"), (1.200, "k")]
+    extra_keypresses, missing_keypresses = process_keypresses.check_keypresses(
+        ref_keypresses, proc_keypresses)
+    self.assertEqual(extra_keypresses, [(1, 1.200, "k")])
+    # The first two are missing from the beginning.
+    self.assertEqual(missing_keypresses,
+                     [(0, 0.100, "b"), (1, 0.200, "l"), (3, 1.1, "r")])
+
+  def testCheckKeypresses_firstRefKeysAreMissingAtTheBeginningContainsRedaction(self):
+    ref_keypresses = [(0.100, "b"), (0.200, "l"), (1.100, "a"), (1.100, "r")]
+    proc_keypresses = [(1.100, "[RedactedKey]"), (1.200, "k")]
+    extra_keypresses, missing_keypresses = process_keypresses.check_keypresses(
+        ref_keypresses, proc_keypresses)
+    self.assertEqual(extra_keypresses, [(1, 1.200, "k")])
+    # The first two are missing from the beginning.
+    self.assertEqual(missing_keypresses,
+                     [(0, 0.100, "b"), (1, 0.200, "l"), (3, 1.1, "r")])
 
   def testWriteExtraAndMissingKeypressesToTsv(self):
     extra_keypresses = [(10, 0.800, "z")]

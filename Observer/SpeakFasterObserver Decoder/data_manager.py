@@ -932,6 +932,9 @@ def _check_keypresses_from(window,
   assert start_index >= 0
   session_prefixes = session_prefixes[start_index:]
   for session_prefix in session_prefixes:
+    if not session_prefix.startswith(container_prefix):
+      session_prefix = (container_prefix if container_prefix.endswith("/")
+                        else (container_prefix + "/")) + session_prefix
     _check_keypresses(data_manager, session_prefix)
 
 

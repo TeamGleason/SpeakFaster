@@ -993,6 +993,14 @@ def check_keypresses(ref_keypresses, proc_keypresses):
     proc_extra_keypresses = []
     proc_missing_keypresses = []
     proc_ts = [item[0] for item in proc_keypresses]
+    # NOTE: Special case: in a small number of sessions, the timestamp of
+    # the first keypress is negative, which becomes timestamp == 0.0 after
+    # ELAN and postprocessing.
+    if (proc_keypresses and ref_keypresses and
+        proc_keypresses[0][0] == 0.0 and ref_keypresses[0][0] < 0.0):
+        if len([t for t, _ in ref_keypresses if t < 0]) > 1:
+            raise ValueError("More than one negative timestamp: not allowed")
+        ref_keypresses[0] = (0.0, ref_keypresses[0][1])
     # Locate the first ref keypress in proc_keypresses.
     if proc_keypresses and ref_keypresses:
         ref_start_idx = None
@@ -1005,7 +1013,7 @@ def check_keypresses(ref_keypresses, proc_keypresses):
                 break
         if ref_start_idx is None:
             raise ValueError("Cannot find the first processed key: %s" %
-                             proc_keypresses[0])
+                             (proc_keypresses[0],))
         for i in range(ref_start_idx):
             proc_missing_keypresses.append((
                 i, ref_keypresses[i][0], ref_keypresses[i][1]))

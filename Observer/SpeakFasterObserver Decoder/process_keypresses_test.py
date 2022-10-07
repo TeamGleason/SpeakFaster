@@ -398,6 +398,13 @@ class PhraseTest(unittest.TestCase):
     self.assertEqual(extra_keypresses, [])
     self.assertEqual(missing_keypresses, [(2, 1.110, "d"), (3, 5.010, "y")])
 
+  def testCheckKeypresses_initialRefKeypressHasNegativeTimestamp(self):
+    ref_keypresses = [(-0.100, "b"), (-0.050, "a"), (1.110, "d"),
+                      (5.000, "x"), (5.010, "y")]
+    proc_keypresses = [(0.000, "b"), (1.100, "a"), (5.000, "x")]
+    with self.assertRaisesRegex(ValueError, "More than one negative timestamp"):
+        process_keypresses.check_keypresses(ref_keypresses, proc_keypresses)
+
   def testCheckKeypresses_redactedKeysAreIgnored_equality(self):
     ref_keypresses = [(0.100, "b"), (1.100, "a"), (1.100, "r")]
     proc_keypresses = [(0.100, "[RedactedKey]"), (1.100, "a"), (1.100, "r")]

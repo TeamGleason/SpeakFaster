@@ -289,5 +289,20 @@ class WerTest(tf.test.TestCase):
     self.assertEqual(transcript_lib.wer(ref_string, string), 1 / 3)
 
 
+class WerMeasuresTest(tf.test.TestCase):
+
+  def testWerMeasuresReturnsZeroWerIgnoringWhitespaceaAndPunc(self):
+    ref_string = "Hi Bob."
+    asr_string = "Hi  Bob"
+    measures = transcript_lib.wer_measures(ref_string, asr_string)
+    self.assertEqual(measures["truth_length"], 7)
+    self.assertEqual(measures["hypothesis_length"], 7)
+    self.assertEqual(measures["wer"], 0)
+    self.assertEqual(measures["hits"], 2)
+    self.assertEqual(measures["deletions"], 0)
+    self.assertEqual(measures["insertions"], 0)
+    self.assertEqual(measures["substitutions"], 0)
+
+
 if __name__ == "__main__":
   tf.test.main()

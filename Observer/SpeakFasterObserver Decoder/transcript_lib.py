@@ -1,9 +1,13 @@
 """Module for speech transcripts."""
+import csv
 import re
 from datetime import datetime
 
 import jiwer
 import nlp
+
+import elan_process_curated
+import tsv_data
 
 _DUMMY_DATETIME_FORMAT_NO_MILLIS = "%Y-%m-%dT%H:%M:%S"
 _DUMMY_DATETIME_FORMAT_WITH_MILLIS = "%Y-%m-%dT%H:%M:%S.%f"
@@ -12,6 +16,38 @@ _SPEAKER_ID_REGEX = r"\[(Speaker:|SpeakerTTS:).*\]"
 _SPEECH_TRANSCRIPT_CONTENT_REGEX = re.compile(
     ".+(\[(Speaker|SpeakerTTS):?\s?([A-Za-z0-9_#]+)\])$")
 _UTTERANCE_ID_REGEX = r"\[U[0-9]+\]"
+_BACKGROUND_SPEECH_TAG_REGEX = re.compile("\[BackgroundSpeech\]")
+
+
+def load_transcripts_from_tsv_file(tsv_filepath):
+  """Loads keypresses from a TSV file.
+
+  Args:
+    tsv_filepath: Path to the TSV file.
+
+  Returns:
+    A list of (timestamp_s, key_content) tuples.
+  """
+  column_order, has_header = elan_process_curated.infer_columns(tsv_filepath)
+  rows = elan_process_curated.load_rows(
+      tsv_filepath, column_order, has_header=has_header)
+  timestamps_s = []
+  key_contents = []
+  for t_begin, t_end, tier, content in rows:
+    if tier != tsv_data.SPEECH_TRANSCRIPT_TIER:
+      continue
+    timestamps_s.append(float(t_begin))
+    key_contents.append(content)
+  return list(zip(timestamps_s, key_contents))
+
+
+def remove_markups(input_str):
+  """Removes redaction and BackgroundSpeech markups."""
+  redacted_segments = parse_redacted_segments(input_str)
+  for begin, end, _, redacted_text, _ in reversed(redacted_segments):
+    input_str = input_str[:begin] + redacted_text + input_str[end:]
+  input_str = re.sub(_BACKGROUND_SPEECH_TAG_REGEX, "", input_str)
+  return input_str
 
 
 def get_utterance_id(index):
@@ -212,3 +248,16 @@ def wer(ref_string, string):
       speech_content,
       truth_transform=JIWER_TRANSFORM,
       hypothesis_transform=JIWER_TRANSFORM)
+
+
+def wer_measures(ref_string, string):
+  ref_speech_content = extract_speech_content(ref_string)
+  speech_content = extract_speech_content(string)
+  measures = jiwer.compute_measures(
+      ref_speech_content,
+      speech_content,
+      truth_transform=JIWER_TRANSFORM,
+      hypothesis_transform=JIWER_TRANSFORM)
+  measures["truth_length"] = len(ref_speech_content)
+  measures["hypothesis_length"] = len(speech_content)
+  return measures

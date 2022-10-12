@@ -5,6 +5,50 @@ import tensorflow as tf
 import transcript_lib
 
 
+class RemoveRedactionMarkupsTest(tf.test.TestCase):
+
+  def testRemovesSinglePairWithTimeAttribute(self):
+    input_str = "Hi <RedactedSensitive time=\"00:00:00-00:00:10\">Bob</RedactedSensitive> how are you"
+    output = transcript_lib.remove_markups(input_str)
+    self.assertEqual(output,  "Hi Bob how are you")
+
+  def testRemovesSinglePairWithoutTimeAttribute(self):
+    input_str = "Hi <RedactedName>Bob </RedactedName> how are you"
+    output = transcript_lib.remove_markups(input_str)
+    self.assertEqual(output,  "Hi Bob  how are you")
+
+  def testRemovesTwoPairs(self):
+    input_str = "Hi <RedactedName>Bob</RedactedName> I am <RedactedSensitive>coughing</RedactedSensitive>"
+    output = transcript_lib.remove_markups(input_str)
+    self.assertEqual(output,  "Hi Bob I am coughing")
+
+  def testRemoveWholePhraseTag(self):
+    input_str = "<RedactedSensitive>I have coughs</RedactedSensitive>"
+    output = transcript_lib.remove_markups(input_str)
+    self.assertEqual(output,  "I have coughs")
+
+  def testReturnsStringAsIsIfNoRedactionTags(self):
+    input_str = "Have a good day."
+    output = transcript_lib.remove_markups(input_str)
+    self.assertEqual(output,  "Have a good day.")
+
+  def testRemovesSingleBackgroundSpeechTag(self):
+    input_str = " [BackgroundSpeech] Have a good day."
+    output = transcript_lib.remove_markups(input_str)
+    self.assertEqual(output,  "  Have a good day.")
+
+  def testRemovesMultipleBackgroundSpeechTags(self):
+    input_str = " [BackgroundSpeech] Have a good day. [BackgroundSpeech]"
+    output = transcript_lib.remove_markups(input_str)
+    self.assertEqual(output,  "  Have a good day. ")
+
+  def testRemovesRedactionAndBackgroundSpeechTag(self):
+    input_str = "[BackgroundSpeech]Hi <RedactedSensitive time=\"00:00:00-00:00:10\">Bob</RedactedSensitive> how are you"
+    output = transcript_lib.remove_markups(input_str)
+    self.assertEqual(output,  "Hi Bob how are you")
+
+
+
 class GetUtteranceIdTest(tf.test.TestCase):
 
   def testReturnsCorrect(self):
@@ -243,6 +287,21 @@ class WerTest(tf.test.TestCase):
     ref_string = "I like watermelon. [U1] [Speaker:Sean]"
     string = "I like water [U1] [Speaker: 1]"
     self.assertEqual(transcript_lib.wer(ref_string, string), 1 / 3)
+
+
+class WerMeasuresTest(tf.test.TestCase):
+
+  def testWerMeasuresReturnsZeroWerIgnoringWhitespaceaAndPunc(self):
+    ref_string = "Hi Bob."
+    asr_string = "Hi  Bob"
+    measures = transcript_lib.wer_measures(ref_string, asr_string)
+    self.assertEqual(measures["truth_length"], 7)
+    self.assertEqual(measures["hypothesis_length"], 7)
+    self.assertEqual(measures["wer"], 0)
+    self.assertEqual(measures["hits"], 2)
+    self.assertEqual(measures["deletions"], 0)
+    self.assertEqual(measures["insertions"], 0)
+    self.assertEqual(measures["substitutions"], 0)
 
 
 if __name__ == "__main__":

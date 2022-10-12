@@ -36,6 +36,7 @@ import freeform_text
 import gcloud_utils
 import metadata_pb2
 import process_keypresses
+import transcript_lib
 
 DEFAULT_PROFILE_NAME = "spo"
 DEFAULT_S3_BUCKET_NAME = "speak-faster"
@@ -916,10 +917,11 @@ def _download_preprocess_upload_sessions_from(window,
           len(task_session_prefixes), True)
 
 
-def _check_keypresses_from(window,
-                           data_manager,
-                           session_container_prefixes,
-                           session_prefixes):
+def _process_from(window,
+                  data_manager,
+                  session_container_prefixes,
+                  session_prefixes,
+                  processing_type="CHECK_KEYPRESSES"):
   container_prefix = _get_container_prefix(window, session_container_prefixes)
   session_prefix = _get_session_prefix(
       window, session_container_prefixes, session_prefixes)
@@ -935,7 +937,12 @@ def _check_keypresses_from(window,
     if not session_prefix.startswith(container_prefix):
       session_prefix = (container_prefix if container_prefix.endswith("/")
                         else (container_prefix + "/")) + session_prefix
-    _check_keypresses(data_manager, session_prefix)
+    if processing_type == "CHECK_KEYPRESSES":
+      _check_keypresses(data_manager, session_prefix)
+    elif processing_type == "ANALYZE_TRANSCRIPTS":
+      _analyze_transcripts(data_manager, session_prefix)
+    else:
+      raise ValueError("Unsupported processing type: %s" % processing_type)
 
 
 def _apply_session_colors(window):
@@ -1044,7 +1051,7 @@ def upload_curated_freeform_text(window,
       gcs_bucket_name, destination_blob_prefix, uploaded_file_names))
 
 
-def _check_keypresses(data_manager, session_prefix):
+def _prep_for_posthoc_analysis(data_manager, session_prefix):
   remote_status = data_manager.get_remote_session_folder_status(
       session_prefix, use_cached=True)
   local_status = data_manager.get_local_session_folder_status(
@@ -1055,13 +1062,26 @@ def _check_keypresses(data_manager, session_prefix):
   session_dir_path = data_manager.get_local_session_dir(session_prefix)
   merged_path = os.path.join(
       session_dir_path, file_naming.MERGED_TSV_FILENAME)
+  curated_path = os.path.join(
+      session_dir_path, file_naming.CURATED_TSV_FILENAME)
   processed_path = os.path.join(
       session_dir_path, file_naming.CURATED_PROCESSED_TSV_FILENAME)
   if not os.path.isfile(merged_path):
     print("File not found: %s" % merged_path)
-    return
+    merged_path = None
+  if not os.path.isfile(curated_path):
+    print("File not found: %s" % curated_path)
+    curated_path = None
   if not os.path.isfile(processed_path):
     print("File not found: %s" % processed_path)
+    processed_path = None
+  return merged_path, curated_path, processed_path, session_dir_path
+
+
+def _check_keypresses(data_manager, session_prefix):
+  merged_path, _, processed_path, session_dir_path = _prep_for_posthoc_analysis(
+      data_manager, session_prefix)
+  if not merged_path or not processed_path:
     return
   print("Comparing %s vs. %s" % (merged_path, processed_path))
   merged_keypresses = process_keypresses.load_keypresses_from_tsv_file(
@@ -1083,6 +1103,40 @@ def _check_keypresses(data_manager, session_prefix):
       [item for item in session_prefix.split("/") if item])
   gcloud_utils.upload_files_as_objects(
       session_dir_path, [os.path.basename(keypress_checks_tsv_path)],
+      data_manager.gcs_bucket_name, destination_blob_prefix)
+
+
+def _analyze_transcripts(data_manager, session_prefix):
+  merged_path, curated_path, _, session_dir_path = _prep_for_posthoc_analysis(
+      data_manager, session_prefix)
+  if not merged_path or not curated_path:
+    return
+  merged_transcripts = transcript_lib.load_transcripts_from_tsv_file(
+      merged_path)
+  curated_transcripts = transcript_lib.load_transcripts_from_tsv_file(
+      curated_path)
+  merged_transcripts = [
+      transcript_lib.remove_markups(
+          transcript_lib.extract_speech_content(content))
+      for _, content in merged_transcripts]
+  curated_transcripts = [
+      transcript_lib.remove_markups(
+          transcript_lib.extract_speech_content(content))
+      for _, content in curated_transcripts]
+  asr_transcripts = " ".join(merged_transcripts)
+  ref_transcripts = " ".join(curated_transcripts)
+  measures = transcript_lib.wer_measures(ref_transcripts, asr_transcripts)
+  analysis_json_path = os.path.join(
+      session_dir_path, file_naming.TRANSCIPRT_ANALYSIS_JSON_FILENAME)
+  with open(analysis_json_path, "wt") as f:
+    json.dump(measures, f)
+  print("Transcript analysis result:", measures)
+  print("Wrote transcript analysis result to %s" % analysis_json_path)
+  destination_blob_prefix = "/".join(
+      [GCS_POSTPROCESSED_UPLOAD_PREFIX] +
+      [item for item in session_prefix.split("/") if item])
+  gcloud_utils.upload_files_as_objects(
+      session_dir_path, [os.path.basename(analysis_json_path)],
       data_manager.gcs_bucket_name, destination_blob_prefix)
 
 
@@ -1136,6 +1190,7 @@ def main():
               [sg.Button("Refresh session state", key="REFRESH_SESSION_STATE")],
               [sg.Button("Show raw ASR", key="OPEN_RAW_ASR")],
               [sg.Button("Check keypresses", key="CHECK_KEYPRESSES")],
+              [sg.Button("Analzye speech transcripts", key="ANALYZE_TRANSCRIPTS")],
           ]),
       ],
       [
@@ -1188,6 +1243,8 @@ def main():
                     key="DOWNLOAD_PREPROCESS_UPLOAD_SESSIONS_BATCH"),
           sg.Button("Check keypresses from here on",
                     key="CHECK_KEYPRESSES_BATCH"),
+          sg.Button("Analyze speech transcripts from here on",
+                    key="ANALYZE_TRANSCRIPTS_BATCH"),
           sg.Button("Upload curated free-form text",
                     key="UPLOAD_CURATED_FREEFORM_TEXT"),
       ],
@@ -1257,6 +1314,7 @@ def main():
                    "REFRESH_SESSION_STATE",
                    "OPEN_RAW_ASR",
                    "CHECK_KEYPRESSES",
+                   "ANALYZE_TRANSCRIPTS",
                    "CLAIM_SESSION",
                    "UNCLAIM_SESSION",
                    "DOWNLOAD_SESSION_TO_LOCAL",
@@ -1264,6 +1322,7 @@ def main():
                    "UPLOAD_PREPROC",
                    "DOWNLOAD_PREPROCESS_UPLOAD_SESSIONS_BATCH",
                    "CHECK_KEYPRESSES_BATCH",
+                   "ANALYZE_TRANSCRIPTS_BATCH",
                    "POSTPROC_CURATION",
                    "UPLOAD_POSTPROC",
                    "UPLOAD_TO_GCS"):
@@ -1304,6 +1363,9 @@ def main():
       elif event == "CHECK_KEYPRESSES":
         _check_keypresses(data_manager, session_prefix)
         continue
+      elif event == "ANALYZE_TRANSCRIPTS":
+        _analyze_transcripts(data_manager, session_prefix)
+        continue
       elif event == "CLAIM_SESSION":
         data_manager.claim_session(session_prefix)
         _show_session_info(window, data_manager, session_container_prefixes,
@@ -1328,6 +1390,8 @@ def main():
         status_message = "Batch downloading, preprocessing and uploading sessions. Please wait..."
       elif event == "CHECK_KEYPRESSES_BATCH":
         status_message = "Batch checking keypresses. Please wait..."
+      elif event == "ANALYZE_TRANSCRIPTS_BATCH":
+        status_message = "Batch analyzing speech transcripts. Please wait..."
       elif event == "POSTPROC_CURATION":
         status_message = "Postprocessing curation results. Please wait..."
       elif event == "UPLOAD_POSTPROC":
@@ -1357,8 +1421,14 @@ def main():
         status_message = ""
         sessions_changed = True
       elif event == "CHECK_KEYPRESSES_BATCH":
-        _check_keypresses_from(
-            window, data_manager, session_container_prefixes, session_prefixes)
+        _process_from(
+            window, data_manager, session_container_prefixes, session_prefixes,
+            processing_type="CHECK_KEYPRESSES")
+        sessions_changed = False
+      elif event == "ANALYZE_TRANSCRIPTS_BATCH":
+        _process_from(
+            window, data_manager, session_container_prefixes, session_prefixes,
+            processing_type="ANALYZE_TRANSCRIPTS")
         sessions_changed = False
       elif event == "POSTPROC_CURATION":
         (status_message,

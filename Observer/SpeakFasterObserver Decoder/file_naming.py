@@ -25,6 +25,7 @@ CURATED_PROCESSED_SPEECH_ONLY_TSV_FILENAME = (
 SPEAKER_ID_CONFIG_JSON_FILENAME = "speaker_id_config.json"
 
 KEYPRESS_CHECKS_TSV_FILENAME = "keypress_checks.tsv"
+TRANSCIPRT_ANALYSIS_JSON_FILENAME = "transcript_analysis.json"
 
 
 def parse_timestamp(timestamp):

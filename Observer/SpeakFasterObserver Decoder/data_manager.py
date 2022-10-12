@@ -939,8 +939,10 @@ def _process_from(window,
                         else (container_prefix + "/")) + session_prefix
     if processing_type == "CHECK_KEYPRESSES":
       _check_keypresses(data_manager, session_prefix)
-    elif processing_type == "ANALYZE_TRANSCRIPT":
+    elif processing_type == "ANALYZE_TRANSCRIPTS":
       _analyze_transcripts(data_manager, session_prefix)
+    else:
+      raise ValueError("Unsupported processing type: %s" % processing_type)
 
 
 def _apply_session_colors(window):
@@ -1421,12 +1423,12 @@ def main():
       elif event == "CHECK_KEYPRESSES_BATCH":
         _process_from(
             window, data_manager, session_container_prefixes, session_prefixes,
-            processsing_type="CHECK_KEYPRESSES")
+            processing_type="CHECK_KEYPRESSES")
         sessions_changed = False
       elif event == "ANALYZE_TRANSCRIPTS_BATCH":
         _process_from(
             window, data_manager, session_container_prefixes, session_prefixes,
-            processsing_type="ANALYZE_TRANSCRIPTS")
+            processing_type="ANALYZE_TRANSCRIPTS")
         sessions_changed = False
       elif event == "POSTPROC_CURATION":
         (status_message,

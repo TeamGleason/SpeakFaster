@@ -917,10 +917,11 @@ def _download_preprocess_upload_sessions_from(window,
           len(task_session_prefixes), True)
 
 
-def _check_keypresses_from(window,
-                           data_manager,
-                           session_container_prefixes,
-                           session_prefixes):
+def _process_from(window,
+                  data_manager,
+                  session_container_prefixes,
+                  session_prefixes,
+                  processing_type="CHECK_KEYPRESSES"):
   container_prefix = _get_container_prefix(window, session_container_prefixes)
   session_prefix = _get_session_prefix(
       window, session_container_prefixes, session_prefixes)
@@ -936,7 +937,10 @@ def _check_keypresses_from(window,
     if not session_prefix.startswith(container_prefix):
       session_prefix = (container_prefix if container_prefix.endswith("/")
                         else (container_prefix + "/")) + session_prefix
-    _check_keypresses(data_manager, session_prefix)
+    if processing_type == "CHECK_KEYPRESSES":
+      _check_keypresses(data_manager, session_prefix)
+    elif processing_type == "ANALYZE_TRANSCRIPT":
+      _analyze_transcripts(data_manager, session_prefix)
 
 
 def _apply_session_colors(window):
@@ -1110,10 +1114,12 @@ def _analyze_transcripts(data_manager, session_prefix):
   curated_transcripts = transcript_lib.load_transcripts_from_tsv_file(
       curated_path)
   merged_transcripts = [
-      transcript_lib.extract_speech_content(content)
+      transcript_lib.remove_markups(
+          transcript_lib.extract_speech_content(content))
       for _, content in merged_transcripts]
   curated_transcripts = [
-      transcript_lib.extract_speech_content(content)
+      transcript_lib.remove_markups(
+          transcript_lib.extract_speech_content(content))
       for _, content in curated_transcripts]
   asr_transcripts = " ".join(merged_transcripts)
   ref_transcripts = " ".join(curated_transcripts)
@@ -1235,6 +1241,8 @@ def main():
                     key="DOWNLOAD_PREPROCESS_UPLOAD_SESSIONS_BATCH"),
           sg.Button("Check keypresses from here on",
                     key="CHECK_KEYPRESSES_BATCH"),
+          sg.Button("Analyze speech transcripts from here on",
+                    key="ANALYZE_TRANSCRIPTS_BATCH"),
           sg.Button("Upload curated free-form text",
                     key="UPLOAD_CURATED_FREEFORM_TEXT"),
       ],
@@ -1312,6 +1320,7 @@ def main():
                    "UPLOAD_PREPROC",
                    "DOWNLOAD_PREPROCESS_UPLOAD_SESSIONS_BATCH",
                    "CHECK_KEYPRESSES_BATCH",
+                   "ANALYZE_TRANSCRIPTS_BATCH",
                    "POSTPROC_CURATION",
                    "UPLOAD_POSTPROC",
                    "UPLOAD_TO_GCS"):
@@ -1379,6 +1388,8 @@ def main():
         status_message = "Batch downloading, preprocessing and uploading sessions. Please wait..."
       elif event == "CHECK_KEYPRESSES_BATCH":
         status_message = "Batch checking keypresses. Please wait..."
+      elif event == "ANALYZE_TRANSCRIPTS_BATCH":
+        status_message = "Batch analyzing speech transcripts. Please wait..."
       elif event == "POSTPROC_CURATION":
         status_message = "Postprocessing curation results. Please wait..."
       elif event == "UPLOAD_POSTPROC":
@@ -1408,8 +1419,14 @@ def main():
         status_message = ""
         sessions_changed = True
       elif event == "CHECK_KEYPRESSES_BATCH":
-        _check_keypresses_from(
-            window, data_manager, session_container_prefixes, session_prefixes)
+        _process_from(
+            window, data_manager, session_container_prefixes, session_prefixes,
+            processsing_type="CHECK_KEYPRESSES")
+        sessions_changed = False
+      elif event == "ANALYZE_TRANSCRIPTS_BATCH":
+        _process_from(
+            window, data_manager, session_container_prefixes, session_prefixes,
+            processsing_type="ANALYZE_TRANSCRIPTS")
         sessions_changed = False
       elif event == "POSTPROC_CURATION":
         (status_message,

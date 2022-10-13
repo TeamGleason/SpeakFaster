@@ -253,11 +253,14 @@ def wer(ref_string, string):
 def wer_measures(ref_string, string):
   ref_speech_content = extract_speech_content(ref_string)
   speech_content = extract_speech_content(string)
-  measures = jiwer.compute_measures(
-      ref_speech_content,
-      speech_content,
-      truth_transform=JIWER_TRANSFORM,
-      hypothesis_transform=JIWER_TRANSFORM)
+  if not ref_speech_content:
+    measures = {}
+  else:
+    measures = jiwer.compute_measures(
+        ref_speech_content,
+        speech_content,
+        truth_transform=JIWER_TRANSFORM,
+        hypothesis_transform=JIWER_TRANSFORM)
   measures["truth_length"] = len(ref_speech_content)
   measures["hypothesis_length"] = len(speech_content)
   return measures

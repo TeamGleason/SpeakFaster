@@ -303,6 +303,20 @@ class WerMeasuresTest(tf.test.TestCase):
     self.assertEqual(measures["insertions"], 0)
     self.assertEqual(measures["substitutions"], 0)
 
+  def testWerMeasuresWithEmptyTruth(self):
+    ref_string = ""
+    asr_string = "Hi, Bob"
+    measures = transcript_lib.wer_measures(ref_string, asr_string)
+    self.assertEqual(measures["truth_length"], 0)
+    self.assertEqual(measures["hypothesis_length"], 7)
+
+  def testWerMeasuresWithEmptyTruthAndHypothesis(self):
+    ref_string = ""
+    asr_string = ""
+    measures = transcript_lib.wer_measures(ref_string, asr_string)
+    self.assertEqual(measures["truth_length"], 0)
+    self.assertEqual(measures["hypothesis_length"], 0)
+
 
 if __name__ == "__main__":
   tf.test.main()

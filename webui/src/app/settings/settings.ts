@@ -44,6 +44,10 @@ export interface AppSettings {
 
   // Whether incomplete-keyword (inckw) AE is enabled.
   enableInckw?: boolean;
+
+  // Whether auto-fire is enabled for AE. If not, the user needs to
+  // explicitly click the "Expand" button or hit Enter in order to trigger AE.
+  enableAbbrevExpansionAutoFire?: boolean;
 }
 
 let appSettings: AppSettings|null = null;
@@ -58,6 +62,7 @@ export function getDefaultAppSettings(): AppSettings {
     dwellDelayMillis: DEFAULT_DWELL_DELAY_MILLIS,
     numWordSuggestions: 4,
     enableInckw: false,
+    enableAbbrevExpansionAutoFire: false,
   };
 }
 
@@ -157,7 +162,7 @@ export async function setTtsSpeakingRate(ttsSpeakingRate: number) {
   await trySaveSettings();
 }
 
-export async function setGenericTtsVoiceName(ttsVoiceName: string | undefined) {
+export async function setGenericTtsVoiceName(ttsVoiceName: string|undefined) {
   await ensureAppSettingsLoaded();
   appSettings!.genericTtsVoiceName = ttsVoiceName;
   await trySaveSettings();
@@ -187,6 +192,13 @@ export async function setNumWordSuggestions(numWordSuggestions: number) {
 export async function setEnableInckw(enableInckw: boolean) {
   await ensureAppSettingsLoaded();
   appSettings!.enableInckw = enableInckw;
+  await trySaveSettings();
+}
+
+export async function setEnableAbbrevExpansionAutoFire(
+    enableAbbrevExpansionAutoFire: boolean) {
+  await ensureAppSettingsLoaded();
+  appSettings!.enableAbbrevExpansionAutoFire = enableAbbrevExpansionAutoFire;
   await trySaveSettings();
 }
 

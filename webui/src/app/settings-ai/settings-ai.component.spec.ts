@@ -38,7 +38,8 @@ describe('SettingsAiComponent', () => {
     const numWordSuggestionsSection =
         fixture.debugElement.query(By.css('.num-word-suggestions-section'));
     expect(numWordSuggestionsSection).not.toBeNull();
-    const buttons = numWordSuggestionsSection.queryAll(By.css('.option-button'));
+    const buttons =
+        numWordSuggestionsSection.queryAll(By.css('.option-button'));
     expect(buttons.length).toEqual(3);
     expect(buttons[0].nativeElement.innerText).toEqual('3');
     expect(buttons[1].nativeElement.innerText).toEqual('4');
@@ -49,17 +50,32 @@ describe('SettingsAiComponent', () => {
     expect(selectedButtons[0].nativeElement.innerText).toEqual('4');
   });
 
-    it('Shows default enable inckw setting when loaded', async () => {
+  it('Shows default enable inckw setting when loaded', async () => {
     await fixture.whenStable();
-    const gazeFuzzyRadiusSection =
+    const enableInckwSection =
         fixture.debugElement.query(By.css('.enable-inckw-section'));
-    expect(gazeFuzzyRadiusSection).not.toBeNull();
-    const buttons = gazeFuzzyRadiusSection.queryAll(By.css('.option-button'));
+    expect(enableInckwSection).not.toBeNull();
+    const buttons = enableInckwSection.queryAll(By.css('.option-button'));
     expect(buttons.length).toEqual(2);
     expect(buttons[0].nativeElement.innerText).toEqual('Yes');
     expect(buttons[1].nativeElement.innerText).toEqual('No');
     const selectedButtons =
-        gazeFuzzyRadiusSection.queryAll(By.css('.active-button'));
+        enableInckwSection.queryAll(By.css('.active-button'));
+    expect(selectedButtons.length).toEqual(1);
+    expect(selectedButtons[0].nativeElement.innerText).toEqual('No');
+  });
+
+  it('Shows default enable AE auto fire setting when loaded', async () => {
+    await fixture.whenStable();
+    const enableAeAutoFireSection =
+        fixture.debugElement.query(By.css('.enable-ae-auto-fire-section'));
+    expect(enableAeAutoFireSection).not.toBeNull();
+    const buttons = enableAeAutoFireSection.queryAll(By.css('.option-button'));
+    expect(buttons.length).toEqual(2);
+    expect(buttons[0].nativeElement.innerText).toEqual('Yes');
+    expect(buttons[1].nativeElement.innerText).toEqual('No');
+    const selectedButtons =
+        enableAeAutoFireSection.queryAll(By.css('.active-button'));
     expect(selectedButtons.length).toEqual(1);
     expect(selectedButtons[0].nativeElement.innerText).toEqual('No');
   });
@@ -81,16 +97,31 @@ describe('SettingsAiComponent', () => {
 
   it('Changing enable inckw saves new settings', async () => {
     await fixture.whenStable();
-    const showGazeTrackerSection =
+    const enableInckwSection =
         fixture.debugElement.query(By.css('.enable-inckw-section'));
-    const buttons = showGazeTrackerSection.queryAll(By.css('.option-button'));
+    const buttons = enableInckwSection.queryAll(By.css('.option-button'));
     buttons[0].nativeElement.click();
     await fixture.whenStable();
 
     const selectedButtons =
-        showGazeTrackerSection.queryAll(By.css('.active-button'));
+        enableInckwSection.queryAll(By.css('.active-button'));
     expect(selectedButtons.length).toEqual(1);
     expect(selectedButtons[0].nativeElement.innerText).toEqual('Yes');
     expect((await getAppSettings()).enableInckw).toBeTrue();
+  });
+
+  it('Changing enable AE auto fire saves new settings', async () => {
+    await fixture.whenStable();
+    const enableAeAutoFireSection =
+        fixture.debugElement.query(By.css('.enable-ae-auto-fire-section'));
+    const buttons = enableAeAutoFireSection.queryAll(By.css('.option-button'));
+    buttons[0].nativeElement.click();
+    await fixture.whenStable();
+
+    const selectedButtons =
+        enableAeAutoFireSection.queryAll(By.css('.active-button'));
+    expect(selectedButtons.length).toEqual(1);
+    expect(selectedButtons[0].nativeElement.innerText).toEqual('Yes');
+    expect((await getAppSettings()).enableAbbrevExpansionAutoFire).toBeTrue();
   });
 });

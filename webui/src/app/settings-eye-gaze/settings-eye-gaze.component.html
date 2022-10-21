@@ -7,7 +7,7 @@
   font-size: 16px;
   height: 304px;
   margin-left: 12px;
-  width: 800px;
+  width: 920px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -198,5 +198,19 @@
       [ngClass]="{'active-button': appSettings!.dwellDelayMillis === 800}"
       (click)="setDwellDelayMillis(800)">
     800
+  </button>
+  <button
+      #clickableButton
+      class="option-button"
+      [ngClass]="{'active-button': appSettings!.dwellDelayMillis === 1000}"
+      (click)="setDwellDelayMillis(1000)">
+    1000
+  </button>
+  <button
+      #clickableButton
+      class="option-button"
+      [ngClass]="{'active-button': appSettings!.dwellDelayMillis === 1200}"
+      (click)="setDwellDelayMillis(1200)">
+    1200
   </button>
 </div>

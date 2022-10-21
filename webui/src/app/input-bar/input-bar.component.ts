@@ -344,6 +344,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     this.eventLogger.logKeypress(event as KeyboardEvent, this.inputString);
     this.scaleInputTextFontSize();
     const aeAutoFire = (await getAppSettings()).enableAbbrevExpansionAutoFire;
+    // TODO(cais): Add unit test for AE auto fire.
     const suffixOrSettingTriggersAe = aeAutoFire ||
         ABBRVIATION_EXPANSION_TRIGGER_SUFFIX.some(
             suffix => this.inputString.endsWith(suffix))

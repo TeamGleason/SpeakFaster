@@ -134,3 +134,24 @@
     No
     </button>
 </div>
+
+<div
+    *ngIf="appSettings !== null"
+    class="settings-section enable-ae-auto-fire-section">
+    <div class="section-title">Trigger AE after every keystroke:</div>
+
+    <button
+        #clickableButton
+        class="option-button"
+        [ngClass]="{'active-button': appSettings!.enableAbbrevExpansionAutoFire === true}"
+        (click)="setEnableAbbrevExpansionAutoFire(true)">
+    Yes
+    </button>
+    <button
+        #clickableButton
+        class="option-button"
+        [ngClass]="{'active-button': appSettings!.enableAbbrevExpansionAutoFire === false}"
+        (click)="setEnableAbbrevExpansionAutoFire(false)">
+    No
+    </button>
+</div>

@@ -4,7 +4,7 @@ import {getHostInfo, setHostEyeGazeOptions, updateButtonBoxesForElements, update
 import {createUuid} from 'src/utils/uuid';
 
 import {HttpEventLogger} from '../event-logger/event-logger-impl';
-import {AppSettings, getAppSettings, setEnableInckw, setNumWordSuggestions} from '../settings/settings';
+import {AppSettings, getAppSettings, setEnableAbbrevExpansionAutoFire, setEnableInckw, setNumWordSuggestions} from '../settings/settings';
 
 @Component({
   selector: 'app-settings-ai-component',
@@ -54,6 +54,12 @@ export class SettingsAiComponent implements AfterViewInit, OnInit, OnDestroy {
   setEnableInckw(enableInckw: boolean) {
     setEnableInckw(enableInckw);
     this.eventLogger.logSettingsChange('EnableInckw');
+    this.refreshSettings();
+  }
+
+  setEnableAbbrevExpansionAutoFire(enableAbbrevExpansionAutoFire: boolean) {
+    setEnableAbbrevExpansionAutoFire(enableAbbrevExpansionAutoFire);
+    this.eventLogger.logSettingsChange('EnableAbbrevExpansionAutoFire');
     this.refreshSettings();
   }
 }

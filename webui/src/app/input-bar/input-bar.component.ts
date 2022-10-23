@@ -343,8 +343,12 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
     this.inputStringChanged.next(this.inputString);
     this.eventLogger.logKeypress(event as KeyboardEvent, this.inputString);
     this.scaleInputTextFontSize();
-    if (ABBRVIATION_EXPANSION_TRIGGER_SUFFIX.some(
-            suffix => this.inputString.endsWith(suffix)) &&
+    const aeAutoFire = (await getAppSettings()).enableAbbrevExpansionAutoFire;
+    // TODO(cais): Add unit test for AE auto fire.
+    const suffixOrSettingTriggersAe = aeAutoFire ||
+        ABBRVIATION_EXPANSION_TRIGGER_SUFFIX.some(
+            suffix => this.inputString.endsWith(suffix))
+    if (suffixOrSettingTriggersAe &&
         !(this.studyManager.isStudyOn &&
           !this.studyManager.isAbbreviationMode) &&
         this.inputStringIsCompatibleWithAbbreviationExpansion) {
@@ -601,8 +605,7 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
       const maskInitial = this._chips[index].text[0];
       const originalChipStrings = this._chips.map(chip => chip.text);
       this.eventLogger.logAbbreviatonExpansionWordRefinementRequest(
-          getPhraseStats(originalChipStrings.join(' ')),
-          this._focusChipIndex);
+          getPhraseStats(originalChipStrings.join(' ')), this._focusChipIndex);
       this.fillMaskTriggers.next({
         speechContent: this.contextStrings.join('|'),
         phraseWithMask,

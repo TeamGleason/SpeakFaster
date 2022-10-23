@@ -1,7 +1,7 @@
 /** Unit tests for settings. */
 import {BOUND_LISTENER_NAME} from '../../utils/cefsharp';
 
-import {clearSettings, ensureAppSettingsLoaded, getAppSettings, LOCAL_STORAGE_ITEM_NAME, modifyAppSettingsForTest, setDwellDelayMillis, setEnableInckw, setGazeFuzzyRadius, setGenericTtsVoiceName as setGenericTtsVoiceName, setNumWordSuggestions, setShowGazeTracker, setTtsSpeakingRate, setTtsVoiceType, setTtsVolume, tryLoadSettings, trySaveSettings} from './settings';
+import {clearSettings, ensureAppSettingsLoaded, getAppSettings, LOCAL_STORAGE_ITEM_NAME, modifyAppSettingsForTest, setDwellDelayMillis, setEnableAbbrevExpansionAutoFire, setEnableInckw, setGazeFuzzyRadius, setGenericTtsVoiceName as setGenericTtsVoiceName, setNumWordSuggestions, setShowGazeTracker, setTtsSpeakingRate, setTtsVoiceType, setTtsVolume, tryLoadSettings, trySaveSettings} from './settings';
 
 describe('settings', () => {
   beforeEach(async () => {
@@ -145,5 +145,11 @@ describe('settings', () => {
     await setEnableInckw(true);
     const settings = await tryLoadSettings();
     expect(settings?.enableInckw).toBeTrue();
+  });
+
+  it('setting enableAbbrevExpansionAutoFire works', async () => {
+    await setEnableAbbrevExpansionAutoFire(true);
+    const settings = await tryLoadSettings();
+    expect(settings?.enableAbbrevExpansionAutoFire).toBeTrue();
   });
 });

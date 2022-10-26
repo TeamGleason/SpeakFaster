@@ -9,7 +9,8 @@ import {ContextComponent} from '../context/context.component';
 import {getAbbreviationExpansionRequestStats, getAbbreviationExpansionResponseStats, getPhraseStats, HttpEventLogger} from '../event-logger/event-logger-impl';
 import {InputBarControlEvent} from '../input-bar/input-bar.component';
 import {LexiconComponent} from '../lexicon/lexicon.component';
-import {FillMaskRequest, SpeakFasterService, TextPredictionResponse} from '../speakfaster-service';
+import {getAppSettings} from '../settings/settings';
+import {FillMaskRequest, SpeakFasterService} from '../speakfaster-service';
 import {StudyManager} from '../study/study-manager';
 import {AbbreviationSpec, InputAbbreviationChangedEvent} from '../types/abbreviation';
 import {ConversationTurn} from '../types/conversation';
@@ -86,6 +87,7 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
               if (!event.requestExpansion) {
                 return;
               }
+              this.highlightedPhraseIndex = null;  // TODO(cais): Add unit test.
               this.abbreviation = event.abbreviationSpec;
               this.expandAbbreviation();
             });
@@ -192,14 +194,25 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
     }
   }
 
-  onTextClicked(event: {phraseText: string; phraseIndex: number}) {
+  async onTextClicked(event: {phraseText: string; phraseIndex: number}) {
+    // NOTE(cais): despite its name, enableAbbrevExpansionAutoFire currently
+    // also controls whether entering the word-replacement model requires two
+    // clicks. The rationale is that AE auto fire is approprite for the eye-gaze
+    // use case, and that eye-gaze users should also need the two-click approach
+    // for activating the word replacement mode.
+    const twoStepWordReplacement =
+        (await getAppSettings()).enableAbbrevExpansionAutoFire;
     const {phraseText, phraseIndex} = event;
-    if (this.highlightedPhraseIndex !== null &&
-        this.highlightedPhraseIndex === phraseIndex) {
-      this.inputBarControlSubject.next(this.phraseToChips(phraseText));
-      this.highlightedPhraseIndex = null;
+    if (twoStepWordReplacement) {
+      if (this.highlightedPhraseIndex !== null &&
+          this.highlightedPhraseIndex === phraseIndex) {
+        this.inputBarControlSubject.next(this.phraseToChips(phraseText));
+        this.highlightedPhraseIndex = null;
+      } else {
+        this.highlightedPhraseIndex = phraseIndex;
+      }
     } else {
-      this.highlightedPhraseIndex = phraseIndex;
+      this.inputBarControlSubject.next(this.phraseToChips(phraseText));
     }
   }
 

@@ -72,6 +72,7 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
   private abbreviationExpansionTriggersSubscription?: Subscription;
   private fillMaskRequestTriggersSubscription?: Subscription;
   private testEntryEndSubscription?: Subscription;
+  private highlightedPhraseIndex: number|null = null;
 
   constructor(
       public speakFasterService: SpeakFasterService,
@@ -192,7 +193,14 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
   }
 
   onTextClicked(event: {phraseText: string; phraseIndex: number}) {
-    this.inputBarControlSubject.next(this.phraseToChips(event.phraseText));
+    const {phraseText, phraseIndex} = event;
+    if (this.highlightedPhraseIndex !== null &&
+        this.highlightedPhraseIndex === phraseIndex) {
+      this.inputBarControlSubject.next(this.phraseToChips(phraseText));
+      this.highlightedPhraseIndex = null;
+    } else {
+      this.highlightedPhraseIndex = phraseIndex;
+    }
   }
 
   onSpeakOptionButtonClicked(event: {phraseText: string, phraseIndex: number}) {
@@ -279,6 +287,7 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
     this.replacementTokens.splice(0);
     this.manualTokenString = '';
     this.reconstructedText = '';
+    this.highlightedPhraseIndex = null;
     this.state = State.PRE_CHOOSING_EXPANSION;
     this.cdr.detectChanges();
   }
@@ -344,8 +353,13 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
     this.cdr.detectChanges();
   }
 
-  get phraseBackgroundColor(): string {
-    return '#057bad';
+  getPhraseBackgroundColor(i: number): string {
+    if (this.highlightedPhraseIndex !== null &&
+        i === this.highlightedPhraseIndex) {
+      return '#006400';
+    } else {
+      return '#057bad';
+    }
   }
 
   get usedContextStrings(): string[] {

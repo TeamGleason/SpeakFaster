@@ -33,8 +33,6 @@ const MAX_NUM_TEXT_PREDICTIONS = 4;
 export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
                                               AfterViewInit {
   private static readonly _NAME = 'AbbreviationComponent';
-  private static readonly _VALID_TEXT_CONTINUATION_REGEX =
-      /^[A-Za-z0-9][A-Za-z0-9\-\.\,\;\!\?\'\" ]+$/;
 
   private readonly instanceId =
       AbbreviationComponent._NAME + '_' + createUuid();

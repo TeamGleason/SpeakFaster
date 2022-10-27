@@ -34,6 +34,8 @@ const MAX_NUM_TEXT_PREDICTIONS = 4;
 export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
                                               AfterViewInit {
   private static readonly _NAME = 'AbbreviationComponent';
+  static readonly PHRASE_BG_COLOR_DEFAULT = '#057bad';
+  static readonly PHRASE_BG_COLOR_HIGHLIGHTED = '#006400';
 
   private readonly instanceId =
       AbbreviationComponent._NAME + '_' + createUuid();
@@ -87,7 +89,7 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
               if (!event.requestExpansion) {
                 return;
               }
-              this.highlightedPhraseIndex = null;  // TODO(cais): Add unit test.
+              this.highlightedPhraseIndex = null;
               this.abbreviation = event.abbreviationSpec;
               this.expandAbbreviation();
             });
@@ -369,9 +371,9 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
   getPhraseBackgroundColor(i: number): string {
     if (this.highlightedPhraseIndex !== null &&
         i === this.highlightedPhraseIndex) {
-      return '#006400';
+      return AbbreviationComponent.PHRASE_BG_COLOR_HIGHLIGHTED;
     } else {
-      return '#057bad';
+      return AbbreviationComponent.PHRASE_BG_COLOR_DEFAULT;
     }
   }
 

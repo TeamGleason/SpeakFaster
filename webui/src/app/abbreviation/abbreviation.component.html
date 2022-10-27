@@ -293,7 +293,7 @@ mat-progress-spinner {
           [showInjectButton]="!isStudyOn"
           [showFavoriteButton]="!isStudyOn"
           [emphasizeSpeakButton]="isStudyOn"
-          [color]="phraseBackgroundColor"
+          [color]="getPhraseBackgroundColor(i)"
           [isTextClickable]="true"
           (textClicked)="onTextClicked($event)"
           (speakButtonClicked)="onSpeakOptionButtonClicked($event)"

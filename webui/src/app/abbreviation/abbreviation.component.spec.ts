@@ -1,7 +1,7 @@
 /** Unit tests for AbbreviationComponent. */
 
 import {HttpClientModule} from '@angular/common/http';
-import {ComponentFixture, TestBed} from '@angular/core/testing';
+import {ComponentFixture, TestBed, tick} from '@angular/core/testing';
 import {By} from '@angular/platform-browser';
 import {Observable, of, Subject} from 'rxjs';
 import {createUuid} from 'src/utils/uuid';
@@ -10,6 +10,7 @@ import * as cefSharp from '../../utils/cefsharp';
 import {HttpEventLogger} from '../event-logger/event-logger-impl';
 import {repeatVirtualKey, VIRTUAL_KEY} from '../external/external-events.component';
 import {InputBarControlEvent} from '../input-bar/input-bar.component';
+import {clearSettings, setEnableAbbrevExpansionAutoFire} from '../settings/settings';
 import {AbbreviationExpansionRespnose, FillMaskRequest, SpeakFasterService, TextPredictionRequest, TextPredictionResponse} from '../speakfaster-service';
 import {StudyManager} from '../study/study-manager';
 import {TestListener} from '../test-utils/test-cefsharp-listener';
@@ -46,6 +47,7 @@ describe('AbbreviationComponent', () => {
   let inputBarControlEvents: InputBarControlEvent[];
 
   beforeEach(async () => {
+    clearSettings();
     speakFasterServiceForTest = new SpeakFasterServiceForTest();
     testListener = new TestListener();
     (window as any)[cefSharp.BOUND_LISTENER_NAME] = testListener;
@@ -309,22 +311,111 @@ describe('AbbreviationComponent', () => {
     expect(fixture.componentInstance.isStudyOn).toBeFalse();
   });
 
-  it('displays expansion options with emphasized speak button during study', () => {
-    studyManager.maybeHandleRemoteControlCommand('study on');
+  it('displays expansion options with emphasized speak button during study',
+     () => {
+       studyManager.maybeHandleRemoteControlCommand('study on');
+       populateAbbreviationOptions(['what time is it', 'we took it in']);
+       fixture.componentInstance.state = State.CHOOSING_EXPANSION;
+       fixture.detectChanges();
+       const expansions =
+           fixture.debugElement.queryAll(By.css('app-phrase-component'));
+       expect(expansions.length).toEqual(2);
+       expect(expansions[0].nativeElement.innerText).toEqual('what time is it');
+       expect(expansions[1].nativeElement.innerText).toEqual('we took it in');
+
+       const phraseComponents =
+           fixture.debugElement.queryAll(By.css('app-phrase-component'));
+       expect(phraseComponents.length).toEqual(2);
+       expect(phraseComponents[0].componentInstance.emphasizeSpeakButton)
+           .toBeTrue();
+       expect(phraseComponents[1].componentInstance.emphasizeSpeakButton)
+           .toBeTrue();
+     });
+
+  it('onTextClicked issues InputBarControlEvent for word chips', async () => {
     populateAbbreviationOptions(['what time is it', 'we took it in']);
     fixture.componentInstance.state = State.CHOOSING_EXPANSION;
-    fixture.detectChanges();
-    const expansions =
-        fixture.debugElement.queryAll(By.css('app-phrase-component'));
-    expect(expansions.length).toEqual(2);
-    expect(expansions[0].nativeElement.innerText).toEqual('what time is it');
-    expect(expansions[1].nativeElement.innerText).toEqual('we took it in');
+    await fixture.componentInstance.onTextClicked(
+        {phraseText: 'we took it in', phraseIndex: 1});
 
-    const phraseComponents =
-        fixture.debugElement.queryAll(By.css('app-phrase-component'));
-    expect(phraseComponents.length).toEqual(2);
-    expect(phraseComponents[0].componentInstance.emphasizeSpeakButton).toBeTrue();
-    expect(phraseComponents[1].componentInstance.emphasizeSpeakButton).toBeTrue();
+    expect(inputBarControlEvents.length).toEqual(1);
+    expect(inputBarControlEvents[0]).toEqual({
+      chips: [{text: 'we'}, {text: 'took'}, {text: 'it'}, {text: 'in'}],
+    });
+    expect(fixture.componentInstance.getPhraseBackgroundColor(0))
+        .toEqual(AbbreviationComponent.PHRASE_BG_COLOR_DEFAULT);
+    expect(fixture.componentInstance.getPhraseBackgroundColor(1))
+        .toEqual(AbbreviationComponent.PHRASE_BG_COLOR_DEFAULT);
   });
 
+  it('onTextClicked toggles phrase highlight color under AE auto fire',
+     async () => {
+       await setEnableAbbrevExpansionAutoFire(true);
+       populateAbbreviationOptions(['what time is it', 'we took it in']);
+       fixture.componentInstance.state = State.CHOOSING_EXPANSION;
+       await fixture.componentInstance.onTextClicked(
+           {phraseText: 'we took it in', phraseIndex: 1});
+
+       expect(inputBarControlEvents.length).toEqual(0);
+       expect(fixture.componentInstance.getPhraseBackgroundColor(0))
+           .toEqual(AbbreviationComponent.PHRASE_BG_COLOR_DEFAULT);
+       expect(fixture.componentInstance.getPhraseBackgroundColor(1))
+           .toEqual(AbbreviationComponent.PHRASE_BG_COLOR_HIGHLIGHTED);
+
+       await fixture.componentInstance.onTextClicked(
+           {phraseText: 'what time is it', phraseIndex: 0});
+
+       expect(inputBarControlEvents.length).toEqual(0);
+       expect(fixture.componentInstance.getPhraseBackgroundColor(0))
+           .toEqual(AbbreviationComponent.PHRASE_BG_COLOR_HIGHLIGHTED);
+       expect(fixture.componentInstance.getPhraseBackgroundColor(1))
+           .toEqual(AbbreviationComponent.PHRASE_BG_COLOR_DEFAULT);
+     });
+
+  it('onTextClicked twice toggles issues word chips under AE auto fire',
+     async () => {
+       await setEnableAbbrevExpansionAutoFire(true);
+       populateAbbreviationOptions(['what time is it', 'we took it in']);
+       fixture.componentInstance.state = State.CHOOSING_EXPANSION;
+       await fixture.componentInstance.onTextClicked(
+           {phraseText: 'we took it in', phraseIndex: 1});
+       await fixture.componentInstance.onTextClicked(
+           {phraseText: 'we took it in', phraseIndex: 1});
+
+       expect(inputBarControlEvents.length).toEqual(1);
+       expect(inputBarControlEvents[0]).toEqual({
+         chips: [{text: 'we'}, {text: 'took'}, {text: 'it'}, {text: 'in'}],
+       });
+       expect(fixture.componentInstance.getPhraseBackgroundColor(0))
+           .toEqual(AbbreviationComponent.PHRASE_BG_COLOR_DEFAULT);
+       expect(fixture.componentInstance.getPhraseBackgroundColor(1))
+           .toEqual(AbbreviationComponent.PHRASE_BG_COLOR_DEFAULT);
+     });
+
+  it('under AE auto fire, new AE resets phrase bg color', async () => {
+    await setEnableAbbrevExpansionAutoFire(true);
+    populateAbbreviationOptions(['what time is it', 'we took it in']);
+    fixture.componentInstance.state = State.CHOOSING_EXPANSION;
+    await fixture.componentInstance.onTextClicked(
+        {phraseText: 'what time is it', phraseIndex: 0});
+
+    const abbreviationSpec: AbbreviationSpec = {
+      tokens: [{
+        value: 'h',
+        isKeyword: false,
+      }],
+      readableString: 'h',
+      precedingText: '',
+      lineageId: createUuid(),
+    };
+    abbreviationExpansionTriggers.next({
+      abbreviationSpec,
+      requestExpansion: true,
+    });
+
+    expect(fixture.componentInstance.getPhraseBackgroundColor(0))
+        .toEqual(AbbreviationComponent.PHRASE_BG_COLOR_DEFAULT);
+    expect(fixture.componentInstance.getPhraseBackgroundColor(1))
+        .toEqual(AbbreviationComponent.PHRASE_BG_COLOR_DEFAULT);
+  });
 });

@@ -1,7 +1,6 @@
 /** Data types and logic related to app settings. */
 
 import {VERSION} from '@angular/core';
-import {ObjectUnsubscribedError} from 'rxjs';
 import {loadSettings, saveSettings} from 'src/utils/cefsharp';
 
 export type TtsVoiceType = 'PERSONALIZED'|'GENERIC';

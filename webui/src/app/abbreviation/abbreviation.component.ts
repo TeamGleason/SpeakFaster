@@ -9,7 +9,8 @@ import {ContextComponent} from '../context/context.component';
 import {getAbbreviationExpansionRequestStats, getAbbreviationExpansionResponseStats, getPhraseStats, HttpEventLogger} from '../event-logger/event-logger-impl';
 import {InputBarControlEvent} from '../input-bar/input-bar.component';
 import {LexiconComponent} from '../lexicon/lexicon.component';
-import {FillMaskRequest, SpeakFasterService, TextPredictionResponse} from '../speakfaster-service';
+import {getAppSettings} from '../settings/settings';
+import {FillMaskRequest, SpeakFasterService} from '../speakfaster-service';
 import {StudyManager} from '../study/study-manager';
 import {AbbreviationSpec, InputAbbreviationChangedEvent} from '../types/abbreviation';
 import {ConversationTurn} from '../types/conversation';
@@ -33,6 +34,8 @@ const MAX_NUM_TEXT_PREDICTIONS = 4;
 export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
                                               AfterViewInit {
   private static readonly _NAME = 'AbbreviationComponent';
+  static readonly PHRASE_BG_COLOR_DEFAULT = '#057bad';
+  static readonly PHRASE_BG_COLOR_HIGHLIGHTED = '#006400';
 
   private readonly instanceId =
       AbbreviationComponent._NAME + '_' + createUuid();
@@ -72,6 +75,7 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
   private abbreviationExpansionTriggersSubscription?: Subscription;
   private fillMaskRequestTriggersSubscription?: Subscription;
   private testEntryEndSubscription?: Subscription;
+  private highlightedPhraseIndex: number|null = null;
 
   constructor(
       public speakFasterService: SpeakFasterService,
@@ -85,6 +89,7 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
               if (!event.requestExpansion) {
                 return;
               }
+              this.highlightedPhraseIndex = null;
               this.abbreviation = event.abbreviationSpec;
               this.expandAbbreviation();
             });
@@ -191,8 +196,26 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
     }
   }
 
-  onTextClicked(event: {phraseText: string; phraseIndex: number}) {
-    this.inputBarControlSubject.next(this.phraseToChips(event.phraseText));
+  async onTextClicked(event: {phraseText: string; phraseIndex: number}) {
+    // NOTE(cais): despite its name, enableAbbrevExpansionAutoFire currently
+    // also controls whether entering the word-replacement model requires two
+    // clicks. The rationale is that AE auto fire is approprite for the eye-gaze
+    // use case, and that eye-gaze users should also need the two-click approach
+    // for activating the word replacement mode.
+    const twoStepWordReplacement =
+        (await getAppSettings()).enableAbbrevExpansionAutoFire;
+    const {phraseText, phraseIndex} = event;
+    if (twoStepWordReplacement) {
+      if (this.highlightedPhraseIndex !== null &&
+          this.highlightedPhraseIndex === phraseIndex) {
+        this.inputBarControlSubject.next(this.phraseToChips(phraseText));
+        this.highlightedPhraseIndex = null;
+      } else {
+        this.highlightedPhraseIndex = phraseIndex;
+      }
+    } else {
+      this.inputBarControlSubject.next(this.phraseToChips(phraseText));
+    }
   }
 
   onSpeakOptionButtonClicked(event: {phraseText: string, phraseIndex: number}) {
@@ -279,6 +302,7 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
     this.replacementTokens.splice(0);
     this.manualTokenString = '';
     this.reconstructedText = '';
+    this.highlightedPhraseIndex = null;
     this.state = State.PRE_CHOOSING_EXPANSION;
     this.cdr.detectChanges();
   }
@@ -344,8 +368,13 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
     this.cdr.detectChanges();
   }
 
-  get phraseBackgroundColor(): string {
-    return '#057bad';
+  getPhraseBackgroundColor(i: number): string {
+    if (this.highlightedPhraseIndex !== null &&
+        i === this.highlightedPhraseIndex) {
+      return AbbreviationComponent.PHRASE_BG_COLOR_HIGHLIGHTED;
+    } else {
+      return AbbreviationComponent.PHRASE_BG_COLOR_DEFAULT;
+    }
   }
 
   get usedContextStrings(): string[] {

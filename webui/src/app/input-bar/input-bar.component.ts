@@ -689,7 +689,9 @@ export class InputBarComponent implements OnInit, AfterViewInit, OnDestroy {
         this._chips.length === 1 && this._chipTypedText !== null &&
         this._chipTypedText[0] !== null) {
       return this._chipTypedText[0].trim();
-    } else if (this.state === State.ENTERING_BASE_TEXT) {
+    } else if (
+        this.state === State.ENTERING_BASE_TEXT ||
+        this.state === State.CHOOSING_PHRASES) {
       return this.inputString;
     }
     return text.trim();

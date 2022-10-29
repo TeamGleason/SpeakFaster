@@ -98,6 +98,7 @@
       [isFocus]="isContextInFocus(contextSignal.contextId!)"
       [isSelf]="contextSignal.conversationTurn!.speakerId === userId"
       [isCompact]="isStudyOn"
+      [disableGazeClick]="isStudyOn"
       (click)="onTurnClicked($event, contextSignal.contextId!)"
     ></app-conversation-turn-component>
     <!-- TODO(cais): Support other context types (contextType values). -->

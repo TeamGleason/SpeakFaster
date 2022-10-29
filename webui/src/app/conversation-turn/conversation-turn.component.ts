@@ -27,6 +27,7 @@ export class ConversationTurnComponent implements AfterViewInit,
   @Input() turn!: ConversationTurn;
   @Input() isFocus: boolean = false;
   @Input() isCompact: boolean = false;
+  @Input() disableGazeClick: boolean = false;
   @Input() showTimestamp: boolean = false;
   // Whether the turn is from the user per se (as versus a conversation
   // partner).
@@ -76,19 +77,29 @@ export class ConversationTurnComponent implements AfterViewInit,
     if (!this.isVisible && offsetParent !== null) {
       // Just became visible.
       this.isVisible = true;
-      updateButtonBoxesForElements(this.instanceId, this.buttons);
+      if (!this.disableGazeClick) {
+        updateButtonBoxesForElements(this.instanceId, this.buttons);
+      }
     } else if (this.isVisible && offsetParent === null) {
       // Just became hidden.
       this.isVisible = false;
-      updateButtonBoxesToEmpty(this.instanceId);
+      if (!this.disableGazeClick) {
+        updateButtonBoxesToEmpty(this.instanceId);
+      }
     }
   }
 
   ngOnDestroy() {
+    if (this.disableGazeClick) {
+      return;
+    }
     updateButtonBoxesToEmpty(this.instanceId);
   }
 
   forceUpdateButtonBox() {
+    if (this.disableGazeClick) {
+      return;
+    }
     updateButtonBoxesForElements(this.instanceId, this.buttons);
   }
 }

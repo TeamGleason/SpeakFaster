@@ -2,6 +2,7 @@ import {ComponentFixture, fakeAsync, TestBed, tick} from '@angular/core/testing'
 import {By} from '@angular/platform-browser';
 
 import * as cefSharp from '../../utils/cefsharp';
+import {StudyManager} from '../study/study-manager';
 import {TestListener} from '../test-utils/test-cefsharp-listener';
 
 import {ConversationTurnComponent} from './conversation-turn.component';
@@ -92,6 +93,21 @@ describe('ConversationTurnComponent', () => {
        expect(lastCall[0].indexOf('ConversationTurnComponent')).toEqual(0);
        expect(lastCall[1].length).toEqual(1);
        expect(lastCall[1][0].length).toEqual(4);
+     }));
+
+  it('does not call updateButtonBoxes under study mode', fakeAsync(() => {
+       fixture.componentInstance.disableGazeClick = true;
+       fixture.componentInstance.turn = {
+         speakerId: 'foo_speaker',
+         startTimestamp: new Date(),
+         speechContent: 'Hi, there!',
+       };
+       fixture.detectChanges();
+       fixture.componentInstance.ngAfterContentChecked();
+       tick();
+
+       const calls = testListener.updateButtonBoxesCalls;
+       expect(calls.length).toEqual(0);
      }));
 
   it('force updateButtonBoxes works', fakeAsync(() => {

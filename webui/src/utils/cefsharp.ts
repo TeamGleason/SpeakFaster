@@ -68,6 +68,11 @@ export function updateButtonBoxesForElements(
       const nativeElement = elementRef.nativeElement as HTMLElement;
       const box = nativeElement.getBoundingClientRect();
       const boxValues = [box.left, box.top, box.right, box.bottom];
+      if (window.getComputedStyle(nativeElement).visibility === 'hidden') {
+        // Do not register boxes that belong to elements whose CSS visibility is
+        // hidden.
+        return;
+      }
       if (nativeElement.getAttribute(LONG_DWELL_ATTRIBUTE_KEY)) {
         boxValues.push(LONG_DWELL_THRESHOLD_DURATION_MILLIS);
       }

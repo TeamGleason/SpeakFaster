@@ -294,6 +294,7 @@ mat-progress-spinner {
           [showFavoriteButton]="!isStudyOn"
           [emphasizeSpeakButton]="isStudyOn"
           [color]="getPhraseBackgroundColor(i)"
+          [hideSpeakButton]="getPhraseHideSpeakButton(i)"
           [isTextClickable]="true"
           (textClicked)="onTextClicked($event)"
           (speakButtonClicked)="onSpeakOptionButtonClicked($event)"

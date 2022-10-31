@@ -34,7 +34,7 @@ class SpeakFasterServiceForTest {
   }
 }
 
-describe('AbbreviationComponent', () => {
+fdescribe('AbbreviationComponent', () => {
   let speakFasterServiceForTest: SpeakFasterServiceForTest;
   let abbreviationExpansionTriggers: Subject<InputAbbreviationChangedEvent>;
   let fillMaskTriggers: Subject<FillMaskRequest>;
@@ -346,6 +346,8 @@ describe('AbbreviationComponent', () => {
         .toEqual(AbbreviationComponent.PHRASE_BG_COLOR_DEFAULT);
     expect(fixture.componentInstance.getPhraseBackgroundColor(1))
         .toEqual(AbbreviationComponent.PHRASE_BG_COLOR_DEFAULT);
+    expect(fixture.componentInstance.getPhraseHideSpeakButton(0)).toBeFalse();
+    expect(fixture.componentInstance.getPhraseHideSpeakButton(1)).toBeFalse();
   });
 
   it('onTextClicked toggles phrase highlight color under AE auto fire',
@@ -361,6 +363,9 @@ describe('AbbreviationComponent', () => {
            .toEqual(AbbreviationComponent.PHRASE_BG_COLOR_DEFAULT);
        expect(fixture.componentInstance.getPhraseBackgroundColor(1))
            .toEqual(AbbreviationComponent.PHRASE_BG_COLOR_HIGHLIGHTED);
+       expect(fixture.componentInstance.getPhraseHideSpeakButton(0)).toBeTrue();
+       expect(fixture.componentInstance.getPhraseHideSpeakButton(1))
+           .toBeFalse();
 
        await fixture.componentInstance.onTextClicked(
            {phraseText: 'what time is it', phraseIndex: 0});
@@ -370,6 +375,9 @@ describe('AbbreviationComponent', () => {
            .toEqual(AbbreviationComponent.PHRASE_BG_COLOR_HIGHLIGHTED);
        expect(fixture.componentInstance.getPhraseBackgroundColor(1))
            .toEqual(AbbreviationComponent.PHRASE_BG_COLOR_DEFAULT);
+       expect(fixture.componentInstance.getPhraseHideSpeakButton(0))
+           .toBeFalse();
+       expect(fixture.componentInstance.getPhraseHideSpeakButton(1)).toBeTrue();
      });
 
   it('onTextClicked twice toggles issues word chips under AE auto fire',
@@ -390,6 +398,10 @@ describe('AbbreviationComponent', () => {
            .toEqual(AbbreviationComponent.PHRASE_BG_COLOR_DEFAULT);
        expect(fixture.componentInstance.getPhraseBackgroundColor(1))
            .toEqual(AbbreviationComponent.PHRASE_BG_COLOR_DEFAULT);
+       expect(fixture.componentInstance.getPhraseHideSpeakButton(0))
+           .toBeFalse();
+       expect(fixture.componentInstance.getPhraseHideSpeakButton(1))
+           .toBeFalse();
      });
 
   it('under AE auto fire, new AE resets phrase bg color', async () => {
@@ -417,5 +429,7 @@ describe('AbbreviationComponent', () => {
         .toEqual(AbbreviationComponent.PHRASE_BG_COLOR_DEFAULT);
     expect(fixture.componentInstance.getPhraseBackgroundColor(1))
         .toEqual(AbbreviationComponent.PHRASE_BG_COLOR_DEFAULT);
+    expect(fixture.componentInstance.getPhraseHideSpeakButton(0)).toBeFalse();
+    expect(fixture.componentInstance.getPhraseHideSpeakButton(1)).toBeFalse();
   });
 });

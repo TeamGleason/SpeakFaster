@@ -71,6 +71,11 @@ export function updateButtonBoxesForElements(
       if (nativeElement.getAttribute(LONG_DWELL_ATTRIBUTE_KEY)) {
         boxValues.push(LONG_DWELL_THRESHOLD_DURATION_MILLIS);
       }
+      // Do not register boxes that belong to elements whose CSS visibility is
+      // hidden.
+      if (window.getComputedStyle(nativeElement).visibility === 'hidden') {
+        return;
+      }
       if (containerRect == null ||
           isRectVisibleInsideContainer(box, containerRect)) {
         boxes.push(boxValues);

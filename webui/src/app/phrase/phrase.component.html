@@ -65,6 +65,10 @@
   border-radius: 8px;
 }
 
+.speak-button-hidden {
+  visibility: hidden;
+}
+
 </style>
 
 <div class="phrase-container"
@@ -84,7 +88,7 @@
       #clickableButton
       *ngIf="!isEditing"
       class="action-button speak-button"
-      [ngClass]="{'speak-button-emphasized': emphasizeSpeakButton}"
+      [ngClass]="{'speak-button-emphasized': emphasizeSpeakButton, 'speak-button-hidden': hideSpeakButton}"
       (click)="onSpeakButtonClicked($event)">
     <img class="button-image" src="/assets/images/speak.png" alt="speak phrase" />
   </button>

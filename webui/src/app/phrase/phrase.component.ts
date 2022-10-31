@@ -1,5 +1,5 @@
 /** A phrase option for user selection. */
-import {AfterViewInit, Component, ElementRef, EventEmitter, Input, OnDestroy, Output, QueryList, ViewChild, ViewChildren} from '@angular/core';
+import {AfterViewInit, Component, ElementRef, EventEmitter, Input, OnChanges, OnDestroy, Output, QueryList, SimpleChanges, ViewChild, ViewChildren} from '@angular/core';
 import {updateButtonBoxesForElements, updateButtonBoxesToEmpty} from 'src/utils/cefsharp';
 import {createUuid} from 'src/utils/uuid';
 
@@ -14,7 +14,7 @@ export enum State {
   selector: 'app-phrase-component',
   templateUrl: './phrase.component.html',
 })
-export class PhraseComponent implements AfterViewInit, OnDestroy {
+export class PhraseComponent implements AfterViewInit, OnDestroy, OnChanges {
   private static readonly _NAME = 'PhraseComponent';
 
   private readonly instanceId = PhraseComponent._NAME + '_' + createUuid();
@@ -36,6 +36,7 @@ export class PhraseComponent implements AfterViewInit, OnDestroy {
   @Input() scaleFontSize = false;
   @Input() isTextClickable: boolean = false;
   @Input() isEditing: boolean = false;
+  @Input() hideSpeakButton: boolean = false;
   @Input() emphasizeSpeakButton: boolean = false;
   @Output()
   textClicked: EventEmitter<{phraseText: string, phraseIndex: number}> =
@@ -67,13 +68,24 @@ export class PhraseComponent implements AfterViewInit, OnDestroy {
         this.instanceId, clicakbleAreas, containerRect);
   }
 
+  private updateButtonBoxesWithoutContainerRect() {
+    // TODO(cais): Add unit test.
+    const clickableAreas = this.isTextClickable ? this.clickableButtonsAndText :
+                                                  this.clickableButtons;
+    if (clickableAreas == null) {
+      // This could happen if the component hasn't been properly initialized
+      // yet.
+      return;
+    }
+    updateButtonBoxesForElements(this.instanceId, clickableAreas);
+  }
+
   ngAfterViewInit() {
     this.adjustFontSize();
-    // TODO(cais): Add unit test.
-    const clicakbleAreas = this.isTextClickable ? this.clickableButtonsAndText :
+    const clickableAreas = this.isTextClickable ? this.clickableButtonsAndText :
                                                   this.clickableButtons;
-    updateButtonBoxesForElements(this.instanceId, clicakbleAreas);
-    clicakbleAreas.changes.subscribe((queryList: QueryList<ElementRef>) => {
+    updateButtonBoxesForElements(this.instanceId, clickableAreas);
+    clickableAreas.changes.subscribe((queryList: QueryList<ElementRef>) => {
       updateButtonBoxesForElements(this.instanceId, queryList);
     });
   }
@@ -96,6 +108,13 @@ export class PhraseComponent implements AfterViewInit, OnDestroy {
       this.phraseElement.nativeElement.style.lineHeight =
           `${lineHeightPx.toFixed(1)}px`;
     }
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes == null || changes.hideSpeakButton == null) {
+      return;
+    }
+    this.updateButtonBoxesWithoutContainerRect();
   }
 
   private get baseFontSizePx() {

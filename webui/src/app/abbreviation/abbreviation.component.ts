@@ -377,6 +377,14 @@ export class AbbreviationComponent implements OnDestroy, OnInit, OnChanges,
     }
   }
 
+  getPhraseHideSpeakButton(i: number): boolean {
+    if (this.highlightedPhraseIndex === null) {
+      return false;
+    } else {
+      return this.highlightedPhraseIndex !== i;
+    }
+  }
+
   get usedContextStrings(): string[] {
     // TODO(#49): Limit by token length? Increase length.
     const LIMIT_TURNS = this.isStudyOn ?

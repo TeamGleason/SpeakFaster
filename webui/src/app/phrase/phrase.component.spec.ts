@@ -1,6 +1,7 @@
 /** Unit tests for PhraseComponent. */
 import {HttpClientModule} from '@angular/common/http';
-import {ComponentFixture, TestBed} from '@angular/core/testing';
+import {SimpleChange} from '@angular/core';
+import {ComponentFixture, fakeAsync, TestBed, tick} from '@angular/core/testing';
 import {By} from '@angular/platform-browser';
 import {Observable, of} from 'rxjs';
 
@@ -293,4 +294,41 @@ describe('PhraseComponent', () => {
     expect(fixture.debugElement.query(By.css('.speak-button-emphasized')))
         .not.toBeNull();
   });
+
+  it('hides speak button if hideSpeakButton', () => {
+    fixture.componentInstance.hideSpeakButton = true;
+    fixture.detectChanges();
+    const speakButton = fixture.nativeElement.querySelector('.speak-button') as
+        HTMLButtonElement;
+    expect(speakButton).not.toBeNull();
+    expect(window.getComputedStyle(speakButton).visibility).toEqual('hidden');
+  });
+
+  it('does not hide speak button if hideSpeakButton is default', () => {
+    fixture.detectChanges();
+    const speakButton = fixture.nativeElement.querySelector('.speak-button') as
+        HTMLButtonElement;
+    expect(fixture.componentInstance.hideSpeakButton).toBeFalse();
+    expect(speakButton).not.toBeNull();
+    expect(window.getComputedStyle(speakButton).visibility)
+        .not.toEqual('hidden');
+  });
+
+  it('change in hideSpeakButton calls updateButtonBoxes', fakeAsync(() => {
+        fixture.componentInstance.showInjectButton = false;
+        fixture.componentInstance.showFavoriteButton = false;
+        fixture.componentInstance.hideSpeakButton = true;
+        fixture.detectChanges();
+        tick();
+        const numCalls0 = testListener.updateButtonBoxesCalls.length;
+        fixture.componentInstance.ngOnChanges(
+            {hideSpeakButton: new SimpleChange(false, true, false)});
+        tick();
+        const numCalls1 = testListener.updateButtonBoxesCalls.length;
+        expect(numCalls1).toEqual(numCalls0 + 1);
+        expect(fixture.debugElement.query(By.css('.speak-button-hidden')))
+            .not.toBeNull();
+        const lastCall = testListener.updateButtonBoxesCalls[numCalls1 - 1];
+        expect(lastCall[1].length).toEqual(0);
+      }));
 });

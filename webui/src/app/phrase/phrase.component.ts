@@ -72,14 +72,11 @@ export class PhraseComponent implements AfterViewInit, OnDestroy, OnChanges {
     // TODO(cais): Add unit test.
     const clickableAreas = this.isTextClickable ? this.clickableButtonsAndText :
                                                   this.clickableButtons;
-    console.log('*** A100');  // DEBUG
     if (clickableAreas == null) {
       // This could happen if the component hasn't been properly initialized
       // yet.
-      console.log('*** A200');  // DEBUG
       return;
     }
-    console.log('*** A300');  // DEBUG
     updateButtonBoxesForElements(this.instanceId, clickableAreas);
   }
 
@@ -117,8 +114,6 @@ export class PhraseComponent implements AfterViewInit, OnDestroy, OnChanges {
     if (changes == null || changes.hideSpeakButton == null) {
       return;
     }
-    console.log(
-        '*** Callnig updateButtonBoxesWithoutContainerRect()');  // DEBUG
     this.updateButtonBoxesWithoutContainerRect();
   }
 

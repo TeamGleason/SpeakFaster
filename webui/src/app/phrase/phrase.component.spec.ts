@@ -293,4 +293,30 @@ describe('PhraseComponent', () => {
     expect(fixture.debugElement.query(By.css('.speak-button-emphasized')))
         .not.toBeNull();
   });
+
+  it('hides speak button if hideSpeakButton', () => {
+    const emittedEvents: Array<{phraseText: string, phraseIndex: number}> = [];
+    fixture.componentInstance.hideSpeakButton = true;
+    fixture.componentInstance.speakButtonClicked.subscribe((event) => {
+      emittedEvents.push(event);
+    });
+    fixture.detectChanges();
+    const speakButton = fixture.nativeElement.querySelector('.speak-button') as
+        HTMLButtonElement;
+    expect(speakButton).not.toBeNull();
+    expect(window.getComputedStyle(speakButton).visibility).toEqual('hidden');
+  });
+
+  it('does not hide speak button if hideSpeakButton is default', () => {
+    const emittedEvents: Array<{phraseText: string, phraseIndex: number}> = [];
+    fixture.componentInstance.speakButtonClicked.subscribe((event) => {
+      emittedEvents.push(event);
+    });
+    fixture.detectChanges();
+    const speakButton = fixture.nativeElement.querySelector('.speak-button') as
+        HTMLButtonElement;
+    expect(fixture.componentInstance.hideSpeakButton).toBeFalse();
+    expect(speakButton).not.toBeNull();
+    expect(window.getComputedStyle(speakButton).visibility).not.toEqual('hidden');
+  });
 });

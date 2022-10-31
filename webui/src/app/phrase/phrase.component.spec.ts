@@ -315,13 +315,20 @@ describe('PhraseComponent', () => {
   });
 
   it('change in hideSpeakButton calls updateButtonBoxes', fakeAsync(() => {
-       fixture.detectChanges();
-       tick();
-       const numCalls0 = testListener.updateButtonBoxesCalls.length;
-       fixture.componentInstance.ngOnChanges(
-           {hideSpeakButton: new SimpleChange(false, true, false)});
-       tick();
-       const numCalls1 = testListener.updateButtonBoxesCalls.length;
-       expect(numCalls1).toEqual(numCalls0 + 1);
-     }));
+        fixture.componentInstance.showInjectButton = false;
+        fixture.componentInstance.showFavoriteButton = false;
+        fixture.componentInstance.hideSpeakButton = true;
+        fixture.detectChanges();
+        tick();
+        const numCalls0 = testListener.updateButtonBoxesCalls.length;
+        fixture.componentInstance.ngOnChanges(
+            {hideSpeakButton: new SimpleChange(false, true, false)});
+        tick();
+        const numCalls1 = testListener.updateButtonBoxesCalls.length;
+        expect(numCalls1).toEqual(numCalls0 + 1);
+        expect(fixture.debugElement.query(By.css('.speak-button-hidden')))
+            .not.toBeNull();
+        const lastCall = testListener.updateButtonBoxesCalls[numCalls1 - 1];
+        expect(lastCall[1].length).toEqual(0);
+      }));
 });

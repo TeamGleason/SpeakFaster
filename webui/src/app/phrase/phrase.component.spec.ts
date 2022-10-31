@@ -1,6 +1,7 @@
 /** Unit tests for PhraseComponent. */
 import {HttpClientModule} from '@angular/common/http';
-import {ComponentFixture, TestBed} from '@angular/core/testing';
+import {SimpleChange} from '@angular/core';
+import {ComponentFixture, fakeAsync, TestBed, tick} from '@angular/core/testing';
 import {By} from '@angular/platform-browser';
 import {Observable, of} from 'rxjs';
 
@@ -295,11 +296,7 @@ describe('PhraseComponent', () => {
   });
 
   it('hides speak button if hideSpeakButton', () => {
-    const emittedEvents: Array<{phraseText: string, phraseIndex: number}> = [];
     fixture.componentInstance.hideSpeakButton = true;
-    fixture.componentInstance.speakButtonClicked.subscribe((event) => {
-      emittedEvents.push(event);
-    });
     fixture.detectChanges();
     const speakButton = fixture.nativeElement.querySelector('.speak-button') as
         HTMLButtonElement;
@@ -308,15 +305,23 @@ describe('PhraseComponent', () => {
   });
 
   it('does not hide speak button if hideSpeakButton is default', () => {
-    const emittedEvents: Array<{phraseText: string, phraseIndex: number}> = [];
-    fixture.componentInstance.speakButtonClicked.subscribe((event) => {
-      emittedEvents.push(event);
-    });
     fixture.detectChanges();
     const speakButton = fixture.nativeElement.querySelector('.speak-button') as
         HTMLButtonElement;
     expect(fixture.componentInstance.hideSpeakButton).toBeFalse();
     expect(speakButton).not.toBeNull();
-    expect(window.getComputedStyle(speakButton).visibility).not.toEqual('hidden');
+    expect(window.getComputedStyle(speakButton).visibility)
+        .not.toEqual('hidden');
   });
+
+  it('change in hideSpeakButton calls updateButtonBoxes', fakeAsync(() => {
+       fixture.detectChanges();
+       tick();
+       const numCalls0 = testListener.updateButtonBoxesCalls.length;
+       fixture.componentInstance.ngOnChanges(
+           {hideSpeakButton: new SimpleChange(false, true, false)});
+       tick();
+       const numCalls1 = testListener.updateButtonBoxesCalls.length;
+       expect(numCalls1).toEqual(numCalls0 + 1);
+     }));
 });

@@ -428,8 +428,15 @@ export class StudyManager {
         'See you later',
       ],
     };
-    this.dialogs['utest1'] = createUnscriptedDialogWithInitialQuestion(
-        'How do you like the weather today?');
+    this.dialogs['dummy3'] = {
+      turns: [
+        'where is the dog?',
+        'i saw him playing in the backyard',
+      ]
+    };
+    this.dialogs['utest1'] =
+        createUnscriptedDialogWithInitialQuestion(
+            'How do you like the weather today?');
   }
 }
 

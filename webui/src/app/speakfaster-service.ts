@@ -195,6 +195,7 @@ export function configureService(config: ServiceConfiguration) {
   configuration = config;
 }
 
+const PING_TIMEOUT_MILLIS = 6000;
 const ABBREVIATION_EXPANSION_TIMEOUT_MILLIS = 6000;
 const TEXT_PREDICTION_TIMEOUT_MILLIS = 6000;
 const FILL_MASK_TIMEOUT_MILLIS = 6000;
@@ -223,10 +224,10 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
     };
     return invokeEndpointCompat<PingResponse>(
                endpoint, this.http, params, headers, withCredentials,
-               CONTEXT_PHRASES_TIMEOUT_MILLIS)
+               PING_TIMEOUT_MILLIS)
         .pipe(catchError(error => {
           return throwError(
-              makeTimeoutErrorMessage('Ping', CONTEXT_PHRASES_TIMEOUT_MILLIS));
+              makeTimeoutErrorMessage('Ping', PING_TIMEOUT_MILLIS));
         }));
   }
 

@@ -195,6 +195,7 @@ export function configureService(config: ServiceConfiguration) {
   configuration = config;
 }
 
+const PING_TIMEOUT_MILLIS = 6000;
 const ABBREVIATION_EXPANSION_TIMEOUT_MILLIS = 6000;
 const TEXT_PREDICTION_TIMEOUT_MILLIS = 6000;
 const FILL_MASK_TIMEOUT_MILLIS = 6000;
@@ -217,14 +218,17 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
   constructor(private http: HttpClient) {}
 
   ping() {
-    const {headers, withCredentials} = this.getServerCallParams();
-    return this.http.get<PingResponse>(configuration!.endpoint, {
-      params: {
-        mode: 'ping',
-      },
-      withCredentials,
-      headers,
-    });
+    const {endpoint, headers, withCredentials} = this.getServerCallParams();
+    const params: any = {
+      mode: 'ping',
+    };
+    return invokeEndpointCompat<PingResponse>(
+               endpoint, this.http, params, headers, withCredentials,
+               PING_TIMEOUT_MILLIS)
+        .pipe(catchError(error => {
+          return throwError(
+              makeTimeoutErrorMessage('Ping', PING_TIMEOUT_MILLIS));
+        }));
   }
 
   expandAbbreviation(
@@ -491,9 +495,13 @@ export class SpeakFasterService implements SpeakFasterServiceStub {
  */
 export function invokeEndpointCompat<T>(
     endpoint: string, http: HttpClient, params: any, headers: any,
-    withCredentials: boolean, timeoutMillis?: number): Observable<T> {
+    withCredentials: boolean, timeoutMillis?: number,
+    runAsMe: boolean = false): Observable<T> {
   if (endpoint.endsWith(':call')) {  // New POST endpoint.
     const body = {json: JSON.stringify(params)};
+    if (runAsMe) {
+      (body as any)['runAsMe'] = true;
+    }
     let observable =
         http.post<T>(endpoint, body, {
               headers,

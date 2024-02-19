@@ -1,0 +1,245 @@
+train chain2_246_1438_105_613_684_561 s/Ohh/Oh/
+train chain2_216_460_507_1226_424_274 s/your ready/you're ready/
+train chain2_736_488_387_896_931_226 s/There a/There's a/
+train chain2_1788_66_250_218_535_976 s/kyte/kite/
+train chain2_1882_808_447_1169_775_543 s/I ll/I'll/
+train chain2_1053_1440_1114_722_404_1006 s/I d/I'd/
+train chain3_298_225_66_133_252_105 s/unbelieveable/unbelievable/
+train chain2_1669_1132_537_1256_211_240 s/idon't/i don't/
+train chain3_398_422_79_154_288_172 s/Fransisco/Francisco/
+train chain2_1397_1336_1391_973_47_645 s/mt feet/my feet/
+train chain3_418_29_61_122_230_64 s/I'l/I'll/
+train chain2_712_1213_195_1135_650_9 s/the Bronte's/Bronte's/
+train chain2_74_1477_534_1253_1044_691 s/its so/it's so/
+train chain2_855_1245_1253_262_1050_553 s/It's a seven/It's at seven/
+train chain2_1657_1230_309_509_1164_676 s/dont/don't/
+train chain3_143_315_253_101_187_293 s/go the casino tomorow/go to the casino tomorrow/
+train chain3_240_103_201_1_1_1 s/Are there yet/Are we there yet/
+train chain2_1832_380_429_1090_472_396 s/a instrument/an instrument/
+train chain3_281_192_386_349_256_109 s/due/do/
+train chain2_211_1295_563_1281_189_479 s/an delicious/a delicious/
+train chain2_1320_896_52_311_464_973 s/than your/than yours/
+train chain2_597_1317_1361_822_557_524 s/hygeine/hygiene/
+train chain2_1732_592_644_297_352_262 s/whats/what's/
+train chain3_310_257_146_285_141_234 s/It's was/It was/ s/Im very/I'm very/
+train chain2_1909_362_475_1196_296_875 s/willl/will/
+train chain3_244_116_229_46_91_161 s/Its/It's/
+train chain2_1737_907_430_1095_1053_1076 s/lets/let's/
+train chain2_581_1186_1260_287_130_353 s/the conserve/they conserve/
+train chain2_185_1146_1039_288_306_928 s/this here shirt/this shirt/
+train chain2_432_448_285_379_111_547 s/think about/think about it/
+train chain2_918_42_658_355_514_548 s/lest/least/
+train chain2_1212_1448_1374_877_196_572 s/Lets/Let's/
+train chain3_426_48_103_196_334_265 s/raquet/racquet/
+train chain3_163_347_297_186_325_250 s/Ill/I'll/
+train chain3_146_320_257_107_200_306 s/an a/in a/
+train chain2_962_244_103_579_938_614 s/I d love/I'd love/
+train chain2_624_1458_188_1112_548_285 s/have few/have a few/
+train chain3_456_128_264_121_229_61 s/alot/a lot/
+train chain2_2016_1015_923_775_1153_624 s/chip/chips/
+train chain2_418_249_327_582_773_427 s/to hard/too hard/
+train chain2_1231_63_890_634_71_255 s/its/it's/
+train chain3_202_3_3_19_39_68 s/OH</OH,/
+train chain2_1580_1343_485_1206_428_859 s/your/you're/
+train chain2_656_1391_255_249_633_32 s/May be/Maybe/
+train chain2_110_394_889_629_1135_85 s/seen to/seen/
+train chain2_805_405_18_96_273_753 s/its a/it's a/
+train chain3_380_391_375_328_217_37 s/be a great/be great/
+train chain2_1410_989_836_200_621_824 s/its always/it's always/
+train chain3_430_59_120_234_52_92 s/got to the/go to the/
+train chain2_1753_613_1180_1069_519_177 s/LIsten/Listen/ s/personaly/personally/
+train chain2_1017_98_1101_630_655_349 s/not problem/not a problem/
+train chain2_1821_1300_1308_555_1151_1010 s/Your  welcome/You're welcome/
+train chain2_1085_781_1228_139_1051_405 s/Ill/I'll/
+train chain2_359_719_1259_284_783_471 s/or no/or not/
+train chain2_1822_376_328_586_759_163 s/later then/later than/
+train chain3_52_160_325_237_55_97 s/its so/it's so/
+train chain2_2060_41_661_368_827_560 s/Say's/Says/
+train chain2_1967_1110_1236_177_199_111 s/know idea/no idea/ s/its any/it's any/
+train chain3_222_49_106_201_8_11 s/I have  they/I have. they/
+train chain2_317_1499_1270_332_373_289 s/Lets/Let's/
+train chain3_377_385_366_309_183_289 s/here that/hear that/
+train chain2_1289_215_206_29_233_1108 s/It the/It's the/
+train chain2_1548_371_1299_514_846_156 s/Its growing/It's growing/
+train chain3_377_385_366_309_183_289 s/get's better/gets better/
+train chain2_279_663_513_1232_673_352 s/suits/suit/
+train chain3_110_255_137_268_109_187 s/it's mouth/its mouth/
+train chain3_364_363_324_235_53_94 s/anyway/any way/
+train chain2_1978_1043_124_825_1057_1064 s/WHere/Where/
+train chain2_52_1190_1162_963_985_126 s/its a/it's a/
+train chain3_451_114_226_40_80_141 s/must a/must be a/ s/they often/they are often/
+train chain2_1455_103_42_242_1205_570 s/I'm I/am I/
+train chain3_269_166_338_257_87_157 s/your self/yourself/
+train chain2_1943_840_558_1277_308_937 s/problem ill be/problem i'll be/
+train chain2_726_993_497_1217_976_537 s/RETIREVER/RETRIEVER/
+train chain2_411_1348_650_328_563_339 s/lets/let's/
+train chain2_18_300_111_673_266_956 s/Mine left/My left/
+train chain3_106_248_125_246_69_120 s/WHat/What/
+train chain3_343_322_259_111_210_24 s/Jans/Jan's/
+train chain2_136_1285_157_992_780_732 s/cant/can't/
+train chain3_102_241_107_203_10_15 s/im not/i'm not/
+train chain2_1632_1049_263_280_1046_968 s/nickles/nickels/
+train chain2_661_606_410_1026_289_562 s/breakfeast/breakfast/
+train chain2_1178_1080_727_715_1221_219 s/lets/let's/
+train chain2_1552_483_93_530_1123_742 s/the the/the/
+train chain3_229_67_138_269_111_190 s/cant/can't/ s/deodarant/deodorant/
+train chain3_249_130_268_128_244_89 s/cant/can't/
+train chain2_804_1463_812_94_1105_504 s/thik/think/
+train chain3_352_340_285_166_309_216 s/alittle/a little/
+train chain3_128_285_198_377_305_208 s/whats/what's/
+train chain2_396_445_800_1089_276_170 s/forgetfullness/forgetfulness/
+train chain2_1575_124_862_462_917_773 s/but a taking/but taking/
+train chain2_1168_76_929_812_950_143 s/your even/you're even/
+train chain3_88_222_56_113_214_33 s/cant beleive/can't believe/
+train chain2_287_1467_1126_773_53_403 s/ill walk/I'll walk/
+train chain2_895_586_1024_123_127_724 s/on understanding/of understanding/
+train chain3_283_194_389_354_264_124 s/its a/it's a/
+train chain2_182_572_906_701_668_942 s/Who's car/Whose car/
+train chain2_550_128_743_806_345_104 s/a unpaid/an unpaid/
+train chain2_1692_393_869_495_961_620 s/long as it/long has it/
+train chain2_1424_992_1309_559_94_995 s/SUPRISED/SURPRISED/
+train chain2_799_423_127_836_842_222 s/you watchin/you watching/
+train chain2_742_556_522_1241_566_1014 s/I cant/I can't/
+train chain2_941_489_1344_753_288_101 s/tommorow/tomorrow/
+train chain2_213_790_471_1193_25_863 s/Aleeve/Aleve/
+train chain3_264_155_315_218_23_42 s/don' know/don't know/
+train chain2_236_220_579_1297_712_335 s/he's has/he has/
+train chain2_1525_585_1300_516_437_419 s/its just/it's just/
+train chain2_938_1483_59_338_1157_468 s/left overs/leftovers/
+train chain2_938_1483_59_338_1157_468 s/the dogs food/the dog's food/
+train chain2_1069_1383_640_276_667_743 s/somtime/sometime/
+train chain2_121_683_1218_93_413_323 s/I run/I ran/
+train chain2_1038_1133_1257_278_560_595 s/chauffer/chauffeur/
+train chain2_486_1238_1058_403_1183_507 s/know long I/know how long I/
+train chain3_234_79_155_301_170_276 s/it wings/its wings/
+train chain2_981_1509_493_1214_277_952 s/always give me/always gives me/
+train chain2_1845_766_484_1205_100_846 s/for paste/for pasta/
+train chain2_498_1102_281_366_1074_596 s/i dont/i don't/
+train chain2_950_590_753_861_242_756 s/to receipts/the receipts/
+train chain2_1817_395_35_216_432_648 s/baseball tea,/baseball team/
+train chain2_1476_1235_30_185_792_608 s/for awhile/for a while/ s/to go do/to do/
+train chain3_265_157_318_223_33_58 s/What do like/What do you like/
+train chain2_1414_1304_655_343_965_856 s/let you knew/let you know/
+train chain3_282_193_387_351_260_115 s/you every/you ever/
+train chain2_1579_844_1133_817_348_549 s/icecream/ice cream/
+train chain2_685_316_724_702_998_826 s/arund/around/
+train chain2_516_934_17_92_841_286 s/thats/that's/
+train chain2_2030_199_480_1201_486_713 s/bussy/busy/
+train chain2_755_1159_819_121_346_248 s/wont/won't/
+train chain2_1558_770_972_1101_807_848 s/goes to wedding/goes to weddings/
+train chain2_803_611_1304_533_389_384 s/DAUGHTERS FRIEND/DAUGHTER'S FRIEND/ s/is NYC/in NYC/
+train chain2_343_1482_1041_298_54_858 s/wouldn't had/wouldn't have/
+train chain2_1767_441_444_1164_770_106 s/your hear/you're here/
+train chain3_63_181_365_307_179_285 s/its a/it's a/
+train chain3_442_91_179_346_249_102 s/alot to/a lot to/
+train chain2_295_526_788_1024_1116_445 s/Its tomorrow/It's tomorrow/
+train chain2_2010_990_548_1267_287_944 s/YOU'D LIKE TOO/YOU'D LIKE TO/
+train chain2_591_1074_116_784_193_1080 s/dont want to talk you/don't want to talk to you/
+train chain2_1665_1095_1333_704_250_1062 s/Whats/What's/ s/its a house/it's a house/
+train chain2_1920_733_1188_1113_344_263 s/email addres/email address/
+train chain2_1204_1449_1402_7_164_633 s/it work out/it works out/
+train chain2_1577_1461_772_942_74_751 s/be are done/we are done/
+train chain2_1716_948_1303_529_57_147 s/beging/begin/
+train chain2_1401_824_1005_26_594_764 s/lets walk/let's walk/
+train chain3_255_141_287_169_312_221 s/Dont worry, Ill handle/Don't worry, I'll handle/
+train chain2_1108_82_751_853_61_482 s/just need/just needs/
+train chain2_401_972_154_979_898_527 s/awhile/a while/
+train chain2_1226_1189_793_1046_294_774 s/tablesaw/table saw/
+train chain2_775_565_1192_1125_757_941 s/its a good/it's a good/
+train chain3_73_198_395_364_281_151 s/9 o clock/9 o'clock/
+train chain2_1339_30_189_1114_431_651 s/Its very/It's very/
+train chain2_1269_333_381_858_19_397 s/kind f clothes/kind of clothes/
+train chain2_1942_955_1065_441_327_484 s/to do to/to go to/
+train chain2_60_75_1231_156_439_492 s/then I care/than I care/
+train chain2_1371_938_426_1078_355_974 s/You're face/Your face/
+train chain2_1272_8_1339_729_940_1067 s/we'll let's/well let's/
+train chain3_54_164_332_245_67_116 s/that wht/that's what/ s/thats what/that's what/
+train chain3_56_168_340_261_96_166 s/Any thing/Anything/
+dev chain2_759_1346_434_1105_781_939 s/Drogon/Dragon/ s/pit bill/pitbull/ s/becaue he/because he/
+dev chain2_501_633_798_1076_110_670 s/8 o clock/8 o'clock/
+dev chain2_1840_1108_652_335_1198_112 s/How's you mother/How's your mother/
+dev chain2_857_110_8_45_161_57 s/was a more/was more/ s/sction/action/
+dev chain2_464_836_553_1272_952_214 s/for awhile/for a while/
+dev chain2_595_841_477_1198_232_531 s/Where are you/What are you/
+dev chain3_175_372_341_262_100_175 s/Ill/I'll/
+dev chain2_13_1310_859_449_1042_659 s/tomatoe soup/tomato soup/ s/a appetizer/an appetizer/
+dev chain2_1596_470_415_1042_836_179 s/What are going/What are you going/
+dev chain2_2085_1281_1147_892_1134_801 s/Carribbean/Caribbean/
+dev chain2_533_625_939_891_517_511 s/thigs/things/
+dev chain2_186_1172_1096_602_262_619 s/to hot/too hot/
+dev chain3_366_366_330_244_66_114 s/What are doing/What are you doing/
+dev chain2_274_1027_829_165_1181_4 s/raman noodles/ramen noodles/ s/love raman/love ramen/
+dev chain3_210_17_36_74_135_226 s/Im looking/I'm looking/
+dev chain2_2101_172_1031_197_658_58 s/Your right/You're right/
+dev chain2_1786_5_690_521_715_130 s/Heartily condolences/hearty condolences/
+dev chain2_308_204_432_1099_671_589 s/its in/it's in/
+dev chain2_397_528_1199_1144_748_819 s/Its in/It's in/
+dev chain3_360_352_305_202_9_13 s/me point/my point/
+dev chain3_436_77_152_296_162_266 s/welcomr/welcome/ s/thank you for you help/thank you for your help/
+dev chain2_662_173_13_70_531_921 s/Sure lets go/Sure let's go/
+dev chain3_379_390_374_326_213_30 s/Have you see/Have you seen/ s/thats why/that's why/
+dev chain2_482_758_786_1004_1058_642 s/those that/that/
+dev chain2_606_600_348_690_555_277 s/that's sucks/that sucks/
+dev chain2_1012_1218_879_589_400_877 s/quit hot/quite hot/
+dev chain2_311_873_45_254_461_796 s/ill/i'll/
+dev chain2_708_629_1315_594_1055_766 s/Your  welcome/You're welcome/
+dev chain2_864_162_562_1280_741_623 s/say its an/say it's an/
+dev chain2_667_833_322_561_591_580 s/its way/it's way/
+dev chain2_2031_1088_662_374_1047_808 s/wants to do/want to do/
+dev chain2_1961_523_1216_84_48_61 s/Sound good/Sounds good/
+dev chain2_1007_198_676_445_730_649 s/he license/the license/
+dev chain3_91_228_78_153_286_168 s/embarassed/embarrassed/
+dev chain2_1480_670_1121_755_672_516 s/joyfull/joyful/
+dev chain2_137_1204_1135_826_970_40 s/lets/let's/
+dev chain2_879_208_516_1235_1146_1105 s/THE NEW IS/THE NEWS IS/
+dev chain3_179_379_354_286_143_237 s/aboot/about/
+test chain2_936_898_245_192_246_174 s/we can a good/we can find a good/
+test chain3_315_269_168_325_212_28 s/my bother/my brother/
+test chain2_723_1090_908_709_462_892 s/Thats/That's/ s/tommorow/tomorrow/
+test chain3_278_184_372_322_205_14 s/Ill invent/I'll invent/ s/dont/don't/
+test chain3_10_53_113_220_27_48 s/Two eyeball/Two eyeballs/
+test chain3_215_28_60_120_227_56 s/Ill buy/I'll buy/
+test chain2_650_568_888_623_597_960 s/have your tried/have you tried/
+test chain2_750_1493_546_1265_899_734 s/a pencil do/a pencil for/
+test chain2_2091_321_946_934_825_1007 s/more then/more than/
+test chain2_722_979_402_1001_88_365 s/your welcome/you're welcome/
+test chain2_1874_1407_1355_797_1117_679 s/its amazing/it's amazing/
+test chain2_820_1006_201_3_909_895 s/its so nice/it's so nice/ s/lets see/let's see/
+test chain2_2103_1155_1389_959_479_754 s/for you help/for your help/
+test chain2_632_811_386_887_325_5 s/cant/can't/
+test chain3_325_290_207_7_5_5 s/I head/I heard/
+test chain2_85_1443_933_850_65_238 s/but its/but it's/
+test chain2_458_688_506_1225_247_609 s/dissentigrate/disintegrate/
+test chain2_1718_33_247_205_677_685 s/for me to/for me too/
+test chain3_171_362_322_230_43_74 s/didnt/didn't/
+test chain2_985_83_732_740_186_186 s/let you known/let you know/
+test chain2_1898_452_278_334_168_932 s/half and hour/half an hour/
+test chain2_739_87_1269_330_687_865 s/Of cause/Of course/
+test chain3_43_140_283_163_303_203 s/done this/done with this/
+test chain2_284_835_219_91_1062_298 s/you car/your car/
+test chain2_1116_1299_851_402_203_160 s/haven't see you/haven't seen you/
+test chain2_513_1411_1022_113_366_388 s/cant/can't/
+test chain2_818_1201_162_1009_502_617 s/thats  tonight/that's tonight/
+test chain2_863_93_1397_994_831_997 s/Why dont/Why don't/
+test chain3_410_18_38_78_142_235 s/i don not/i do not/
+test chain2_383_20_611_73_941_542 s/mine favorite/my favorite/ s/opinon/opinion/
+test chain3_93_231_85_165_307_212 s/im hungry/i'm hungry/
+test chain2_583_1512_817_115_755_73 s/old Beattle/old Beetle/ s/Beattle for/Beetle for/
+test chain2_1345_1355_807_66_387_778 s/hoisery/hosiery/
+test chain2_1689_1447_653_337_1008_33 s/I though/I thought/
+test chain2_201_1362_693_534_616_254 s/I wont/I won't/
+test chain2_1285_256_300_468_401_755 s/have sen/have seen/
+test chain3_414_22_48_96_175_281 s/ill send/i'll send/
+test chain3_295_218_39_80_145_240 s/a a mango/a mango/
+test chain2_1247_1111_1057_396_1113_272 s/its fine/it's fine/
+test chain3_345_326_263_119_225_51 s/has good has/as good as/
+test chain2_471_1050_332_606_491_107 s/a interesting/an interesting/ s/a ice breaker/an ice breaker/
+test chain2_161_741_1305_537_268_790 s/like a she/like she/
+test chain2_839_1478_209_43_1020_495 s/its paid/it's paid/
+test chain2_1854_397_1176_1052_141_408 s/Its so/It's so/
+test chain2_813_1183_997_1167_236_912 s/sound good/sounds good/
+test chain2_1611_546_307_497_696_70 s/cant u/can't u/
+test chain2_416_1435_414_1039_1031_278 s/Always choice/Always choose/ s/whats wrong/what's wrong/
+test chain2_575_687_567_1285_858_963 s/may be you/maybe you/
+test chain2_1789_1442_945_931_385_457 s/its available/it's available/
+test chain3_182_386_367_311_186_292 s/or chicken pox/or chickenpox/ s/and chicken pox/and chickenpox/

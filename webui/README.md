@@ -9,7 +9,7 @@ It is written in the [Angular framework](https://angular.io/)
 
 ### Getting started
 
-1. Install node 14+. See https://nodejs.org/en/download/
+1. Install node 14+ (e.g., 20.10.0). See https://nodejs.org/en/download/
 2. Add node and npm to your path.
 3. Install the Angular CLI: `npm instal -g @angular/cli`
    - Make sure that the Angular CLI binary (`ng`) available on your path.
@@ -23,6 +23,10 @@ cd webui
 npm install
 ng serve
 ```
+
+If you see an error of the code `ERR_OSSL_EVP_UNSUPPORTED` while running
+`ng serve`, you can get past it by setting the environment variable
+`NODE_OPTIONS=--openssl-legacy-provider`.
 
 Then open your browser and navigate to
 
